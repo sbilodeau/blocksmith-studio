@@ -497,13 +497,13 @@
     "keyNotNeeded": "No key needed (local)",
     "eval": {
       "title": "Test a model",
-      "hint": "Sends the French and English test phrases to the model and checks that it picks the right tools. Uses your provider tokens: about 16 requests for the quick test, 60 for the full test.",
+      "hint": "Sends the French and English test phrases to the model and checks that it picks the right tools. Uses your provider tokens: 16 phrases for the quick test, 60 for the full test.",
       "quick": "Quick test",
       "full": "Full test",
       "progress": "{done} of {total} requests",
       "stopped": "Test stopped before the end; the scores cover only what ran.",
       "good": "Good fit: {rate} % of requests mapped to the right tools in both languages.",
-      "weak": "Weak fit: {rate} % right, with a {gap}-point gap between French and English. The agent may misread some requests with this model.",
+      "weak": "Weak fit: only {rate} % of requests mapped to the right tools. The agent may misread some requests with this model.",
       "overall": "Overall",
       "french": "French",
       "english": "English",
@@ -511,7 +511,8 @@
       "failures": "Missed requests ({count})",
       "noCall": "(no tool call)",
       "copy": "Copy the report (Markdown)",
-      "copied": "Report copied."
+      "copied": "Report copied.",
+      "weakGap": "Uneven fit: {gap} points between French and English. The agent may misread requests in one of the languages."
     }
   },
   "brief": {

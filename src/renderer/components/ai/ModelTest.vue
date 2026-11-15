@@ -104,7 +104,9 @@ async function copyReport(): Promise<void> {
             ? t('ai.eval.stopped')
             : report.ok
               ? t('ai.eval.good', { rate: report.overall.rate })
-              : t('ai.eval.weak', { rate: report.overall.rate, gap: report.gap })
+              : report.overall.rate < 90
+                ? t('ai.eval.weak', { rate: report.overall.rate })
+                : t('ai.eval.weakGap', { gap: report.gap })
         }}
       </n-alert>
       <n-table size="small" :bordered="false" :single-line="false">

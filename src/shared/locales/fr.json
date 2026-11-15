@@ -497,13 +497,13 @@
     "keyNotNeeded": "Aucune clé requise (local)",
     "eval": {
       "title": "Tester un modèle",
-      "hint": "Envoie au modèle les phrases de test en français et en anglais et vérifie qu'il choisit les bons outils. Utilise les jetons de votre fournisseur : environ 16 requêtes pour le test rapide, 60 pour le test complet.",
+      "hint": "Envoie au modèle les phrases de test en français et en anglais et vérifie qu'il choisit les bons outils. Utilise les jetons de votre fournisseur : 16 phrases pour le test rapide, 60 pour le test complet.",
       "quick": "Test rapide",
       "full": "Test complet",
       "progress": "{done} requêtes sur {total}",
       "stopped": "Test arrêté avant la fin ; les scores ne couvrent que ce qui a été exécuté.",
       "good": "Bon choix : {rate} % des requêtes ont donné les bons outils dans les deux langues.",
-      "weak": "Choix faible : {rate} % de bonnes réponses, avec un écart de {gap} points entre le français et l'anglais. L'agent risque de mal comprendre certaines demandes avec ce modèle.",
+      "weak": "Choix faible : seulement {rate} % des requêtes ont donné les bons outils. L'agent risque de mal comprendre certaines demandes avec ce modèle.",
       "overall": "Global",
       "french": "Français",
       "english": "Anglais",
@@ -511,7 +511,8 @@
       "failures": "Requêtes ratées ({count})",
       "noCall": "(aucun appel d'outil)",
       "copy": "Copier le rapport (Markdown)",
-      "copied": "Rapport copié."
+      "copied": "Rapport copié.",
+      "weakGap": "Résultats inégaux : {gap} points d'écart entre le français et l'anglais. L'agent risque de mal comprendre les demandes dans l'une des langues."
     }
   },
   "brief": {
