@@ -122,7 +122,7 @@
     "ai": {
       "unauthorized": "Le fournisseur a refusé la clé d'API. Vérifiez-la dans les Paramètres.",
       "rateLimited": "Trop de requêtes ; réessayez dans un instant.",
-      "modelNotFound": "Ce modèle n'est pas disponible chez le fournisseur.",
+      "modelNotFound": "Le modèle « {model} » n'est pas disponible chez ce fournisseur.",
       "providerError": "Le fournisseur d'IA a renvoyé une erreur ({status}).",
       "network": "Impossible de joindre le fournisseur d'IA. Vérifiez votre connexion.",
       "invalidResponse": "Le fournisseur d'IA a envoyé une réponse illisible.",
@@ -134,7 +134,11 @@
       "budgetReached": "Arrêt après le nombre maximal d'allers-retours ; voici ce qui a été fait jusqu'ici.",
       "stopped": "Arrêté.",
       "proposalNotFound": "Ce plan a expiré. Redemandez.",
-      "runFailed": "La requête à l'IA a échoué."
+      "runFailed": "La requête à l'IA a échoué.",
+      "insecureBaseUrl": "L'adresse du fournisseur doit utiliser https (http est permis seulement pour localhost).",
+      "invalidHeader": "L'en-tête supplémentaire « {name} » n'est pas permis.",
+      "timeout": "Le fournisseur d'IA a mis trop de temps à répondre.",
+      "aborted": "Arrêté."
     }
   },
   "common": {
