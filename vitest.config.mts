@@ -1,5 +1,6 @@
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
@@ -9,6 +10,13 @@ const alias = {
   '@shared': resolve(root, 'src/shared'),
   '@renderer': resolve(root, 'src/renderer')
 }
+
+// The live AI evaluation reads its key and options from the environment or .env.local (never committed).
+const aiEnv = Object.fromEntries(
+  Object.entries(loadEnv('test', root, ['OLLAMA_API_KEY', 'BLOCKSMITH_EVAL_'])).filter(
+    ([k]) => k === 'OLLAMA_API_KEY' || k.startsWith('BLOCKSMITH_EVAL_')
+  )
+)
 
 export default defineConfig({
   test: {
@@ -29,6 +37,15 @@ export default defineConfig({
           environment: 'happy-dom',
           include: ['tests/component/**/*.test.ts'],
           setupFiles: ['tests/component/setup.ts']
+        }
+      },
+      {
+        resolve: { alias },
+        test: {
+          name: 'ai-eval',
+          environment: 'node',
+          include: ['tests/ai-eval/**/*.test.ts'],
+          env: aiEnv
         }
       }
     ]
