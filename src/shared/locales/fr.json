@@ -332,7 +332,8 @@
       "flipV": "Miroir vertical",
       "paste": "Collage"
     },
-    "shortcut": "{label} ({key})"
+    "shortcut": "{label} ({key})",
+    "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer."
   },
   "history": {
     "label": {

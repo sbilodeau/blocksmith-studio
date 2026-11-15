@@ -47,9 +47,14 @@ const displayed = computed<RgbaImage | null>(() => {
   return editor.value.image
 })
 
+// The read-only vanilla pane keeps its own zoom so the two compare panes do not fight over it.
+const localZoom = ref(0)
 const zoom = computed({
-  get: () => editor.value.zoom,
-  set: (z: number) => (editor.value.zoom = z)
+  get: () => (props.readonly ? localZoom.value : editor.value.zoom),
+  set: (z: number) => {
+    if (props.readonly) localZoom.value = z
+    else editor.value.zoom = z
+  }
 })
 
 // ---------- rendering ----------
@@ -67,12 +72,16 @@ function imageToCanvas(img: RgbaImage, target: HTMLCanvasElement | null): HTMLCa
 function fit(): void {
   const img = displayed.value
   if (!img || size.value.width === 0) return
+  // Animated strips fit one frame and start at the top; scroll (wheel) to move along the strip.
+  const frame = editor.value.frameSize
+  const fitHeight = frame ?? img.height
   const fitZoom = Math.max(
     1,
-    Math.floor(Math.min((size.value.width - 48) / img.width, (size.value.height - 48) / img.height))
+    Math.floor(Math.min((size.value.width - 48) / img.width, (size.value.height - 48) / fitHeight))
   )
   zoom.value = ZOOM_LEVELS.filter((z) => z <= fitZoom).pop() ?? 1
   center()
+  if (frame) offset.value = { ...offset.value, y: 24 }
 }
 
 function center(): void {
@@ -443,6 +452,14 @@ function onWheel(e: WheelEvent): void {
   e.preventDefault()
   const img = displayed.value
   if (!img) return
+  // Plain wheel / two-finger scroll pans; Ctrl/Cmd + wheel (and trackpad pinch, reported as ctrlKey) zooms.
+  if (!e.ctrlKey && !e.metaKey) {
+    const dx = e.shiftKey ? e.deltaY : e.deltaX
+    const dy = e.shiftKey ? 0 : e.deltaY
+    offset.value = { x: Math.round(offset.value.x - dx), y: Math.round(offset.value.y - dy) }
+    schedule()
+    return
+  }
   const before = zoom.value
   const after = nextZoom(before, e.deltaY < 0 ? 1 : -1)
   if (after === before) return
@@ -502,12 +519,25 @@ watch(
     schedule()
   }
 )
+// The vanilla pane follows texture changes of the main pane.
+watch(
+  () => [editor.value.vanilla, editor.value.frameSize],
+  () => {
+    if (props.readonly) {
+      localZoom.value = 0
+      schedule()
+    }
+  }
+)
 
 onMounted(() => {
   resizeObserver = new ResizeObserver(([entryRect]) => {
-    const first = size.value.width === 0
-    size.value = { width: entryRect.contentRect.width, height: entryRect.contentRect.height }
-    if (first || zoom.value === 0) fit()
+    const { width, height } = entryRect.contentRect
+    const changed =
+      Math.abs(width - size.value.width) > 1 || Math.abs(height - size.value.height) > 1
+    size.value = { width, height }
+    // Refit when the view size changes (window resize, compare split) so the texture stays visible.
+    if (changed || zoom.value === 0) fit()
     schedule()
   })
   if (host.value) resizeObserver.observe(host.value)

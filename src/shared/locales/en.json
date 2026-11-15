@@ -332,7 +332,8 @@
       "flipV": "Flip vertically",
       "paste": "Paste"
     },
-    "shortcut": "{label} ({key})"
+    "shortcut": "{label} ({key})",
+    "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan."
   },
   "history": {
     "label": {

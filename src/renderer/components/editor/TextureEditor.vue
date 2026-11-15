@@ -288,6 +288,7 @@ const statusTag = computed(() => {
           </n-text>
           <n-text depth="3">{{ t('editor.zoomLevel', { zoom: editor.zoom }) }}</n-text>
           <n-text v-if="editor.peekVanilla" type="warning">{{ t('editor.showingVanilla') }}</n-text>
+          <n-text depth="3" class="nav-hint">{{ t('editor.navHint') }}</n-text>
         </div>
       </div>
       <aside class="side">
@@ -364,6 +365,10 @@ const statusTag = computed(() => {
   padding: 4px 2px 0;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+}
+.nav-hint {
+  margin-left: auto;
+  font-size: 11px;
 }
 .side {
   width: 250px;

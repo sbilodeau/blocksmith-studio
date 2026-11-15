@@ -5,7 +5,7 @@
 Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs, with a pixel editor,
 a live 3D preview and AI agents that propose changes you review before anything is applied.
 
-> Status: early development (milestone M1 - packs and browsing). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M2 - pixel editor). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
@@ -68,6 +68,8 @@ Project documentation:
 - [docs/versions.md](docs/versions.md) - supported Minecraft versions, pack.mcmeta rules, vanilla extraction
 - [docs/packs.md](docs/packs.md) - pack folder layout, texture statuses, import and export
 - [docs/categories.md](docs/categories.md) - texture categories and how to edit the mapping
+- [docs/editor.md](docs/editor.md) - pixel editor tools, shortcuts and undo levels
+- [docs/image-core.md](docs/image-core.md) - the shared image library (conventions, operations)
 - [CONTRIBUTING.md](CONTRIBUTING.md) - conventions, tests, i18n rules, commits
 
 ## License

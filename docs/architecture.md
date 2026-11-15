@@ -123,6 +123,9 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 - `stores/pack.ts` creates one Pinia store per open pack (`pack/<id>`), holding its textures, categories and view
   state (category, search, status filter, zoom, selection). It is disposed when the tab closes.
 - `stores/packs.ts` (pack list), `stores/vanilla.ts` (installs and versions), `stores/jobs.ts` (progress).
+- `stores/editor.ts` creates one pixel-editor store per open pack (`editor/<packId>`); see [editor.md](editor.md).
+- `src/shared/image/` is the pure image core (RGBA buffers, transforms, drawing, colors, PNG); see
+  [image-core.md](image-core.md). It runs unchanged in the renderer, in main and in tests.
 - `router/` uses hash history (works with `file://`).
 
 ## Updates
