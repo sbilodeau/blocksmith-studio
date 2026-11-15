@@ -1,0 +1,12 @@
+{
+  "license": "Apache License 2.0",
+  "details": { "format": "gguf", "family": "qwen3", "parameter_size": "32.8B" },
+  "model_info": {
+    "general.architecture": "qwen3",
+    "general.parameter_count": 32762123264,
+    "qwen3.context_length": 40960,
+    "qwen3.embedding_length": 5120
+  },
+  "capabilities": ["completion", "tools", "thinking"],
+  "modified_at": "2026-10-01T00:00:00Z"
+}
