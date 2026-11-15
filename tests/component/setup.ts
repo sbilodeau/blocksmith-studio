@@ -45,7 +45,12 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
   'workspace.get': () => ({ path: '/Users/test/Documents/Blocksmith Studio' }),
   'packs.list': () => fakeBridge.packs,
   'packs.create': (input) => {
-    const i = input as { name: string; description?: string; base: 'vanilla' | 'empty'; authoringVersion: string }
+    const i = input as {
+      name: string
+      description?: string
+      base: 'vanilla' | 'empty'
+      authoringVersion: string
+    }
     const pack: PackSummary = {
       id: `p${fakeBridge.packs.length + 1}`,
       name: i.name,
@@ -59,7 +64,8 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
     fakeBridge.packs = [pack, ...fakeBridge.packs]
     return pack
   },
-  'pack.get': (input) => fakeBridge.packs.find((p) => p.id === (input as { packId: string }).packId),
+  'pack.get': (input) =>
+    fakeBridge.packs.find((p) => p.id === (input as { packId: string }).packId),
   'pack.textures': () => fakeBridge.textures,
   'pack.categories': () => fakeBridge.categories,
   'minecraft.detect': () => [],

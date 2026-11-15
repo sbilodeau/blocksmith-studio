@@ -200,10 +200,9 @@ export async function createTestEnv(
     showItemInFolder: vi.fn(),
     notifyChanged: vi.fn(),
     now: () => new Date((clock += 1000)),
-    newId: () => `pack${String(++counter).padStart(4, '0')}`,
-    ...options.overrides
+    newId: () => `pack${String(++counter).padStart(4, '0')}`
   }
-  const service = createPackService(deps)
+  const service = createPackService({ ...deps, ...options.overrides })
   return {
     root,
     documentsDir,

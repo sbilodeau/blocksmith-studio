@@ -49,6 +49,12 @@ export const CATEGORIES: CategorySummary[] = [
 
 export const VERSIONS: VanillaAvailability[] = [
   { versionId: '26.3', releaseTime: '2026-09-15', state: 'ready', isLatest: true },
-  { versionId: '26.2', releaseTime: '2026-06-16', state: 'local', isLatest: false, jarPath: '/mc/26.2.jar' },
+  {
+    versionId: '26.2',
+    releaseTime: '2026-06-16',
+    state: 'local',
+    isLatest: false,
+    jarPath: '/mc/26.2.jar'
+  },
   { versionId: '1.21.4', releaseTime: '2024-12-03', state: 'downloadable', isLatest: false }
 ]
