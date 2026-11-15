@@ -5,6 +5,7 @@ import { registerIpcHandlers } from './ipc/handlers'
 import { registerVanillaHandlers } from './ipc/vanilla-handlers'
 import { registerPackHandlers } from './ipc/pack-handlers'
 import { registerTextureHandlers } from './ipc/texture-handlers'
+import { registerPreviewHandlers } from './ipc/preview-handlers'
 import { send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
 import { createJobReporter } from './jobs'
@@ -13,6 +14,7 @@ import { createUpdaterService } from './services/updater'
 import { createDefaultVanillaStore } from './services/vanilla'
 import { createPackService, createTextureEditService } from './services/packs'
 import { createHistoryService } from './services/history'
+import { createPreviewService } from './services/preview'
 
 const isDev = !app.isPackaged
 
@@ -77,6 +79,7 @@ if (!app.requestSingleInstanceLock()) {
       history,
       notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
     })
+    const preview = createPreviewService({ packs, vanilla })
 
     // Dialogs are looked up at call time (E2E tests replace them on the dialog module).
     const parent = (): BrowserWindow | undefined => mainWindow ?? undefined
@@ -130,6 +133,7 @@ if (!app.requestSingleInstanceLock()) {
       }
     })
     registerTextureHandlers({ textures, history })
+    registerPreviewHandlers({ preview })
     handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 
     mainWindow = createMainWindow()
