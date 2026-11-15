@@ -14,6 +14,15 @@ import {
 import type { JobProgress } from '../model/jobs'
 import type { HistoryState, TextureData } from '../model/history'
 import type { PreviewModel } from '../model/preview'
+import { ProviderConfigSchema, ModelRefSchema, LanguageSchema } from '../model/settings'
+import { StyleBriefPatchSchema, type StyleBrief } from '../model/brief'
+import type {
+  AgentEvent,
+  ConversationTurn,
+  ModelInfo,
+  ProposalApplyResult,
+  ProviderStatus
+} from '../ai/types'
 
 /** Typed, i18n-keyed error returned across IPC (message key: `errors.<code>`). */
 export interface AppError {
@@ -79,7 +88,50 @@ export const inputSchemas = {
   'history.get': PackRef,
   'history.undo': PackRef,
   'history.redo': PackRef,
-  'texture.preview': TextureRef
+  'texture.preview': TextureRef,
+  'ai.providers.list': NoInput,
+  'ai.providers.save': ProviderConfigSchema,
+  'ai.providers.delete': z.object({ providerId: z.string().min(1).max(40) }).strict(),
+  'ai.providers.setKey': z
+    .object({ providerId: z.string().min(1).max(40), key: z.string().max(4096) })
+    .strict(),
+  'ai.providers.test': z.object({ providerId: z.string().min(1).max(40) }).strict(),
+  'ai.models.list': z
+    .object({ providerId: z.string().min(1).max(40).optional(), refresh: z.boolean().optional() })
+    .strict()
+    .optional(),
+  'ai.agent.send': z
+    .object({
+      packId: z.string().min(1).max(64),
+      message: z.string().trim().min(1).max(4000),
+      model: ModelRefSchema,
+      texture: z
+        .object({
+          path: TexturePathSchema,
+          png: z
+            .instanceof(Uint8Array)
+            .refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES)
+        })
+        .strict(),
+      language: LanguageSchema
+    })
+    .strict(),
+  'ai.agent.stop': z.object({ runId: z.string().min(1).max(64) }).strict(),
+  'ai.agent.conversation': PackRef.extend({
+    agent: z.enum(['creation', 'navigation', 'editor'])
+  }).strict(),
+  'ai.agent.clear': PackRef.extend({
+    agent: z.enum(['creation', 'navigation', 'editor'])
+  }).strict(),
+  'ai.proposal.apply': z
+    .object({
+      proposalId: z.string().min(1).max(64),
+      acceptedStepIds: z.array(z.string().max(64)).max(200)
+    })
+    .strict(),
+  'ai.proposal.reject': z.object({ proposalId: z.string().min(1).max(64) }).strict(),
+  'brief.get': PackRef,
+  'brief.update': PackRef.extend({ patch: StyleBriefPatchSchema }).strict()
 } satisfies Record<InvokeChannel, z.ZodType>
 
 /** Output types (compile-time only; main is trusted). */
@@ -126,6 +178,26 @@ export interface InvokeOutputs {
   'history.redo': HistoryState
   /** How to show the texture in 3D: block model, item sprite, entity geometry or flat fallback. */
   'texture.preview': PreviewModel
+  'ai.providers.list': ProviderStatus[]
+  'ai.providers.save': ProviderStatus[]
+  'ai.providers.delete': ProviderStatus[]
+  /** Stores the key encrypted (empty string removes it). The key never comes back to the renderer. */
+  'ai.providers.setKey': ProviderStatus
+  'ai.providers.test': {
+    ok: boolean
+    modelCount?: number
+    error?: { code: string; params?: Record<string, string | number> }
+  }
+  'ai.models.list': ModelInfo[]
+  /** Starts an editor-agent run; progress arrives as 'ai.event'. */
+  'ai.agent.send': { runId: string }
+  'ai.agent.stop': void
+  'ai.agent.conversation': ConversationTurn[]
+  'ai.agent.clear': void
+  'ai.proposal.apply': ProposalApplyResult
+  'ai.proposal.reject': void
+  'brief.get': StyleBrief
+  'brief.update': StyleBrief
 }
 
 export type InvokeInput<C extends InvokeChannel> = z.input<(typeof inputSchemas)[C]>
@@ -137,6 +209,7 @@ export interface EventPayloads {
   'job.progress': JobProgress
   /** The pack list or a pack's files changed (create, import, delete, external edit). */
   'packs.changed': { packId?: string }
+  'ai.event': AgentEvent
 }
 
 export type EventPayload<E extends EventChannel> = EventPayloads[E]

@@ -9,6 +9,52 @@ export const ThemeSchema = z.enum(THEMES)
 export type Language = z.infer<typeof LanguageSchema>
 export type Theme = z.infer<typeof ThemeSchema>
 
+export const ProviderConfigSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/),
+    kind: z.enum(['ollama', 'openai-compatible']),
+    label: z.string().min(1).max(60),
+    baseUrl: z.url({ protocol: /^https?$/ }),
+    enabled: z.boolean().default(true),
+    extraHeaders: z.record(z.string(), z.string()).optional()
+  })
+  .strict()
+
+export const ModelRefSchema = z.object({ providerId: z.string(), modelId: z.string() }).strict()
+
+export const AgentSettingsSchema = z.object({
+  model: ModelRefSchema.optional(),
+  thinking: z.boolean().default(false),
+  maxIterations: z.number().int().min(1).max(20).default(6),
+  imageMode: z.enum(['vision+grid', 'grid', 'image']).default('vision+grid')
+})
+
+/** Ollama Cloud (native API) is the default provider. The key is stored separately, encrypted. */
+export const DEFAULT_PROVIDERS = [
+  {
+    id: 'ollama-cloud',
+    kind: 'ollama',
+    label: 'Ollama Cloud',
+    baseUrl: 'https://ollama.com',
+    enabled: true
+  }
+] as const
+
+const AiSettingsSchema = z
+  .object({
+    providers: z
+      .array(ProviderConfigSchema)
+      .default(() => DEFAULT_PROVIDERS.map((p) => ({ ...p }))),
+    agents: z
+      .object({
+        creation: AgentSettingsSchema.prefault({}),
+        navigation: AgentSettingsSchema.prefault({}),
+        editor: AgentSettingsSchema.prefault({})
+      })
+      .prefault({})
+  })
+  .prefault({})
+
 /** Persisted app settings (userData/settings.json). Never contains secrets. */
 export const SettingsSchema = z.object({
   schemaVersion: z.literal(1).default(1),
@@ -24,7 +70,9 @@ export const SettingsSchema = z.object({
   /** Extra Minecraft folders or jars added by hand (auto-detected launchers are not stored). */
   minecraftPaths: z.array(z.string()).default([]),
   /** User agreed to download client jars from Mojang when a version is missing locally. */
-  allowMojangDownload: z.boolean().default(false)
+  allowMojangDownload: z.boolean().default(false),
+  /** AI providers (no keys) and per-agent defaults. */
+  ai: AiSettingsSchema
 })
 
 export type Settings = z.infer<typeof SettingsSchema>
@@ -35,7 +83,16 @@ export const SettingsPatchSchema = z
     language: LanguageSchema.optional(),
     theme: ThemeSchema.optional(),
     updates: z.object({ autoCheck: z.boolean().optional() }).strict().optional(),
-    allowMojangDownload: z.boolean().optional()
+    allowMojangDownload: z.boolean().optional(),
+    /** Per-agent defaults (providers are changed through the ai.providers.* channels). */
+    aiAgents: z
+      .object({
+        creation: AgentSettingsSchema.partial().optional(),
+        navigation: AgentSettingsSchema.partial().optional(),
+        editor: AgentSettingsSchema.partial().optional()
+      })
+      .strict()
+      .optional()
   })
   .strict()
 
@@ -54,6 +111,14 @@ export function applySettingsPatch(current: Settings, patch: SettingsPatch): Set
     ...(patch.allowMojangDownload !== undefined
       ? { allowMojangDownload: patch.allowMojangDownload }
       : {}),
-    updates: { ...current.updates, ...(patch.updates ?? {}) }
+    updates: { ...current.updates, ...(patch.updates ?? {}) },
+    ai: {
+      ...current.ai,
+      agents: {
+        creation: { ...current.ai.agents.creation, ...(patch.aiAgents?.creation ?? {}) },
+        navigation: { ...current.ai.agents.navigation, ...(patch.aiAgents?.navigation ?? {}) },
+        editor: { ...current.ai.agents.editor, ...(patch.aiAgents?.editor ?? {}) }
+      }
+    }
   })
 }

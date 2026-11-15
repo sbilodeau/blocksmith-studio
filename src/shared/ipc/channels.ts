@@ -37,7 +37,22 @@ export const INVOKE_CHANNELS = [
   'history.get',
   'history.undo',
   'history.redo',
-  'texture.preview'
+  'texture.preview',
+  // AI providers, models and agents
+  'ai.providers.list',
+  'ai.providers.save',
+  'ai.providers.delete',
+  'ai.providers.setKey',
+  'ai.providers.test',
+  'ai.models.list',
+  'ai.agent.send',
+  'ai.agent.stop',
+  'ai.agent.conversation',
+  'ai.agent.clear',
+  'ai.proposal.apply',
+  'ai.proposal.reject',
+  'brief.get',
+  'brief.update'
 ] as const
 
 /** Event channels (main -> renderer, via webContents.send). */
@@ -45,7 +60,8 @@ export const EVENT_CHANNELS = [
   'settings.changed',
   'updater.status',
   'job.progress',
-  'packs.changed'
+  'packs.changed',
+  'ai.event'
 ] as const
 
 export type InvokeChannel = (typeof INVOKE_CHANNELS)[number]
