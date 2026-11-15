@@ -1,0 +1,95 @@
+# electron-builder configuration (https://www.electron.build/configuration)
+# Release artifacts are built by .github/workflows/release.yml; see docs/releasing.md.
+#
+# Artifact names must not contain spaces: GitHub replaces spaces with dots in release asset names,
+# which would break the URLs written in latest.yml / latest-mac.yml and the macOS DMG URL built by
+# src/main/services/updater.ts (keep `Blocksmith-Studio-${version}-${arch}.dmg` in sync with it).
+
+appId: com.sbilodeau.blocksmithstudio
+productName: Blocksmith Studio
+copyright: Copyright (c) Stephane Bilodeau
+
+directories:
+  buildResources: build
+  output: dist
+
+files:
+  - '!**/.vscode/*'
+  - '!**/.github/*'
+  - '!src/*'
+  - '!tests/*'
+  - '!scripts/*'
+  - '!docs/*'
+  - '!coverage/*'
+  - '!test-results/*'
+  - '!playwright-report/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{vitest,playwright}.config.{js,ts,mjs,cjs}'
+  - '!{eslint.config.{js,mjs,cjs,ts},.eslintcache}'
+  - '!{.editorconfig,.prettierignore,.prettierrc.yaml,.gitignore,.gitattributes}'
+  - '!{dev-app-update.yml,electron-builder.yml,CHANGELOG.md,README.md,PLAN.md,LICENSE}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,package-lock.json}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+
+asarUnpack:
+  - resources/**
+
+# Electron 45 has no native modules to rebuild here; keep packaging deterministic and fast.
+npmRebuild: false
+
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+
+win:
+  executableName: blocksmith-studio
+  target:
+    - target: nsis
+      arch: [x64]
+
+nsis:
+  artifactName: Blocksmith-Studio-${version}-setup.${ext}
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+
+mac:
+  category: public.app-category.graphics-design
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  artifactName: Blocksmith-Studio-${version}-${arch}.${ext}
+  # Ad-hoc signature: no Apple Developer ID yet, but Apple Silicon refuses to run unsigned code.
+  # When a Developer ID is added, remove `identity`, set hardenedRuntime/notarize to true (docs/releasing.md).
+  identity: '-'
+  hardenedRuntime: false
+  notarize: false
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+dmg:
+  artifactName: Blocksmith-Studio-${version}-${arch}.${ext}
+
+# Not an official target; handy for local testing on Linux only.
+linux:
+  executableName: blocksmith-studio
+  target: [AppImage]
+  category: Graphics
+  artifactName: Blocksmith-Studio-${version}-${arch}.${ext}
+
+publish:
+  provider: github
+  owner: sbilodeau
+  repo: blocksmith-studio
+  releaseType: release
