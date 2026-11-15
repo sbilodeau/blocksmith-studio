@@ -87,7 +87,26 @@ are strings with an explicit sign (`"+20"`, `"-15"`, `"0"`). Colors are lowercas
    characters per token). Assistant tool calls are summarized as "(Tools called: ...)", tool results are dropped,
    proposal decisions become "[App note]" user messages. Dropped turns are replaced by one note listing the last
    few earlier requests.
-3. **User message**: `[Open texture: <path> (W x H px)]`, the texture state, then the request.
+3. **User message**: `[Open texture: <path> (W x H px)]`, the texture state, the 3D model layout when the texture
+   has one, then the request.
+
+### 3D model layout
+
+The texture is wrapped around the same model as the 3D preview (`previewModel` dependency, see
+[preview.md](preview.md) and [entity-models.md](entity-models.md)), so the agent knows which pixels are which body
+part or block face. `src/shared/preview/layout.ts` turns the model into a short text block starting with
+`3D MODEL LAYOUT:` (about 400 tokens for a mob):
+
+- **Entities** (jar or built-in model, only when the texture's aspect ratio fits it): one line per cube with its
+  part path, size and flags (mirrored, overlay, rest rotation), then each visible face as `face x,y wxh` in this
+  texture's pixels (scaled for high-resolution packs). Faces with no area are skipped; at most 80 cubes are
+  listed.
+- **Blocks**: the texture rectangles of every element face that uses this texture, grouped by rectangle, with
+  rotation and tint notes; UVs refer to one frame for animated strips.
+- **Items**: one line about the extruded in-hand sprite. Flat textures (GUI, particles) get nothing.
+
+A failing preview never fails the run; the block is simply left out. The editor instructions tell the model to use
+the rectangles before drawing and to edit every face a change should appear on.
 
 ### Image and grid strategy
 

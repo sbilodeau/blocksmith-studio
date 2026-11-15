@@ -108,10 +108,15 @@ export function findEntityDefinition(packPath: string): EntityDefinition | undef
 }
 
 /**
+ * For an animated texture, pass the height of ONE frame (the conduit wind is a strip of 64x32 frames).
  * Whether a texture of this size uses the definition's UV layout: same aspect ratio as `textureSize`, so
  * high-resolution packs (128x64 for a 64x32 layout) still fit, while a texture whose layout changed between
  * Minecraft versions (64x64 cow vs the old 64x32) falls back to the flat view instead of rendering wrong.
  */
-export function entityFitsTexture(def: EntityDefinition, width: number, height: number): boolean {
+export function entityFitsTexture(
+  def: Pick<EntityDefinition, 'textureSize'>,
+  width: number,
+  height: number
+): boolean {
   return width * def.textureSize[1] === height * def.textureSize[0]
 }

@@ -842,6 +842,35 @@ Parallel execution:
 - FR/EN eval suite (about 60 cases) + runner + CI job + "Test this model" in Settings.
 - **Acceptance**: in French and in English, "tourne de 90° à gauche et ajoute des flammes au bout" produces a reviewable plan; partial apply and undo work.
 
+### M3b - Entity models read from the Minecraft jar
+Why: hand-written entity definitions (3.4) cover about 115 of the ~560 entity textures of 26.3, none of the baby models,
+and drift when Mojang changes a mob. Since 26.1 the client jar is no longer obfuscated, so the exact model geometry can be
+read from the user's own jar, like the textures (nothing is bundled or uploaded; the result is cached in `userData`).
+
+- **Class reader** (`src/main/services/entity-models/classfile.ts`): pure TS parser for JVM class files (constant pool,
+  methods, code, bootstrap methods), any class version.
+- **Model interpreter** (`interpreter.ts`): a small symbolic JVM interpreter that runs only the model-building code:
+  `ModelLayers.<clinit>` (layer names) and `LayerDefinitions.createRoots()` (every layer's mesh). Model builder classes
+  (`MeshDefinition`, `PartDefinition`, `CubeListBuilder`, `PartPose`, `CubeDeformation`, `LayerDefinition`,
+  `MeshTransformer`, `ImmutableMap.Builder`) are simulated; calls into other jar classes are interpreted recursively
+  (static helpers, `<clinit>` constants, lambdas); loops, int/float math and `Mth` are supported. Anything else becomes
+  an opaque value, and a layer that depends on one is skipped (never guessed). Instruction budget per layer.
+- **Conversion** (`extract.ts`): each layer -> the existing `EntityDefinition` format (Mojang y-down / -z front to the
+  preview's y-up / +z front, absolute pivots), with `MeshTransformer.scaling` baked in, per-axis inflation, and an
+  optional part `scale`. Written to `userData/vanilla/<version>/entity-models.json` during extraction, or on first use
+  for versions extracted before this milestone. Pre-26.1 (obfuscated) jars: skipped, built-in definitions are used.
+- **Texture -> layer table** (`resources/data/entity-layers.json`): names only (glob -> layer, e.g.
+  `entity/axolotl/axolotl_*_baby.png` -> `axolotl_baby`), hand-maintained, checked by a test that every entry's layer
+  exists and its texture size matches the texture.
+- **Preview lookup**: jar models (through the table) first, then the built-in definitions, then the flat view. The
+  aspect-ratio check stays.
+- **Tests**: a test-only class assembler builds synthetic classes for every supported pattern (offsets, rotations,
+  children, mirror, deformation, scaling, static helpers, loops, lambdas, opaque calls); the fixture jar gains synthetic
+  model classes so the E2E test checks the whole path; a local-only test (skipped without a real jar) checks coverage on
+  the user's 26.x jar.
+- **Acceptance**: with a 26.3 jar, `entity/axolotl/axolotl_lucy_baby.png`, the warm cow, the llama, the camel and the
+  baby farm animals render on their real models; textures without a table entry keep the flat view with its notice.
+
 ### M4 - OpenAI-compatible providers and AI settings
 - OpenAI-compatible adapter (OpenAI, OpenRouter, custom); capability hints and overrides; per-agent default models; cost estimates (price table, OpenRouter cost); `$`/`$$`/`$$$` cost tier in the model picker (7.4).
 - Eval report comparing several models side by side.

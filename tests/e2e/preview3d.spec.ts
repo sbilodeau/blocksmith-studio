@@ -75,7 +75,10 @@ test('entity textures preview on their entity model', async () => {
   await openTexture(page, 'zombie')
   await page.getByTestId('editor-3d').click()
   await expect(page.getByTestId('preview3d-kind')).toHaveText('Entity')
-  await expect(page.getByTestId('preview3d-walk')).toBeVisible()
+  // The fixture 26.3 jar carries (synthetic) model code: the zombie comes from the jar, not the built-in set.
+  // Its stand-in mesh has no arms, so there is no walk animation to offer.
+  await expect(page.getByTestId('preview3d-from-game')).toBeVisible()
+  await expect(page.getByTestId('preview3d-walk')).toHaveCount(0)
 })
 
 test('item textures preview as an extruded sprite', async () => {

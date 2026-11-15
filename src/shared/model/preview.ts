@@ -52,8 +52,15 @@ export interface EntityBox {
   uv: [number, number]
   /** Mirrors the texture horizontally (Minecraft mirrored limbs). */
   mirror?: boolean
-  /** Grows the box by this many pixels on every side without changing its UV (overlays like hats). */
-  inflate?: number
+  /**
+   * Grows the box by this many pixels on every side without changing its UV (overlays like hats); per axis
+   * [x, y, z] for models read from the jar.
+   */
+  inflate?: number | Vec3
+  /** UV size multiplier [u, v] (Minecraft `texScale`; default 1, 1). */
+  uvScale?: [number, number]
+  /** Faces to draw (default: all six). Names follow the box UV layout of src/shared/preview/box-uv.ts. */
+  faces?: Array<'top' | 'bottom' | 'right' | 'front' | 'left' | 'back'>
 }
 
 export interface EntityPart {
@@ -76,6 +83,8 @@ export interface EntityPart {
     | 'backLeftLeg'
     | 'tail'
     | 'wing'
+  /** Scale of the part and its children around the pivot (baby models). */
+  scale?: Vec3
   boxes: EntityBox[]
   children?: EntityPart[]
 }
@@ -94,6 +103,8 @@ export interface EntityDefinition {
 export interface EntityPreview {
   kind: 'entity'
   definition: EntityDefinition
+  /** 'jar': geometry read from the user's Minecraft jar (exact); 'builtin': the app's own definitions. */
+  source?: 'jar' | 'builtin'
 }
 
 /** Fallback: the texture on a flat plane (entity without definition, GUI, particles, ...). */

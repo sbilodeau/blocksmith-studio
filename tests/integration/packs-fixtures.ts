@@ -2,6 +2,7 @@
  * Test helpers for the packs integration tests: generated PNGs, a fake VanillaStore backed by a temp folder,
  * and a pack service wired to a temp workspace. No Mojang assets are used.
  */
+import type { JarEntityModels } from '../../src/main/services/entity-models/extract'
 import { createHash } from 'node:crypto'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -95,6 +96,12 @@ export class FakeVanillaStore implements VanillaStore {
     this.getIndexCalls++
     return this.indexes.get(versionId) ?? null
   }
+  /** Entity models read from a jar (tests set this map). */
+  models = new Map<string, JarEntityModels>()
+  async entityModels(versionId: string): Promise<JarEntityModels | null> {
+    return this.models.get(versionId) ?? null
+  }
+
   resolveFile(versionId: string, packPath: string): string | null {
     const index = this.indexes.get(versionId)
     if (!index || !index.entries[packPath]) return null

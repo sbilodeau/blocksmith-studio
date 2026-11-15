@@ -48,7 +48,10 @@ describe('editor agent service', () => {
 
   function service(
     scripts: Script[],
-    extra: { proposalTtlMs?: number } = {}
+    extra: {
+      proposalTtlMs?: number
+      previewModel?: Parameters<typeof createEditorAgentService>[0]['previewModel']
+    } = {}
   ): {
     agent: ReturnType<typeof createEditorAgentService>
     brief: ReturnType<typeof createBriefService>
@@ -333,6 +336,41 @@ describe('editor agent service', () => {
     await sendAndWait(agent)
     const tool = fake.requests[1].messages.find((m) => m.role === 'tool')!
     expect(JSON.parse(tool.text!)).toMatchObject({ ok: true, result: { w: 1, h: 1 } })
+  })
+
+  it('sends the 3D model layout of the texture with the request', async () => {
+    const { agent, fake } = service([[text('Ok'), DONE_END]], {
+      previewModel: async () => ({
+        kind: 'block',
+        modelId: 'minecraft:block/stone',
+        tints: {},
+        elements: [
+          {
+            from: [0, 0, 0],
+            to: [16, 16, 16],
+            faces: { up: { texture: PATH, uv: [0, 0, 16, 16] } }
+          }
+        ]
+      })
+    })
+    await sendAndWait(agent)
+    const user = fake.requests[0].messages.at(-1)!
+    expect(user.text).toContain(
+      '3D MODEL LAYOUT: this texture is used by the block model minecraft:block/stone'
+    )
+    expect(user.text).toContain('- 0,0 2x1: up')
+    expect(user.text!.indexOf('3D MODEL LAYOUT')).toBeLessThan(user.text!.indexOf('User request:'))
+  })
+
+  it('a failing preview model never fails the run', async () => {
+    const { agent, fake } = service([[text('Ok'), DONE_END]], {
+      previewModel: async () => {
+        throw new Error('boom')
+      }
+    })
+    await sendAndWait(agent)
+    expect(fake.requests[0].messages.at(-1)!.text).not.toContain('3D MODEL LAYOUT')
+    expect(events.at(-1)).toMatchObject({ type: 'done', reason: 'end' })
   })
 
   it('conversation files skip corrupted lines and clear removes them', async () => {

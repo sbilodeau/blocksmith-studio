@@ -45,6 +45,8 @@ export interface RunInput {
   brief: StyleBrief
   vanilla: RgbaImage | null
   history: ConversationTurn[]
+  /** How the texture wraps its 3D model (body part / block face rectangles), when known. */
+  modelLayout?: string
 }
 
 export interface RunDeps {
@@ -158,7 +160,7 @@ export async function runEditorAgent(
       })
     },
     ...historyMessages(input.history),
-    buildUserMessage(request.message, request.texture.path, draft, plan)
+    buildUserMessage(request.message, request.texture.path, draft, plan, input.modelLayout)
   ]
 
   function execute(call: ToolCall): CallOutcome {

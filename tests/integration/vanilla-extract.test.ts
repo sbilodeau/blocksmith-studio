@@ -1,3 +1,4 @@
+import { ENTITY_MODELS_FILE } from '../../src/main/services/entity-models/extract'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createHash } from 'crypto'
 import { existsSync } from 'fs'
@@ -43,7 +44,9 @@ describe('extractVanillaJar (fixture jars)', () => {
       )
 
       const expected = expectedExtractedPaths(id)
-      expect(await listFiles(outDir)).toEqual([...expected, INDEX_FILE].sort())
+      // 26.x jars carry readable model code: their entity models are written next to the index.
+      const extra = id === '26.3' ? [INDEX_FILE, ENTITY_MODELS_FILE] : [INDEX_FILE]
+      expect(await listFiles(outDir)).toEqual([...expected, ...extra].sort())
       expect(Object.keys(index.entries).sort()).toEqual(expected)
 
       // Files that must never be extracted.

@@ -403,7 +403,9 @@
       "entity": "Entité",
       "flat": "À plat"
     },
-    "noEntityModel": "Pas encore de modèle 3D pour cette texture d'entité : elle est affichée à plat, comme dans l'éditeur."
+    "noEntityModel": "Pas encore de modèle 3D pour cette texture d'entité : elle est affichée à plat, comme dans l'éditeur.",
+    "fromGame": "modèle du jeu",
+    "fromGameHint": "Modèle exact lu dans vos fichiers Minecraft pour cette version."
   },
   "ai": {
     "title": "IA",

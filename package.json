@@ -28,6 +28,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ai": "vitest run --project ai-eval",
+    "test:real-jar": "vitest run --project real-jar",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "npm run build && playwright test",
     "package": "npm run build && electron-builder --publish never",

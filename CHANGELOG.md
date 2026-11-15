@@ -5,6 +5,18 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M3b - Entity models read from the Minecraft jar
+
+- The 3D preview reads every entity model from your own Minecraft jar (26.1 and later): 361 models in 26.3,
+  including all baby mobs, block entities (such as chests, banners, the conduit and the decorated pot) and new mobs, exact and
+  up to date with each version; nothing from Mojang is bundled
+- A table maps 708 of the 743 entity textures of 26.3 to their model; the preview shows a "game model" tag when the
+  model comes from your game files
+- Older versions keep the built-in models; textures without a model keep the flat view with its notice
+- `npm run test:real-jar` checks the extraction and the table against your local jar (never in CI)
+- The editor AI receives the 3D model layout of the open texture (which rectangle is the head front, the left leg,
+  the top of the block...), so changes like "give it red eyes" land on the right pixels and on every face
+
 ### M3 - Editor AI agent (MVP complete)
 
 - AI tab in the editor: describe a change in French or English, follow the streamed answer, the model's reasoning

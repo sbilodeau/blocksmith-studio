@@ -27,10 +27,12 @@ export const EntityBoxSchema = z.strictObject({
   origin: Vec3Schema,
   /** Sizes may be 0 for flat planes (ears, fins), never negative. */
   size: z.tuple([z.number().min(0), z.number().min(0), z.number().min(0)]),
-  uv: z.tuple([z.number().int().min(0), z.number().int().min(0)]),
+  uv: z.tuple([z.number().min(0), z.number().min(0)]),
   mirror: z.boolean().optional(),
-  /** Negative values shrink the box (e.g. the enderman's inner jaw). */
-  inflate: z.number().optional()
+  /** Negative values shrink the box (e.g. the enderman's inner jaw). Per axis for jar models. */
+  inflate: z.union([z.number(), Vec3Schema]).optional(),
+  uvScale: z.tuple([z.number().positive(), z.number().positive()]).optional(),
+  faces: z.array(z.enum(['top', 'bottom', 'right', 'front', 'left', 'back'])).optional()
 }) satisfies z.ZodType<EntityBox>
 
 export const EntityPartSchema: z.ZodType<EntityPart> = z.lazy(() =>
@@ -39,6 +41,7 @@ export const EntityPartSchema: z.ZodType<EntityPart> = z.lazy(() =>
     pivot: Vec3Schema,
     rotation: Vec3Schema.optional(),
     role: z.enum(ENTITY_PART_ROLES).optional(),
+    scale: Vec3Schema.optional(),
     boxes: z.array(EntityBoxSchema),
     children: z.array(EntityPartSchema).optional()
   })

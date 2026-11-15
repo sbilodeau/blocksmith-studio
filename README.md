@@ -84,7 +84,7 @@ Project documentation:
 - [docs/editor.md](docs/editor.md) - pixel editor tools, shortcuts and undo levels
 - [docs/image-core.md](docs/image-core.md) - the shared image library (conventions, operations)
 - [docs/preview.md](docs/preview.md) - live 3D preview: model resolution and rendering
-- [docs/entity-models.md](docs/entity-models.md) - built-in entity geometry and how to add entities
+- [docs/entity-models.md](docs/entity-models.md) - entity models read from your Minecraft jar, built-in geometry, how to add entities
 - [docs/ai-agents.md](docs/ai-agents.md) - editor agent: tools, context, runtime loop, proposals, style brief
 - [docs/ai-providers.md](docs/ai-providers.md) - provider layer, Ollama API, secrets, errors
 - [docs/ai-evaluation.md](docs/ai-evaluation.md) - FR/EN evaluation: running it, thresholds, adding cases

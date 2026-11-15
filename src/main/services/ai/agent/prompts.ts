@@ -26,6 +26,8 @@ for detail. Stay in the texture's existing palette or the style brief palette. K
 no anti-aliasing, limited colors, 1-pixel details, consistent light from the top-left.
 Each tool you call runs on a draft and returns the new state, so you can chain steps (for example rotate, then draw on
 the rotated result). Coordinates in later calls refer to the state AFTER the previous calls.
+When the request includes a 3D MODEL LAYOUT, the texture is wrapped around that 3D model: use its rectangles to know
+which pixels are which body part or block face before drawing, and edit every face a change should appear on.
 For textures larger than 64 px, call get_pixels with a rect to read exact pixels before drawing details.
 When you are done, stop calling tools and reply with one or two short sentences.`
 

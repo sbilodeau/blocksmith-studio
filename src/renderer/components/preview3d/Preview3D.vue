@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vu
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { NButton, NButtonGroup, NSelect, NSpace, NSwitch, NText, NTooltip } from 'naive-ui'
+import { NButton, NButtonGroup, NSelect, NSpace, NSwitch, NTag, NText, NTooltip } from 'naive-ui'
 import { decodePng, type RgbaImage } from '@shared/image'
 import type { PreviewModel } from '@shared/model/preview'
 import { entityFitsTexture } from '@shared/preview/entities'
@@ -35,8 +35,10 @@ const FLAT: PreviewModel = { kind: 'flat' }
 const model = computed<PreviewModel | null>(() => {
   const m = rawModel.value
   const img = editor.value.image
-  if (m?.kind === 'entity' && img && !entityFitsTexture(m.definition, img.width, img.height)) {
-    return FLAT
+  if (m?.kind === 'entity' && img) {
+    // Animated textures are strips: compare one frame.
+    const frameHeight = parseAnimation(editor.value.mcmeta, img)?.frameHeight ?? img.height
+    if (!entityFitsTexture(m.definition, img.width, frameHeight)) return FLAT
   }
   return m
 })
@@ -405,6 +407,14 @@ onBeforeUnmount(() => {
     <div class="bar">
       <n-space size="small" align="center" :wrap="true">
         <n-text depth="3" class="kind" data-testid="preview3d-kind">{{ kindLabel }}</n-text>
+        <n-tooltip v-if="model?.kind === 'entity' && model.source === 'jar'">
+          <template #trigger>
+            <n-tag size="tiny" :bordered="false" type="success" data-testid="preview3d-from-game">
+              {{ t('preview.fromGame') }}
+            </n-tag>
+          </template>
+          {{ t('preview.fromGameHint') }}
+        </n-tooltip>
         <n-button-group size="tiny">
           <n-button
             v-for="v in ['front', 'back', 'left', 'right', 'top', 'iso'] as const"

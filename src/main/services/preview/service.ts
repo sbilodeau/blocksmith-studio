@@ -1,5 +1,6 @@
 import type { EntityDefinition, PreviewModel } from '@shared/model/preview'
 import { findEntityDefinition } from '@shared/preview/entities'
+import { findEntityLayer } from '@shared/preview/entity-layers'
 import type { VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { resolvePackFile } from '../history/pack-files'
@@ -27,13 +28,16 @@ const MAX_CACHED_INDEXES = 8
 
 export interface PreviewServiceDeps {
   packs: Pick<PackService, 'locate'>
-  vanilla: Pick<VanillaStore, 'getIndex' | 'resolveFile'>
+  vanilla: Pick<VanillaStore, 'getIndex' | 'resolveFile'> &
+    Partial<Pick<VanillaStore, 'entityModels'>>
   /** Defaults to console.warn. */
   warn?: (message: string) => void
   /** Index build timings; defaults to console.info. */
   info?: (message: string) => void
   /** Defaults to the built-in entity definitions (src/shared/preview/entities.ts). */
   findEntity?: (packPath: string) => EntityDefinition | undefined
+  /** Defaults to the texture -> jar layer table (src/shared/preview/entity-layers.ts). */
+  findLayer?: (packPath: string) => string | undefined
 }
 
 export interface PreviewService {
@@ -47,6 +51,28 @@ export function createPreviewService(deps: PreviewServiceDeps): PreviewService {
   const warn = deps.warn ?? ((message: string): void => console.warn(message))
   const info = deps.info ?? ((message: string): void => console.info(message))
   const findEntity = deps.findEntity ?? findEntityDefinition
+  const findLayer = deps.findLayer ?? findEntityLayer
+
+  /** The model read from the pack's Minecraft jar for this texture, if the table names a layer and it exists. */
+  async function jarEntity(versionId: string, path: string): Promise<EntityDefinition | undefined> {
+    const layer = findLayer(path)
+    if (!layer || !deps.vanilla.entityModels) return undefined
+    try {
+      const models = await deps.vanilla.entityModels(versionId)
+      const found = models?.layers[layer]
+      if (!found) return undefined
+      return {
+        id: layer.replace(/[^a-z0-9_]+/g, '_'),
+        textureSize: found.textureSize,
+        textures: [path],
+        animation: found.animation,
+        parts: found.parts
+      }
+    } catch (err) {
+      warn(`[preview] entity models of ${versionId}: ${String(err)}`)
+      return undefined
+    }
+  }
   /** Parsed vanilla model files per version, reloaded when the version is re-extracted. */
   const vanillaFiles = new Map<string, { stamp: string; files: Promise<ModelFiles> }>()
   /** Block indexes by vanilla version + pack model file signature, least recently used first. */
@@ -130,8 +156,11 @@ export function createPreviewService(deps: PreviewServiceDeps): PreviewService {
       }
       switch (previewCategory(path)) {
         case 'entity': {
+          // Jar models first (exact, every entity of 26.1+), then the built-in definitions, then flat.
+          const fromJar = await jarEntity(location.project.authoringVersion, path)
+          if (fromJar) return { kind: 'entity', definition: fromJar, source: 'jar' }
           const definition = findEntity(path)
-          return definition ? { kind: 'entity', definition } : { kind: 'flat' }
+          return definition ? { kind: 'entity', definition, source: 'builtin' } : { kind: 'flat' }
         }
         case 'item':
           return { kind: 'item' }

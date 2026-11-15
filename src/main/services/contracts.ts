@@ -7,6 +7,7 @@
 import type { McVersion, PackFormat } from '@shared/model/versions'
 import type { MinecraftInstall, VanillaAvailability, VanillaIndex } from '@shared/model/vanilla'
 import type { JobKind } from '@shared/model/jobs'
+import type { JarEntityModels } from './entity-models/extract'
 
 /** Progress callback for long operations; main forwards it to the renderer as 'job.progress'. */
 export type ProgressFn = (phase: string, done: number, total: number) => void
@@ -40,6 +41,13 @@ export interface VanillaStore {
 
   /** Absolute path of an extracted vanilla file (validated to stay in the cache), or null if absent. */
   resolveFile(versionId: string, packPath: string): string | null
+
+  /**
+   * Entity model geometry read from the version's client jar (26.1+; PLAN M3b), cached next to the extracted
+   * assets. Built on first use for versions extracted earlier. Null when the version is not extracted, its jar is
+   * gone, or the jar's code is obfuscated (older versions).
+   */
+  entityModels(versionId: string): Promise<JarEntityModels | null>
 }
 
 // ---------- AI (M3) ----------
