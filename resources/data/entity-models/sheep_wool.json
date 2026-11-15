@@ -1,0 +1,45 @@
+{
+  "id": "sheep_wool",
+  "textureSize": [64, 32],
+  "animation": "quadruped",
+  "textures": ["assets/minecraft/textures/entity/sheep/sheep_fur.png"],
+  "parts": [
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 18, 8],
+      "boxes": [{ "origin": [-3, 16, 6], "size": [6, 6, 6], "uv": [0, 0], "inflate": 0.6 }]
+    },
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 19, -2],
+      "rotation": [90, 0, 0],
+      "boxes": [{ "origin": [-4, 13, -1], "size": [8, 16, 6], "uv": [28, 8], "inflate": 1.75 }]
+    },
+    {
+      "name": "right_hind_leg",
+      "role": "backRightLeg",
+      "pivot": [-3, 12, -7],
+      "boxes": [{ "origin": [-5, 6, -9], "size": [4, 6, 4], "uv": [0, 16], "inflate": 0.5 }]
+    },
+    {
+      "name": "left_hind_leg",
+      "role": "backLeftLeg",
+      "pivot": [3, 12, -7],
+      "boxes": [{ "origin": [1, 6, -9], "size": [4, 6, 4], "uv": [0, 16], "inflate": 0.5 }]
+    },
+    {
+      "name": "right_front_leg",
+      "role": "frontRightLeg",
+      "pivot": [-3, 12, 5],
+      "boxes": [{ "origin": [-5, 6, 3], "size": [4, 6, 4], "uv": [0, 16], "inflate": 0.5 }]
+    },
+    {
+      "name": "left_front_leg",
+      "role": "frontLeftLeg",
+      "pivot": [3, 12, 5],
+      "boxes": [{ "origin": [1, 6, 3], "size": [4, 6, 4], "uv": [0, 16], "inflate": 0.5 }]
+    }
+  ]
+}
