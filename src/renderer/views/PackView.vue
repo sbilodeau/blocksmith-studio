@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NH3, NSpace, NSpin, NTag, NText } from 'naive-ui'
+import { NAlert, NButton, NH3, NSpace, NSpin, NTag, NText } from 'naive-ui'
 import type { ExportReport } from '@shared/model/pack'
 import CategorySidebar from '../components/pack/CategorySidebar.vue'
 import CategoryOverview from '../components/pack/CategoryOverview.vue'
 import TextureGrid from '../components/pack/TextureGrid.vue'
 import ExportDialog from '../components/pack/ExportDialog.vue'
 import ReportDialog from '../components/common/ReportDialog.vue'
+import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
+import { IpcError } from '../services/ipc'
+import { useVanillaStore } from '../stores/vanilla'
 import { usePackStore } from '../stores/pack'
 import { usePacksStore } from '../stores/packs'
 import { useTabsStore } from '../stores/tabs'
@@ -22,6 +25,9 @@ const { showError } = useErrorMessage()
 // The same view instance is reused across pack tabs; each pack has its own store (state survives tab switches).
 const store = computed(() => usePackStore(props.packId))
 const showExport = ref(false)
+/** Set when a vanilla-based pack's vanilla textures are missing on this computer. */
+const missingVanilla = ref<string | null>(null)
+const vanilla = useVanillaStore()
 const exportReport = ref<ExportReport | null>(null)
 const showReport = computed({
   get: () => exportReport.value !== null,
@@ -37,11 +43,22 @@ async function ensureLoaded(): Promise<void> {
   }
   tabs.activate(props.packId)
   if (s.loaded || s.loading) return
+  await load()
+}
+
+async function load(): Promise<void> {
+  const s = store.value
+  missingVanilla.value = null
   try {
     await s.load()
     if (s.summary) tabs.rename(props.packId, s.summary.name)
   } catch (err) {
-    showError(err)
+    if (err instanceof IpcError && err.appError.code === 'packs.vanillaNotReady') {
+      missingVanilla.value = String(err.appError.params?.['version'] ?? '')
+      await vanilla.refresh().catch(showError)
+    } else {
+      showError(err)
+    }
   }
 }
 
@@ -105,8 +122,14 @@ const exportItems = computed(() => [
           </n-space>
         </n-space>
         <div class="body">
+          <div v-if="missingVanilla" class="missing" data-testid="pack-vanilla-missing">
+            <n-alert type="warning" :show-icon="false">
+              {{ t('pack.vanillaMissing', { version: missingVanilla }) }}
+            </n-alert>
+            <vanilla-prepare :version-id="missingVanilla" @ready="load" />
+          </div>
           <category-overview
-            v-if="store.category === null"
+            v-else-if="store.category === null"
             :categories="store.categories"
             @open="store.openCategory"
           />
@@ -156,6 +179,12 @@ const exportItems = computed(() => [
 }
 .desc {
   font-size: 12px;
+}
+.missing {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 560px;
 }
 .body {
   flex: 1;

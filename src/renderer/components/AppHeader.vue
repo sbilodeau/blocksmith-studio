@@ -43,6 +43,7 @@ function openSettings(): void {
         :name="tab.id"
         :closable="tab.closable"
         :data-testid="`tab-${tab.id}`"
+        @click="onSelect(tab.id)"
       >
         {{ tab.labelKey ? t(tab.labelKey) : tab.label }}
       </n-tab>

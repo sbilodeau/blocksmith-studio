@@ -75,7 +75,36 @@
       "noUpdate": "no update is available",
       "failed": "unknown error"
     },
-    "withCode": "Something went wrong ({code})."
+    "withCode": "Something went wrong ({code}).",
+    "vanilla": {
+      "versionUnknown": "Minecraft {version} is not a known release.",
+      "downloadNotAllowed": "Minecraft {version} is not installed. Allow downloads from Mojang in Settings to get it.",
+      "downloadFailed": "Could not download Minecraft {version} ({reason}).",
+      "checksumMismatch": "The downloaded Minecraft {version} file is corrupted. Please try again.",
+      "invalidJar": "This Minecraft file cannot be read ({reason}).",
+      "jarVersionMismatch": "This jar is Minecraft {actual}, not {expected}.",
+      "extractFailed": "Could not extract the textures ({reason})."
+    },
+    "minecraft": {
+      "noVersionsFound": "No supported Minecraft version was found in {path}."
+    },
+    "packs": {
+      "notFound": "This pack no longer exists.",
+      "unsupportedVersion": "Minecraft {version} is not supported.",
+      "vanillaNotReady": "The Minecraft {version} textures are not set up yet."
+    },
+    "workspace": {
+      "invalidPath": "This folder cannot be used as a workspace."
+    },
+    "export": {
+      "targetNotSupported": "Exporting to Minecraft {target} is not available yet (this pack targets {authoring})."
+    },
+    "import": {
+      "invalidZip": "This file is not a valid .zip archive.",
+      "notAPack": "This .zip does not contain a resource pack (no pack.mcmeta).",
+      "unsafePath": "The archive contains an unsafe path: {path}",
+      "tooLarge": "The archive is too large ({reason}, limit {limit})."
+    }
   },
   "common": {
     "cancel": "Cancel",
@@ -146,7 +175,8 @@
       "vanilla": "Vanilla",
       "modified": "Modified",
       "added": "Added"
-    }
+    },
+    "vanillaMissing": "This pack is based on the Minecraft {version} textures, which are not set up on this computer."
   },
   "grid": {
     "search": "Search textures",
@@ -203,5 +233,22 @@
     "environment": "Environment",
     "other": "Other"
   },
-  "warnings": {}
+  "warnings": {
+    "import": {
+      "formatMismatch": "The pack was made for another Minecraft version; some textures may have moved (version migration comes later).",
+      "formatMissing": "pack.mcmeta has no pack format.",
+      "vanillaNotReady": "Vanilla textures were not set up, so files identical to vanilla were kept."
+    },
+    "export": {
+      "vanillaNotReady": "Vanilla textures were not set up, so unchanged files could not be skipped.",
+      "invalidMcmeta": "pack.mcmeta was invalid and has been regenerated.",
+      "missingPackPng": "The pack has no pack.png icon.",
+      "invalidPng": "Invalid PNG file",
+      "invalidJson": "Invalid JSON file",
+      "invalidPath": "Path not allowed by Minecraft (use lowercase letters, digits, _ - . /)",
+      "nonPowerOfTwo": "Texture size is not a power of two",
+      "animationMismatch": "Animated texture height does not match its frames"
+    },
+    "identicalToVanilla": "Skipped: identical to vanilla"
+  }
 }

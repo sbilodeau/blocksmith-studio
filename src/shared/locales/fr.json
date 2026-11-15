@@ -75,7 +75,36 @@
       "noUpdate": "aucune mise à jour disponible",
       "failed": "erreur inconnue"
     },
-    "withCode": "Une erreur est survenue ({code})."
+    "withCode": "Une erreur est survenue ({code}).",
+    "vanilla": {
+      "versionUnknown": "Minecraft {version} n'est pas une version connue.",
+      "downloadNotAllowed": "Minecraft {version} n'est pas installé. Autorisez les téléchargements depuis Mojang dans les Paramètres pour l'obtenir.",
+      "downloadFailed": "Impossible de télécharger Minecraft {version} ({reason}).",
+      "checksumMismatch": "Le fichier Minecraft {version} téléchargé est corrompu. Veuillez réessayer.",
+      "invalidJar": "Ce fichier Minecraft est illisible ({reason}).",
+      "jarVersionMismatch": "Ce jar correspond à Minecraft {actual}, pas à {expected}.",
+      "extractFailed": "Impossible d'extraire les textures ({reason})."
+    },
+    "minecraft": {
+      "noVersionsFound": "Aucune version prise en charge de Minecraft n'a été trouvée dans {path}."
+    },
+    "packs": {
+      "notFound": "Ce pack n'existe plus.",
+      "unsupportedVersion": "Minecraft {version} n'est pas pris en charge.",
+      "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes."
+    },
+    "workspace": {
+      "invalidPath": "Ce dossier ne peut pas servir d'espace de travail."
+    },
+    "export": {
+      "targetNotSupported": "L'export vers Minecraft {target} n'est pas encore disponible (ce pack cible {authoring})."
+    },
+    "import": {
+      "invalidZip": "Ce fichier n'est pas une archive .zip valide.",
+      "notAPack": "Ce .zip ne contient pas de resource pack (pas de pack.mcmeta).",
+      "unsafePath": "L'archive contient un chemin dangereux : {path}",
+      "tooLarge": "L'archive est trop volumineuse ({reason}, limite {limit})."
+    }
   },
   "common": {
     "cancel": "Annuler",
@@ -146,7 +175,8 @@
       "vanilla": "Vanilla",
       "modified": "Modifiée",
       "added": "Ajoutée"
-    }
+    },
+    "vanillaMissing": "Ce pack s'appuie sur les textures de Minecraft {version}, qui ne sont pas prêtes sur cet ordinateur."
   },
   "grid": {
     "search": "Rechercher des textures",
@@ -203,5 +233,22 @@
     "environment": "Environnement",
     "other": "Autres"
   },
-  "warnings": {}
+  "warnings": {
+    "import": {
+      "formatMismatch": "Le pack a été conçu pour une autre version de Minecraft ; certaines textures ont pu changer de place (la migration entre versions viendra plus tard).",
+      "formatMissing": "pack.mcmeta n'indique pas de format de pack.",
+      "vanillaNotReady": "Les textures vanilla n'étaient pas prêtes, donc les fichiers identiques à vanilla ont été conservés."
+    },
+    "export": {
+      "vanillaNotReady": "Les textures vanilla n'étaient pas prêtes, donc les fichiers inchangés n'ont pas pu être ignorés.",
+      "invalidMcmeta": "pack.mcmeta était invalide et a été régénéré.",
+      "missingPackPng": "Le pack n'a pas d'icône pack.png.",
+      "invalidPng": "Fichier PNG invalide",
+      "invalidJson": "Fichier JSON invalide",
+      "invalidPath": "Chemin refusé par Minecraft (utilisez des minuscules, chiffres, _ - . /)",
+      "nonPowerOfTwo": "La taille de la texture n'est pas une puissance de deux",
+      "animationMismatch": "La hauteur de la texture animée ne correspond pas à ses images"
+    },
+    "identicalToVanilla": "Ignoré : identique à vanilla"
+  }
 }

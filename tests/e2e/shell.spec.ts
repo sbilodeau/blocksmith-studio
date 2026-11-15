@@ -27,14 +27,14 @@ test('reports the app version from package.json', async () => {
 
 test('switches to French and keeps the choice after a restart', async () => {
   launched = await launchApp()
-  const { page, userDataDir } = launched
+  const { page, root } = launched
   await page.getByTestId('open-settings').click()
   await page.getByTestId('language-select').click()
   await page.locator('.n-base-select-option', { hasText: 'Français' }).click()
   await expect(page.getByTestId('open-settings')).toHaveText('Paramètres')
 
   await launched.app.close()
-  launched = await launchApp(userDataDir)
+  launched = await launchApp({ root })
   await expect(launched.page.getByTestId('home-empty')).toContainText("Aucun pack pour l'instant")
 })
 

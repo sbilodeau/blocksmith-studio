@@ -123,6 +123,7 @@ async function create(): Promise<void> {
         <n-select
           v-model:value="version"
           :options="versionOptions"
+          filterable
           data-testid="new-pack-version"
           :render-label="
             (o: SelectOption) => [

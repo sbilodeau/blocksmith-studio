@@ -17,7 +17,7 @@ today; [PLAN.md](../PLAN.md) describes where it is going.
 +---------------------------+                              +-------------------------------+
 ```
 
-- **Main** (`src/main/`) owns the file system, settings, updates and (later) packs, vanilla assets and AI providers.
+- **Main** (`src/main/`) owns the file system, settings, updates, vanilla assets and packs (and, later, AI providers).
 - **Preload** (`src/preload/index.ts`) exposes exactly two functions on `window.blocksmith`: `invoke` and `on`.
   It rejects any channel not listed in `src/shared/ipc/channels.ts`.
 - **Renderer** (`src/renderer/`) is a Vue 3 app. It never talks to the network or the disk directly.
@@ -60,6 +60,42 @@ These are covered by `tests/unit/security-policy.test.ts`, `tests/unit/ipc-contr
 `tests/e2e/security.spec.ts` (which checks the running app: no `require`/`process` in the renderer, sandbox and
 context isolation enabled, unknown channels refused, CSP present, remote fetch blocked).
 
+## Main-process services
+
+| Service        | Folder / file                   | Responsibility                                                             |
+| -------------- | ------------------------------- | -------------------------------------------------------------------------- |
+| Settings       | `src/main/services/settings.ts` | `settings.json` in userData (see below)                                    |
+| Updater        | `src/main/services/updater.ts`  | Self-update (see [releasing.md](releasing.md))                             |
+| Vanilla store  | `src/main/services/vanilla/`    | Launcher detection, Mojang download, jar extraction (worker thread), index |
+| Pack service   | `src/main/services/packs/`      | Workspace, packs, texture index, categories, zip import and export         |
+| Asset protocol | `src/main/protocol.ts`          | Read-only `bs-asset://` URLs for thumbnails (pack file, else vanilla file) |
+| Job reporter   | `src/main/jobs.ts`              | Throttled `job.progress` events for long operations                        |
+
+Services talk to each other through the interfaces in `src/main/services/contracts.ts` (`VanillaStore`,
+`JobReporter`), so each one is tested with in-memory fakes of the others. `src/main/index.ts` wires the real
+implementations together with Electron (dialogs, shell, `net.fetch`).
+
+Details: [versions.md](versions.md) (version table, support window, pack.mcmeta rules, vanilla extraction),
+[packs.md](packs.md) (pack layout, texture statuses, import/export rules), [categories.md](categories.md)
+(category mapping).
+
+### Data files
+
+| File                             | Content                                                                        |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| `resources/data/versions.json`   | Java releases with pack formats; regenerate with `scripts/update-versions.mjs` |
+| `resources/data/categories.json` | Default texture categories (glob rules); see categories.md                     |
+
+Both are imported statically and bundled into the main process.
+
+### Vanilla assets and the `bs-asset://` protocol
+
+Vanilla textures are never bundled. The vanilla store extracts the needed folders of a client jar (local install or
+Mojang download with consent) into `userData/vanilla/<version>/` and writes `index.json` last. A vanilla-based pack
+stores only changed and added files; everything else is read from that cache. The renderer shows thumbnails through
+`bs-asset://pack/<packId>/<path>` (pack file, else vanilla) and `bs-asset://vanilla/<version>/<path>`. The protocol
+only serves `.png`, `.json` and `.mcmeta` files and checks every resolved path stays inside its root.
+
 ## Settings
 
 `src/main/services/settings.ts` stores `settings.json` in Electron's `userData` folder. The schema lives in
@@ -73,7 +109,10 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 
 - `main.ts` loads settings and updater status from main before mounting, so the first paint uses the right language and theme.
 - `App.vue` wraps everything in Naive UI's config provider (theme, locale) and keeps vue-i18n in sync with settings.
-- `stores/tabs.ts` manages workspace tabs: a permanent home tab now, one tab per open pack from M1.
+- `stores/tabs.ts` manages workspace tabs: a permanent home tab plus one tab per open pack.
+- `stores/pack.ts` creates one Pinia store per open pack (`pack/<id>`), holding its textures, categories and view
+  state (category, search, status filter, zoom, selection). It is disposed when the tab closes.
+- `stores/packs.ts` (pack list), `stores/vanilla.ts` (installs and versions), `stores/jobs.ts` (progress).
 - `router/` uses hash history (works with `file://`).
 
 ## Updates
@@ -90,8 +129,8 @@ src/
   renderer/    Vue app: components/, views/, stores/, composables/, router/, services/, styles/
 tests/
   unit/  integration/  component/  e2e/
-scripts/       release tooling (CalVer)
+scripts/       CalVer, version table generator, synthetic fixture jar
 docs/          project documentation
 build/         icons and macOS entitlements used by electron-builder
-resources/     runtime resources shipped with the app
+resources/     runtime resources: icon, data/versions.json, data/categories.json
 ```

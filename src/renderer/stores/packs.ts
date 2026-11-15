@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import type { CreatePackInput, ImportReport, PackSummary } from '@shared/model/pack'
 import { call } from '../services/ipc'
 import { useJobsStore } from './jobs'
+import { useTabsStore } from './tabs'
 
 /** The workspace's pack list (pack selector). */
 export const usePacksStore = defineStore('packs', () => {
@@ -17,6 +18,10 @@ export const usePacksStore = defineStore('packs', () => {
       const [list, ws] = await Promise.all([call('packs.list'), call('workspace.get')])
       packs.value = list
       workspacePath.value = ws.path
+      const ids = new Set(list.map((p) => p.id))
+      const tabs = useTabsStore()
+      for (const tab of [...tabs.tabs])
+        if (tab.kind === 'pack' && !ids.has(tab.id)) tabs.close(tab.id)
     } finally {
       loading.value = false
     }
