@@ -7,6 +7,7 @@ import { registerPackHandlers } from './ipc/pack-handlers'
 import { registerTextureHandlers } from './ipc/texture-handlers'
 import { registerPreviewHandlers } from './ipc/preview-handlers'
 import { registerAiProviderHandlers } from './ipc/ai-provider-handlers'
+import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
 import { send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
 import { createJobReporter } from './jobs'
@@ -147,6 +148,13 @@ if (!app.requestSingleInstanceLock()) {
     registerTextureHandlers({ textures, history })
     registerPreviewHandlers({ preview })
     registerAiProviderHandlers({ settings, secrets, registry: aiProviders })
+    registerAiAgentHandlers({
+      providers: aiProviders,
+      getAgentSettings: (agent) => settings.get().ai.agents[agent],
+      packs,
+      readVanillaPng: async (packId, path) => (await textures.read(packId, path)).vanillaPng,
+      emit: (event) => send(webContents(), 'ai.event', event)
+    })
     handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 
     mainWindow = createMainWindow()
