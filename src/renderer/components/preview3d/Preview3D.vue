@@ -269,7 +269,7 @@ function view(name: 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'is
   const box = new THREE.Box3().setFromObject(root)
   const size = box.getSize(new THREE.Vector3())
   const center = box.getCenter(new THREE.Vector3())
-  const dist = Math.max(size.x, size.y, size.z) * 2.6 + 8
+  const dist = Math.max(size.x, size.y, size.z) * 3.1 + 8
   const dirs: Record<typeof name, [number, number, number]> = {
     front: [0, 0, 1],
     back: [0, 0, -1],
