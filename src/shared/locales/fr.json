@@ -91,7 +91,8 @@
     "packs": {
       "notFound": "Ce pack n'existe plus.",
       "unsupportedVersion": "Minecraft {version} n'est pas pris en charge.",
-      "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes."
+      "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes.",
+      "unsafePath": "Cette modification écrirait en dehors du dossier du pack ; elle a été refusée."
     },
     "workspace": {
       "invalidPath": "Ce dossier ne peut pas servir d'espace de travail."
@@ -107,12 +108,16 @@
     },
     "texture": {
       "invalidPng": "Cette image n'a pas pu être enregistrée (PNG invalide).",
-      "notInPack": "Cette texture n'a aucune modification à annuler."
+      "notInPack": "Cette texture n'a aucune modification à annuler.",
+      "invalidPath": "Ce chemin de texture n'est pas valide.",
+      "noVanilla": "Cette texture n'a pas de version vanilla vers laquelle revenir."
     },
     "history": {
-      "conflict": "Le fichier a été modifié en dehors de Blocksmith Studio : cette étape ne peut pas être annulée sans risque.",
+      "conflict": "Le fichier {path} a été modifié en dehors de Blocksmith Studio : cette étape ne peut pas être annulée sans risque.",
       "nothingToUndo": "Rien à annuler.",
-      "nothingToRedo": "Rien à rétablir."
+      "nothingToRedo": "Rien à rétablir.",
+      "blobMissing": "La copie enregistrée de {path} est introuvable : cette étape ne peut pas être annulée.",
+      "invalidPath": "L'historique contient un chemin invalide."
     }
   },
   "common": {

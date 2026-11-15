@@ -91,7 +91,8 @@
     "packs": {
       "notFound": "This pack no longer exists.",
       "unsupportedVersion": "Minecraft {version} is not supported.",
-      "vanillaNotReady": "The Minecraft {version} textures are not set up yet."
+      "vanillaNotReady": "The Minecraft {version} textures are not set up yet.",
+      "unsafePath": "This change would write outside the pack folder and was refused."
     },
     "workspace": {
       "invalidPath": "This folder cannot be used as a workspace."
@@ -107,12 +108,16 @@
     },
     "texture": {
       "invalidPng": "This image could not be saved (invalid PNG).",
-      "notInPack": "This texture has no changes to revert."
+      "notInPack": "This texture has no changes to revert.",
+      "invalidPath": "This texture path is not valid.",
+      "noVanilla": "This texture has no vanilla version to revert to."
     },
     "history": {
-      "conflict": "The file was changed outside Blocksmith Studio, so this step cannot be undone safely.",
+      "conflict": "The file {path} was changed outside Blocksmith Studio, so this step cannot be undone safely.",
       "nothingToUndo": "Nothing to undo.",
-      "nothingToRedo": "Nothing to redo."
+      "nothingToRedo": "Nothing to redo.",
+      "blobMissing": "The saved copy of {path} is missing, so this step cannot be undone.",
+      "invalidPath": "The history contains an invalid path."
     }
   },
   "common": {
