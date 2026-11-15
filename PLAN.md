@@ -823,7 +823,7 @@ Parallel execution:
 - **Acceptance**: edit a texture, undo/redo, save, see it marked modified in the grid, export, see it in-game.
 
 ### M2b - Live 3D preview
-- Preview3D panel (3.4): three.js scene, orbit/zoom/pan, preset views, auto-rotate, backgrounds, lighting toggle, pop-out window.
+- Preview3D panel (3.4): three.js scene, orbit/zoom/pan, preset views, auto-rotate, backgrounds, lighting toggle (pop-out window moved to M11).
 - Live texture updates from the editor buffer on every stroke; animated texture playback.
 - Block models from vanilla blockstates/models (elements, UVs, rotations, tint); extruded items.
 - Entity geometry format + starter set (humanoids incl. zombie and armor layers, creeper, common animals); flat UV fallback for the rest.
@@ -869,7 +869,7 @@ Parallel execution:
 - Data pack projects (or combined resource+data), JSON editors with schema validation (recipes, loot tables, tags, advancements), `write_json` tool, data pack format in mcmeta/export.
 
 ### M11 - Polish and extras
-- Category mapping editor UI; optional layers in the editor; paint directly on the 3D preview model; more entity definitions; performance pass for huge packs; accessibility pass.
+- Category mapping editor UI; optional layers in the editor; pop-out 3D preview window; paint directly on the 3D preview model; more entity definitions; performance pass for huge packs; accessibility pass.
 - Investigation note on Bedrock support (not implementation).
 
 ---

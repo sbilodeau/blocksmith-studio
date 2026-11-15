@@ -359,7 +359,8 @@ export function buildEntity(
       part.pivot[2] - parentPivot[2]
     )
     if (part.rotation) {
-      pivot.rotation.set(...(part.rotation.map((d) => THREE.MathUtils.degToRad(d)) as Vec3), 'XYZ')
+      // Minecraft applies part rotations x, then y, then z (matrix Rz * Ry * Rx = three.js order 'ZYX').
+      pivot.rotation.set(...(part.rotation.map((d) => THREE.MathUtils.degToRad(d)) as Vec3), 'ZYX')
     }
     pivot.userData['rest'] = pivot.rotation.clone()
     if (part.role) roles.set(part.role, pivot)

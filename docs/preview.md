@@ -1,7 +1,27 @@
 # 3D preview
 
-How Blocksmith Studio decides what to show in the 3D preview for the texture open in the editor (PLAN 3.4).
+The 3D preview shows the texture open in the editor on its real shape and updates on every stroke (PLAN 3.4).
+Open it with the **3D** button in the editor header (or press 3); drag the handle on its left edge to resize it.
 The model contract is `PreviewModel` in `src/shared/model/preview.ts`.
+
+## Using the preview
+
+| Control                            | What it does                                                       |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| Drag / scroll / right-drag         | Orbit in every direction / zoom / pan (three.js OrbitControls)     |
+| Front, Back, Left, Right, Top, 3/4 | Preset camera views                                                |
+| Rotate                             | Auto-rotation                                                      |
+| Walk                               | Simple limb swing for entities with a biped or quadruped animation |
+| Floor                              | Grid under the model                                               |
+| In-game / Studio light             | Minecraft's flat per-face shading, or directional lights           |
+| Background                         | Dark, light, checker or sky                                        |
+
+- **Live**: the editor's RGBA buffer is uploaded into a three.js `DataTexture` (nearest filtering, no mipmaps)
+  whenever it changes; no save or IPC is involved. Rotating a non-square texture rebuilds the model.
+- **Linked hover**: hovering a pixel on the 3D model outlines it in pink on the 2D canvas; hovering the 2D canvas
+  highlights that pixel (inverted color) on the model.
+- **Animated textures** play using the `.png.mcmeta` timing (`frametime`, `frames`, `height`).
+- Not in M2b: the pop-out preview window (planned for M11, with painting directly on the 3D model).
 
 ## Main process: model resolution
 
@@ -131,3 +151,25 @@ grass color. In game these colors come from biome colormaps and Java code; the p
   `~/Library/Application Support/minecraft/versions/1.21.4/1.21.4.jar` (or `BLOCKSMITH_REAL_JAR`) when present.
   Models and blockstates are extracted into a temp folder that is deleted afterwards; nothing from the jar is
   committed.
+
+## Renderer
+
+Code: `src/renderer/components/preview3d/`.
+
+| File            | Role                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| `Preview3D.vue` | Scene, camera, controls, render loop (on demand; continuous only while rotating, walking or animating) |
+| `builders.ts`   | Geometry builders: block elements, extruded item sprite, entity boxes, flat fallback                   |
+| `animation.ts`  | `.png.mcmeta` animation parsing and frame timing                                                       |
+
+- **Blocks**: one quad per element face with Minecraft's face orientation and uv (0..16), uv rotation, element
+  rotation around its origin (with `rescale`), tints multiplied into vertex colors, and per-face shading in
+  in-game mode (up 1.0, north/south 0.8, east/west 0.6, down 0.5). Other textures used by the model (for example the
+  grass side and overlay when editing `grass_block_top`) are read once with `texture.read`.
+- **Items**: front and back quads plus side walls only where an opaque pixel borders a transparent one, each wall
+  textured with its pixel's color; rebuilt when the alpha mask changes.
+- **Entities**: one pivot group per part, box UV from `src/shared/preview/box-uv.ts`, `mirror` and `inflate` support,
+  part rotations applied x then y then z (three.js order `ZYX`, as in Minecraft). Geometry definitions are documented
+  in [entity-models.md](entity-models.md).
+- Textures are uploaded without `flipY`, so texture v grows downward like Minecraft UVs. Pixel data is never read
+  back from WebGL.
