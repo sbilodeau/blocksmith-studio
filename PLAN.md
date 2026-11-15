@@ -329,14 +329,14 @@ blocksmith-studio/
       entity-models/            our own entity geometry definitions for the 3D preview (MIT, data-only)
       ai-eval/phrases.json      FR/EN phrase -> expected tool-call cases
   scripts/
-    calver.mjs                  compute next yy.ww.fix from git tags
+    calver.mjs                  CLI: print next yy.ww.fix from git tags (logic in lib/calver.mjs)
     update-versions.mjs         refresh versions.json from Mojang manifest + misode/mcmeta
     gen-migrations.mjs          diff two vanilla indexes -> migration table draft
     gen-tools-doc.mjs           tools-reference.md from the tool registry
     make-fixture-jar.mjs        build the synthetic test jar (no Mojang assets in repo)
   src/
     main/
-      index.ts  window.ts  menu.ts  protocol.ts  security.ts
+      index.ts  window.ts  menu.ts  protocol.ts  security.ts  security-policy.ts (pure, tested)
       ipc/                      handlers per domain (pack, vanilla, export, ai, settings, updater)
       services/                 workspace, vanilla, versions, importer, exporter, merger, history, secrets, settings, updater
       ai/
@@ -347,15 +347,15 @@ blocksmith-studio/
       workers/                  batch.worker.ts (utilityProcess)
       i18n.ts                   main-process strings (dialogs, menus) from the same locale files
     preload/
-      index.ts
+      index.ts  global.d.ts
     shared/                     pure TS, no Electron/DOM imports (runs everywhere)
       image/                    RgbaImage, transforms, drawing, color ops, palette, png io, diff
       tools/                    tool registry: zod schemas, descriptions, describe(), execute()
       model/                    types + zod schemas (Project, StyleBrief, ...)
       versions/                 support window, pack.mcmeta builder, migration logic
       categories/               mapping engine
-      ipc/contract.ts
-      calver.ts
+      ipc/                      channels.ts (names, no deps) + contract.ts (zod schemas, types)
+      locales/                  en.json  fr.json (shared by renderer and main)
     renderer/
       index.html  main.ts  App.vue
       router/  stores/ (app, tabs, pack(id), editor, ai, settings)
@@ -366,16 +366,16 @@ blocksmith-studio/
         grid/                   TextureTile, SelectionBar, Filters
         ai/                     AgentPanel, ModelPicker, ThinkingPanel, ToolCallList, ProposalReview, UsageBadge
         common/
-      composables/
-      locales/ en.json  fr.json
+      composables/  services/ (ipc call helper)  styles/
   tests/
     unit/                       mirrors src/shared, src/main/services
+    component/                  Vue components/stores with a fake preload bridge (happy-dom)
     integration/                main services against a temp workspace + fixture jar; provider adapters vs fake HTTP server
     e2e/                        Playwright Electron specs
     ai-eval/                    live FR/EN suite (skipped without API key)
     fixtures/                   synthetic jar, sample packs, recorded provider responses
-  electron.vite.config.ts  electron-builder.yml  vitest.workspace.ts  playwright.config.ts
-  package.json  tsconfig*.json  eslint.config.js  .prettierrc
+  electron.vite.config.ts  electron-builder.yml  vitest.config.mts  playwright.config.ts
+  package.json  tsconfig*.json  eslint.config.mjs  .prettierrc.yaml
   README.md  LICENSE (MIT)  CHANGELOG.md  PLAN.md
 ```
 
@@ -761,7 +761,7 @@ runs the same suite against your real installed jar.
 
 ## 11. i18n
 
-- `src/renderer/locales/{en,fr}.json`, nested keys by domain (`common`, `packs`, `category`, `editor.tools`, `ops`, `ai`, `settings`, `errors`).
+- `src/shared/locales/{en,fr}.json`, nested keys by domain (`common`, `packs`, `category`, `editor.tools`, `ops`, `ai`, `settings`, `errors`).
 - Default language = **English**. French is chosen in Settings and applied live (persisted in `settings.json`).
 - Category names, tool operation descriptions (`ops.*`), error messages (typed `AppError.code` -> `errors.<code>`) and main-process dialogs/menus all go through i18n.
 - Lint rule `@intlify/vue-i18n/no-raw-text` = error; CI check for key parity and unused keys.
