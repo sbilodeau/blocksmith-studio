@@ -19,6 +19,8 @@ import { StyleBriefPatchSchema, type StyleBrief } from '../model/brief'
 import type {
   AgentEvent,
   ConversationTurn,
+  EvalProgress,
+  EvalReport,
   ModelInfo,
   ProposalApplyResult,
   ProviderStatus
@@ -131,7 +133,9 @@ export const inputSchemas = {
     .strict(),
   'ai.proposal.reject': z.object({ proposalId: z.string().min(1).max(64) }).strict(),
   'brief.get': PackRef,
-  'brief.update': PackRef.extend({ patch: StyleBriefPatchSchema }).strict()
+  'brief.update': PackRef.extend({ patch: StyleBriefPatchSchema }).strict(),
+  'ai.eval.run': z.object({ model: ModelRefSchema, quick: z.boolean().default(true) }).strict(),
+  'ai.eval.stop': NoInput
 } satisfies Record<InvokeChannel, z.ZodType>
 
 /** Output types (compile-time only; main is trusted). */
@@ -198,6 +202,9 @@ export interface InvokeOutputs {
   'ai.proposal.reject': void
   'brief.get': StyleBrief
   'brief.update': StyleBrief
+  /** Runs the FR/EN evaluation against a model (quick: a subset). Progress arrives as 'ai.eval.progress'. */
+  'ai.eval.run': EvalReport
+  'ai.eval.stop': void
 }
 
 export type InvokeInput<C extends InvokeChannel> = z.input<(typeof inputSchemas)[C]>
@@ -210,6 +217,7 @@ export interface EventPayloads {
   /** The pack list or a pack's files changed (create, import, delete, external edit). */
   'packs.changed': { packId?: string }
   'ai.event': AgentEvent
+  'ai.eval.progress': EvalProgress
 }
 
 export type EventPayload<E extends EventChannel> = EventPayloads[E]

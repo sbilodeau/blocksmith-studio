@@ -8,6 +8,7 @@ import { registerTextureHandlers } from './ipc/texture-handlers'
 import { registerPreviewHandlers } from './ipc/preview-handlers'
 import { registerAiProviderHandlers } from './ipc/ai-provider-handlers'
 import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
+import { registerAiEvalHandlers } from './ipc/ai-eval-handlers'
 import { send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
 import { createJobReporter } from './jobs'
@@ -154,6 +155,10 @@ if (!app.requestSingleInstanceLock()) {
       packs,
       readVanillaPng: async (packId, path) => (await textures.read(packId, path)).vanillaPng,
       emit: (event) => send(webContents(), 'ai.event', event)
+    })
+    registerAiEvalHandlers({
+      providers: aiProviders,
+      emit: (progress) => send(webContents(), 'ai.eval.progress', progress)
     })
     handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 

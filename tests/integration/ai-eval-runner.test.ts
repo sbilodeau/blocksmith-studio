@@ -1,7 +1,14 @@
 import { join } from 'path'
 import { describe, expect, it } from 'vitest'
 import type { ChatRequest } from '@shared/ai/types'
-import { loadEvalCases, parseModelRef, runEval } from '../../src/main/services/ai/eval/runner'
+import {
+  bundledEvalCases,
+  loadEvalCases,
+  parseModelRef,
+  QUICK_CASE_IDS,
+  runEval,
+  runEvalReport
+} from '../../src/main/services/ai/eval/runner'
 import { summarize } from '../../src/main/services/ai/eval/report'
 import { DONE_END, DONE_TOOLS, fakeProvider, text, toolCall } from '../unit/ai-agent-fakes'
 
@@ -72,5 +79,36 @@ describe('eval runner', () => {
     const { providers } = fakeProvider([err, err])
     const results = await runEval({ providers, model, cases, concurrency: 1 })
     expect(results.every((r) => !r.pass && r.error)).toBe(true)
+  })
+
+  it('quick test ids exist in the bundled cases', () => {
+    const ids = bundledEvalCases().map((c) => c.id)
+    for (const id of QUICK_CASE_IDS) expect(ids).toContain(id)
+  })
+
+  it('builds the Settings report for the quick test', async () => {
+    const { providers } = fakeProvider(Array.from({ length: 40 }, () => rotateOnly))
+    const report = await runEvalReport({ providers, model, quick: true, concurrency: 2 })
+    expect(report.overall.total).toBe(QUICK_CASE_IDS.length * 2)
+    expect(report.stopped).toBe(false)
+    expect(report.ok).toBe(false)
+    expect(report.failures.length).toBeGreaterThan(0)
+    expect(report.markdown).toContain('fake/m1')
+  })
+
+  it('reports a stopped run', async () => {
+    const controller = new AbortController()
+    const { providers } = fakeProvider(Array.from({ length: 40 }, () => rotateOnly))
+    const report = await runEvalReport({
+      providers,
+      model,
+      quick: true,
+      concurrency: 1,
+      signal: controller.signal,
+      onResult: (_r, done) => done === 2 && controller.abort()
+    })
+    expect(report.stopped).toBe(true)
+    expect(report.ok).toBe(false)
+    expect(report.overall.total).toBe(2)
   })
 })

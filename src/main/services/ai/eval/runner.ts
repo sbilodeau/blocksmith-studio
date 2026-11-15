@@ -1,11 +1,12 @@
 import { readFileSync } from 'fs'
-import type { AgentEvent, AgentSettings, ModelRef, ToolCall } from '@shared/ai/types'
+import type { AgentEvent, AgentSettings, EvalReport, ModelRef, ToolCall } from '@shared/ai/types'
 import { encodePng } from '@shared/image'
 import { emptyBrief } from '@shared/model/brief'
 import type { ProviderRegistry } from '../../contracts'
 import { runEditorAgent } from '../agent'
 import { EvalFileSchema, matchCalls, type EvalCase } from './match'
-import { evalFixture, type EvalLanguage, type EvalResult } from './report'
+import { evalFixture, summarize, toMarkdown, type EvalLanguage, type EvalResult } from './report'
+import phrases from '../../../../../resources/data/ai-eval/phrases.json'
 
 /**
  * Runs the FR/EN evaluation cases against a real model through the same runtime as the editor agent: one fresh
@@ -30,6 +31,57 @@ const EVAL_TEXTURE = 'assets/minecraft/textures/block/eval_sample.png'
 
 export function loadEvalCases(path: string): EvalCase[] {
   return EvalFileSchema.parse(JSON.parse(readFileSync(path, 'utf8'))).cases
+}
+
+/** Cases bundled with the app (Settings > "Test this model"). */
+export function bundledEvalCases(): EvalCase[] {
+  return EvalFileSchema.parse(phrases).cases
+}
+
+/** Quick test: one case per family (transform, drawing, color, memory, multi-step). 16 requests. */
+export const QUICK_CASE_IDS = [
+  'rotate-left-90',
+  'flip-horizontal',
+  'pixel-top-left-red',
+  'fill-quarter',
+  'make-redder',
+  'darker',
+  'remember-theme',
+  'rotate-and-flames'
+]
+
+/** Runs the cases and builds the report the renderer shows. */
+export async function runEvalReport(
+  opts: Omit<EvalRunOptions, 'cases'> & { quick: boolean }
+): Promise<EvalReport> {
+  const all = bundledEvalCases()
+  const cases = opts.quick ? all.filter((c) => QUICK_CASE_IDS.includes(c.id)) : all
+  const results = await runEval({ ...opts, cases })
+  const summary = summarize(results)
+  const label = `${opts.model.providerId}/${opts.model.modelId}`
+  const stopped = results.length < cases.length * (opts.languages?.length ?? 2)
+  return {
+    model: opts.model,
+    overall: summary.overall,
+    fr: summary.fr,
+    en: summary.en,
+    gap: summary.gap,
+    ok: summary.ok && !stopped,
+    avgLatencyMs: summary.avgLatencyMs,
+    inputTokens: summary.inputTokens,
+    outputTokens: summary.outputTokens,
+    stopped,
+    failures: results
+      .filter((r) => !r.pass)
+      .map((r) => ({
+        caseId: r.caseId,
+        language: r.language,
+        phrase: r.phrase,
+        calls: r.calls.map((c) => `${c.name}(${JSON.stringify(c.args)})`).join(', '),
+        ...(r.error ? { error: r.error } : {})
+      })),
+    markdown: toMarkdown(label, results, summary)
+  }
 }
 
 /** "provider/model" or just "model" (Ollama Cloud). Model ids may contain ':' and '/'. */

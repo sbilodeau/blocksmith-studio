@@ -17,6 +17,7 @@ import {
 } from 'naive-ui'
 import type { ProviderKind } from '@shared/ai/types'
 import AgentSettingsForm from './AgentSettingsForm.vue'
+import ModelTest from './ModelTest.vue'
 import { useAiStore } from '../../stores/ai'
 import { useErrorMessage } from '../../composables/useErrorMessage'
 
@@ -222,6 +223,7 @@ onMounted(async () => {
       </n-button>
 
       <agent-settings-form agent="editor" />
+      <model-test />
     </n-space>
   </n-card>
 </template>

@@ -159,6 +159,46 @@ export interface ProposalApplyResult {
   briefUpdated: boolean
 }
 
+/** Result of Settings > "Test this model" (FR/EN evaluation, PLAN 6.8). */
+export interface EvalScore {
+  total: number
+  passed: number
+  /** 0-100. */
+  rate: number
+}
+
+export interface EvalReport {
+  model: ModelRef
+  overall: EvalScore
+  fr: EvalScore
+  en: EvalScore
+  /** |FR - EN| in percentage points. */
+  gap: number
+  /** Meets the thresholds (90% overall, gap <= 10 points). */
+  ok: boolean
+  avgLatencyMs: number
+  inputTokens: number
+  outputTokens: number
+  /** Stopped before every request ran. */
+  stopped: boolean
+  failures: Array<{
+    caseId: string
+    language: 'fr' | 'en'
+    phrase: string
+    calls: string
+    error?: string
+  }>
+  markdown: string
+}
+
+export interface EvalProgress {
+  done: number
+  total: number
+  caseId: string
+  language: 'fr' | 'en'
+  pass: boolean
+}
+
 export type AgentEvent =
   | { runId: string; type: 'started'; agent: AgentKind; model: ModelRef }
   | { runId: string; type: 'thinking'; delta: string }

@@ -52,7 +52,9 @@ export const INVOKE_CHANNELS = [
   'ai.proposal.apply',
   'ai.proposal.reject',
   'brief.get',
-  'brief.update'
+  'brief.update',
+  'ai.eval.run',
+  'ai.eval.stop'
 ] as const
 
 /** Event channels (main -> renderer, via webContents.send). */
@@ -61,7 +63,8 @@ export const EVENT_CHANNELS = [
   'updater.status',
   'job.progress',
   'packs.changed',
-  'ai.event'
+  'ai.event',
+  'ai.eval.progress'
 ] as const
 
 export type InvokeChannel = (typeof INVOKE_CHANNELS)[number]

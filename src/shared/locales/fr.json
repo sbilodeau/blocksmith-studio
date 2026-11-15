@@ -143,7 +143,8 @@
       "textureTooLarge": "Cette texture est trop grande pour l'IA (max {max} pixels par côté).",
       "proposalNotPending": "Ce plan a déjà été appliqué ou refusé.",
       "replayFailed": "L'étape {step} ({tool}) n'a pas pu être appliquée.",
-      "agentFailed": "L'agent IA s'est arrêté à cause d'une erreur inattendue."
+      "agentFailed": "L'agent IA s'est arrêté à cause d'une erreur inattendue.",
+      "evalBusy": "Un test de modèle est déjà en cours."
     }
   },
   "common": {
@@ -493,7 +494,25 @@
         "rejected": "Refusé"
       }
     },
-    "keyNotNeeded": "Aucune clé requise (local)"
+    "keyNotNeeded": "Aucune clé requise (local)",
+    "eval": {
+      "title": "Tester un modèle",
+      "hint": "Envoie au modèle les phrases de test en français et en anglais et vérifie qu'il choisit les bons outils. Utilise les jetons de votre fournisseur : environ 16 requêtes pour le test rapide, 60 pour le test complet.",
+      "quick": "Test rapide",
+      "full": "Test complet",
+      "progress": "{done} requêtes sur {total}",
+      "stopped": "Test arrêté avant la fin ; les scores ne couvrent que ce qui a été exécuté.",
+      "good": "Bon choix : {rate} % des requêtes ont donné les bons outils dans les deux langues.",
+      "weak": "Choix faible : {rate} % de bonnes réponses, avec un écart de {gap} points entre le français et l'anglais. L'agent risque de mal comprendre certaines demandes avec ce modèle.",
+      "overall": "Global",
+      "french": "Français",
+      "english": "Anglais",
+      "stats": "Moyenne de {latency} ms par requête. Jetons : {input} en entrée, {output} en sortie.",
+      "failures": "Requêtes ratées ({count})",
+      "noCall": "(aucun appel d'outil)",
+      "copy": "Copier le rapport (Markdown)",
+      "copied": "Rapport copié."
+    }
   },
   "brief": {
     "open": "Brief de style",

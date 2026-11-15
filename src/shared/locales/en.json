@@ -143,7 +143,8 @@
       "textureTooLarge": "This texture is too large for the AI (max {max} pixels per side).",
       "proposalNotPending": "This plan was already applied or refused.",
       "replayFailed": "Step {step} ({tool}) could not be applied.",
-      "agentFailed": "The AI agent stopped because of an unexpected error."
+      "agentFailed": "The AI agent stopped because of an unexpected error.",
+      "evalBusy": "A model test is already running."
     }
   },
   "common": {
@@ -493,7 +494,25 @@
         "rejected": "Rejected"
       }
     },
-    "keyNotNeeded": "No key needed (local)"
+    "keyNotNeeded": "No key needed (local)",
+    "eval": {
+      "title": "Test a model",
+      "hint": "Sends the French and English test phrases to the model and checks that it picks the right tools. Uses your provider tokens: about 16 requests for the quick test, 60 for the full test.",
+      "quick": "Quick test",
+      "full": "Full test",
+      "progress": "{done} of {total} requests",
+      "stopped": "Test stopped before the end; the scores cover only what ran.",
+      "good": "Good fit: {rate} % of requests mapped to the right tools in both languages.",
+      "weak": "Weak fit: {rate} % right, with a {gap}-point gap between French and English. The agent may misread some requests with this model.",
+      "overall": "Overall",
+      "french": "French",
+      "english": "English",
+      "stats": "Average {latency} ms per request. Tokens: {input} in, {output} out.",
+      "failures": "Missed requests ({count})",
+      "noCall": "(no tool call)",
+      "copy": "Copy the report (Markdown)",
+      "copied": "Report copied."
+    }
   },
   "brief": {
     "open": "Style brief",

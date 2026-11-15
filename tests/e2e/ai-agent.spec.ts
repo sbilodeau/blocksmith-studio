@@ -227,3 +227,17 @@ test('rejecting a plan leaves the texture untouched', async () => {
   await expect(review).toContainText('Refusé')
   await expect(page.getByTestId('editor-dirty')).toHaveCount(0)
 })
+
+test('Settings can test a model with the FR/EN phrases', async () => {
+  launched = await setup()
+  const { page } = launched
+  await page.getByTestId('open-settings').click()
+  const box = page.getByTestId('model-test')
+  await box.scrollIntoViewIfNeeded()
+  await box.getByTestId('model-test-quick').click()
+  const report = box.getByTestId('model-test-report')
+  await expect(report).toBeVisible({ timeout: 30_000 })
+  // The fake model always rotates left then paints: the rotation and rotate-and-flames cases pass.
+  await expect(box.getByTestId('model-test-rate')).toHaveText('25 %')
+  await expect(report).toContainText('Requêtes ratées (12)')
+})
