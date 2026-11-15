@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-15",
+  "versions": [
+    {
+      "id": "26.3",
+      "releaseTime": "2026-09-15T11:23:02+00:00",
+      "resourcePack": {
+        "major": 97,
+        "minor": 1
+      },
+      "dataPack": {
+        "major": 121,
+        "minor": 0
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "26.2",
+      "releaseTime": "2026-06-16T12:03:33+00:00",
+      "resourcePack": {
+        "major": 88,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 107,
+        "minor": 1
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "26.1.2",
+      "releaseTime": "2026-04-09T10:12:23+00:00",
+      "resourcePack": {
+        "major": 84,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 101,
+        "minor": 1
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "26.1.1",
+      "releaseTime": "2026-04-01T09:06:36+00:00",
+      "resourcePack": {
+        "major": 84,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 101,
+        "minor": 1
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "26.1",
+      "releaseTime": "2026-03-24T12:11:04+00:00",
+      "resourcePack": {
+        "major": 84,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 101,
+        "minor": 1
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "1.21.11",
+      "releaseTime": "2025-12-09T12:23:30+00:00",
+      "resourcePack": {
+        "major": 75,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 94,
+        "minor": 1
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "1.21.10",
+      "releaseTime": "2025-10-07T09:17:23+00:00",
+      "resourcePack": {
+        "major": 69,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 88,
+        "minor": 0
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "1.21.9",
+      "releaseTime": "2025-09-30T11:58:43+00:00",
+      "resourcePack": {
+        "major": 69,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 88,
+        "minor": 0
+      },
+      "mcmetaStyle": "minmax"
+    },
+    {
+      "id": "1.21.8",
+      "releaseTime": "2025-07-17T12:04:02+00:00",
+      "resourcePack": {
+        "major": 64,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 81,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21.7",
+      "releaseTime": "2025-06-30T09:32:16+00:00",
+      "resourcePack": {
+        "major": 64,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 81,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21.6",
+      "releaseTime": "2025-06-17T11:10:28+00:00",
+      "resourcePack": {
+        "major": 63,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 80,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21.5",
+      "releaseTime": "2025-03-25T12:14:58+00:00",
+      "resourcePack": {
+        "major": 55,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 71,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21.4",
+      "releaseTime": "2024-12-03T10:12:57+00:00",
+      "resourcePack": {
+        "major": 46,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 61,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21.3",
+      "releaseTime": "2024-10-23T12:28:15+00:00",
+      "resourcePack": {
+        "major": 42,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 57,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21.2",
+      "releaseTime": "2024-10-22T09:58:55+00:00",
+      "resourcePack": {
+        "major": 42,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 57,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21.1",
+      "releaseTime": "2024-08-08T12:24:45+00:00",
+      "resourcePack": {
+        "major": 34,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 48,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    },
+    {
+      "id": "1.21",
+      "releaseTime": "2024-06-13T08:24:03+00:00",
+      "resourcePack": {
+        "major": 34,
+        "minor": 0
+      },
+      "dataPack": {
+        "major": 48,
+        "minor": 0
+      },
+      "mcmetaStyle": "pack_format"
+    }
+  ]
+}
