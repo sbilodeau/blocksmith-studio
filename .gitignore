@@ -33,3 +33,6 @@ Thumbs.db
 # Worktrees used for parallel work
 .worktrees/
 .claude/worktrees/
+
+# Tool caches
+.eslintcache
