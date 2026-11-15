@@ -9,7 +9,9 @@ import { cleanup, launchApp, stubSaveDialog, type LaunchedApp } from './app'
 type MakeFixtureJar = (outPath: string, versionId: string) => Promise<void>
 
 async function makeFixtureJar(outPath: string, versionId: string): Promise<void> {
-  const mod = (await import('../../scripts/make-fixture-jar.mjs' as string)) as { makeFixtureJar: MakeFixtureJar }
+  const mod = (await import('../../scripts/make-fixture-jar.mjs' as string)) as {
+    makeFixtureJar: MakeFixtureJar
+  }
   await mod.makeFixtureJar(outPath, versionId)
 }
 
@@ -78,8 +80,13 @@ test('draws, undoes, saves a texture and exports it', async () => {
   await expect(page.getByTestId('saved-history')).toContainText('Saved stone')
   const file = join(await ctx.packFolder(), 'assets/minecraft/textures/block/stone.png')
   const png = decode(await readFile(file))
-  const i = (8 * png.width + 8) * png.channels
-  expect(Array.from(png.data.slice(i, i + 3))).toEqual([0, 0, 0])
+  let black = 0
+  for (let i = 0; i < png.width * png.height; i++) {
+    const o = i * png.channels
+    if (png.data[o] === 0 && png.data[o + 1] === 0 && png.data[o + 2] === 0) black++
+  }
+  // The fixture stone has no black pixels; exactly the one drawn pixel was saved.
+  expect(black).toBe(1)
 
   // Back in the grid the texture is marked modified.
   await page.getByTestId('editor-back').click()
@@ -128,7 +135,9 @@ test('previous/next navigation asks before discarding unsaved edits', async () =
   const first = await page.getByTestId('editor-name').textContent()
   await page.getByTestId('tool-pencil').click()
   await clickCanvasCenter(page)
-  await page.getByTestId('editor-next').click()
+  // stone is the last texture of its category, so go to the previous one.
+  await expect(page.getByTestId('editor-next')).toBeDisabled()
+  await page.getByTestId('editor-prev').click()
   await page.getByRole('button', { name: 'Discard' }).click()
   await expect(page.getByTestId('editor-name')).not.toHaveText(first ?? '')
   await expect(page.getByTestId('editor-dirty')).toHaveCount(0)

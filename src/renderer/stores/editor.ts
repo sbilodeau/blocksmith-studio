@@ -246,7 +246,6 @@ export function useEditorStore(packId: string) {
       touch()
     }
 
-
     function moveFloating(x: number, y: number): void {
       const f = floating.value
       if (!f) return

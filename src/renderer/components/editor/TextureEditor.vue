@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NButtonGroup, NSpace, NSpin, NTag, NText, NTooltip, useDialog } from 'naive-ui'
+import { NButton, NButtonGroup, NSpace, NTag, NText, NTooltip, useDialog } from 'naive-ui'
+import LoadingOverlay from '../common/LoadingOverlay.vue'
 import { toHex, type Rgba } from '@shared/image'
 import PixelCanvas from './PixelCanvas.vue'
 import EditorToolbar from './EditorToolbar.vue'
@@ -253,7 +254,8 @@ const statusTag = computed(() => {
         @zoom="(s) => canvasRef?.zoomBy(s)"
         @fit="canvasRef?.fit()"
       />
-      <n-spin :show="editor.loading" class="center">
+      <div class="center">
+        <loading-overlay :show="editor.loading" />
         <div class="canvases" :class="{ split: editor.compare && editor.vanilla }">
           <div v-if="editor.compare && editor.vanilla" class="pane">
             <n-text depth="3" class="pane-label">{{ t('editor.vanilla') }}</n-text>
@@ -287,7 +289,7 @@ const statusTag = computed(() => {
           <n-text depth="3">{{ t('editor.zoomLevel', { zoom: editor.zoom }) }}</n-text>
           <n-text v-if="editor.peekVanilla" type="warning">{{ t('editor.showingVanilla') }}</n-text>
         </div>
-      </n-spin>
+      </div>
       <aside class="side">
         <color-panel :pack-id="packId" />
         <history-panel :pack-id="packId" />
@@ -336,11 +338,10 @@ const statusTag = computed(() => {
   display: flex;
   flex-direction: column;
 }
-.center :deep(.n-spin-content) {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+.center {
+  position: relative;
 }
+
 .canvases {
   flex: 1;
   min-height: 0;
