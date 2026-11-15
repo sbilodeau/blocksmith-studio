@@ -8,6 +8,8 @@ import {
   type SettingsPatch
 } from '@shared/model/settings'
 
+export type ProviderSettings = Settings['ai']['providers'][number]
+
 /**
  * App settings persisted as JSON in userData. Invalid or unreadable files fall back to defaults
  * (the broken file is kept as settings.json.bak for inspection). Writes are atomic (tmp + rename).
@@ -76,6 +78,21 @@ export class SettingsService {
       ...this.settings,
       minecraftPaths: this.settings.minecraftPaths.filter((p) => p !== path)
     })
+  }
+
+  /** Main-process only (validated by the ai.providers.* handlers): inserts or replaces a provider by id. */
+  async saveProvider(provider: ProviderSettings): Promise<Settings> {
+    const providers = this.settings.ai.providers
+    const index = providers.findIndex((p) => p.id === provider.id)
+    const next =
+      index >= 0 ? providers.map((p, i) => (i === index ? provider : p)) : [...providers, provider]
+    return this.replace({ ...this.settings, ai: { ...this.settings.ai, providers: next } })
+  }
+
+  /** Main-process only: removes a provider (its key is deleted separately by the caller). */
+  async deleteProvider(providerId: string): Promise<Settings> {
+    const providers = this.settings.ai.providers.filter((p) => p.id !== providerId)
+    return this.replace({ ...this.settings, ai: { ...this.settings.ai, providers } })
   }
 
   onChange(listener: (s: Settings) => void): () => void {
