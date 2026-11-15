@@ -15,3 +15,4 @@ All notable changes to this project are documented here. Versions follow CalVer 
 - English and French translations with a lint rule forbidding hard-coded UI text
 - Settings persisted in the user data folder with atomic writes and corruption recovery
 - Unit, integration, component (Vitest) and end-to-end (Playwright) tests
+- Original pixel-art app icon (anvil forging a glowing block)

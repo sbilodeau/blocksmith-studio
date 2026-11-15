@@ -1,3 +1,5 @@
+<p align="center"><img src="build/icon.png" width="128" alt="Blocksmith Studio icon"></p>
+
 # Blocksmith Studio
 
 Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs, with a pixel editor,
@@ -43,18 +45,18 @@ npm install
 npm run dev          # start the app with hot reload
 ```
 
-| Command               | What it does                                                    |
-| --------------------- | --------------------------------------------------------------- |
-| `npm run dev`         | Run the app in development mode (hot reload)                    |
-| `npm run build`       | Build main, preload and renderer into `out/`                    |
-| `npm run lint`        | ESLint (includes the i18n rule that forbids hard-coded UI text) |
-| `npm run typecheck`   | Type-check main/preload/shared (tsc) and renderer (vue-tsc)     |
-| `npm test`            | Unit, integration and component tests (Vitest)                  |
-| `npm run test:e2e`    | Build, then drive the real Electron app with Playwright         |
-| `npm run format`      | Format the code with Prettier                                   |
-| `npm run package:dir` | Build an unpacked app for the current platform (no installer)   |
-| `npm run package`     | Build installers for the current platform (not published)       |
-| `npm run calver`      | Print the next CalVer release version computed from git tags    |
+| Command               | What it does                                                           |
+| --------------------- | ---------------------------------------------------------------------- |
+| `npm run dev`         | Run the app in development mode (hot reload)                           |
+| `npm run build`       | Build main, preload and renderer into `out/`                           |
+| `npm run lint`        | ESLint (includes the i18n rule that forbids hard-coded UI text)        |
+| `npm run typecheck`   | Type-check main/preload/shared (tsc) and renderer (vue-tsc)            |
+| `npm test`            | Unit, integration and component tests (Vitest)                         |
+| `npm run test:e2e`    | Build, then drive the real Electron app with Playwright                |
+| `npm run format`      | Format the code with Prettier                                          |
+| `npm run package:dir` | Build an unpacked app for the current platform (no installer)          |
+| `npm run package`     | Build installers for the current platform (not published)              |
+| `npm run calver`      | Print the next CalVer release version computed from git tags           |
 
 Running from a terminal inside VS Code: VS Code sets `ELECTRON_RUN_AS_NODE`, which makes Electron start as plain
 Node. The E2E helper removes it automatically; if `npm run dev` fails with "bad option", run `unset ELECTRON_RUN_AS_NODE`.
