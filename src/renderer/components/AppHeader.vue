@@ -12,6 +12,13 @@ const tabs = useTabsStore()
 function onSelect(id: string): void {
   tabs.activate(id)
   if (id === HOME_TAB_ID) void router.push({ name: 'home' })
+  else void router.push({ name: 'pack', params: { packId: id } })
+}
+
+function onClose(id: string): void {
+  const wasActive = tabs.activeId === id
+  tabs.close(id)
+  if (wasActive) onSelect(tabs.activeId)
 }
 
 function openSettings(): void {
@@ -28,7 +35,7 @@ function openSettings(): void {
       size="small"
       :value="route.name === 'settings' ? undefined : tabs.activeId"
       @update:value="onSelect"
-      @close="tabs.close"
+      @close="onClose"
     >
       <n-tab
         v-for="tab in tabs.tabs"
@@ -36,6 +43,7 @@ function openSettings(): void {
         :name="tab.id"
         :closable="tab.closable"
         :data-testid="`tab-${tab.id}`"
+        @click="onSelect(tab.id)"
       >
         {{ tab.labelKey ? t(tab.labelKey) : tab.label }}
       </n-tab>

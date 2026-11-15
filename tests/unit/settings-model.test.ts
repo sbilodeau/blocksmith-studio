@@ -7,7 +7,9 @@ describe('settings model', () => {
       schemaVersion: 1,
       language: 'en',
       theme: 'system',
-      updates: { autoCheck: true }
+      updates: { autoCheck: true },
+      minecraftPaths: [],
+      allowMojangDownload: false
     })
   })
 

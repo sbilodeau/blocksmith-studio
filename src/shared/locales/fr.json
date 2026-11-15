@@ -11,10 +11,12 @@
   "home": {
     "title": "Vos packs",
     "empty": "Aucun pack pour l'instant",
-    "emptyHint": "La création et l'importation de packs arrivent au prochain jalon.",
+    "emptyHint": "Créez un pack à partir des textures vanilla ou importez un .zip existant.",
     "newPack": "Nouveau pack",
     "importPack": "Importer un .zip",
-    "comingSoon": "Bientôt disponible"
+    "workspace": "Espace de travail :",
+    "changeWorkspace": "Changer",
+    "filter": "Filtrer les packs"
   },
   "settings": {
     "title": "Paramètres",
@@ -72,6 +74,181 @@
       "installFailed": "l'installateur n'a pas pu être lancé",
       "noUpdate": "aucune mise à jour disponible",
       "failed": "erreur inconnue"
+    },
+    "withCode": "Une erreur est survenue ({code}).",
+    "vanilla": {
+      "versionUnknown": "Minecraft {version} n'est pas une version connue.",
+      "downloadNotAllowed": "Minecraft {version} n'est pas installé. Autorisez les téléchargements depuis Mojang dans les Paramètres pour l'obtenir.",
+      "downloadFailed": "Impossible de télécharger Minecraft {version} ({reason}).",
+      "checksumMismatch": "Le fichier Minecraft {version} téléchargé est corrompu. Veuillez réessayer.",
+      "invalidJar": "Ce fichier Minecraft est illisible ({reason}).",
+      "jarVersionMismatch": "Ce jar correspond à Minecraft {actual}, pas à {expected}.",
+      "extractFailed": "Impossible d'extraire les textures ({reason})."
+    },
+    "minecraft": {
+      "noVersionsFound": "Aucune version prise en charge de Minecraft n'a été trouvée dans {path}."
+    },
+    "packs": {
+      "notFound": "Ce pack n'existe plus.",
+      "unsupportedVersion": "Minecraft {version} n'est pas pris en charge.",
+      "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes."
+    },
+    "workspace": {
+      "invalidPath": "Ce dossier ne peut pas servir d'espace de travail."
+    },
+    "export": {
+      "targetNotSupported": "L'export vers Minecraft {target} n'est pas encore disponible (ce pack cible {authoring})."
+    },
+    "import": {
+      "invalidZip": "Ce fichier n'est pas une archive .zip valide.",
+      "notAPack": "Ce .zip ne contient pas de resource pack (pas de pack.mcmeta).",
+      "unsafePath": "L'archive contient un chemin dangereux : {path}",
+      "tooLarge": "L'archive est trop volumineuse ({reason}, limite {limit})."
     }
+  },
+  "common": {
+    "cancel": "Annuler",
+    "close": "Fermer"
+  },
+  "packs": {
+    "noDescription": "Aucune description",
+    "minecraft": "Minecraft {version}",
+    "changed": "aucun fichier modifié | 1 fichier modifié | {count} fichiers modifiés",
+    "updated": "Modifié le {date}",
+    "open": "Ouvrir",
+    "reveal": "Afficher le dossier",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer le pack",
+    "deleteConfirm": "Mettre « {name} » à la corbeille ? Vous pourrez le restaurer depuis la corbeille."
+  },
+  "newPack": {
+    "title": "Nouveau pack",
+    "name": "Nom",
+    "namePlaceholder": "Mon pack de feu",
+    "description": "Description",
+    "base": "Point de départ",
+    "baseVanilla": "Textures vanilla (modifier les textures du jeu)",
+    "baseEmpty": "Pack vide (ajouter vos propres fichiers)",
+    "version": "Version de Minecraft",
+    "versionHint": "Vous éditez pour cette version. L'export vers des versions plus anciennes arrivera plus tard.",
+    "vanillaRequired": "Textures vanilla nécessaires",
+    "create": "Créer"
+  },
+  "vanilla": {
+    "foundLocal": "Minecraft {version} a été trouvé sur cet ordinateur. Ses textures seront extraites (rien n'est envoyé en ligne).",
+    "notInstalled": "Minecraft {version} n'est pas installé sur cet ordinateur.",
+    "allowDownload": "Autoriser le téléchargement des fichiers du jeu depuis Mojang",
+    "downloadHint": "Utilisé seulement quand une version manque localement. Les fichiers viennent directement des serveurs de Mojang et restent sur cet ordinateur.",
+    "extract": "Extraire les textures",
+    "download": "Télécharger depuis Mojang",
+    "version": "Version",
+    "status": "État",
+    "latest": "dernière",
+    "state": {
+      "ready": "Prête",
+      "local": "Sur cet ordinateur",
+      "downloadable": "Non installée"
+    }
+  },
+  "minecraft": {
+    "title": "Minecraft",
+    "installs": "Installations détectées",
+    "addFolder": "Ajouter un dossier...",
+    "noInstalls": "Aucune installation de Minecraft trouvée. Ajoutez un dossier ou autorisez les téléchargements depuis Mojang.",
+    "launchers": {
+      "official": "Minecraft Launcher",
+      "prism": "Prism Launcher",
+      "multimc": "MultiMC",
+      "modrinth": "Modrinth App",
+      "curseforge": "CurseForge",
+      "custom": "Ajouté par vous"
+    }
+  },
+  "pack": {
+    "overview": "Vue d'ensemble",
+    "allTextures": "Toutes les textures",
+    "changedTotal": "{count} modifiées",
+    "textureCount": "aucune texture | 1 texture | {count} textures",
+    "modifiedCount": "{count} modifiées",
+    "animated": "Texture animée",
+    "status": {
+      "vanilla": "Vanilla",
+      "modified": "Modifiée",
+      "added": "Ajoutée"
+    },
+    "vanillaMissing": "Ce pack s'appuie sur les textures de Minecraft {version}, qui ne sont pas prêtes sur cet ordinateur."
+  },
+  "grid": {
+    "search": "Rechercher des textures",
+    "zoom": "Zoom",
+    "count": "{shown} sur {total}",
+    "filter": {
+      "all": "Toutes",
+      "changed": "Modifiées",
+      "vanilla": "Vanilla"
+    },
+    "selected": "aucune texture sélectionnée | 1 texture sélectionnée | {count} textures sélectionnées",
+    "selectAll": "Tout sélectionner",
+    "clearSelection": "Effacer",
+    "empty": "Aucune texture ne correspond."
+  },
+  "export": {
+    "open": "Exporter",
+    "title": "Exporter le pack",
+    "target": "Version de Minecraft",
+    "targetHint": "Les autres versions seront disponibles avec la migration entre versions.",
+    "changedOnly": "Seuls les fichiers modifiés et ajoutés sont exportés. Minecraft utilise ses propres textures pour tout le reste.",
+    "run": "Exporter le .zip",
+    "done": "Export terminé",
+    "summary": "{files} fichiers exportés pour Minecraft {version} vers {path}"
+  },
+  "import": {
+    "title": "Importation terminée",
+    "summary": "« {name} » importé : {files} fichiers conservés, {identical} identiques à vanilla retirés."
+  },
+  "report": {
+    "warnings": "Avertissements ({count})"
+  },
+  "jobs": {
+    "phase": {
+      "download": "Téléchargement",
+      "extract": "Extraction",
+      "index": "Indexation",
+      "read": "Lecture",
+      "write": "Écriture",
+      "collect": "Collecte des fichiers"
+    }
+  },
+  "category": {
+    "blocks": "Blocs",
+    "ores": "Minerais",
+    "tools": "Outils",
+    "weapons": "Armes",
+    "armor": "Armures",
+    "food": "Nourriture",
+    "materials": "Matériaux",
+    "entities": "Entités",
+    "gui": "Interface",
+    "particles": "Particules",
+    "environment": "Environnement",
+    "other": "Autres"
+  },
+  "warnings": {
+    "import": {
+      "formatMismatch": "Le pack a été conçu pour une autre version de Minecraft ; certaines textures ont pu changer de place (la migration entre versions viendra plus tard).",
+      "formatMissing": "pack.mcmeta n'indique pas de format de pack.",
+      "vanillaNotReady": "Les textures vanilla n'étaient pas prêtes, donc les fichiers identiques à vanilla ont été conservés."
+    },
+    "export": {
+      "vanillaNotReady": "Les textures vanilla n'étaient pas prêtes, donc les fichiers inchangés n'ont pas pu être ignorés.",
+      "invalidMcmeta": "pack.mcmeta était invalide et a été régénéré.",
+      "missingPackPng": "Le pack n'a pas d'icône pack.png.",
+      "invalidPng": "Fichier PNG invalide",
+      "invalidJson": "Fichier JSON invalide",
+      "invalidPath": "Chemin refusé par Minecraft (utilisez des minuscules, chiffres, _ - . /)",
+      "nonPowerOfTwo": "La taille de la texture n'est pas une puissance de deux",
+      "animationMismatch": "La hauteur de la texture animée ne correspond pas à ses images"
+    },
+    "identicalToVanilla": "Ignoré : identique à vanilla"
   }
 }

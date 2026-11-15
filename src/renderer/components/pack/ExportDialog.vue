@@ -1,0 +1,97 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import {
+  NAlert,
+  NButton,
+  NForm,
+  NFormItem,
+  NModal,
+  NSelect,
+  NSpace,
+  type SelectOption
+} from 'naive-ui'
+import type { ExportReport } from '@shared/model/pack'
+import JobProgressBar from '../common/JobProgressBar.vue'
+import type { PackStore } from '../../stores/pack'
+import { useVanillaStore } from '../../stores/vanilla'
+import { useErrorMessage } from '../../composables/useErrorMessage'
+
+const show = defineModel<boolean>('show', { required: true })
+const props = defineProps<{ store: PackStore }>()
+const emit = defineEmits<{ exported: [report: ExportReport] }>()
+
+const { t } = useI18n()
+const vanilla = useVanillaStore()
+const { showError } = useErrorMessage()
+const target = ref<string | null>(null)
+const exporting = ref(false)
+
+const authoring = computed(() => props.store.summary?.authoringVersion ?? null)
+// Exporting to other versions arrives with the migration tables (M7); they are listed but disabled for now.
+const options = computed<SelectOption[]>(() =>
+  vanilla.versions.map((v) => ({
+    value: v.versionId,
+    label: v.versionId,
+    disabled: v.versionId !== authoring.value
+  }))
+)
+
+watch(show, async (open) => {
+  if (!open) return
+  target.value = authoring.value
+  if (!vanilla.loaded) await vanilla.refresh().catch(showError)
+})
+
+async function run(): Promise<void> {
+  if (!target.value) return
+  exporting.value = true
+  try {
+    const report = await props.store.exportPack(target.value)
+    if (report) {
+      show.value = false
+      emit('exported', report)
+    }
+  } catch (err) {
+    showError(err)
+  } finally {
+    exporting.value = false
+  }
+}
+</script>
+
+<template>
+  <n-modal
+    v-model:show="show"
+    preset="card"
+    :title="t('export.title')"
+    style="width: 480px"
+    :mask-closable="!exporting"
+    data-testid="export-dialog"
+  >
+    <n-form label-placement="top">
+      <n-form-item :label="t('export.target')" :feedback="t('export.targetHint')">
+        <n-select v-model:value="target" :options="options" data-testid="export-target" />
+      </n-form-item>
+    </n-form>
+    <n-alert type="info" :show-icon="false">{{ t('export.changedOnly') }}</n-alert>
+    <template #footer>
+      <n-space justify="space-between" align="center">
+        <job-progress-bar v-if="exporting" kind="pack.export" />
+        <span v-else />
+        <n-space>
+          <n-button :disabled="exporting" @click="show = false">{{ t('common.cancel') }}</n-button>
+          <n-button
+            type="primary"
+            :loading="exporting"
+            :disabled="!target"
+            data-testid="export-run"
+            @click="run"
+          >
+            {{ t('export.run') }}
+          </n-button>
+        </n-space>
+      </n-space>
+    </template>
+  </n-modal>
+</template>

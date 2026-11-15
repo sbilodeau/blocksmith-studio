@@ -5,6 +5,7 @@ import { createAppI18n } from './i18n'
 import { createAppRouter } from './router'
 import { useSettingsStore } from './stores/settings'
 import { useUpdaterStore } from './stores/updater'
+import { useJobsStore } from './stores/jobs'
 import './styles/base.css'
 
 async function bootstrap(): Promise<void> {
@@ -16,6 +17,7 @@ async function bootstrap(): Promise<void> {
   const settings = useSettingsStore()
   await settings.load()
   await useUpdaterStore().init()
+  useJobsStore().init()
 
   app.mount('#app')
 }

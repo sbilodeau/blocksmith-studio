@@ -45,12 +45,37 @@ export class SettingsService {
   }
 
   async update(patch: SettingsPatch): Promise<Settings> {
-    this.settings = applySettingsPatch(this.settings, patch)
+    return this.replace(applySettingsPatch(this.settings, patch))
+  }
+
+  private async replace(next: Settings): Promise<Settings> {
+    this.settings = SettingsSchema.parse(next)
     const snapshot = this.settings
     this.writeQueue = this.writeQueue.then(() => this.write(snapshot))
     await this.writeQueue
     for (const listener of this.listeners) listener(snapshot)
     return snapshot
+  }
+
+  /** Main-process only: the renderer never sends file system paths into settings. */
+  async setWorkspacePath(path: string | undefined): Promise<Settings> {
+    return this.replace({ ...this.settings, workspacePath: path })
+  }
+
+  /** Main-process only: remembers a Minecraft folder or jar added by hand (deduplicated). */
+  async addMinecraftPath(path: string): Promise<Settings> {
+    if (this.settings.minecraftPaths.includes(path)) return this.settings
+    return this.replace({
+      ...this.settings,
+      minecraftPaths: [...this.settings.minecraftPaths, path]
+    })
+  }
+
+  async removeMinecraftPath(path: string): Promise<Settings> {
+    return this.replace({
+      ...this.settings,
+      minecraftPaths: this.settings.minecraftPaths.filter((p) => p !== path)
+    })
   }
 
   onChange(listener: (s: Settings) => void): () => void {

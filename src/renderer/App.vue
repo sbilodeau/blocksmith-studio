@@ -57,7 +57,10 @@ watch(
             <app-header />
           </n-layout-header>
           <update-banner />
-          <n-layout-content class="app-content" content-style="padding: 24px;">
+          <n-layout-content
+            class="app-content"
+            content-style="padding: 16px 24px; height: 100%; box-sizing: border-box;"
+          >
             <router-view />
           </n-layout-content>
         </n-layout>
@@ -77,5 +80,6 @@ watch(
 }
 .app-content {
   flex: 1;
+  min-height: 0;
 }
 </style>

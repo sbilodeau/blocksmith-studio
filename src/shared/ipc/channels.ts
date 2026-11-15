@@ -12,11 +12,33 @@ export const INVOKE_CHANNELS = [
   'updater.getStatus',
   'updater.check',
   'updater.download',
-  'updater.install'
+  'updater.install',
+  // Minecraft installs and vanilla assets
+  'minecraft.detect',
+  'minecraft.addPath',
+  'vanilla.availability',
+  'vanilla.prepare',
+  // Workspace and packs
+  'workspace.get',
+  'workspace.choose',
+  'packs.list',
+  'packs.create',
+  'packs.import',
+  'packs.delete',
+  'packs.reveal',
+  'pack.get',
+  'pack.textures',
+  'pack.categories',
+  'pack.export'
 ] as const
 
 /** Event channels (main -> renderer, via webContents.send). */
-export const EVENT_CHANNELS = ['settings.changed', 'updater.status'] as const
+export const EVENT_CHANNELS = [
+  'settings.changed',
+  'updater.status',
+  'job.progress',
+  'packs.changed'
+] as const
 
 export type InvokeChannel = (typeof INVOKE_CHANNELS)[number]
 export type EventChannel = (typeof EVENT_CHANNELS)[number]

@@ -42,6 +42,20 @@ describe('SettingsService (filesystem)', () => {
     expect(seen).toEqual(['fr'])
   })
 
+  it('stores main-only paths (workspace, Minecraft folders) without duplicates', async () => {
+    const service = SettingsService.forUserData(dir)
+    await service.load()
+    await service.setWorkspacePath('/tmp/ws')
+    await service.addMinecraftPath('/games/mc')
+    await service.addMinecraftPath('/games/mc')
+    const reloaded = SettingsService.forUserData(dir)
+    const s = await reloaded.load()
+    expect(s.workspacePath).toBe('/tmp/ws')
+    expect(s.minecraftPaths).toEqual(['/games/mc'])
+    await reloaded.removeMinecraftPath('/games/mc')
+    expect(reloaded.get().minecraftPaths).toEqual([])
+  })
+
   it('falls back to defaults and keeps a backup when the file is corrupted', async () => {
     await writeFile(join(dir, 'settings.json'), '{ not json', 'utf8')
     const service = SettingsService.forUserData(dir)

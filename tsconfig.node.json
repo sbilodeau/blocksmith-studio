@@ -8,6 +8,7 @@
     "src/preload/**/*",
     "src/shared/**/*",
     "tests/unit/**/*",
+    "tests/integration/**/*",
     "tests/e2e/**/*"
   ],
   "compilerOptions": {

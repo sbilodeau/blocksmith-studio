@@ -18,7 +18,13 @@ export const SettingsSchema = z.object({
     .object({
       autoCheck: z.boolean().default(true)
     })
-    .prefault({})
+    .prefault({}),
+  /** Folder that holds the packs. Unset = default (~/Documents/Blocksmith Studio). */
+  workspacePath: z.string().optional(),
+  /** Extra Minecraft folders or jars added by hand (auto-detected launchers are not stored). */
+  minecraftPaths: z.array(z.string()).default([]),
+  /** User agreed to download client jars from Mojang when a version is missing locally. */
+  allowMojangDownload: z.boolean().default(false)
 })
 
 export type Settings = z.infer<typeof SettingsSchema>
@@ -28,7 +34,8 @@ export const SettingsPatchSchema = z
   .object({
     language: LanguageSchema.optional(),
     theme: ThemeSchema.optional(),
-    updates: z.object({ autoCheck: z.boolean().optional() }).strict().optional()
+    updates: z.object({ autoCheck: z.boolean().optional() }).strict().optional(),
+    allowMojangDownload: z.boolean().optional()
   })
   .strict()
 
@@ -44,6 +51,9 @@ export function applySettingsPatch(current: Settings, patch: SettingsPatch): Set
     ...current,
     ...(patch.language !== undefined ? { language: patch.language } : {}),
     ...(patch.theme !== undefined ? { theme: patch.theme } : {}),
+    ...(patch.allowMojangDownload !== undefined
+      ? { allowMojangDownload: patch.allowMojangDownload }
+      : {}),
     updates: { ...current.updates, ...(patch.updates ?? {}) }
   })
 }

@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { NMessageProvider } from 'naive-ui'
 import SettingsView from '@renderer/views/SettingsView.vue'
 import { createAppI18n } from '@renderer/i18n'
 import { useSettingsStore } from '@renderer/stores/settings'
@@ -20,7 +21,7 @@ const Host = defineComponent({
       (l) => (locale.value = l),
       { immediate: true }
     )
-    return () => h(SettingsView)
+    return () => h(NMessageProvider, () => h(SettingsView))
   }
 })
 

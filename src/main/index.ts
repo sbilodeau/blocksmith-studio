@@ -1,10 +1,16 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { createMainWindow } from './window'
 import { hardenSession, hardenWebContents } from './security'
 import { registerIpcHandlers } from './ipc/handlers'
+import { registerVanillaHandlers } from './ipc/vanilla-handlers'
+import { registerPackHandlers } from './ipc/pack-handlers'
 import { send } from './ipc/registry'
+import { registerAssetScheme, handleAssetProtocol } from './protocol'
+import { createJobReporter } from './jobs'
 import { SettingsService } from './services/settings'
 import { createUpdaterService } from './services/updater'
+import { createDefaultVanillaStore } from './services/vanilla'
+import { createPackService } from './services/packs'
 
 const isDev = !app.isPackaged
 
@@ -13,10 +19,14 @@ if (process.env['BLOCKSMITH_USER_DATA']) {
   app.setPath('userData', process.env['BLOCKSMITH_USER_DATA'])
 }
 
+// Custom schemes must be registered before the app is ready.
+registerAssetScheme()
+
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   let mainWindow: BrowserWindow | null = null
+  const webContents = (): Electron.WebContents | undefined => mainWindow?.webContents
 
   app.on('second-instance', () => {
     if (mainWindow) {
@@ -35,17 +45,87 @@ if (!app.requestSingleInstanceLock()) {
     await settings.load()
 
     const updater = createUpdaterService()
+    const jobs = createJobReporter((progress) => send(webContents(), 'job.progress', progress))
 
+    const vanilla = createDefaultVanillaStore({
+      userDataDir: app.getPath('userData'),
+      getMinecraftPaths: () => settings.get().minecraftPaths
+    })
+
+    const packs = createPackService({
+      vanilla,
+      jobs,
+      documentsDir: app.getPath('documents'),
+      getWorkspacePath: () => settings.get().workspacePath,
+      setWorkspacePath: async (path) => {
+        await settings.setWorkspacePath(path)
+      },
+      trashItem: (path) => shell.trashItem(path),
+      showItemInFolder: (path) => shell.showItemInFolder(path),
+      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+    })
+
+    // Dialogs are looked up at call time (E2E tests replace them on the dialog module).
+    const parent = (): BrowserWindow | undefined => mainWindow ?? undefined
     registerIpcHandlers({ settings, updater })
+    registerVanillaHandlers({
+      vanilla,
+      settings,
+      jobs,
+      dialog: (options) => {
+        const win = parent()
+        return win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options)
+      },
+      addMinecraftPath: (path) => settings.addMinecraftPath(path)
+    })
+    registerPackHandlers({
+      packs,
+      dialogs: {
+        chooseFolder: async (defaultPath) => {
+          const options: Electron.OpenDialogOptions = {
+            defaultPath,
+            properties: ['openDirectory', 'createDirectory']
+          }
+          const win = parent()
+          const r = win
+            ? await dialog.showOpenDialog(win, options)
+            : await dialog.showOpenDialog(options)
+          return r.canceled ? null : (r.filePaths[0] ?? null)
+        },
+        openZip: async () => {
+          const options: Electron.OpenDialogOptions = {
+            properties: ['openFile'],
+            filters: [{ name: 'Resource pack', extensions: ['zip'] }]
+          }
+          const win = parent()
+          const r = win
+            ? await dialog.showOpenDialog(win, options)
+            : await dialog.showOpenDialog(options)
+          return r.canceled ? null : (r.filePaths[0] ?? null)
+        },
+        saveZip: async (defaultFileName) => {
+          const options: Electron.SaveDialogOptions = {
+            defaultPath: defaultFileName,
+            filters: [{ name: 'Resource pack', extensions: ['zip'] }]
+          }
+          const win = parent()
+          const r = win
+            ? await dialog.showSaveDialog(win, options)
+            : await dialog.showSaveDialog(options)
+          return r.canceled || !r.filePath ? null : r.filePath
+        }
+      }
+    })
+    handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 
     mainWindow = createMainWindow()
     mainWindow.on('closed', () => (mainWindow = null))
 
     settings.onChange((s) => {
-      send(mainWindow?.webContents, 'settings.changed', s)
+      send(webContents(), 'settings.changed', s)
       updater.start({ autoCheck: s.updates.autoCheck })
     })
-    updater.onStatus((status) => send(mainWindow?.webContents, 'updater.status', status))
+    updater.onStatus((status) => send(webContents(), 'updater.status', status))
     updater.start({ autoCheck: settings.get().updates.autoCheck })
 
     app.on('activate', () => {

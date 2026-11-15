@@ -16,6 +16,10 @@ export function createAppI18n(locale: Language = 'en'): AppI18n {
     legacy: false,
     locale,
     fallbackLocale: 'en',
-    messages
+    messages,
+    datetimeFormats: {
+      en: { short: { year: 'numeric', month: 'short', day: 'numeric' } },
+      fr: { short: { year: 'numeric', month: 'short', day: 'numeric' } }
+    }
   })
 }
