@@ -30,7 +30,7 @@ export interface DetectFs {
   isFile(path: string): Promise<boolean>
   isDirectory(path: string): Promise<boolean>
   readFile(path: string): Promise<Uint8Array>
-  /** Cache key for a file (size + mtime); null if missing. */
+  /** Cache key for a file, `<size in bytes>:<mtime>`; null if missing. */
   fingerprint(path: string): Promise<string | null>
 }
 
@@ -143,6 +143,7 @@ async function scanLayouts(
 }
 
 const jarIdCache = new Map<string, string | null>()
+const MAX_JAR_BYTES = 256 * 1024 * 1024
 
 /** Version id of a client jar, from its file name when it is a known id, else from its version.json. */
 export async function jarVersionId(
@@ -155,7 +156,8 @@ export async function jarVersionId(
   if (fromName && versionIds.includes(fromName)) return fromName
 
   const fingerprint = await fs.fingerprint(jarPath)
-  if (!fingerprint) return null
+  // Client jars are ~30-50 MB; do not load arbitrary huge files to look for a version.json.
+  if (!fingerprint || Number.parseInt(fingerprint, 10) > MAX_JAR_BYTES) return null
   const key = `${jarPath}|${fingerprint}`
   if (jarIdCache.has(key)) return jarIdCache.get(key) ?? null
   let id: string | null

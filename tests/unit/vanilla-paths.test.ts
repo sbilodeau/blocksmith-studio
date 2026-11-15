@@ -49,6 +49,10 @@ describe('resolveInside', () => {
     )
   })
 
+  it('accepts names that merely start with two dots', () => {
+    expect(resolveInside(root, '..hidden/file.png')).toBe(join(root, '..hidden', 'file.png'))
+  })
+
   it.each(['../outside.png', 'a/../../outside', '/abs', 'a\\b', ''])('rejects %j', (path) => {
     expect(resolveInside(root, path)).toBeNull()
   })

@@ -23,7 +23,7 @@ export function resolveInside(root: string, relativePath: string): string | null
   const base = resolve(root)
   const target = resolve(join(base, ...relativePath.split('/')))
   const rel = relative(base, target)
-  if (rel === '' || rel.startsWith('..') || isAbsolute(rel) || rel.split(sep).includes('..')) {
+  if (rel === '' || isAbsolute(rel) || rel.split(sep).includes('..')) {
     return null
   }
   return target
