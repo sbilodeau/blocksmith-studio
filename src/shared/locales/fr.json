@@ -340,5 +340,38 @@
       "save": "{name} enregistrée",
       "revert": "{name} remise à vanilla"
     }
+  },
+  "preview": {
+    "toggle": "3D",
+    "toggleHint": "Aperçu 3D en direct",
+    "loading": "Chargement du modèle 3D...",
+    "failed": "Pas d'aperçu 3D pour cette texture.",
+    "autoRotate": "Rotation",
+    "walk": "Marche",
+    "floor": "Sol",
+    "shading": {
+      "game": "Lumière du jeu",
+      "studio": "Lumière studio"
+    },
+    "background": {
+      "dark": "Sombre",
+      "light": "Clair",
+      "checker": "Damier",
+      "sky": "Ciel"
+    },
+    "view": {
+      "front": "Face",
+      "back": "Dos",
+      "left": "Gauche",
+      "right": "Droite",
+      "top": "Dessus",
+      "iso": "3/4"
+    },
+    "kind": {
+      "block": "Modèle de bloc",
+      "item": "Objet",
+      "entity": "Entité",
+      "flat": "À plat"
+    }
   }
 }

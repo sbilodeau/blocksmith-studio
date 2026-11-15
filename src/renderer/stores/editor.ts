@@ -97,6 +97,11 @@ export function useEditorStore(packId: string) {
 
     const packHistory = ref<HistoryState | null>(null)
 
+    /** 3D preview panel visibility (kept while the tab is open). */
+    const show3d = ref(false)
+    /** Pixel hovered in the 2D canvas or on the 3D model, highlighted in the other view. */
+    const linkedHover = ref<{ x: number; y: number; source: '2d' | '3d' } | null>(null)
+
     const dirty = computed(() => {
       void revision.value
       const img = image.value
@@ -435,6 +440,8 @@ export function useEditorStore(packId: string) {
       compare,
       peekVanilla,
       packHistory,
+      show3d,
+      linkedHover,
       dirty,
       canUndo,
       canRedo,

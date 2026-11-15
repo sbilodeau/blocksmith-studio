@@ -36,7 +36,8 @@ export const INVOKE_CHANNELS = [
   'texture.revert',
   'history.get',
   'history.undo',
-  'history.redo'
+  'history.redo',
+  'texture.preview'
 ] as const
 
 /** Event channels (main -> renderer, via webContents.send). */

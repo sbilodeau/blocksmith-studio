@@ -1,0 +1,52 @@
+{
+  "id": "skeleton",
+  "textureSize": [64, 32],
+  "animation": "biped",
+  "textures": [
+    "assets/minecraft/textures/entity/skeleton/skeleton.png",
+    "assets/minecraft/textures/entity/skeleton/stray.png",
+    "assets/minecraft/textures/entity/skeleton/wither_skeleton.png",
+    "assets/minecraft/textures/entity/skeleton/bogged.png"
+  ],
+  "parts": [
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 24, 0],
+      "boxes": [
+        { "origin": [-4, 24, -4], "size": [8, 8, 8], "uv": [0, 0] },
+        { "origin": [-4, 24, -4], "size": [8, 8, 8], "uv": [32, 0], "inflate": 0.5 }
+      ]
+    },
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 24, 0],
+      "boxes": [{ "origin": [-4, 12, -2], "size": [8, 12, 4], "uv": [16, 16] }]
+    },
+    {
+      "name": "right_arm",
+      "role": "rightArm",
+      "pivot": [-5, 22, 0],
+      "boxes": [{ "origin": [-6, 12, -1], "size": [2, 12, 2], "uv": [40, 16] }]
+    },
+    {
+      "name": "left_arm",
+      "role": "leftArm",
+      "pivot": [5, 22, 0],
+      "boxes": [{ "origin": [4, 12, -1], "size": [2, 12, 2], "uv": [40, 16], "mirror": true }]
+    },
+    {
+      "name": "right_leg",
+      "role": "rightLeg",
+      "pivot": [-2, 12, 0],
+      "boxes": [{ "origin": [-3, 0, -1], "size": [2, 12, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "left_leg",
+      "role": "leftLeg",
+      "pivot": [2, 12, 0],
+      "boxes": [{ "origin": [1, 0, -1], "size": [2, 12, 2], "uv": [0, 16], "mirror": true }]
+    }
+  ]
+}

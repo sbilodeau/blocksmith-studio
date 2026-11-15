@@ -13,6 +13,7 @@ import {
 } from '../model/pack'
 import type { JobProgress } from '../model/jobs'
 import type { HistoryState, TextureData } from '../model/history'
+import type { PreviewModel } from '../model/preview'
 
 /** Typed, i18n-keyed error returned across IPC (message key: `errors.<code>`). */
 export interface AppError {
@@ -77,7 +78,8 @@ export const inputSchemas = {
   'texture.revert': TextureRef,
   'history.get': PackRef,
   'history.undo': PackRef,
-  'history.redo': PackRef
+  'history.redo': PackRef,
+  'texture.preview': TextureRef
 } satisfies Record<InvokeChannel, z.ZodType>
 
 /** Output types (compile-time only; main is trusted). */
@@ -122,6 +124,8 @@ export interface InvokeOutputs {
   'history.get': HistoryState
   'history.undo': HistoryState
   'history.redo': HistoryState
+  /** How to show the texture in 3D: block model, item sprite, entity geometry or flat fallback. */
+  'texture.preview': PreviewModel
 }
 
 export type InvokeInput<C extends InvokeChannel> = z.input<(typeof inputSchemas)[C]>

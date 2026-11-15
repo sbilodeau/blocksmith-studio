@@ -9,6 +9,7 @@ import EditorToolbar from './EditorToolbar.vue'
 import ColorPanel from './ColorPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import EditorIcon from './EditorIcon.vue'
+import Preview3d from '../preview3d/Preview3D.vue'
 import { useEditorStore, type EditorTool } from '../../stores/editor'
 import { usePackStore } from '../../stores/pack'
 import { useErrorMessage } from '../../composables/useErrorMessage'
@@ -21,6 +22,24 @@ const { showError } = useErrorMessage()
 const pack = computed(() => usePackStore(props.packId))
 const editor = computed(() => useEditorStore(props.packId))
 const canvasRef = ref<InstanceType<typeof PixelCanvas> | null>(null)
+
+/** Width of the 3D preview pane, adjusted with the drag handle. */
+const previewWidth = ref(380)
+function startResize(e: PointerEvent): void {
+  const startX = e.clientX
+  const startWidth = previewWidth.value
+  const target = e.target as HTMLElement
+  target.setPointerCapture(e.pointerId)
+  const move = (ev: PointerEvent): void => {
+    previewWidth.value = Math.min(900, Math.max(220, startWidth - (ev.clientX - startX)))
+  }
+  const up = (): void => {
+    target.removeEventListener('pointermove', move)
+    target.removeEventListener('pointerup', up)
+  }
+  target.addEventListener('pointermove', move)
+  target.addEventListener('pointerup', up)
+}
 const hoverInfo = ref<{ x: number; y: number; color: Rgba } | null>(null)
 
 const name = computed(() => editor.value.entry?.name ?? '')
@@ -152,6 +171,7 @@ function onKeydown(e: KeyboardEvent): void {
   else if (key === '-') canvasRef.value?.zoomBy(-1)
   else if (key === '0') canvasRef.value?.fit()
   else if (key === 'c' && ed.vanilla) ed.peekVanilla = true
+  else if (key === '3') ed.show3d = !ed.show3d
   else if (key === 'pageup' || (e.altKey && key === 'arrowleft')) go('prev')
   else if (key === 'pagedown' || (e.altKey && key === 'arrowright')) go('next')
   else handled = false
@@ -226,6 +246,19 @@ const statusTag = computed(() => {
           </template>
           {{ t('editor.compareHint') }}
         </n-tooltip>
+        <n-tooltip>
+          <template #trigger>
+            <n-button
+              size="small"
+              :type="editor.show3d ? 'primary' : 'default'"
+              data-testid="editor-3d"
+              @click="editor.show3d = !editor.show3d"
+            >
+              {{ t('preview.toggle') }}
+            </n-button>
+          </template>
+          {{ t('editor.shortcut', { label: t('preview.toggleHint'), key: '3' }) }}
+        </n-tooltip>
         <n-button
           v-if="editor.vanilla && editor.entry?.status === 'modified'"
           size="small"
@@ -267,6 +300,12 @@ const statusTag = computed(() => {
             </n-text>
             <pixel-canvas ref="canvasRef" :pack-id="packId" @hover="(h) => (hoverInfo = h)" />
           </div>
+          <template v-if="editor.show3d">
+            <div class="resizer" data-testid="preview3d-resizer" @pointerdown="startResize" />
+            <div class="pane preview-pane" :style="{ flex: `0 0 ${previewWidth}px` }">
+              <preview3d :pack-id="packId" />
+            </div>
+          </template>
         </div>
         <div class="status" data-testid="editor-status">
           <n-text v-if="editor.image" depth="3">
@@ -355,6 +394,18 @@ const statusTag = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+.resizer {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  border-radius: 3px;
+  background: rgba(128, 128, 128, 0.15);
+}
+.resizer:hover {
+  background: rgba(24, 160, 88, 0.4);
+}
+.preview-pane {
+  min-width: 220px;
 }
 .pane-label {
   font-size: 11px;

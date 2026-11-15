@@ -5,6 +5,18 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M2b - Live 3D preview
+
+- 3D panel in the editor (3D button or key 3, resizable): updates on every stroke, orbit/zoom/pan, preset views,
+  auto-rotate, floor grid, in-game or studio lighting, backgrounds
+- Blocks shown on their real model resolved from vanilla and pack blockstates/models (parents, texture variables,
+  element rotation, uv rotation, tints); about 96% of 1.21.4 block textures resolve to a real model, the rest use a
+  cube
+- Items shown as an extruded sprite; entities shown on built-in geometry for 20 definitions (zombie, husk, drowned,
+  skeleton family, player wide/slim, armor stand, armor layers, creeper, pig, cow, sheep, chicken, spider, enderman,
+  villager, wolf, cat) with a walk animation
+- Animated textures play with their .png.mcmeta timing; linked hover between the 2D canvas and the 3D model
+
 ### M2 - Pixel editor
 
 - 1:1 editor in the pack tab: pencil, eraser, paint bucket (tolerance, contiguous), eyedropper, line, rectangle
