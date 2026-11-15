@@ -11,6 +11,7 @@ import { VanillaError, VanillaErrorCode } from './errors'
 import { isSafeRelativePath, resolveInside } from './paths'
 import { readPngSize } from './png'
 import { parseJarVersionJson } from './version-json'
+import { ENTITY_MODELS_FILE, extractEntityModelsFromJar } from '../entity-models/extract'
 
 export const INDEX_FILE = 'index.json'
 
@@ -178,6 +179,20 @@ export async function extractVanillaJar(
     entries[path] = indexEntry(path, files[path], files)
     if ((i + 1) % PROGRESS_STEP === 0 || i + 1 === total) onProgress('index', i + 1, total)
   })
+
+  // Phase 3: entity model geometry from the jar's code (26.1+). Never fails the extraction.
+  try {
+    const models = extractEntityModelsFromJar(
+      new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength),
+      {
+        versionId: job.versionId,
+        now
+      }
+    )
+    if (models) await writeFile(join(job.outDir, ENTITY_MODELS_FILE), JSON.stringify(models))
+  } catch {
+    // The store builds the file on first use when it is missing.
+  }
 
   const index: VanillaIndex = {
     schemaVersion: 1,

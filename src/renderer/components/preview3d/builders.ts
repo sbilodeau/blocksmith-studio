@@ -362,12 +362,16 @@ export function buildEntity(
       // Minecraft applies part rotations x, then y, then z (matrix Rz * Ry * Rx = three.js order 'ZYX').
       pivot.rotation.set(...(part.rotation.map((d) => THREE.MathUtils.degToRad(d)) as Vec3), 'ZYX')
     }
+    if (part.scale) pivot.scale.set(...part.scale)
     pivot.userData['rest'] = pivot.rotation.clone()
     if (part.role) roles.set(part.role, pivot)
     const qb = new QuadBuilder()
     let flat = false
     for (const box of part.boxes) {
-      flat ||= box.size.some((s) => s === 0) || (box.inflate ?? 0) > 0
+      flat ||=
+        box.size.some((s) => s === 0) ||
+        (Array.isArray(box.inflate) ? box.inflate.some((g) => g > 0) : (box.inflate ?? 0) > 0) ||
+        (box.faces !== undefined && box.faces.length < 6)
       addBox(qb, box, part.pivot, tw, th, mode)
     }
     if (qb.positions.length) {
@@ -392,19 +396,22 @@ function addBox(
   th: number,
   mode: ShadingMode
 ): void {
-  const inflate = box.inflate ?? 0
+  const g: Vec3 = Array.isArray(box.inflate)
+    ? box.inflate
+    : [box.inflate ?? 0, box.inflate ?? 0, box.inflate ?? 0]
   const from: Vec3 = [
-    box.origin[0] - inflate - pivot[0],
-    box.origin[1] - inflate - pivot[1],
-    box.origin[2] - inflate - pivot[2]
+    box.origin[0] - g[0] - pivot[0],
+    box.origin[1] - g[1] - pivot[1],
+    box.origin[2] - g[2] - pivot[2]
   ]
   const to: Vec3 = [
-    box.origin[0] + box.size[0] + inflate - pivot[0],
-    box.origin[1] + box.size[1] + inflate - pivot[1],
-    box.origin[2] + box.size[2] + inflate - pivot[2]
+    box.origin[0] + box.size[0] + g[0] - pivot[0],
+    box.origin[1] + box.size[1] + g[1] - pivot[1],
+    box.origin[2] + box.size[2] + g[2] - pivot[2]
   ]
   const rects = boxUvRects(box)
   for (const face of Object.keys(rects) as BoxFace[]) {
+    if (box.faces && !box.faces.includes(face)) continue
     const r = rects[face]
     if (r.u1 === r.u2 || r.v1 === r.v2) continue // zero-area face of a flat plane
     const dir = BOX_FACE_DIRECTION[face]

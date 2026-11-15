@@ -3,7 +3,7 @@
  * vanilla cache in userData/vanilla/<versionId>/ (ready when its index.json exists).
  */
 import { existsSync, statSync } from 'node:fs'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { McVersion, VersionTable } from '@shared/model/versions'
 import type { MinecraftInstall, VanillaAvailability, VanillaIndex } from '@shared/model/vanilla'
@@ -25,6 +25,13 @@ import {
 } from './detect'
 import { VanillaError, VanillaErrorCode } from './errors'
 import { INDEX_FILE, type ExtractRunner } from './extract'
+import {
+  ENTITY_MODELS_FILE,
+  ENTITY_MODELS_SCHEMA_VERSION,
+  extractEntityModelsFromJar,
+  parseEntityModels,
+  type JarEntityModels
+} from '../entity-models/extract'
 import type { MojangClient } from './mojang'
 import { isSafeVersionId, resolveInside } from './paths'
 
@@ -41,6 +48,11 @@ export interface VanillaStoreDeps {
   mojang: MojangClient
   /** Extraction runner: a worker thread in the app, extractVanillaJar directly in tests. */
   extract: ExtractRunner
+  /**
+   * Reads entity models from a jar for versions extracted before M3b (defaults to running the interpreter
+   * inline; it takes a fraction of a second).
+   */
+  extractModels?: (jarPath: string, versionId: string) => Promise<JarEntityModels | null>
   logger?: Pick<Console, 'warn'>
 }
 
@@ -78,6 +90,7 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
   const vanillaRoot = join(deps.userDataDir, 'vanilla')
   const jarsDir = join(deps.userDataDir, 'jars')
   const indexCache = new Map<string, VanillaIndex>()
+  const modelsCache = new Map<string, Promise<JarEntityModels | null>>()
   const inflight = new Map<string, { promise: Promise<VanillaIndex>; listeners: Set<ProgressFn> }>()
 
   const versionDir = (id: string): string => join(vanillaRoot, id)
@@ -147,6 +160,7 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
     }
 
     indexCache.delete(version.id)
+    modelsCache.delete(version.id)
     const index = await deps.extract(
       { jarPath, outDir: versionDir(version.id), versionId: version.id },
       progress
@@ -160,6 +174,48 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
     }
     indexCache.set(version.id, index)
     return index
+  }
+
+  const extractModels =
+    deps.extractModels ??
+    (async (jarPath: string, versionId: string): Promise<JarEntityModels | null> =>
+      extractEntityModelsFromJar(new Uint8Array(await readFile(jarPath)), { versionId, now }))
+
+  /** Cached file, else built once from the jar (versions extracted before M3b). */
+  async function loadEntityModels(versionId: string): Promise<JarEntityModels | null> {
+    const file = join(versionDir(versionId), ENTITY_MODELS_FILE)
+    try {
+      const cached = parseEntityModels(await readFile(file, 'utf8'))
+      if (cached) return cached
+    } catch {
+      // not written yet
+    }
+    if (!(await indexExists(versionId))) return null
+    const jarPath = await localJar(versionId, await detect())
+    if (!jarPath) return null
+    let models: JarEntityModels | null
+    try {
+      models = await extractModels(jarPath, versionId)
+    } catch (err) {
+      logger.warn(`[vanilla] ${versionId}: entity models not read: ${String(err)}`)
+      return null
+    }
+    // Obfuscated (pre-26.1) jars: remember that there is nothing to read.
+    const out: JarEntityModels = models ?? {
+      schemaVersion: ENTITY_MODELS_SCHEMA_VERSION,
+      versionId,
+      generatedAt: now().toISOString(),
+      layers: {},
+      skipped: [],
+      stats: { steps: 0, aborts: 0 }
+    }
+    try {
+      await writeFile(`${file}.tmp`, JSON.stringify(out))
+      await rename(`${file}.tmp`, file)
+    } catch (err) {
+      logger.warn(`[vanilla] ${versionId}: could not cache entity models: ${String(err)}`)
+    }
+    return out
   }
 
   return {
@@ -218,6 +274,20 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
     },
 
     getIndex,
+
+    entityModels(versionId) {
+      if (!knownVersion(versionId)) return Promise.resolve(null)
+      let p = modelsCache.get(versionId)
+      if (!p) {
+        p = loadEntityModels(versionId)
+        modelsCache.set(versionId, p)
+        // Not extracted yet / jar missing: try again next time.
+        void p.then((m) => {
+          if (!m) modelsCache.delete(versionId)
+        })
+      }
+      return p
+    },
 
     resolveFile(versionId, packPath): string | null {
       if (!knownVersion(versionId)) return null

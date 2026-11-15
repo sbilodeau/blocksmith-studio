@@ -22,9 +22,13 @@ export interface UvRect {
 }
 
 export function boxUvRects(
-  box: Pick<EntityBox, 'size' | 'uv' | 'mirror'>
+  box: Pick<EntityBox, 'size' | 'uv' | 'mirror' | 'uvScale'>
 ): Record<BoxFace, UvRect> {
-  const [w, h, d] = box.size
+  // Minecraft lays the UVs out from the exact box sizes, multiplied by the cube's texScale.
+  const [su, sv] = box.uvScale ?? [1, 1]
+  const w = box.size[0] * su
+  const h = box.size[1] * sv
+  const d = box.size[2] * su
   const [u, v] = box.uv
   const rects: Record<BoxFace, UvRect> = {
     top: { u1: u + d, v1: v, u2: u + d + w, v2: v + d },
@@ -49,8 +53,11 @@ export function boxUvRects(
 }
 
 /** Total pixel area covered by a box's UV layout: (2d + 2w) x (d + h). */
-export function boxUvExtent(box: Pick<EntityBox, 'size' | 'uv'>): UvRect {
-  const [w, h, d] = box.size
+export function boxUvExtent(box: Pick<EntityBox, 'size' | 'uv' | 'uvScale'>): UvRect {
+  const [su, sv] = box.uvScale ?? [1, 1]
+  const w = box.size[0] * su
+  const h = box.size[1] * sv
+  const d = box.size[2] * su
   const [u, v] = box.uv
   return { u1: u, v1: v, u2: u + 2 * d + 2 * w, v2: v + d + h }
 }

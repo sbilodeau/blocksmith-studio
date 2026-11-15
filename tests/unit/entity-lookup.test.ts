@@ -88,5 +88,6 @@ describe('entityFitsTexture', () => {
     expect(entityFitsTexture(wolf, 128, 64)).toBe(true)
     expect(entityFitsTexture(wolf, 64, 64)).toBe(false)
     expect(entityFitsTexture(wolf, 32, 32)).toBe(false)
+    expect(entityFitsTexture(wolf, 64, 48)).toBe(false)
   })
 })

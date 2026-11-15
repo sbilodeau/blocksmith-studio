@@ -1,0 +1,823 @@
+{
+  "schemaVersion": 1,
+  "description": "Which model layer of the Minecraft jar each entity texture is drawn on (names only, no geometry). Read by the 3D preview with the models extracted from the user's jar.",
+  "entries": [
+    { "textures": ["assets/minecraft/textures/entity/allay/*.png"], "layer": "allay#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/armadillo/armadillo.png"],
+      "layer": "armadillo#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/armadillo/armadillo_baby.png"],
+      "layer": "armadillo_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/armorstand/*.png"],
+      "layer": "armor_stand#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/axolotl/axolotl_*_baby.png"],
+      "layer": "axolotl_baby#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/axolotl/axolotl_{blue,cyan,gold,lucy,wild}.png"
+      ],
+      "layer": "axolotl#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/banner/banner_base.png"],
+      "layer": "standing_banner#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/banner/{base,border,bricks,circle,creeper,cross,curly_border,diagonal_left,diagonal_right,diagonal_up_left,diagonal_up_right,flow,flower,globe,gradient,gradient_up,guster,half_horizontal,half_horizontal_bottom,half_vertical,half_vertical_right,mojang,piglin,rhombus,skull,small_stripes,square_bottom_left,square_bottom_right,square_top_left,square_top_right,straight_cross,stripe_bottom,stripe_center,stripe_downleft,stripe_downright,stripe_left,stripe_middle,stripe_right,stripe_top,triangle_bottom,triangle_top,triangles_bottom,triangles_top}.png"
+      ],
+      "layer": "standing_banner#flag"
+    },
+    { "textures": ["assets/minecraft/textures/entity/bat/*.png"], "layer": "bat#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/bear/polarbear.png"],
+      "layer": "polar_bear#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/bear/polarbear_baby.png"],
+      "layer": "polar_bear_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/bee/bee*_baby.png"],
+      "layer": "bee_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/bee/bee{,_angry,_angry_nectar,_nectar}.png"],
+      "layer": "bee#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/bee/bee_stinger.png"],
+      "layer": "bee_stinger#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/bell/bell_body.png"], "layer": "bell#main" },
+    { "textures": ["assets/minecraft/textures/entity/blaze/*.png"], "layer": "blaze#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/acacia.png"],
+      "layer": "boat/acacia#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/bamboo.png"],
+      "layer": "boat/bamboo#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/boat/birch.png"], "layer": "boat/birch#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/cherry.png"],
+      "layer": "boat/cherry#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/dark_oak.png"],
+      "layer": "boat/dark_oak#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/jungle.png"],
+      "layer": "boat/jungle#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/mangrove.png"],
+      "layer": "boat/mangrove#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/boat/oak.png"], "layer": "boat/oak#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/pale_oak.png"],
+      "layer": "boat/pale_oak#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/poplar.png"],
+      "layer": "boat/poplar#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/boat/spruce.png"],
+      "layer": "boat/spruce#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/breeze/breeze.png"], "layer": "breeze#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/breeze/breeze_eyes.png"],
+      "layer": "breeze#eyes"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/breeze/breeze_wind.png"],
+      "layer": "breeze#wind"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/camel/camel.png",
+        "assets/minecraft/textures/entity/camel/camel_husk.png"
+      ],
+      "layer": "camel#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/camel/camel_baby.png"],
+      "layer": "camel_baby#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/cat/cat_{all_black,black,british_shorthair,calico,jellie,persian,ragdoll,red,siamese,tabby,white}.png"
+      ],
+      "layer": "cat#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/cat/cat_{all_black,black,british_shorthair,calico,jellie,persian,ragdoll,red,siamese,tabby,white}_baby.png"
+      ],
+      "layer": "cat_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/cat/cat_collar.png"], "layer": "cat#collar" },
+    {
+      "textures": ["assets/minecraft/textures/entity/cat/cat_collar_baby.png"],
+      "layer": "cat_baby#collar"
+    },
+    { "textures": ["assets/minecraft/textures/entity/cat/ocelot.png"], "layer": "ocelot#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/cat/ocelot_baby.png"],
+      "layer": "ocelot_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest/*_left.png"],
+      "layer": "double_chest_left#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest/*_right.png"],
+      "layer": "double_chest_right#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/chest/{christmas,copper,copper_exposed,copper_oxidized,copper_weathered,ender,normal,trapped}.png"
+      ],
+      "layer": "chest#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/acacia.png"],
+      "layer": "chest_boat/acacia#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/bamboo.png"],
+      "layer": "chest_boat/bamboo#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/birch.png"],
+      "layer": "chest_boat/birch#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/cherry.png"],
+      "layer": "chest_boat/cherry#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/dark_oak.png"],
+      "layer": "chest_boat/dark_oak#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/jungle.png"],
+      "layer": "chest_boat/jungle#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/mangrove.png"],
+      "layer": "chest_boat/mangrove#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/oak.png"],
+      "layer": "chest_boat/oak#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/pale_oak.png"],
+      "layer": "chest_boat/pale_oak#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/poplar.png"],
+      "layer": "chest_boat/poplar#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chest_boat/spruce.png"],
+      "layer": "chest_boat/spruce#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chicken/chicken_{temperate,warm}.png"],
+      "layer": "chicken#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chicken/chicken_cold.png"],
+      "layer": "cold_chicken#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/chicken/chicken_*_baby.png"],
+      "layer": "chicken_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/conduit/base.png"], "layer": "conduit#shell" },
+    { "textures": ["assets/minecraft/textures/entity/conduit/cage.png"], "layer": "conduit#cage" },
+    {
+      "textures": ["assets/minecraft/textures/entity/conduit/{closed,open}_eye.png"],
+      "layer": "conduit#eye"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/conduit/wind{,_vertical}.png"],
+      "layer": "conduit#wind"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/copper_golem/copper_golem{,_exposed,_oxidized,_weathered}.png",
+        "assets/minecraft/textures/entity/copper_golem/copper_golem_eyes*.png"
+      ],
+      "layer": "copper_golem#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/cow/cow_temperate.png"], "layer": "cow#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/cow/cow_temperate_baby.png"],
+      "layer": "cow_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/cow/cow_cold.png"], "layer": "cold_cow#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/cow/cow_cold_baby.png"],
+      "layer": "cold_cow_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/cow/cow_warm.png"], "layer": "warm_cow#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/cow/cow_warm_baby.png"],
+      "layer": "warm_cow_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/cow/mooshroom_{brown,red}.png"],
+      "layer": "mooshroom#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/cow/mooshroom_*_baby.png"],
+      "layer": "mooshroom_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/creaking/creaking.png"],
+      "layer": "creaking#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/creaking/creaking_eyes.png"],
+      "layer": "creaking#eyes"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/creeper/creeper.png"],
+      "layer": "creeper#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/creeper/creeper_armor.png"],
+      "layer": "creeper#armor"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/cushion/*_cushion.png"],
+      "layer": "cushion#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/decorated_pot/decorated_pot_base.png"],
+      "layer": "decorated_pot_base#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/decorated_pot/decorated_pot_side.png",
+        "assets/minecraft/textures/entity/decorated_pot/*_pottery_pattern.png"
+      ],
+      "layer": "decorated_pot_sides#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/dolphin/dolphin.png"],
+      "layer": "dolphin#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/dolphin/dolphin_baby.png"],
+      "layer": "dolphin_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/enchantment/enchanting_table_book.png"],
+      "layer": "book#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/end_crystal/end_crystal.png"],
+      "layer": "end_crystal#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/enderdragon/dragon{,_exploding,_eyes}.png"],
+      "layer": "ender_dragon#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/enderman/*.png"], "layer": "enderman#main" },
+    { "textures": ["assets/minecraft/textures/entity/endermite/*.png"], "layer": "endermite#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/camel_husk_saddle/*.png"],
+      "layer": "camel_husk#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/camel_saddle/*.png"],
+      "layer": "camel#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/donkey_saddle/*.png"],
+      "layer": "donkey#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/happy_ghast_body/*.png"],
+      "layer": "happy_ghast_harness#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/horse_body/*.png"],
+      "layer": "horse_armor#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/horse_saddle/*.png"],
+      "layer": "horse#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/llama_body/*_baby.png"],
+      "layer": "llama_baby#decor"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/equipment/llama_body/{black,blue,brown,cyan,gray,green,light_blue,light_gray,lime,magenta,orange,pink,purple,red,trader_llama,white,yellow}.png"
+      ],
+      "layer": "llama#decor"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/mule_saddle/*.png"],
+      "layer": "mule#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/nautilus_body/*.png"],
+      "layer": "nautilus_armor#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/nautilus_saddle/*.png"],
+      "layer": "nautilus#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/pig_saddle/*.png"],
+      "layer": "pig#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/skeleton_horse_saddle/*.png"],
+      "layer": "skeleton_horse#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/strider_saddle/*.png"],
+      "layer": "strider#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/wings/*.png"],
+      "layer": "elytra#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/wolf_body/*.png"],
+      "layer": "wolf_armor#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/zombie_horse_saddle/*.png"],
+      "layer": "zombie_horse#saddle"
+    },
+    { "textures": ["assets/minecraft/textures/entity/fish/cod.png"], "layer": "cod#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/fish/pufferfish.png"],
+      "layer": "pufferfish_big#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/fish/salmon.png"], "layer": "salmon#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/fish/tropical_a.png"],
+      "layer": "tropical_fish_small#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/fish/tropical_a_pattern_*.png"],
+      "layer": "tropical_fish_small#pattern"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/fish/tropical_b.png"],
+      "layer": "tropical_fish_large#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/fish/tropical_b_pattern_*.png"],
+      "layer": "tropical_fish_large#pattern"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/fox/fox{,_sleep,_snow,_snow_sleep}.png"],
+      "layer": "fox#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/fox/fox*_baby.png"],
+      "layer": "fox_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/frog/*.png"], "layer": "frog#main" },
+    { "textures": ["assets/minecraft/textures/entity/ghast/ghast*.png"], "layer": "ghast#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/ghast/happy_ghast.png"],
+      "layer": "happy_ghast#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/ghast/happy_ghast_baby.png"],
+      "layer": "happy_ghast_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/ghast/happy_ghast_ropes.png"],
+      "layer": "happy_ghast_ropes#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/goat/goat.png"], "layer": "goat#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/goat/goat_baby.png"],
+      "layer": "goat_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/guardian/guardian.png"],
+      "layer": "guardian#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/guardian/guardian_elder.png"],
+      "layer": "elder_guardian#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/hoglin/hoglin.png"], "layer": "hoglin#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/hoglin/hoglin_baby.png"],
+      "layer": "hoglin_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/hoglin/zoglin.png"], "layer": "zoglin#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/hoglin/zoglin_baby.png"],
+      "layer": "zoglin_baby#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/horse/horse_{black,brown,chestnut,creamy,darkbrown,gray,white,markings_blackdots,markings_white,markings_whitedots,markings_whitefield}.png"
+      ],
+      "layer": "horse#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/horse/horse_{black,brown,chestnut,creamy,darkbrown,gray,white,markings_blackdots,markings_white,markings_whitedots,markings_whitefield}_baby.png"
+      ],
+      "layer": "horse_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/horse/donkey.png"], "layer": "donkey#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/horse/donkey_baby.png"],
+      "layer": "donkey_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/horse/mule.png"], "layer": "mule#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/horse/mule_baby.png"],
+      "layer": "mule_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/horse/horse_skeleton.png"],
+      "layer": "skeleton_horse#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/horse/horse_skeleton_baby.png"],
+      "layer": "skeleton_horse_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/horse/horse_zombie.png"],
+      "layer": "zombie_horse#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/horse/horse_zombie_baby.png"],
+      "layer": "zombie_horse_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/illager/evoker.png"], "layer": "evoker#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/illager/evoker_fangs.png"],
+      "layer": "evoker_fangs#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/illager/illusioner.png"],
+      "layer": "illusioner#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/illager/pillager.png"],
+      "layer": "pillager#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/illager/ravager.png"],
+      "layer": "ravager#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/illager/vex*.png"], "layer": "vex#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/illager/vindicator.png"],
+      "layer": "vindicator#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/iron_golem/iron_golem*.png"],
+      "layer": "iron_golem#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/lead_knot/*.png"],
+      "layer": "leash_knot#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/llama/llama_{brown,creamy,gray,white}.png"],
+      "layer": "llama#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/llama/llama_*_baby.png"],
+      "layer": "llama_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/llama/llama_spit.png"],
+      "layer": "llama_spit#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/minecart/*.png"], "layer": "minecart#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/nautilus/nautilus.png"],
+      "layer": "nautilus#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/nautilus/nautilus_baby.png"],
+      "layer": "nautilus_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/nautilus/zombie_nautilus.png"],
+      "layer": "zombie_nautilus#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/nautilus/zombie_nautilus_coral.png"],
+      "layer": "zombie_nautilus_coral#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/panda/panda{,_aggressive,_brown,_lazy,_playful,_weak,_worried}.png"
+      ],
+      "layer": "panda#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/panda/*panda_baby.png"],
+      "layer": "panda_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/parrot/*.png"], "layer": "parrot#main" },
+    { "textures": ["assets/minecraft/textures/entity/phantom/*.png"], "layer": "phantom#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/pig/pig_{temperate,warm}.png"],
+      "layer": "pig#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/pig/pig_cold.png"], "layer": "cold_pig#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/pig/pig_*_baby.png"],
+      "layer": "pig_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/piglin/piglin.png"], "layer": "piglin#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/piglin/piglin_baby.png"],
+      "layer": "piglin_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/piglin/piglin_brute.png"],
+      "layer": "piglin_brute#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/piglin/zombified_piglin.png"],
+      "layer": "zombified_piglin#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/piglin/zombified_piglin_baby.png"],
+      "layer": "zombified_piglin_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/player/slim/*.png"],
+      "layer": "player_slim#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/player/wide/*.png"], "layer": "player#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/projectiles/arrow*.png"],
+      "layer": "arrow#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/projectiles/wind_charge.png"],
+      "layer": "wind_charge#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/rabbit/rabbit_{black,brown,caerbannog,gold,salt,toast,white,white_splotched}.png"
+      ],
+      "layer": "rabbit#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/rabbit/rabbit_*_baby.png"],
+      "layer": "rabbit_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/sheep/sheep.png"], "layer": "sheep#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/sheep/sheep_baby.png"],
+      "layer": "sheep_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sheep/sheep_wool.png"],
+      "layer": "sheep#wool"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sheep/sheep_wool_baby.png"],
+      "layer": "sheep_baby#wool"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sheep/sheep_wool_undercoat.png"],
+      "layer": "sheep#wool_undercoat"
+    },
+    { "textures": ["assets/minecraft/textures/entity/shield/*.png"], "layer": "shield#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/shulker/shulker*.png"],
+      "layer": "shulker#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/shulker/spark.png"],
+      "layer": "shulker_bullet#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/silverfish/*.png"],
+      "layer": "silverfish#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/skeleton/bogged.png"],
+      "layer": "bogged#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/skeleton/bogged_overlay.png"],
+      "layer": "bogged#outer"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/skeleton/parched.png"],
+      "layer": "parched#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/skeleton/skeleton.png"],
+      "layer": "skeleton#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/skeleton/stray.png"], "layer": "stray#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/skeleton/stray_overlay.png"],
+      "layer": "stray#outer"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/skeleton/wither_skeleton.png"],
+      "layer": "wither_skeleton#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/slime/magmacube.png"],
+      "layer": "magma_cube#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/slime/slime.png"], "layer": "slime#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/sniffer/sniffer.png"],
+      "layer": "sniffer#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sniffer/snifflet.png"],
+      "layer": "sniffer_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/snow_golem/*.png"],
+      "layer": "snow_golem#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/spider/cave_spider.png"],
+      "layer": "cave_spider#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/spider/spider{,_eyes}.png"],
+      "layer": "spider#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/squid/glow_squid.png"],
+      "layer": "glow_squid#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/squid/glow_squid_baby.png"],
+      "layer": "glow_squid_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/squid/squid.png"], "layer": "squid#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/squid/squid_baby.png"],
+      "layer": "squid_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/strider/strider{,_cold}.png"],
+      "layer": "strider#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/strider/strider*_baby.png"],
+      "layer": "strider_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sulfur_cube/sulfur_cube_inner.png"],
+      "layer": "sulfur_cube#inner"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sulfur_cube/sulfur_cube_inner_small.png"],
+      "layer": "sulfur_cube_small#inner"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sulfur_cube/sulfur_cube_outer.png"],
+      "layer": "sulfur_cube#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/sulfur_cube/sulfur_cube_outer_small.png"],
+      "layer": "sulfur_cube_small#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/tadpole/*.png"], "layer": "tadpole#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/trident/trident.png"],
+      "layer": "trident#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/trident/trident_riptide.png"],
+      "layer": "spin_attack#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/turtle/turtle.png"], "layer": "turtle#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/turtle/turtle_baby.png"],
+      "layer": "turtle_baby#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/villager/villager.png",
+        "assets/minecraft/textures/entity/villager/{profession,profession_level,type}/*.png"
+      ],
+      "layer": "villager#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/villager/villager_baby.png",
+        "assets/minecraft/textures/entity/villager/baby/*.png"
+      ],
+      "layer": "villager_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/wandering_trader/*.png"],
+      "layer": "wandering_trader#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/warden/warden.png"], "layer": "warden#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/warden/warden_bioluminescent_layer.png"],
+      "layer": "warden#bioluminescent"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/warden/warden_heart.png"],
+      "layer": "warden#heart"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/warden/warden_pulsating_spots_*.png"],
+      "layer": "warden#pulsating_spots"
+    },
+    { "textures": ["assets/minecraft/textures/entity/witch/*.png"], "layer": "witch#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/wither/wither{,_invulnerable}.png"],
+      "layer": "wither#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/wither/wither_armor.png"],
+      "layer": "wither#armor"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/wolf/wolf{,_ashen,_black,_chestnut,_rusty,_snowy,_spotted,_striped,_woods}{,_angry,_tame}.png",
+        "assets/minecraft/textures/entity/wolf/wolf_collar.png"
+      ],
+      "layer": "wolf#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/wolf/*_baby.png"], "layer": "wolf_baby#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/wolf/wolf_armor_crackiness_*.png"],
+      "layer": "wolf_armor#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/zombie/drowned.png"],
+      "layer": "drowned#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/zombie/drowned_outer_layer.png"],
+      "layer": "drowned#outer"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/zombie/drowned_baby.png"],
+      "layer": "drowned_baby#main"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/zombie/drowned_outer_layer_baby.png"],
+      "layer": "drowned_baby#outer"
+    },
+    { "textures": ["assets/minecraft/textures/entity/zombie/husk.png"], "layer": "husk#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/zombie/husk_baby.png"],
+      "layer": "husk_baby#main"
+    },
+    { "textures": ["assets/minecraft/textures/entity/zombie/zombie.png"], "layer": "zombie#main" },
+    {
+      "textures": ["assets/minecraft/textures/entity/zombie/zombie_baby.png"],
+      "layer": "zombie_baby#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/zombie_villager/zombie_villager.png",
+        "assets/minecraft/textures/entity/zombie_villager/{profession,profession_level,type}/*.png"
+      ],
+      "layer": "zombie_villager#main"
+    },
+    {
+      "textures": [
+        "assets/minecraft/textures/entity/zombie_villager/zombie_villager_baby.png",
+        "assets/minecraft/textures/entity/zombie_villager/baby/*.png"
+      ],
+      "layer": "zombie_villager_baby#main"
+    }
+  ]
+}

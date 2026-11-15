@@ -47,6 +47,7 @@ function setup(settingsOverride: Partial<Settings> = {}): {
     prepare: vi.fn(async () => index),
     getIndex: vi.fn(),
     resolveFile: vi.fn(),
+    entityModels: vi.fn(async () => null),
     inspectPath: vi.fn(async (): Promise<MinecraftInstall | null> => install)
   }
   const dialog = vi.fn(async () => ({ canceled: false, filePaths: ['/games/mc'] }))

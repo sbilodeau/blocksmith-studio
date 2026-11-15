@@ -35,8 +35,10 @@ const FLAT: PreviewModel = { kind: 'flat' }
 const model = computed<PreviewModel | null>(() => {
   const m = rawModel.value
   const img = editor.value.image
-  if (m?.kind === 'entity' && img && !entityFitsTexture(m.definition, img.width, img.height)) {
-    return FLAT
+  if (m?.kind === 'entity' && img) {
+    // Animated textures are strips: compare one frame.
+    const frameHeight = parseAnimation(editor.value.mcmeta, img)?.frameHeight ?? img.height
+    if (!entityFitsTexture(m.definition, img.width, frameHeight)) return FLAT
   }
   return m
 })
