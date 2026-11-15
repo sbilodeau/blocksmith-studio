@@ -207,9 +207,19 @@ export function useEditorStore(packId: string) {
       touch()
     }
 
+    /** Sets the active color and remembers it in recent colors (palette clicks, eyedropper). */
     function useColor(color: Rgba, which: 'primary' | 'secondary' = 'primary'): void {
+      setColor(color, which)
+      rememberColor(color)
+    }
+
+    /** Sets the active color without touching recent colors (live updates while dragging in the picker). */
+    function setColor(color: Rgba, which: 'primary' | 'secondary' = 'primary'): void {
       if (which === 'primary') primary.value = color
       else secondary.value = color
+    }
+
+    function rememberColor(color: Rgba): void {
       const hex = toHex(color)
       recentColors.value = [hex, ...recentColors.value.filter((c) => c !== hex)].slice(
         0,
@@ -437,6 +447,8 @@ export function useEditorStore(packId: string) {
       undo,
       redo,
       useColor,
+      setColor,
+      rememberColor,
       swapColors,
       selectAll,
       deselect,

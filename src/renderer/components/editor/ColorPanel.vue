@@ -19,11 +19,11 @@ const palette = computed(() => {
 
 const primaryHex = computed({
   get: () => toHex(editor.value.primary),
-  set: (hex: string) => editor.value.useColor(normalize(hex), 'primary')
+  set: (hex: string) => editor.value.setColor(normalize(hex), 'primary')
 })
 const secondaryHex = computed({
   get: () => toHex(editor.value.secondary),
-  set: (hex: string) => editor.value.useColor(normalize(hex), 'secondary')
+  set: (hex: string) => editor.value.setColor(normalize(hex), 'secondary')
 })
 
 function normalize(hex: string): Rgba {
@@ -32,6 +32,12 @@ function normalize(hex: string): Rgba {
   } catch {
     return [0, 0, 0, 255]
   }
+}
+
+/** The picker updates the color live while dragging; it joins recent colors only once the picker closes. */
+function onPickerShow(open: boolean, which: 'primary' | 'secondary'): void {
+  if (!open)
+    editor.value.rememberColor(which === 'primary' ? editor.value.primary : editor.value.secondary)
 }
 
 function pick(hex: string, e: MouseEvent): void {
@@ -57,6 +63,7 @@ function swatchStyle(hex: string): Record<string, string> {
           size="small"
           class="picker"
           data-testid="color-primary"
+          @update:show="(open: boolean) => onPickerShow(open, 'primary')"
         />
         <n-color-picker
           v-model:value="secondaryHex"
@@ -65,6 +72,7 @@ function swatchStyle(hex: string): Record<string, string> {
           size="small"
           class="picker"
           data-testid="color-secondary"
+          @update:show="(open: boolean) => onPickerShow(open, 'secondary')"
         />
       </div>
       <n-tooltip>

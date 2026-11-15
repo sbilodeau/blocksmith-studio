@@ -108,6 +108,16 @@ describe('editor store', () => {
     expect(getPixel(editor.image!, 3, 0)).toEqual([0, 0, 0, 0])
   })
 
+  it('setColor changes the active color without adding it to recent colors', async () => {
+    const editor = await openEditor()
+    editor.setColor([10, 20, 30, 255])
+    editor.setColor([11, 21, 31, 255])
+    expect(editor.primary).toEqual([11, 21, 31, 255])
+    expect(editor.recentColors).toEqual([])
+    editor.rememberColor(editor.primary)
+    expect(editor.recentColors).toEqual(['#0b151fff'])
+  })
+
   it('remembers recent colors without duplicates and swaps colors', async () => {
     const editor = await openEditor()
     editor.useColor(RED)
