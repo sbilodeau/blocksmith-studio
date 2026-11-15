@@ -138,7 +138,12 @@
       "insecureBaseUrl": "The provider address must use https (http is allowed only for localhost).",
       "invalidHeader": "The extra header \"{name}\" is not allowed.",
       "timeout": "The AI provider took too long to answer.",
-      "aborted": "Stopped."
+      "aborted": "Stopped.",
+      "invalidTexture": "The texture could not be read.",
+      "textureTooLarge": "This texture is too large for the AI (max {max} pixels per side).",
+      "proposalNotPending": "This plan was already applied or refused.",
+      "replayFailed": "Step {step} ({tool}) could not be applied.",
+      "agentFailed": "The AI agent stopped because of an unexpected error."
     }
   },
   "common": {

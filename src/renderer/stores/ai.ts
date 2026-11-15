@@ -14,7 +14,7 @@ import type {
   ToolKind
 } from '@shared/ai/types'
 import type { Language } from '@shared/model/settings'
-import { call } from '../services/ipc'
+import { call, IpcError } from '../services/ipc'
 
 /** One message bubble in the AI panel, built from persisted turns and live events. */
 export interface ChatItem {
@@ -79,6 +79,11 @@ export const useAiStore = defineStore('ai', () => {
   const sessions = ref<Record<string, AgentSession>>({})
   /** runId -> session key, to route events. */
   const runs = new Map<string, string>()
+  /**
+   * Events that arrive before `ai.agent.send` resolves with their runId (a fast provider can finish first).
+   * Replayed once the run is registered; dropped if never claimed.
+   */
+  const early = new Map<string, AgentEvent[]>()
   let listening = false
 
   const hasUsableProvider = computed(() =>
@@ -175,12 +180,29 @@ export const useAiStore = defineStore('ai', () => {
       toolCalls: [],
       streaming: true
     })
-    const { runId } = await call('ai.agent.send', {
-      ...args,
-      texture: { path: args.texture.path, png: new Uint8Array(args.texture.png) }
-    })
+    let runId: string
+    try {
+      ;({ runId } = await call('ai.agent.send', {
+        ...args,
+        texture: { path: args.texture.path, png: new Uint8Array(args.texture.png) }
+      }))
+    } catch (err) {
+      // The run never started: close the pending bubble with the error instead of "working" forever.
+      const item = s.items[s.items.length - 1]
+      if (item?.role === 'assistant') {
+        item.streaming = false
+        item.error =
+          err instanceof IpcError
+            ? { code: err.appError.code, params: err.appError.params }
+            : { code: 'ai.runFailed' }
+      }
+      throw err
+    }
     s.runId = runId
     runs.set(runId, s.key)
+    const buffered = early.get(runId) ?? []
+    early.delete(runId)
+    for (const e of buffered) onEvent(e)
   }
 
   async function stop(packId: string, agent: AgentKind): Promise<void> {
@@ -206,7 +228,14 @@ export const useAiStore = defineStore('ai', () => {
 
   function onEvent(e: AgentEvent): void {
     const key = runs.get(e.runId)
-    if (!key) return
+    if (!key) {
+      const list = early.get(e.runId) ?? []
+      list.push(e)
+      early.set(e.runId, list)
+      // Bound memory for runs started elsewhere (another window) that this store never claims.
+      if (early.size > 20) early.delete(early.keys().next().value!)
+      return
+    }
     const s = sessions.value[key]
     if (!s) return
     const item = currentAssistant(s)

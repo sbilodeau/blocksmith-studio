@@ -348,11 +348,7 @@
       "en": "make everything redder",
       "expect": [
         {
-          "anyTool": [
-            "hue_shift",
-            "replace_color",
-            "apply_palette"
-          ]
+          "anyTool": ["hue_shift", "replace_color", "apply_palette"]
         }
       ]
     },
@@ -487,11 +483,7 @@
           "tool": "apply_palette",
           "args": {
             "palette": {
-              "containsAll": [
-                "#000000",
-                "#ffffff",
-                "#ff0000"
-              ]
+              "containsAll": ["#000000", "#ffffff", "#ff0000"]
             }
           }
         }
@@ -508,10 +500,7 @@
           "tool": "update_style_brief",
           "args": {
             "patch.theme": {
-              "containsAny": [
-                "feu",
-                "fire"
-              ]
+              "containsAny": ["feu", "fire"]
             }
           }
         }
@@ -544,13 +533,7 @@
           }
         },
         {
-          "anyTool": [
-            "set_pixels",
-            "draw_line",
-            "fill_rect",
-            "fill",
-            "draw_rect"
-          ]
+          "anyTool": ["set_pixels", "draw_line", "fill_rect", "fill", "draw_rect"]
         }
       ]
     },

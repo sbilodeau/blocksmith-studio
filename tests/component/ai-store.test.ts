@@ -107,4 +107,27 @@ describe('AI store', () => {
     ai.onEvent({ runId: 'nope', type: 'text', delta: 'x' })
     expect(Object.keys(ai.sessions)).toHaveLength(0)
   })
+
+  it('keeps events that arrive before the run id and replays them', async () => {
+    const ai = useAiStore()
+    window.blocksmith.invoke = (async (channel: string) => {
+      if (channel !== 'ai.agent.send') return { ok: true, value: [] }
+      // The whole run streams before send resolves.
+      ai.onEvent({ runId: 'run3', type: 'text', delta: 'Fini' })
+      ai.onEvent({ runId: 'run3', type: 'done', reason: 'end' })
+      return { ok: true, value: { runId: 'run3' } }
+    }) as typeof window.blocksmith.invoke
+    await ai.sendEditor({
+      packId: 'fire',
+      message: 'x',
+      model: { providerId: 'p', modelId: 'm' },
+      texture: { path: proposal.texturePath, png: new Uint8Array([1]) },
+      language: 'fr'
+    })
+    const s = ai.session('fire', 'editor')
+    const last = s.items[s.items.length - 1]
+    expect(last.text).toBe('Fini')
+    expect(last.streaming).toBe(false)
+    expect(s.runId).toBeNull()
+  })
 })

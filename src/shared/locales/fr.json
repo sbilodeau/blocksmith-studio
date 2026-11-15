@@ -138,7 +138,12 @@
       "insecureBaseUrl": "L'adresse du fournisseur doit utiliser https (http est permis seulement pour localhost).",
       "invalidHeader": "L'en-tête supplémentaire « {name} » n'est pas permis.",
       "timeout": "Le fournisseur d'IA a mis trop de temps à répondre.",
-      "aborted": "Arrêté."
+      "aborted": "Arrêté.",
+      "invalidTexture": "La texture n'a pas pu être lue.",
+      "textureTooLarge": "Cette texture est trop grande pour l'IA (max {max} pixels par côté).",
+      "proposalNotPending": "Ce plan a déjà été appliqué ou refusé.",
+      "replayFailed": "L'étape {step} ({tool}) n'a pas pu être appliquée.",
+      "agentFailed": "L'agent IA s'est arrêté à cause d'une erreur inattendue."
     }
   },
   "common": {
