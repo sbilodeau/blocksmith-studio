@@ -484,5 +484,27 @@
         "rejected": "Rejected"
       }
     }
+  },
+  "brief": {
+    "open": "Style brief",
+    "title": "Style brief",
+    "intro": "Shared memory for every AI agent of this pack: they follow it and may propose updates (you approve them).",
+    "theme": "Theme",
+    "themePlaceholder": "e.g. Fire and volcanic",
+    "palette": "Palette",
+    "rolePlaceholder": "Role (e.g. highlights)",
+    "rules": "Visual rules",
+    "rulePlaceholder": "e.g. Keep vanilla silhouettes",
+    "save": "Save brief",
+    "saved": "Style brief saved.",
+    "decisions": "Decisions",
+    "requests": "Recent AI requests",
+    "none": "Nothing yet",
+    "by": {
+      "user": "You",
+      "editor": "Editor",
+      "navigation": "Navigation",
+      "creation": "Creation"
+    }
   }
 }

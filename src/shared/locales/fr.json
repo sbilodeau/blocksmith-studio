@@ -484,5 +484,27 @@
         "rejected": "Refusé"
       }
     }
+  },
+  "brief": {
+    "open": "Brief de style",
+    "title": "Brief de style",
+    "intro": "Mémoire partagée par tous les agents IA de ce pack : ils la suivent et peuvent proposer des mises à jour (que vous validez).",
+    "theme": "Thème",
+    "themePlaceholder": "ex. Feu et volcanique",
+    "palette": "Palette",
+    "rolePlaceholder": "Rôle (ex. reflets)",
+    "rules": "Règles visuelles",
+    "rulePlaceholder": "ex. Garder les silhouettes vanilla",
+    "save": "Enregistrer le brief",
+    "saved": "Brief de style enregistré.",
+    "decisions": "Décisions",
+    "requests": "Demandes récentes à l'IA",
+    "none": "Rien pour l'instant",
+    "by": {
+      "user": "Vous",
+      "editor": "Éditeur",
+      "navigation": "Navigation",
+      "creation": "Création"
+    }
   }
 }
