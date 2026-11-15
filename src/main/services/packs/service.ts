@@ -82,7 +82,17 @@ export interface PackService {
   exportPack(packId: string, targetVersion: string, outputPath: string): Promise<ExportReport>
 }
 
-export function createPackService(deps: PackServiceDeps): PackService {
+/**
+ * Cache control for in-process writers (texture editing, history undo/redo). The texture index is invalidated
+ * by size + mtime, which can miss a rewrite with the same size inside the file system's mtime granularity, so
+ * writers call this after changing pack files.
+ */
+export interface PackCacheControl {
+  /** Drops the cached hashes of `paths` (pack-relative POSIX) and the cached texture list of the pack. */
+  invalidate(location: PackLocation, paths: readonly string[]): void
+}
+
+export function createPackService(deps: PackServiceDeps): PackService & PackCacheControl {
   const now = deps.now ?? ((): Date => new Date())
   const newId = deps.newId ?? newPackId
   const engine = deps.categories ?? getDefaultCategoryEngine()
@@ -270,6 +280,11 @@ export function createPackService(deps: PackServiceDeps): PackService {
     },
 
     locate,
+
+    invalidate(location, paths) {
+      for (const path of paths) fileInfo.delete(join(location.folder, ...path.split('/')))
+      indexer.forget(location.id)
+    },
 
     async delete(packId) {
       const location = await requireLocation(packId)
