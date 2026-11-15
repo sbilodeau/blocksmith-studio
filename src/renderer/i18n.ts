@@ -18,8 +18,14 @@ export function createAppI18n(locale: Language = 'en'): AppI18n {
     fallbackLocale: 'en',
     messages,
     datetimeFormats: {
-      en: { short: { year: 'numeric', month: 'short', day: 'numeric' } },
-      fr: { short: { year: 'numeric', month: 'short', day: 'numeric' } }
+      en: {
+        short: { year: 'numeric', month: 'short', day: 'numeric' },
+        time: { hour: '2-digit', minute: '2-digit' }
+      },
+      fr: {
+        short: { year: 'numeric', month: 'short', day: 'numeric' },
+        time: { hour: '2-digit', minute: '2-digit' }
+      }
     }
   })
 }

@@ -33,6 +33,8 @@ export function usePackStore(packId: string) {
     const statusFilter = ref<StatusFilter>('all')
     const zoom = ref(64)
     const selection = ref<Set<string>>(new Set())
+    /** Texture open in the 1:1 editor (null = grid/overview). */
+    const editing = ref<string | null>(null)
     const anchor = ref<string | null>(null)
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
@@ -112,6 +114,14 @@ export function usePackStore(packId: string) {
       anchor.value = null
     }
 
+    function openEditor(path: string): void {
+      editing.value = path
+    }
+
+    function closeEditor(): void {
+      editing.value = null
+    }
+
     async function exportPack(targetVersion: string): Promise<ExportReport | null> {
       try {
         return await call('pack.export', { packId, targetVersion })
@@ -132,6 +142,7 @@ export function usePackStore(packId: string) {
       statusFilter,
       zoom,
       selection,
+      editing,
       changedCount,
       visible,
       load,
@@ -139,6 +150,8 @@ export function usePackStore(packId: string) {
       select,
       selectAll,
       clearSelection,
+      openEditor,
+      closeEditor,
       exportPack
     }
   })()

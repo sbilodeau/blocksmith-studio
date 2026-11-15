@@ -6,6 +6,7 @@ import type { ExportReport } from '@shared/model/pack'
 import CategorySidebar from '../components/pack/CategorySidebar.vue'
 import CategoryOverview from '../components/pack/CategoryOverview.vue'
 import TextureGrid from '../components/pack/TextureGrid.vue'
+import TextureEditor from '../components/editor/TextureEditor.vue'
 import ExportDialog from '../components/pack/ExportDialog.vue'
 import ReportDialog from '../components/common/ReportDialog.vue'
 import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
@@ -87,7 +88,7 @@ const exportItems = computed(() => [
 <template>
   <n-spin :show="store.loading && !store.loaded" class="spin">
     <div class="pack" data-testid="pack-view">
-      <aside class="side">
+      <aside v-if="!store.editing" class="side">
         <category-sidebar
           :categories="store.categories"
           :active="store.category"
@@ -128,6 +129,7 @@ const exportItems = computed(() => [
             </n-alert>
             <vanilla-prepare :version-id="missingVanilla" @ready="load" />
           </div>
+          <texture-editor v-else-if="store.editing" :pack-id="packId" />
           <category-overview
             v-else-if="store.category === null"
             :categories="store.categories"

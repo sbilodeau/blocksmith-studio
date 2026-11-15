@@ -27,6 +27,10 @@ function onKeydown(e: KeyboardEvent): void {
     store.value.selectAll()
   } else if (e.key === 'Escape') {
     store.value.clearSelection()
+  } else if (e.key === 'Enter' && store.value.selection.size > 0) {
+    // Open the first selected texture (in grid order) in the editor.
+    const first = store.value.visible.find((tex) => store.value.selection.has(tex.path))
+    if (first) store.value.openEditor(first.path)
   }
 }
 </script>
@@ -78,6 +82,7 @@ function onKeydown(e: KeyboardEvent): void {
           :size="store.zoom"
           :selected="store.selection.has(tex.path)"
           @pick="(mode) => store.select(tex.path, mode)"
+          @open="store.openEditor(tex.path)"
         />
       </div>
     </div>

@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { TextureEntry } from '@shared/model/pack'
 
 const props = defineProps<{ texture: TextureEntry; size: number; selected: boolean }>()
-const emit = defineEmits<{ pick: [mode: 'single' | 'toggle' | 'range'] }>()
+const emit = defineEmits<{ pick: [mode: 'single' | 'toggle' | 'range']; open: [] }>()
 const { t } = useI18n()
 
 // Animated strips show their first frame (width-fit, top aligned); other textures are contained.
@@ -29,6 +29,7 @@ function onClick(e: MouseEvent): void {
     :data-testid="`tile-${texture.name}`"
     :data-status="texture.status"
     @click="onClick"
+    @dblclick="emit('open')"
   >
     <div class="img pixelated" :style="style" />
     <div class="name">{{ texture.name }}</div>

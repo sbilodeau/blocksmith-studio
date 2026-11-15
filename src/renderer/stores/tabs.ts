@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { disposePackStore } from './pack'
+import { disposeEditorStore } from './editor'
 
 /**
  * Workspace tabs. The "home" tab (pack selector) is always present; from M1 on, each open pack gets its own
@@ -38,7 +39,10 @@ export const useTabsStore = defineStore('tabs', () => {
     const index = tabs.value.findIndex((t) => t.id === id)
     if (index < 0 || !tabs.value[index].closable) return
     const [removed] = tabs.value.splice(index, 1)
-    if (removed.kind === 'pack') disposePackStore(removed.id)
+    if (removed.kind === 'pack') {
+      disposePackStore(removed.id)
+      disposeEditorStore(removed.id)
+    }
     if (activeId.value === id) activeId.value = tabs.value[Math.max(0, index - 1)].id
   }
 
