@@ -6,6 +6,7 @@ import { createAppRouter } from './router'
 import { useSettingsStore } from './stores/settings'
 import { useUpdaterStore } from './stores/updater'
 import { useJobsStore } from './stores/jobs'
+import { useAiStore } from './stores/ai'
 import './styles/base.css'
 
 async function bootstrap(): Promise<void> {
@@ -18,6 +19,7 @@ async function bootstrap(): Promise<void> {
   await settings.load()
   await useUpdaterStore().init()
   useJobsStore().init()
+  useAiStore().init()
 
   app.mount('#app')
 }

@@ -118,6 +118,23 @@
       "nothingToRedo": "Nothing to redo.",
       "blobMissing": "The saved copy of {path} is missing, so this step cannot be undone.",
       "invalidPath": "The history contains an invalid path."
+    },
+    "ai": {
+      "unauthorized": "The provider refused the API key. Check it in Settings.",
+      "rateLimited": "Too many requests; try again in a moment.",
+      "modelNotFound": "This model is not available on the provider.",
+      "providerError": "The AI provider returned an error ({status}).",
+      "network": "Could not reach the AI provider. Check your connection.",
+      "invalidResponse": "The AI provider sent an unreadable response.",
+      "secretsUnavailable": "Secure storage is not available on this system, so the key was not saved.",
+      "providerNotFound": "This AI provider no longer exists.",
+      "providerDisabled": "This AI provider is disabled.",
+      "noApiKey": "No API key for this provider. Add it in Settings.",
+      "providerKindUnsupported": "This provider type is not supported yet.",
+      "budgetReached": "Stopped after the maximum number of round trips; here is what was done so far.",
+      "stopped": "Stopped.",
+      "proposalNotFound": "This plan expired. Ask again.",
+      "runFailed": "The AI request failed."
     }
   },
   "common": {
@@ -330,10 +347,13 @@
       "rotateCcw": "Rotate 90° counterclockwise",
       "flipH": "Flip horizontally",
       "flipV": "Flip vertically",
-      "paste": "Paste"
+      "paste": "Paste",
+      "ai": "AI edit"
     },
     "shortcut": "{label} ({key})",
-    "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan."
+    "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan.",
+    "tabDraw": "Draw",
+    "tabAi": "AI"
   },
   "history": {
     "label": {
@@ -372,6 +392,97 @@
       "item": "Item",
       "entity": "Entity",
       "flat": "Flat"
+    }
+  },
+  "ai": {
+    "title": "AI",
+    "kind": {
+      "ollama": "Ollama (native API)",
+      "openai-compatible": "OpenAI-compatible"
+    },
+    "keySet": "Key saved",
+    "keyMissing": "No key",
+    "enterKey": "API key",
+    "replaceKey": "Replace the API key",
+    "saveKey": "Save key",
+    "removeKey": "Remove key",
+    "keySaved": "API key saved (encrypted on this computer).",
+    "keyHint": "Keys are encrypted with your system keychain and never leave the main process.",
+    "test": "Test",
+    "testOk": "Connected: {count} models available.",
+    "deleteProvider": "Delete",
+    "newProvider": "Add a provider",
+    "providerName": "Name",
+    "providerType": "Type",
+    "baseUrl": "Base URL",
+    "addProvider": "Add",
+    "agents": {
+      "editor": "Editor agent",
+      "navigation": "Navigation agent",
+      "creation": "Creation agent"
+    },
+    "editorAgent": "Editor agent",
+    "refreshModels": "Refresh models",
+    "defaultModel": "Default model",
+    "thinking": "Show reasoning",
+    "thinkingHint": "Asks for the model's reasoning when it supports it (slower, more tokens).",
+    "maxIterations": "Max round trips",
+    "maxIterationsHint": "How many times the AI may call tools and look at the result for one request.",
+    "imageMode": "What the AI sees",
+    "imageModes": {
+      "vision+grid": "Image + pixel grid",
+      "grid": "Pixel grid only",
+      "image": "Image only"
+    },
+    "pickModel": "Choose a model",
+    "cap": {
+      "vision": "Can see images",
+      "visionShort": "vision",
+      "tools": "Can call tools",
+      "toolsShort": "tools",
+      "thinking": "Can show its reasoning",
+      "thinkingShort": "thinking"
+    },
+    "cost": {
+      "tooltip": "${input} / ${output} per million tokens (in / out), {source}",
+      "source": {
+        "provider": "from the provider",
+        "hint": "estimated",
+        "user": "your price"
+      },
+      "unknown": "Price unknown"
+    },
+    "noProvider": "Add an Ollama Cloud API key (or another provider) in Settings to use the AI.",
+    "openSettings": "Open Settings",
+    "clear": "New conversation",
+    "clearHint": "Forget this conversation (the style brief is kept).",
+    "emptyEditor": "Ask for a change, for example: \"rotate 90° left and add flames at the tip\".",
+    "thinkingTitle": "Reasoning",
+    "toolCallsTitle": "Tool calls ({count})",
+    "working": "Working...",
+    "usage": "{input} in / {output} out tokens",
+    "usageCost": " · ${cost}",
+    "placeholder": "Describe the change (English or French)...",
+    "sendHint": "Enter to send, Shift+Enter for a new line",
+    "send": "Send",
+    "stop": "Stop",
+    "proposal": {
+      "title": "Proposed plan ({count} steps)",
+      "before": "Before",
+      "after": "After",
+      "brief": "style brief",
+      "dependencyWarning": "{count} kept step(s) were computed on top of a step you unchecked; the result may differ from the preview.",
+      "reject": "Reject",
+      "applyAll": "Apply all",
+      "applySome": "Apply {count} of {total}",
+      "applied": "Applied {count} step(s) to the texture. Save to keep it.",
+      "briefUpdated": "The style brief was updated.",
+      "status": {
+        "pending": "Pending",
+        "applied": "Applied",
+        "partially-applied": "Partly applied",
+        "rejected": "Rejected"
+      }
     }
   }
 }

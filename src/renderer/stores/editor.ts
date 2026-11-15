@@ -349,6 +349,17 @@ export function useEditorStore(packId: string) {
       commit(before, label)
     }
 
+    /** Puts an applied AI proposal into the editor as ONE undoable edit (the user saves normally). */
+    function applyAiResult(png: Uint8Array): void {
+      const img = image.value
+      if (!img) return
+      commitFloating()
+      const before = cloneImage(img)
+      image.value = decodePng(png)
+      selection.value = null
+      commit(before, 'ai')
+    }
+
     function rotate(direction: RotateDirection): void {
       transform(direction === 'clockwise' ? 'rotateCw' : 'rotateCcw', (img) =>
         rotateImage(img, 90, direction)
@@ -468,6 +479,7 @@ export function useEditorStore(packId: string) {
       deleteSelection,
       rotate,
       flip,
+      applyAiResult,
       save,
       revertToVanilla,
       refreshHistory,

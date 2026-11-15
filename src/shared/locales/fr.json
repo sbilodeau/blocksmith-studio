@@ -118,6 +118,23 @@
       "nothingToRedo": "Rien à rétablir.",
       "blobMissing": "La copie enregistrée de {path} est introuvable : cette étape ne peut pas être annulée.",
       "invalidPath": "L'historique contient un chemin invalide."
+    },
+    "ai": {
+      "unauthorized": "Le fournisseur a refusé la clé d'API. Vérifiez-la dans les Paramètres.",
+      "rateLimited": "Trop de requêtes ; réessayez dans un instant.",
+      "modelNotFound": "Ce modèle n'est pas disponible chez le fournisseur.",
+      "providerError": "Le fournisseur d'IA a renvoyé une erreur ({status}).",
+      "network": "Impossible de joindre le fournisseur d'IA. Vérifiez votre connexion.",
+      "invalidResponse": "Le fournisseur d'IA a envoyé une réponse illisible.",
+      "secretsUnavailable": "Le stockage sécurisé n'est pas disponible sur ce système : la clé n'a pas été enregistrée.",
+      "providerNotFound": "Ce fournisseur d'IA n'existe plus.",
+      "providerDisabled": "Ce fournisseur d'IA est désactivé.",
+      "noApiKey": "Aucune clé d'API pour ce fournisseur. Ajoutez-la dans les Paramètres.",
+      "providerKindUnsupported": "Ce type de fournisseur n'est pas encore pris en charge.",
+      "budgetReached": "Arrêt après le nombre maximal d'allers-retours ; voici ce qui a été fait jusqu'ici.",
+      "stopped": "Arrêté.",
+      "proposalNotFound": "Ce plan a expiré. Redemandez.",
+      "runFailed": "La requête à l'IA a échoué."
     }
   },
   "common": {
@@ -330,10 +347,13 @@
       "rotateCcw": "Rotation 90° antihoraire",
       "flipH": "Miroir horizontal",
       "flipV": "Miroir vertical",
-      "paste": "Collage"
+      "paste": "Collage",
+      "ai": "Modification IA"
     },
     "shortcut": "{label} ({key})",
-    "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer."
+    "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer.",
+    "tabDraw": "Dessin",
+    "tabAi": "IA"
   },
   "history": {
     "label": {
@@ -372,6 +392,97 @@
       "item": "Objet",
       "entity": "Entité",
       "flat": "À plat"
+    }
+  },
+  "ai": {
+    "title": "IA",
+    "kind": {
+      "ollama": "Ollama (API native)",
+      "openai-compatible": "Compatible OpenAI"
+    },
+    "keySet": "Clé enregistrée",
+    "keyMissing": "Pas de clé",
+    "enterKey": "Clé d'API",
+    "replaceKey": "Remplacer la clé d'API",
+    "saveKey": "Enregistrer la clé",
+    "removeKey": "Supprimer la clé",
+    "keySaved": "Clé d'API enregistrée (chiffrée sur cet ordinateur).",
+    "keyHint": "Les clés sont chiffrées avec le trousseau du système et ne quittent jamais le processus principal.",
+    "test": "Tester",
+    "testOk": "Connecté : {count} modèles disponibles.",
+    "deleteProvider": "Supprimer",
+    "newProvider": "Ajouter un fournisseur",
+    "providerName": "Nom",
+    "providerType": "Type",
+    "baseUrl": "URL de base",
+    "addProvider": "Ajouter",
+    "agents": {
+      "editor": "Agent Éditeur",
+      "navigation": "Agent Navigation",
+      "creation": "Agent Création"
+    },
+    "editorAgent": "Agent Éditeur",
+    "refreshModels": "Actualiser les modèles",
+    "defaultModel": "Modèle par défaut",
+    "thinking": "Afficher le raisonnement",
+    "thinkingHint": "Demande le raisonnement du modèle s'il le permet (plus lent, plus de jetons).",
+    "maxIterations": "Allers-retours max",
+    "maxIterationsHint": "Nombre de fois où l'IA peut appeler des outils et regarder le résultat pour une demande.",
+    "imageMode": "Ce que voit l'IA",
+    "imageModes": {
+      "vision+grid": "Image + grille de pixels",
+      "grid": "Grille de pixels seulement",
+      "image": "Image seulement"
+    },
+    "pickModel": "Choisir un modèle",
+    "cap": {
+      "vision": "Peut voir les images",
+      "visionShort": "vision",
+      "tools": "Peut appeler des outils",
+      "toolsShort": "outils",
+      "thinking": "Peut afficher son raisonnement",
+      "thinkingShort": "raisonnement"
+    },
+    "cost": {
+      "tooltip": "{input} $ / {output} $ par million de jetons (entrée / sortie), {source}",
+      "source": {
+        "provider": "selon le fournisseur",
+        "hint": "estimation",
+        "user": "votre prix"
+      },
+      "unknown": "Prix inconnu"
+    },
+    "noProvider": "Ajoutez une clé d'API Ollama Cloud (ou un autre fournisseur) dans les Paramètres pour utiliser l'IA.",
+    "openSettings": "Ouvrir les Paramètres",
+    "clear": "Nouvelle conversation",
+    "clearHint": "Oublier cette conversation (le brief de style est conservé).",
+    "emptyEditor": "Demandez une modification, par exemple : « tourne de 90° à gauche et ajoute des flammes au bout ».",
+    "thinkingTitle": "Raisonnement",
+    "toolCallsTitle": "Appels d'outils ({count})",
+    "working": "En cours...",
+    "usage": "{input} en entrée / {output} en sortie (jetons)",
+    "usageCost": " · {cost} $",
+    "placeholder": "Décrivez la modification (français ou anglais)...",
+    "sendHint": "Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne",
+    "send": "Envoyer",
+    "stop": "Arrêter",
+    "proposal": {
+      "title": "Plan proposé ({count} étapes)",
+      "before": "Avant",
+      "after": "Après",
+      "brief": "brief de style",
+      "dependencyWarning": "{count} étape(s) conservée(s) ont été calculées après une étape décochée ; le résultat peut différer de l'aperçu.",
+      "reject": "Refuser",
+      "applyAll": "Tout appliquer",
+      "applySome": "Appliquer {count} sur {total}",
+      "applied": "{count} étape(s) appliquée(s) à la texture. Enregistrez pour la conserver.",
+      "briefUpdated": "Le brief de style a été mis à jour.",
+      "status": {
+        "pending": "En attente",
+        "applied": "Appliqué",
+        "partially-applied": "Appliqué en partie",
+        "rejected": "Refusé"
+      }
     }
   }
 }

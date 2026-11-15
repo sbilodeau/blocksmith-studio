@@ -1,0 +1,367 @@
+<script setup lang="ts">
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import {
+  NAlert,
+  NButton,
+  NCollapse,
+  NCollapseItem,
+  NEmpty,
+  NInput,
+  NScrollbar,
+  NSpace,
+  NTag,
+  NText,
+  NTooltip,
+  useMessage
+} from 'naive-ui'
+import { encodePng } from '@shared/image'
+import type { ModelRef } from '@shared/ai/types'
+import ModelPicker from './ModelPicker.vue'
+import ProposalReview from './ProposalReview.vue'
+import { useAiStore, type ChatItem } from '../../stores/ai'
+import { useEditorStore } from '../../stores/editor'
+import { useSettingsStore } from '../../stores/settings'
+import { useErrorMessage } from '../../composables/useErrorMessage'
+
+/** Editor agent: one conversation per pack tab that persists from one texture to the next (PLAN 6.3). */
+const props = defineProps<{ packId: string }>()
+const emit = defineEmits<{ openSettings: [] }>()
+const { t, te } = useI18n()
+const ai = useAiStore()
+const settings = useSettingsStore()
+const editor = computed(() => useEditorStore(props.packId))
+const message = useMessage()
+const { showError } = useErrorMessage()
+
+const session = computed(() => ai.session(props.packId, 'editor'))
+const input = ref('')
+const applying = ref<string | null>(null)
+const scroller = ref<InstanceType<typeof NScrollbar> | null>(null)
+
+/** Model for this tab: starts from the editor agent default, can be switched on the fly. */
+const model = ref<ModelRef | undefined>(settings.settings.ai.agents.editor.model)
+watch(
+  () => settings.settings.ai.agents.editor.model,
+  (m) => {
+    if (!model.value) model.value = m
+  }
+)
+
+const running = computed(() => !!session.value.runId)
+const canSend = computed(
+  () =>
+    !!input.value.trim() &&
+    !!model.value &&
+    !!editor.value.image &&
+    !!editor.value.path &&
+    !running.value
+)
+
+async function send(): Promise<void> {
+  if (!canSend.value || !model.value || !editor.value.image || !editor.value.path) return
+  editor.value.commitFloating()
+  const text = input.value.trim()
+  input.value = ''
+  try {
+    await ai.sendEditor({
+      packId: props.packId,
+      message: text,
+      model: model.value,
+      texture: { path: editor.value.path, png: new Uint8Array(encodePng(editor.value.image)) },
+      language: settings.settings.language
+    })
+  } catch (err) {
+    showError(err)
+  }
+  scrollDown()
+}
+
+function onKeydown(e: KeyboardEvent): void {
+  // Enter sends, Shift+Enter adds a line. Keep editor shortcuts from firing while typing.
+  e.stopPropagation()
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault()
+    void send()
+  }
+}
+
+async function apply(proposalId: string, stepIds: string[]): Promise<void> {
+  applying.value = proposalId
+  try {
+    const result = await ai.applyProposal(props.packId, proposalId, stepIds)
+    if (result.appliedStepIds.length) editor.value.applyAiResult(result.png)
+    message.success(
+      t('ai.proposal.applied', { count: result.appliedStepIds.length }) +
+        (result.briefUpdated ? ` ${t('ai.proposal.briefUpdated')}` : '')
+    )
+  } catch (err) {
+    showError(err)
+  } finally {
+    applying.value = null
+  }
+}
+
+async function reject(proposalId: string): Promise<void> {
+  try {
+    await ai.rejectProposal(props.packId, proposalId)
+  } catch (err) {
+    showError(err)
+  }
+}
+
+function errorLabel(e: NonNullable<ChatItem['error']>): string {
+  return te(`errors.${e.code}`) ? t(`errors.${e.code}`, e.params ?? {}) : e.code
+}
+
+function scrollDown(): void {
+  void nextTick(() => scroller.value?.scrollTo({ top: 1e9, behavior: 'smooth' }))
+}
+
+watch(() => {
+  const items = session.value.items
+  const last = items[items.length - 1]
+  return [items.length, last?.text.length, last?.toolCalls.length, last?.proposalId]
+}, scrollDown)
+
+onMounted(async () => {
+  try {
+    if (!ai.providers.length) await ai.loadProviders()
+    if (ai.hasUsableProvider && !ai.models.length) await ai.loadModels()
+    if (!session.value.loaded) await ai.loadConversation(props.packId, 'editor')
+  } catch (err) {
+    showError(err)
+  }
+  scrollDown()
+})
+</script>
+
+<template>
+  <div class="agent" data-testid="editor-agent">
+    <n-alert v-if="!ai.hasUsableProvider" type="info" :show-icon="false" class="setup">
+      <p class="para">{{ t('ai.noProvider') }}</p>
+      <n-button size="small" type="primary" @click="emit('openSettings')">{{
+        t('ai.openSettings')
+      }}</n-button>
+    </n-alert>
+
+    <n-space justify="space-between" align="center" :wrap="false" class="head">
+      <model-picker v-model="model" size="tiny" class="picker" />
+      <n-tooltip>
+        <template #trigger>
+          <n-button
+            size="tiny"
+            quaternary
+            :disabled="running || session.items.length === 0"
+            data-testid="agent-clear"
+            @click="ai.clearConversation(packId, 'editor').catch(showError)"
+          >
+            {{ t('ai.clear') }}
+          </n-button>
+        </template>
+        {{ t('ai.clearHint') }}
+      </n-tooltip>
+    </n-space>
+
+    <n-scrollbar ref="scroller" class="messages" data-testid="agent-messages">
+      <n-empty
+        v-if="session.items.length === 0"
+        size="small"
+        :description="t('ai.emptyEditor')"
+        class="empty"
+      />
+      <div v-for="item in session.items" :key="item.id" class="msg" :class="item.role">
+        <template v-if="item.role === 'user'">
+          <div class="bubble user-bubble">{{ item.text }}</div>
+        </template>
+        <template v-else>
+          <n-collapse v-if="item.thinking || item.toolCalls.length" class="details">
+            <n-collapse-item v-if="item.thinking" :title="t('ai.thinkingTitle')" name="thinking">
+              <pre class="thinking" data-testid="agent-thinking">{{ item.thinking }}</pre>
+            </n-collapse-item>
+            <n-collapse-item
+              v-if="item.toolCalls.length"
+              :title="t('ai.toolCallsTitle', { count: item.toolCalls.length })"
+              name="tools"
+            >
+              <ul class="calls" data-testid="agent-tool-calls">
+                <li v-for="tc in item.toolCalls" :key="tc.call.id">
+                  <code class="call-name">{{ tc.call.name }}</code>
+                  <code class="args">{{ JSON.stringify(tc.call.args) }}</code>
+                  <n-text
+                    v-if="tc.result"
+                    :type="tc.result.ok ? 'success' : 'error'"
+                    class="result"
+                  >
+                    {{ tc.result.summary }}
+                  </n-text>
+                </li>
+              </ul>
+            </n-collapse-item>
+          </n-collapse>
+          <div v-if="item.text" class="bubble" data-testid="agent-text">{{ item.text }}</div>
+          <n-text v-if="item.streaming && !item.text" depth="3" class="working">{{
+            t('ai.working')
+          }}</n-text>
+          <proposal-review
+            v-if="item.proposalId && session.proposals[item.proposalId]"
+            :proposal="session.proposals[item.proposalId]"
+            :busy="applying === item.proposalId"
+            @apply="(ids) => apply(item.proposalId!, ids)"
+            @reject="reject(item.proposalId!)"
+          />
+          <n-text
+            v-if="item.error"
+            :type="item.error.code === 'ai.stopped' ? 'warning' : 'error'"
+            class="error"
+          >
+            {{ errorLabel(item.error) }}
+          </n-text>
+          <n-tag
+            v-if="item.usage"
+            size="tiny"
+            :bordered="false"
+            class="usage"
+            data-testid="agent-usage"
+          >
+            {{
+              t('ai.usage', {
+                input: item.usage.inputTokens ?? 0,
+                output: item.usage.outputTokens ?? 0
+              })
+            }}
+            <template v-if="item.usage.costUsd !== undefined">{{
+              t('ai.usageCost', { cost: item.usage.costUsd.toFixed(4) })
+            }}</template>
+          </n-tag>
+        </template>
+      </div>
+    </n-scrollbar>
+
+    <div class="composer">
+      <n-input
+        v-model:value="input"
+        type="textarea"
+        :autosize="{ minRows: 2, maxRows: 6 }"
+        :placeholder="t('ai.placeholder')"
+        :disabled="!ai.hasUsableProvider"
+        data-testid="agent-input"
+        @keydown="onKeydown"
+      />
+      <n-space justify="space-between" align="center">
+        <n-text depth="3" class="hint">{{ t('ai.sendHint') }}</n-text>
+        <n-button
+          v-if="running"
+          size="small"
+          type="warning"
+          data-testid="agent-stop"
+          @click="ai.stop(packId, 'editor')"
+        >
+          {{ t('ai.stop') }}
+        </n-button>
+        <n-button
+          v-else
+          size="small"
+          type="primary"
+          :disabled="!canSend"
+          data-testid="agent-send"
+          @click="send"
+        >
+          {{ t('ai.send') }}
+        </n-button>
+      </n-space>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.agent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+.setup .para {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+.picker {
+  flex: 1;
+  min-width: 0;
+}
+.messages {
+  flex: 1;
+  min-height: 120px;
+}
+.empty {
+  margin-top: 24px;
+}
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.msg.user {
+  align-items: flex-end;
+}
+.bubble {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(128, 128, 128, 0.1);
+  max-width: 100%;
+}
+.user-bubble {
+  background: rgba(24, 160, 88, 0.16);
+}
+.details :deep(.n-collapse-item__header) {
+  font-size: 12px;
+}
+.thinking {
+  white-space: pre-wrap;
+  font-size: 11px;
+  opacity: 0.75;
+  margin: 0;
+  max-height: 200px;
+  overflow: auto;
+}
+.calls {
+  margin: 0;
+  padding-left: 14px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.call-name {
+  font-weight: 600;
+  margin-right: 4px;
+}
+.args {
+  word-break: break-all;
+  opacity: 0.8;
+}
+.result {
+  display: block;
+  font-size: 11px;
+}
+.working,
+.hint {
+  font-size: 11px;
+}
+.error {
+  font-size: 12px;
+}
+.usage {
+  align-self: flex-start;
+}
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+</style>

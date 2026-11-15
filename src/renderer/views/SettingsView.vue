@@ -21,6 +21,7 @@ import { LANGUAGES, THEMES, type Language, type Theme } from '@shared/model/sett
 import type { AppInfo } from '@shared/ipc/contract'
 import UpdateActions from '../components/UpdateActions.vue'
 import MinecraftSettings from '../components/vanilla/MinecraftSettings.vue'
+import AiSettings from '../components/ai/AiSettings.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useUpdaterStore } from '../stores/updater'
 import { useUpdaterMessage } from '../composables/useUpdaterMessage'
@@ -90,6 +91,8 @@ onMounted(async () => {
       </n-card>
 
       <minecraft-settings />
+
+      <ai-settings />
 
       <n-card :title="t('settings.updates')" size="small">
         <n-form label-placement="left" label-width="160">
