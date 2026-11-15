@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  SettingsPatchSchema,
-  applySettingsPatch,
-  defaultSettings
-} from '@shared/model/settings'
+import { SettingsPatchSchema, applySettingsPatch, defaultSettings } from '@shared/model/settings'
 
 describe('settings model', () => {
   it('defaults to English, system theme and auto update checks', () => {

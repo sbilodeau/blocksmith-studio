@@ -8,6 +8,7 @@ import {
   type Result
 } from '@shared/ipc/contract'
 import type { z } from 'zod'
+import { isTrustedSender } from '../security-policy'
 
 /** Thrown by handlers to return a typed, i18n-keyed error to the renderer. */
 export class AppErrorException extends Error {
@@ -23,23 +24,6 @@ type Handler<C extends InvokeChannel> = (
   input: z.output<(typeof inputSchemas)[C]>,
   event: IpcMainInvokeEvent
 ) => Promise<InvokeOutput<C>> | InvokeOutput<C>
-
-/**
- * Only frames loaded from the app itself may call IPC: the packaged file:// renderer, or the
- * electron-vite dev server in development.
- */
-export function isTrustedSender(frameUrl: string | undefined, devServerUrl?: string): boolean {
-  if (!frameUrl) return false
-  if (frameUrl.startsWith('file://')) return true
-  if (devServerUrl) {
-    try {
-      return new URL(frameUrl).origin === new URL(devServerUrl).origin
-    } catch {
-      return false
-    }
-  }
-  return false
-}
 
 export function handle<C extends InvokeChannel>(channel: C, handler: Handler<C>): void {
   ipcMain.handle(channel, async (event, payload: unknown): Promise<Result<InvokeOutput<C>>> => {

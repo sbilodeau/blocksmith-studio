@@ -1,10 +1,13 @@
-import { resolve } from 'path'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
+const root = dirname(fileURLToPath(import.meta.url))
+
 const alias = {
-  '@shared': resolve(__dirname, 'src/shared'),
-  '@renderer': resolve(__dirname, 'src/renderer')
+  '@shared': resolve(root, 'src/shared'),
+  '@renderer': resolve(root, 'src/renderer')
 }
 
 export default defineConfig({
@@ -24,7 +27,8 @@ export default defineConfig({
         test: {
           name: 'component',
           environment: 'happy-dom',
-          include: ['tests/component/**/*.test.ts']
+          include: ['tests/component/**/*.test.ts'],
+          setupFiles: ['tests/component/setup.ts']
         }
       }
     ]
