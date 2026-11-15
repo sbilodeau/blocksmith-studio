@@ -402,7 +402,8 @@
       "item": "Objet",
       "entity": "Entité",
       "flat": "À plat"
-    }
+    },
+    "noEntityModel": "Pas encore de modèle 3D pour cette texture d'entité : elle est affichée à plat, comme dans l'éditeur."
   },
   "ai": {
     "title": "IA",

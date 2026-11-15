@@ -81,6 +81,10 @@ const backgroundOptions = computed(() =>
   }))
 )
 
+/** Entity textures shown flat because no built-in model covers them (or the layout does not fit). */
+const noEntityModel = computed(
+  () => model.value?.kind === 'flat' && (editor.value.path ?? '').includes('/textures/entity/')
+)
 const kindLabel = computed(() => (model.value ? t(`preview.kind.${model.value.kind}`) : ''))
 const canWalk = computed(
   () => model.value?.kind === 'entity' && (model.value.definition.animation ?? 'none') !== 'none'
@@ -187,7 +191,8 @@ async function loadModel(): Promise<void> {
     rawModel.value = await call('texture.preview', { packId: props.packId, path })
     await loadOtherTextures()
     rebuild()
-    view('iso')
+    // A flat texture is a single plane: show it facing the camera, not at the 3/4 angle.
+    view(model.value?.kind === 'flat' ? 'front' : 'iso')
   } catch (err) {
     console.error(err)
     failed.value = true
@@ -415,6 +420,9 @@ onBeforeUnmount(() => {
       <div v-if="loadingModel || failed" class="note">
         <n-text depth="3">{{ failed ? t('preview.failed') : t('preview.loading') }}</n-text>
       </div>
+      <div v-else-if="noEntityModel" class="banner" data-testid="preview3d-no-model">
+        <n-text depth="2">{{ t('preview.noEntityModel') }}</n-text>
+      </div>
     </div>
     <div class="bar">
       <n-space size="small" align="center" :wrap="true">
@@ -476,6 +484,20 @@ onBeforeUnmount(() => {
 .host :deep(canvas) {
   display: block;
   cursor: grab;
+}
+.banner {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.banner :deep(.n-text) {
+  color: #e8e8e8;
 }
 .note {
   position: absolute;

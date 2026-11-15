@@ -402,7 +402,8 @@
       "item": "Item",
       "entity": "Entity",
       "flat": "Flat"
-    }
+    },
+    "noEntityModel": "No 3D model for this entity texture yet: it is shown flat, as in the editor."
   },
   "ai": {
     "title": "AI",
