@@ -241,3 +241,41 @@ test('Settings can test a model with the FR/EN phrases', async () => {
   await expect(box.getByTestId('model-test-rate')).toHaveText('25 %')
   await expect(report).toContainText('Requêtes ratées (12)')
 })
+
+test('a long conversation stays inside the window; Up/Down recall earlier messages', async () => {
+  launched = await setup()
+  const { page, app } = launched
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(1100, 700))
+  await openTexture(page, 'stone')
+  await page.locator('.side-tabs .n-tabs-tab[data-name="ai"]').click()
+  const panel = page.getByTestId('editor-agent')
+  const input = panel.getByTestId('agent-input').locator('textarea')
+  for (const text of ['tourne 1', 'tourne 2', 'tourne 3']) {
+    await input.fill(text)
+    await panel.getByTestId('agent-send').click()
+    await expect(panel.getByTestId('agent-send')).toBeVisible({ timeout: 15_000 })
+  }
+  await expect(panel.getByTestId('proposal-review')).toHaveCount(3)
+
+  // The page does not scroll: the canvas and the send button stay in view, the messages scroll instead.
+  const viewport = await page.evaluate(() => innerHeight)
+  const send = (await panel.getByTestId('agent-send').boundingBox())!
+  expect(send.y + send.height).toBeLessThanOrEqual(viewport)
+  const canvas = (await page.getByTestId('pixel-canvas').boundingBox())!
+  expect(canvas.y).toBeGreaterThanOrEqual(0)
+  const pageScrolled = await page.evaluate(() =>
+    [...document.querySelectorAll('.n-layout-scroll-container')].some((e) => e.scrollTop > 0)
+  )
+  expect(pageScrolled).toBe(false)
+
+  // Up walks back through sent messages, Down returns to the draft.
+  await input.fill('brouillon')
+  await input.press('ArrowUp')
+  await expect(input).toHaveValue('tourne 3')
+  await input.press('ArrowUp')
+  await expect(input).toHaveValue('tourne 2')
+  await input.press('ArrowDown')
+  await expect(input).toHaveValue('tourne 3')
+  await input.press('ArrowDown')
+  await expect(input).toHaveValue('brouillon')
+})

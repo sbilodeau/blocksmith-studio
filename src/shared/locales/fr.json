@@ -473,7 +473,7 @@
     "usage": "{input} en entrée / {output} en sortie (jetons)",
     "usageCost": " · {cost} $",
     "placeholder": "Décrivez la modification (français ou anglais)...",
-    "sendHint": "Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne",
+    "sendHint": "Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne, Haut/Bas pour les messages précédents",
     "send": "Envoyer",
     "stop": "Arrêter",
     "proposal": {

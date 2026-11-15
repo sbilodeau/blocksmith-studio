@@ -63,6 +63,8 @@ async function send(): Promise<void> {
   editor.value.commitFloating()
   const text = input.value.trim()
   input.value = ''
+  historyIndex.value = null
+  draft = ''
   try {
     await ai.sendEditor({
       packId: props.packId,
@@ -77,13 +79,62 @@ async function send(): Promise<void> {
   scrollDown()
 }
 
+/** Up/Down recall earlier messages of this conversation, like a terminal. null = editing the draft. */
+const historyIndex = ref<number | null>(null)
+let draft = ''
+const sentMessages = computed(() =>
+  session.value.items.filter((i) => i.role === 'user').map((i) => i.text)
+)
+
+function recall(step: -1 | 1): boolean {
+  const list = sentMessages.value
+  if (!list.length) return false
+  if (historyIndex.value === null) {
+    if (step === 1) return false
+    draft = input.value
+    historyIndex.value = list.length - 1
+  } else {
+    const next = historyIndex.value + step
+    if (next < 0) return true
+    if (next >= list.length) {
+      historyIndex.value = null
+      input.value = draft
+      return true
+    }
+    historyIndex.value = next
+  }
+  input.value = list[historyIndex.value] ?? ''
+  return true
+}
+
 function onKeydown(e: KeyboardEvent): void {
   // Enter sends, Shift+Enter adds a line. Keep editor shortcuts from firing while typing.
   e.stopPropagation()
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+  if (e.isComposing) return
+  if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
     void send()
+    return
   }
+  if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && !e.shiftKey && !e.altKey) {
+    const el = e.target as HTMLTextAreaElement
+    const before = el.value.slice(0, el.selectionStart ?? 0)
+    const after = el.value.slice(el.selectionEnd ?? 0)
+    // Only from the first line (Up) or the last line (Down), so moving inside a multi-line message still works.
+    const atEdge = e.key === 'ArrowUp' ? !before.includes('\n') : !after.includes('\n')
+    if (atEdge && recall(e.key === 'ArrowUp' ? -1 : 1)) {
+      e.preventDefault()
+      void nextTick(() => {
+        const end = el.value.length
+        el.setSelectionRange(end, end)
+      })
+    }
+  }
+}
+
+function onInput(): void {
+  // Typing leaves history browsing: the edited text becomes the new draft.
+  historyIndex.value = null
 }
 
 async function apply(proposalId: string, stepIds: string[]): Promise<void> {
@@ -247,6 +298,7 @@ onMounted(async () => {
         :disabled="!ai.hasUsableProvider"
         data-testid="agent-input"
         @keydown="onKeydown"
+        @input="onInput"
       />
       <n-space justify="space-between" align="center">
         <n-text depth="3" class="hint">{{ t('ai.sendHint') }}</n-text>

@@ -474,6 +474,9 @@ const statusTag = computed(() => {
   min-height: 0;
   height: 100%;
 }
+.side-tabs :deep(.n-tab-pane) {
+  box-sizing: border-box;
+}
 .side-scroll {
   height: 100%;
   overflow-y: auto;

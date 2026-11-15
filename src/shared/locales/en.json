@@ -473,7 +473,7 @@
     "usage": "{input} in / {output} out tokens",
     "usageCost": " · ${cost}",
     "placeholder": "Describe the change (English or French)...",
-    "sendHint": "Enter to send, Shift+Enter for a new line",
+    "sendHint": "Enter to send, Shift+Enter for a new line, Up/Down for earlier messages",
     "send": "Send",
     "stop": "Stop",
     "proposal": {
