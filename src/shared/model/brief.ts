@@ -43,8 +43,9 @@ export type StyleBrief = z.infer<typeof StyleBriefSchema>
 export const StyleBriefPatchSchema = z
   .object({
     theme: z.string().max(200).optional(),
-    palette: StyleBriefSchema.shape.palette.optional(),
-    rules: StyleBriefSchema.shape.rules.optional(),
+    // unwrap(): the brief defaults ([]) must not apply to a patch, or every patch would clear these fields.
+    palette: StyleBriefSchema.shape.palette.unwrap().optional(),
+    rules: StyleBriefSchema.shape.rules.unwrap().optional(),
     addDecision: z.string().max(300).optional()
   })
   .strict()
