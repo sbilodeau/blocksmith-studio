@@ -1,7 +1,8 @@
 # Packs
 
-How Blocksmith Studio stores, lists, imports and exports resource packs. Code: `src/main/services/packs/`,
-`src/main/protocol.ts` and `src/main/ipc/pack-handlers.ts`.
+How Blocksmith Studio stores, lists, edits, imports and exports resource packs. Code: `src/main/services/packs/`,
+`src/main/services/history/`, `src/main/protocol.ts`, `src/main/ipc/pack-handlers.ts` and
+`src/main/ipc/texture-handlers.ts`.
 
 ## Workspace
 
@@ -22,6 +23,7 @@ fire-pack/
   pack.png                    64x64, generated at creation
   assets/<ns>/...             only files that differ from vanilla, or new files
   .blocksmith/project.json    id, name, description, authoring version, base, dates (ProjectSchema)
+  .blocksmith/history/        pack journal for undo / redo (see History)
 ```
 
 A vanilla-based pack is **copy-on-write**: vanilla textures are read from the extracted vanilla cache until a file
@@ -57,6 +59,75 @@ or mtime changed. Measured on a test machine with 4000 vanilla textures and 1000
 
 `pack.categories` returns, in display order, every category that has at least one texture: count, changed count
 and an icon URL.
+
+## Texture editing
+
+`src/main/services/packs/textures-edit.ts`. Every path is validated again in main: it must match
+`assets/<ns>/textures/**.png`, use only `[a-z0-9_.-/]`, have no `.`, `..`, empty or hidden segment, and resolve
+inside the pack folder (`texture.invalidPath` otherwise). Writes also refuse a target whose folder resolves outside
+the pack through a symbolic link (`packs.unsafePath`).
+
+- `texture.read` returns the pack file if present, else the vanilla file of the authoring version (vanilla base
+  only), else `png: null` with `origin: 'none'`. `vanillaPng` is the vanilla file (vanilla base only) and
+  `mcmeta` the text of the sibling `.png.mcmeta` (pack first, then vanilla).
+- `texture.save` checks the PNG (signature, IHDR, sides 1..4096, decodes; `texture.invalidPng` otherwise). Bytes
+  identical to vanilla delete the pack copy instead (the pack keeps only changed files). The write is atomic and
+  creates folders. It records a history entry (`source: 'editor'`, label `save` with `params.name` = file name
+  without `.png`) and returns the fresh texture entry (status, cache-busted URL...).
+- `texture.revert` deletes the pack copy so the vanilla texture shows again (a pack `.png.mcmeta` is kept in M2).
+  It records a `revert` entry. `texture.notInPack` when the pack has no copy, `texture.noVanilla` when there is
+  no vanilla counterpart (empty pack or added texture).
+
+Both writes invalidate the cached hashes of the path and the pack's texture list (`PackCacheControl.invalidate`;
+size + mtime alone can miss a same-size rewrite) and emit `packs.changed`.
+
+## History
+
+`src/main/services/history/` keeps one persisted undo / redo stack per pack (level 2 of PLAN.md section 4.3; the
+pixel editor keeps its own in-memory undo while a texture is open).
+
+```
+.blocksmith/history/
+  journal.jsonl          one entry per line, oldest first
+  state.json             { "schemaVersion": 1, "head": "<id of the newest applied entry>" | null }
+  blobs/<sha256>.bin     content-addressed file versions
+```
+
+A journal entry (one line on disk, shown indented here):
+
+```json
+{
+  "v": 1,
+  "id": "7f0c2a9e-…",
+  "at": "2026-11-15T10:00:00.000Z",
+  "source": "editor",
+  "label": { "key": "save", "params": { "name": "stone" } },
+  "changes": [
+    { "path": "assets/minecraft/textures/block/stone.png", "before": null, "after": "<sha256>" }
+  ]
+}
+```
+
+`before` / `after` are blob hashes of the file content before and after the change, `null` when the file is
+absent. Entries up to `head` are applied, later ones are undone (redoable). A missing or invalid `state.json`, or
+an unknown head, means every entry is applied.
+
+- **Record**: `apply(packId, { source, label, changes: [{ path, after }] })` snapshots the current files, writes
+  the new contents (null deletes) and records one entry; `record(...)` records a change the caller already made
+  (before and after given). Multi-file entries are supported, for AI proposals (M3), imports and merges (M8).
+  New entries are appended; when undone entries exist they are dropped first (redo tail).
+- **Undo / redo** restore the `before` (or `after`) state of one entry, writing or deleting files, move `head`,
+  and emit `packs.changed`. With nothing to undo or redo they return the state unchanged.
+- **Conflicts**: before writing anything, every file of the entry must still hold the expected content. A file
+  already in the target state is accepted (resumes an interrupted operation); any other content means it was
+  edited outside the app and the operation is refused with `history.conflict` (`params.path`).
+- **Limits**: at most 200 entries per pack (`maxEntries`). Dropping the redo tail or trimming old entries rewrites
+  the journal atomically and deletes every blob no remaining entry references.
+- **Robustness**: corrupted lines (invalid JSON, schema mismatch, unsafe path, duplicate id) are skipped with a
+  warning; an append after a partial last line starts on a new line. Blobs are checked against their hash when
+  read (`history.blobMissing` otherwise). Operations on one pack run one at a time (promise queue).
+- `history.get` returns the entries newest first with `applied`, `canUndo` and `canRedo`. Importing a zip does not
+  record history in M2.
 
 ## Import (.zip)
 
@@ -133,3 +204,11 @@ query parameter does the cache busting. The resolution logic (`resolveAssetUrl`)
 | `packs.vanillaNotReady`     | Vanilla base but the version's vanilla assets are not extracted |
 | `workspace.invalidPath`     | Chosen workspace is not absolute or cannot be created           |
 | `export.targetNotSupported` | Export target other than the authoring version (M1)             |
+| `packs.unsafePath`          | A write would follow a symbolic link out of the pack folder     |
+| `texture.invalidPath`       | Not a safe `assets/<ns>/textures/**.png` path                   |
+| `texture.invalidPng`        | Bad signature or IHDR, does not decode, or a side over 4096     |
+| `texture.notInPack`         | Revert of a texture the pack does not contain                   |
+| `texture.noVanilla`         | Revert of a texture with no vanilla counterpart                 |
+| `history.conflict`          | Undo / redo over a file changed outside the app                 |
+| `history.blobMissing`       | A stored file version is missing or corrupted                   |
+| `history.invalidPath`       | A recorded change targets an unsafe pack path                   |
