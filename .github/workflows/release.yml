@@ -1,0 +1,163 @@
+# Manual release: computes the CalVer version, tests, builds installers on Windows and macOS,
+# then tags the workflow commit and creates the GitHub Release. See docs/releasing.md.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: Extra release notes (Markdown), shown above the generated notes
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+# One release at a time so two runs cannot compute the same version.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - id: calver
+        name: Compute CalVer version
+        run: |
+          version="$(node scripts/calver.mjs)"
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "::error::Tag v$version already exists"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing **v$version** from \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: Lint, typecheck and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  build:
+    name: Build (${{ matrix.platform }})
+    needs: [version, test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            builder-args: --win --x64
+          - os: macos-latest
+            platform: macos
+            # Both archs in one run so electron-builder writes a single latest-mac.yml for arm64 + x64.
+            builder-args: --mac --arm64 --x64
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      # No signing certificates yet: macOS builds are ad-hoc signed (identity "-" in electron-builder.yml).
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Set app version
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+      - run: npm run build
+      - name: Package
+        run: npx electron-builder ${{ matrix.builder-args }} --publish never
+      - name: Check update metadata
+        run: |
+          shopt -s nullglob
+          metadata=(dist/latest*.yml)
+          if [ ${#metadata[@]} -eq 0 ]; then
+            echo "::error::No latest*.yml produced"
+            exit 1
+          fi
+          for yml in "${metadata[@]}"; do
+            echo "--- $yml"
+            cat "$yml"
+            # Every file referenced by the update metadata must exist under that exact name
+            # (names contain no spaces, so word splitting is safe and would catch a space anyway).
+            for name in $(sed -nE 's/^ *(- )?(url|path): *//p' "$yml"); do
+              if [ ! -f "dist/$name" ]; then
+                echo "::error::$yml references $name, which was not built"
+                exit 1
+              fi
+            done
+          done
+      - name: Check macOS DMG names used by the in-app updater
+        if: matrix.platform == 'macos'
+        run: |
+          for arch in arm64 x64; do
+            test -f "dist/Blocksmith-Studio-$VERSION-$arch.dmg" || {
+              echo "::error::Missing dist/Blocksmith-Studio-$VERSION-$arch.dmg"
+              exit 1
+            }
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: |
+            dist/Blocksmith-Studio-*
+            dist/latest*.yml
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Tag and publish GitHub Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release
+      - name: List release files
+        run: ls -la release
+      - name: Create tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.version.outputs.version }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          args=(--target "$GITHUB_SHA" --title "Blocksmith Studio $VERSION" --generate-notes --latest)
+          if [ -n "$NOTES" ]; then
+            args+=(--notes "$NOTES")
+          fi
+          # Creates tag v$VERSION on the workflow commit, then uploads every file.
+          gh release create "v$VERSION" "${args[@]}" release/*
