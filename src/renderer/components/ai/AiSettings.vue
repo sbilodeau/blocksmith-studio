@@ -10,6 +10,7 @@ import {
   NRadioButton,
   NRadioGroup,
   NSpace,
+  NSwitch,
   NTag,
   NText,
   useMessage
@@ -129,7 +130,10 @@ onMounted(async () => {
           <n-space align="center" size="small">
             <n-text strong>{{ p.label }}</n-text>
             <n-tag size="tiny" :bordered="false">{{ t(`ai.kind.${p.kind}`) }}</n-tag>
-            <n-tag size="tiny" :bordered="false" :type="p.hasKey ? 'success' : 'warning'">
+            <n-tag v-if="!p.keyRequired && !p.hasKey" size="tiny" :bordered="false">
+              {{ t('ai.keyNotNeeded') }}
+            </n-tag>
+            <n-tag v-else size="tiny" :bordered="false" :type="p.hasKey ? 'success' : 'warning'">
               {{ p.hasKey ? t('ai.keySet') : t('ai.keyMissing') }}
             </n-tag>
           </n-space>
@@ -165,7 +169,8 @@ onMounted(async () => {
           <n-button
             size="small"
             :loading="testing === p.id"
-            :disabled="!p.hasKey"
+            :disabled="p.keyRequired && !p.hasKey"
+            :data-testid="`provider-test-${p.id}`"
             @click="test(p.id)"
           >
             {{ t('ai.test') }}

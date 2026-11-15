@@ -81,7 +81,9 @@ export const useAiStore = defineStore('ai', () => {
   const runs = new Map<string, string>()
   let listening = false
 
-  const hasUsableProvider = computed(() => providers.value.some((p) => p.enabled && p.hasKey))
+  const hasUsableProvider = computed(() =>
+    providers.value.some((p) => p.enabled && (p.hasKey || !p.keyRequired))
+  )
   const toolModels = computed(() => models.value.filter((m) => m.capabilities.tools !== false))
 
   function init(): void {

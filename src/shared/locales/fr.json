@@ -487,7 +487,8 @@
         "partially-applied": "Appliqué en partie",
         "rejected": "Refusé"
       }
-    }
+    },
+    "keyNotNeeded": "Aucune clé requise (local)"
   },
   "brief": {
     "open": "Brief de style",

@@ -87,7 +87,7 @@ describe('registerAiProviderHandlers', () => {
   it('list returns statuses with hasKey and never the key', async () => {
     keys.set('ollama-cloud', 'secret-key')
     const list = await call('ai.providers.list')
-    expect(list).toEqual([{ ...cloud, hasKey: true }])
+    expect(list).toEqual([{ ...cloud, hasKey: true, keyRequired: true }])
     expect(JSON.stringify(list)).not.toContain('secret-key')
   })
 
@@ -100,8 +100,8 @@ describe('registerAiProviderHandlers', () => {
       enabled: true
     }
     expect(await call('ai.providers.save', custom)).toEqual([
-      { ...cloud, hasKey: false },
-      { ...custom, hasKey: false }
+      { ...cloud, hasKey: false, keyRequired: true },
+      { ...custom, hasKey: false, keyRequired: false }
     ])
     const renamed = await call('ai.providers.save', { ...cloud, label: 'Cloud' })
     expect((renamed as ProviderSettings[]).map((p) => [p.id, p.label])).toEqual([
@@ -136,12 +136,14 @@ describe('registerAiProviderHandlers', () => {
   it('setKey stores (or clears) the key and returns the status', async () => {
     expect(await call('ai.providers.setKey', { providerId: 'ollama-cloud', key: 'abc' })).toEqual({
       ...cloud,
-      hasKey: true
+      hasKey: true,
+      keyRequired: true
     })
     expect(registry.invalidate).toHaveBeenCalledWith('ollama-cloud')
     expect(await call('ai.providers.setKey', { providerId: 'ollama-cloud', key: '' })).toEqual({
       ...cloud,
-      hasKey: false
+      hasKey: false,
+      keyRequired: true
     })
     await expect(
       call('ai.providers.setKey', { providerId: 'nope', key: 'abc' })

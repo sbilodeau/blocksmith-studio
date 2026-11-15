@@ -21,6 +21,8 @@ export interface ProviderConfig {
 /** What the renderer sees about a provider: never the key itself. */
 export interface ProviderStatus extends ProviderConfig {
   hasKey: boolean
+  /** False for loopback providers (self-hosted Ollama on localhost), which work without a key. */
+  keyRequired: boolean
 }
 
 export interface ModelCapabilities {

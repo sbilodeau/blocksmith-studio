@@ -5,6 +5,7 @@ import type { ProviderSettings } from '../services/settings'
 import {
   assertSafeBaseUrl,
   assertValidExtraHeaders,
+  isLoopbackUrl,
   type ProviderRegistryService
 } from '../services/ai/providers'
 
@@ -36,7 +37,11 @@ export function registerAiProviderHandlers({
   const providers = (): ProviderSettings[] => settings.get().ai.providers
 
   async function status(config: ProviderConfig): Promise<ProviderStatus> {
-    return { ...config, hasKey: await secrets.has(config.id) }
+    return {
+      ...config,
+      hasKey: await secrets.has(config.id),
+      keyRequired: !isLoopbackUrl(config.baseUrl)
+    }
   }
 
   const statuses = (): Promise<ProviderStatus[]> => Promise.all(providers().map(status))
