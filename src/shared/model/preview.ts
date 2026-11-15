@@ -103,6 +103,8 @@ export interface EntityDefinition {
 export interface EntityPreview {
   kind: 'entity'
   definition: EntityDefinition
+  /** 'jar': geometry read from the user's Minecraft jar (exact); 'builtin': the app's own definitions. */
+  source?: 'jar' | 'builtin'
 }
 
 /** Fallback: the texture on a flat plane (entity without definition, GUI, particles, ...). */

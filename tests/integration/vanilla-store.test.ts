@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { existsSync } from 'fs'
-import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { makeFixtureJar } from '../../scripts/make-fixture-jar.mjs'
@@ -9,6 +9,10 @@ import { extractVanillaJar, type ExtractRunner } from '../../src/main/services/v
 import type { MojangClient } from '../../src/main/services/vanilla/mojang'
 import { VanillaError } from '../../src/main/services/vanilla/errors'
 import { AppErrorException } from '../../src/main/ipc/registry'
+import {
+  ENTITY_MODELS_FILE,
+  extractEntityModelsFromJar
+} from '../../src/main/services/entity-models/extract'
 
 const NOW = new Date('2026-11-15T12:00:00Z')
 
@@ -303,6 +307,44 @@ describe('VanillaStore', () => {
       await mkdir(join(oldOnly, 'versions', '1.21.1'), { recursive: true })
       await writeFile(join(oldOnly, 'versions', '1.21.1', '1.21.1.jar'), 'old')
       expect(await store().inspectPath(oldOnly)).toBeNull()
+    })
+  })
+
+  describe('entity models', () => {
+    it('are written during extraction of a 26.x jar and read from the cache', async () => {
+      await makeFixtureJar(join(officialRoot(), 'versions', '26.3', '26.3.jar'), '26.3')
+      const s = store()
+      await s.prepare('26.3', { allowDownload: false })
+      expect(existsSync(join(userData, 'vanilla', '26.3', ENTITY_MODELS_FILE))).toBe(true)
+      const models = await s.entityModels('26.3')
+      expect(Object.keys(models!.layers)).toContain('zombie#main')
+    })
+
+    it('are built on first use for versions extracted before, then cached', async () => {
+      await makeFixtureJar(join(officialRoot(), 'versions', '26.3', '26.3.jar'), '26.3')
+      await store().prepare('26.3', { allowDownload: false })
+      const file = join(userData, 'vanilla', '26.3', ENTITY_MODELS_FILE)
+      await rm(file)
+      const calls: string[] = []
+      const s = store({
+        extractModels: async (jarPath, versionId) => {
+          calls.push(versionId)
+          return extractEntityModelsFromJar(new Uint8Array(await readFile(jarPath)), { versionId })
+        }
+      })
+      expect(Object.keys((await s.entityModels('26.3'))!.layers)).toContain('demo#main')
+      expect(existsSync(file)).toBe(true)
+      await s.entityModels('26.3')
+      expect(calls).toEqual(['26.3'])
+    })
+
+    it('are empty for jars without readable model code, and null before extraction', async () => {
+      await makeFixtureJar(join(officialRoot(), 'versions', '1.21.4', '1.21.4.jar'), '1.21.4')
+      const s = store()
+      expect(await s.entityModels('1.21.4')).toBeNull()
+      await s.prepare('1.21.4', { allowDownload: false })
+      expect((await s.entityModels('1.21.4'))!.layers).toEqual({})
+      expect(await s.entityModels('9.9.9')).toBeNull()
     })
   })
 })

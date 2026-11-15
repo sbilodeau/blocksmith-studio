@@ -1,7 +1,81 @@
 # Entity models
 
-Minecraft keeps entity geometry in its Java code, not in the assets, so the 3D preview (PLAN 3.4) ships its own
-geometry definitions: one data-only JSON file per entity in
+Minecraft keeps entity geometry in its Java code, not in the assets. The 3D preview gets it in two ways:
+
+1. **From the user's own Minecraft jar** (26.1 and later, whose code is not obfuscated): every model the game
+   registers, read when the version is extracted. This covers all entities, babies and block entities. See
+   [Models read from the jar](#models-read-from-the-jar).
+2. **Built-in definitions** for older versions and as a fallback, described in the rest of this page.
+
+The preview uses the jar model when the texture -> layer table names one, then the built-in definition, then the flat
+view.
+
+## Models read from the jar
+
+Since 26.1 the Minecraft client jar keeps readable class and method names. The model code is a sequence of builder
+calls (`CubeListBuilder.texOffs(..).addBox(..)`, `PartPose.offsetAndRotation(..)`, `addOrReplaceChild(..)`),
+registered in `LayerDefinitions.createRoots()` under named layers (`ModelLayers.AXOLOTL_BABY` = `axolotl_baby#main`).
+
+| Piece                                                                           | Role                                                                                                                                        |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`classfile.ts`](../src/main/services/entity-models/classfile.ts)               | Reads JVM class files (constant pool, methods, code, bootstrap methods)                                                                     |
+| [`interpreter.ts`](../src/main/services/entity-models/interpreter.ts)           | Symbolic JVM interpreter: runs the bytecode of `client/model/**` and the entity / block-entity renderers, simulates the JDK pieces they use |
+| [`extract.ts`](../src/main/services/entity-models/extract.ts)                   | Runs the registry, converts each layer to the preview format, writes `entity-models.json`                                                   |
+| [`resources/data/entity-layers.json`](../resources/data/entity-layers.json)     | Texture -> layer table (names only, hand-maintained)                                                                                        |
+| [`src/shared/preview/entity-layers.ts`](../src/shared/preview/entity-layers.ts) | Table lookup (`findEntityLayer`)                                                                                                            |
+
+How it runs:
+
+- **When**: during vanilla extraction (`userData/vanilla/<version>/entity-models.json`, next to `index.json`), or on
+  first use for versions extracted before this feature (from the same jar). 26.3 gives 361 layers in about 0.2 s.
+- **What is executed**: nothing natively. The interpreter only steps through bytecode. Classes outside the model and
+  renderer packages are simulated (lists, maps, sets, iterators, Guava builders, boxing, `Math`, `Mth`,
+  `Direction`, `Identifier`, JOML `Vector3f`, lambdas, string concatenation, Mojang's seeded `RandomSource`) or
+  become an unknown value. Branching on an unknown value, throwing, or running out of budget aborts that method
+  only; the layer that needed it is skipped, never guessed.
+- **Conversion**: Mojang's coordinates (y down, entity front at -z, offsets relative to the parent part) become the
+  preview's (y up, front +z, absolute pivots): `y' = 24 - y`, `z' = -z`, rotations `(x, -y, -z)`. Mesh transformers
+  (baby scaling) are kept as a part `scale`; per-axis inflation, `texScale` (`uvScale`) and visible faces (`faces`)
+  are carried over.
+- **Nothing is redistributed**: the geometry stays in the user's `userData`, like the extracted textures.
+
+Limits: armor model sets depend on a map keyed by `EquipmentSlot` that is built outside the model code, so their
+"keep only these parts" step is not applied (the table does not use armor layers; humanoid armor keeps its built-in
+definition). Animations (`setupAnim`) are not interpreted: models show their rest pose, with the preview's own walk
+animation when the part names match.
+
+### The texture -> layer table
+
+`resources/data/entity-layers.json` maps texture globs to layer ids:
+
+```json
+{ "textures": ["assets/minecraft/textures/entity/axolotl/axolotl_*_baby.png"], "layer": "axolotl_baby#main" }
+```
+
+Rules: one entry per texture at most (tested); overlays (eyes, collars, markings, saddles, armor) use the layer they
+are drawn on; baby textures use the `*_baby` layers. To check the table against a real jar and its textures:
+
+```bash
+BLOCKSMITH_REAL_JAR="<userData>/jars/26.3.jar" \
+BLOCKSMITH_REAL_JAR_TEXTURES="<userData>/vanilla/26.3" npm run test:real-jar
+```
+
+It fails when an entry names a layer the jar does not have, or a texture whose size does not fit its layer.
+`BLOCKSMITH_REAL_JAR_DUMP=<file.json>` also writes the extracted models for inspection. This test never runs in CI and
+reads only your local files.
+
+### Tests without Mojang code
+
+[`scripts/lib/class-assembler.mjs`](../scripts/lib/class-assembler.mjs) writes class files from a short instruction
+list. [`scripts/lib/synthetic-models.mjs`](../scripts/lib/synthetic-models.mjs) uses it to build stand-in model code
+with the same package and field names (our own simplified bodies): a demo model (children, rotation, a loop, string
+concatenation, mirror, inflate, visible faces), a scaled baby layer through a lambda, a `zombie#main` layer, and a
+model that throws. The 26.3 fixture jar includes these classes, so the extraction, the store, the preview and the E2E
+test all go through the jar path.
+
+## Built-in definitions
+
+The app ships its own geometry definitions: one data-only JSON file per entity in
 [`resources/data/entity-models/`](../resources/data/entity-models/). They were written for Blocksmith Studio from
 the publicly known box sizes, positions and texture offsets of the vanilla models, and are MIT licensed like the rest of
 the repository. Nothing is copied from Mojang code, Blockbench or OptiFine CEM templates, and no Mojang asset is in the

@@ -228,7 +228,41 @@ describe('texture.preview', () => {
         parts: []
       }
       entities[path] = definition
-      expect(await service.preview(packId, path)).toEqual({ kind: 'entity', definition })
+      expect(await service.preview(packId, path)).toEqual({
+        kind: 'entity',
+        definition,
+        source: 'builtin'
+      })
+    })
+
+    it('prefers the model read from the jar when the table names a layer it has', async () => {
+      const path = T('entity/zombie/zombie.png')
+      entities[path] = { id: 'zombie', textureSize: [64, 64], textures: [path], parts: [] }
+      const parts = [{ name: 'body', pivot: [0, 12, 0] as [number, number, number], boxes: [] }]
+      env.vanilla.models.set('26.3', {
+        schemaVersion: 1,
+        versionId: '26.3',
+        generatedAt: '2026-11-15T00:00:00.000Z',
+        layers: { 'zombie#main': { textureSize: [64, 64], animation: 'biped', parts } },
+        skipped: [],
+        stats: { steps: 1, aborts: 0 }
+      })
+      expect(await service.preview(packId, path)).toEqual({
+        kind: 'entity',
+        source: 'jar',
+        definition: {
+          id: 'zombie_main',
+          textureSize: [64, 64],
+          textures: [path],
+          animation: 'biped',
+          parts
+        }
+      })
+      // A texture the table does not know keeps the built-in definition.
+      const other = T('entity/custom/thing.png')
+      entities[other] = { id: 'thing', textureSize: [16, 16], textures: [other], parts: [] }
+      expect((await service.preview(packId, other)).kind).toBe('entity')
+      env.vanilla.models.clear()
     })
 
     it('uses the built-in entity definitions by default', async () => {

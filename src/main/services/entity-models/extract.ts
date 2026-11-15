@@ -95,7 +95,8 @@ function obj(v: JValue | undefined, cls?: string): JObject {
   return v
 }
 
-const round = (n: number): number => Math.round(n * 10000) / 10000
+/** 4 decimals, and never -0 (flipping y/z produces negative zeros). */
+const round = (n: number): number => Math.round(n * 10000) / 10000 || 0
 const deg = (rad: number): number => round((rad * 180) / Math.PI)
 
 /** Mojang Direction -> box UV face of src/shared/preview/box-uv.ts (WEST is the entity's right side). */
@@ -186,7 +187,7 @@ function convertPart(
   const rx = num(pose.get('xRot'))
   const ry = num(pose.get('yRot'))
   const rz = num(pose.get('zRot'))
-  if (rx || ry || rz) out.rotation = [deg(rx), deg(-ry) || 0, deg(-rz) || 0]
+  if (rx || ry || rz) out.rotation = [deg(rx), deg(-ry), deg(-rz)]
   const scale = [pose.get('xScale'), pose.get('yScale'), pose.get('zScale')].map((v) =>
     v === undefined ? 1 : num(v)
   )

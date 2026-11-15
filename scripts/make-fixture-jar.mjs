@@ -20,6 +20,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { strToU8, zipSync } from 'fflate'
 import { encode } from 'fast-png'
+import { syntheticModelClasses } from './lib/synthetic-models.mjs'
 
 /**
  * Fake versions. `packVersion` is written verbatim into version.json:
@@ -162,6 +163,10 @@ export function fixtureJarFiles(versionId, options = {}) {
     'assets/minecraft/texts/splashes.txt': strToU8('Fixture!\n'),
     'assets/realms/textures/gui/realms/news_icon.png': texture('realms', 16, 16)
   })
+
+  // 26.x jars ship readable model code: synthetic model classes (scripts/lib/synthetic-models.mjs) stand in for it.
+  // The 1.21.4 jar has none, like an obfuscated jar.
+  if (versionId === '26.3') Object.assign(files, syntheticModelClasses())
 
   if (options.includeUnsafeEntries) {
     files[`${T}../../../../evil.txt`] = strToU8('zip slip')

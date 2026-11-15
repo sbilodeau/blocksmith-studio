@@ -403,7 +403,9 @@
       "entity": "Entity",
       "flat": "Flat"
     },
-    "noEntityModel": "No 3D model for this entity texture yet: it is shown flat, as in the editor."
+    "noEntityModel": "No 3D model for this entity texture yet: it is shown flat, as in the editor.",
+    "fromGame": "game model",
+    "fromGameHint": "Exact model read from your Minecraft files for this version."
   },
   "ai": {
     "title": "AI",

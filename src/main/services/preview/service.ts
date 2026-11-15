@@ -157,9 +157,10 @@ export function createPreviewService(deps: PreviewServiceDeps): PreviewService {
       switch (previewCategory(path)) {
         case 'entity': {
           // Jar models first (exact, every entity of 26.1+), then the built-in definitions, then flat.
-          const definition =
-            (await jarEntity(location.project.authoringVersion, path)) ?? findEntity(path)
-          return definition ? { kind: 'entity', definition } : { kind: 'flat' }
+          const fromJar = await jarEntity(location.project.authoringVersion, path)
+          if (fromJar) return { kind: 'entity', definition: fromJar, source: 'jar' }
+          const definition = findEntity(path)
+          return definition ? { kind: 'entity', definition, source: 'builtin' } : { kind: 'flat' }
         }
         case 'item':
           return { kind: 'item' }
