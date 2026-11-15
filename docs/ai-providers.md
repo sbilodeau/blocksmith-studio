@@ -26,7 +26,7 @@ Provider configs (`{ id, kind, label, baseUrl, enabled, extraHeaders? }`) live i
 - When `safeStorage.isEncryptionAvailable()` is false, storing a key fails with `ai.secretsUnavailable`. There is
   no plain-text fallback.
 - An empty (or blank) key deletes the entry; keys are trimmed. Deleting a provider deletes its key.
-- Keys are never logged, never put in error params and never returned over IPC: the renderer only gets `hasKey`.
+- Keys are never logged, never put in error params and never returned over IPC: the renderer only gets `hasKey`, plus `keyRequired: false` for loopback providers that work without a key.
 - A corrupted file is kept as `secrets.bin.bak` and the store starts empty. A key that cannot be decrypted (other
   machine, keychain reset) reports `ai.secretsUnavailable`; setting the key again fixes it.
 
@@ -111,14 +111,14 @@ Verified against https://docs.ollama.com/api (chat, tags, errors, streaming), ht
 
 ## IPC channels
 
-| Channel               | Input                       | Output                                       |
-| --------------------- | --------------------------- | -------------------------------------------- |
-| `ai.providers.list`   |                             | `ProviderStatus[]` (config + `hasKey`)       |
-| `ai.providers.save`   | `ProviderConfig`            | `ProviderStatus[]` (upsert by id)            |
-| `ai.providers.delete` | `{ providerId }`            | `ProviderStatus[]` (also deletes the key)    |
-| `ai.providers.setKey` | `{ providerId, key }`       | `ProviderStatus` (empty key = delete)        |
-| `ai.providers.test`   | `{ providerId }`            | `{ ok, modelCount?, error? }` (never throws) |
-| `ai.models.list`      | `{ providerId?, refresh? }` | `ModelInfo[]`                                |
+| Channel               | Input                       | Output                                                |
+| --------------------- | --------------------------- | ----------------------------------------------------- |
+| `ai.providers.list`   |                             | `ProviderStatus[]` (config + `hasKey`, `keyRequired`) |
+| `ai.providers.save`   | `ProviderConfig`            | `ProviderStatus[]` (upsert by id)                     |
+| `ai.providers.delete` | `{ providerId }`            | `ProviderStatus[]` (also deletes the key)             |
+| `ai.providers.setKey` | `{ providerId, key }`       | `ProviderStatus` (empty key = delete)                 |
+| `ai.providers.test`   | `{ providerId }`            | `{ ok, modelCount?, error? }` (never throws)          |
+| `ai.models.list`      | `{ providerId?, refresh? }` | `ModelInfo[]`                                         |
 
 - Deleting the last provider is allowed: the settings UI can add a preset (Ollama Cloud...) again with `save`.
 - `test` builds a fresh adapter (also for a disabled provider), lists `/api/tags` only (no `/api/show`) with a

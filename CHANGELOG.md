@@ -5,6 +5,23 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M3 - Editor AI agent (MVP complete)
+
+- AI tab in the editor: describe a change in French or English, follow the streamed answer, the model's reasoning
+  and its tool calls, with token usage per request; Stop at any time; one conversation per pack tab that follows
+  you from one texture to the next
+- Plans instead of edits: every change is a step with a localized description ("Rotation 90° antihoraire") and a
+  before/after preview; apply all, some or none; the result is one undoable edit in the editor
+- 21 tools for the model: rotate, flip, shift, resize, set_pixels, lines, rectangles, fill, erase, replace color,
+  palette, hue, saturation, brightness, outline, reading pixels, palette, the vanilla texture and the style brief
+- Style brief per pack (theme, palette, rules, decisions, request log), editable in a side panel; agents read it and
+  propose changes as plan steps
+- Ollama Cloud provider (native API: streaming, tools, images, thinking, model capabilities); self-hosted Ollama on
+  localhost without a key; API keys encrypted with the system keychain, never sent to the renderer
+- Settings > AI: providers, keys, connection test, default model and options for the editor agent, and
+  "Test a model" (quick or full FR/EN evaluation)
+- FR/EN evaluation suite (60 phrases), `npm run test:ai`, and a CI job on pull requests that touch AI code
+
 ### M2b - Live 3D preview
 
 - 3D panel in the editor (3D button or key 3, resizable): updates on every stroke, orbit/zoom/pan, preset views,
