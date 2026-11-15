@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "categories": [
+    {
+      "id": "blocks",
+      "i18nKey": "category.blocks",
+      "icon": "assets/minecraft/textures/block/grass_block_side.png",
+      "order": 10,
+      "include": [
+        "block/**",
+        "item/*_door.png",
+        "item/*_sign.png",
+        "item/*candle.png",
+        "item/{bamboo,bell,brewing_stand,cake,campfire,cauldron,chain,comparator,flower_pot,hopper,kelp,lantern,mangrove_propagule,nether_sprouts,pink_petals,pitcher_plant,pointed_dripstone,repeater,sea_pickle,seagrass,soul_campfire,soul_lantern,sugar_cane}.png"
+      ]
+    },
+    {
+      "id": "ores",
+      "i18nKey": "category.ores",
+      "icon": "assets/minecraft/textures/block/diamond_ore.png",
+      "order": 20,
+      "include": [
+        "block/*_ore.png",
+        "block/raw_*_block.png",
+        "block/ancient_debris_*.png",
+        "item/raw_*.png"
+      ]
+    },
+    {
+      "id": "tools",
+      "i18nKey": "category.tools",
+      "icon": "assets/minecraft/textures/item/iron_pickaxe.png",
+      "order": 30,
+      "include": [
+        "item/*_pickaxe.png",
+        "item/*_axe.png",
+        "item/*_shovel.png",
+        "item/*_hoe.png",
+        "item/*bucket.png",
+        "item/{compass,recovery_compass,clock}*.png",
+        "item/fishing_rod*.png",
+        "item/spyglass*.png",
+        "item/{brush,carrot_on_a_stick,flint_and_steel,lead,name_tag,shears,warped_fungus_on_a_stick}.png"
+      ]
+    },
+    {
+      "id": "weapons",
+      "i18nKey": "category.weapons",
+      "icon": "assets/minecraft/textures/item/diamond_sword.png",
+      "order": 40,
+      "include": [
+        "item/*_sword.png",
+        "item/*_spear*.png",
+        "item/bow.png",
+        "item/bow_*.png",
+        "item/crossbow*.png",
+        "item/{arrow,spectral_arrow,mace,trident}.png",
+        "item/tipped_arrow*.png"
+      ]
+    },
+    {
+      "id": "armor",
+      "i18nKey": "category.armor",
+      "icon": "assets/minecraft/textures/item/diamond_chestplate.png",
+      "order": 50,
+      "include": [
+        "item/*_{helmet,chestplate,leggings,boots}.png",
+        "item/*_{helmet,chestplate,leggings,boots}_overlay.png",
+        "item/*horse_armor*.png",
+        "item/*nautilus_armor*.png",
+        "item/wolf_armor*.png",
+        "item/elytra*.png",
+        "item/*_armor_trim_smithing_template.png",
+        "entity/equipment/**",
+        "trims/**"
+      ]
+    },
+    {
+      "id": "food",
+      "i18nKey": "category.food",
+      "icon": "assets/minecraft/textures/item/apple.png",
+      "order": 60,
+      "include": [
+        "item/{apple,golden_apple,enchanted_golden_apple,bread,cookie,cake,pumpkin_pie,melon_slice,glistering_melon_slice}.png",
+        "item/{carrot,golden_carrot,potato,baked_potato,poisonous_potato,beetroot,beetroot_soup}.png",
+        "item/{mushroom_stew,rabbit_stew,suspicious_stew,dried_kelp,sweet_berries,glow_berries,chorus_fruit}.png",
+        "item/{beef,cooked_beef,porkchop,cooked_porkchop,mutton,cooked_mutton,chicken,cooked_chicken,rabbit,cooked_rabbit}.png",
+        "item/{cod,cooked_cod,salmon,cooked_salmon,tropical_fish,pufferfish}.png",
+        "item/{honey_bottle,milk_bucket,rotten_flesh,spider_eye}.png"
+      ]
+    },
+    {
+      "id": "materials",
+      "i18nKey": "category.materials",
+      "icon": "assets/minecraft/textures/item/iron_ingot.png",
+      "order": 70,
+      "include": [
+        "item/*_ingot.png",
+        "item/*_nugget.png",
+        "item/*_dye.png",
+        "item/*_pottery_sherd.png",
+        "item/*_seeds.png",
+        "item/netherite_upgrade_smithing_template.png",
+        "item/{diamond,emerald,lapis_lazuli,quartz,amethyst_shard,echo_shard,coal,charcoal,netherite_scrap}.png",
+        "item/{redstone,glowstone_dust,gunpowder,blaze_powder,blaze_rod,breeze_rod,sugar,wheat}.png",
+        "item/{stick,string,feather,flint,leather,rabbit_hide,rabbit_foot,bone,bone_meal,slime_ball,magma_cream}.png",
+        "item/{ender_pearl,ender_eye,ghast_tear,nether_star,dragon_breath,fermented_spider_eye,popped_chorus_fruit}.png",
+        "item/{prismarine_shard,prismarine_crystals,heart_of_the_sea,nautilus_shell,phantom_membrane,shulker_shell}.png",
+        "item/{turtle_scute,armadillo_scute,clay_ball,brick,nether_brick,resin_brick,resin_clump,honeycomb}.png",
+        "item/{ink_sac,glow_ink_sac,paper,disc_fragment_5,nether_wart,pitcher_pod,cocoa_beans,egg}.png"
+      ]
+    },
+    {
+      "id": "entities",
+      "i18nKey": "category.entities",
+      "icon": "assets/minecraft/textures/entity/creeper/creeper.png",
+      "order": 80,
+      "include": ["entity/**"],
+      "exclude": ["entity/equipment/**"]
+    },
+    {
+      "id": "gui",
+      "i18nKey": "category.gui",
+      "icon": "assets/minecraft/textures/gui/sprites/hud/heart/full.png",
+      "order": 90,
+      "include": ["gui/**", "font/**"]
+    },
+    {
+      "id": "particles",
+      "i18nKey": "category.particles",
+      "icon": "assets/minecraft/textures/particle/flame.png",
+      "order": 100,
+      "include": ["particle/**"]
+    },
+    {
+      "id": "environment",
+      "i18nKey": "category.environment",
+      "icon": "assets/minecraft/textures/environment/sun.png",
+      "order": 110,
+      "include": [
+        "environment/**",
+        "misc/**",
+        "painting/**",
+        "mob_effect/**",
+        "map/**",
+        "colormap/**",
+        "effect/**"
+      ]
+    },
+    {
+      "id": "other",
+      "i18nKey": "category.other",
+      "icon": "assets/minecraft/textures/item/bundle.png",
+      "order": 1000,
+      "include": []
+    }
+  ]
+}
