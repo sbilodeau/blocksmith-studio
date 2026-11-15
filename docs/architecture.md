@@ -68,6 +68,8 @@ context isolation enabled, unknown channels refused, CSP present, remote fetch b
 | Updater        | `src/main/services/updater.ts`  | Self-update (see [releasing.md](releasing.md))                             |
 | Vanilla store  | `src/main/services/vanilla/`    | Launcher detection, Mojang download, jar extraction (worker thread), index |
 | Pack service   | `src/main/services/packs/`      | Workspace, packs, texture index, categories, zip import and export         |
+| Texture edit   | `src/main/services/packs/`      | Texture read / save / revert (`textures-edit.ts`), recorded in history     |
+| History        | `src/main/services/history/`    | Per-pack journal, content-addressed blobs, undo / redo with conflict check |
 | Asset protocol | `src/main/protocol.ts`          | Read-only `bs-asset://` URLs for thumbnails (pack file, else vanilla file) |
 | Job reporter   | `src/main/jobs.ts`              | Throttled `job.progress` events for long operations                        |
 
@@ -76,8 +78,16 @@ Services talk to each other through the interfaces in `src/main/services/contrac
 implementations together with Electron (dialogs, shell, `net.fetch`).
 
 Details: [versions.md](versions.md) (version table, support window, pack.mcmeta rules, vanilla extraction),
-[packs.md](packs.md) (pack layout, texture statuses, import/export rules), [categories.md](categories.md)
+[packs.md](packs.md) (pack layout, texture statuses, texture editing, history, import/export rules), [categories.md](categories.md)
 (category mapping).
+
+### History
+
+Each pack keeps a persisted undo / redo journal in `.blocksmith/history/` (`journal.jsonl`, `state.json` with the
+undo pointer, and content-addressed `blobs/<sha256>.bin`). The history service is the single entry point for
+recorded file changes: `apply` snapshots, writes and records in one step (editor saves and reverts today, AI
+proposals, imports and merges later). Undo and redo refuse to overwrite files edited outside the app
+(`history.conflict`). Operations on one pack are serialized. Format and rules: [packs.md](packs.md#history).
 
 ### Data files
 
@@ -113,6 +123,9 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 - `stores/pack.ts` creates one Pinia store per open pack (`pack/<id>`), holding its textures, categories and view
   state (category, search, status filter, zoom, selection). It is disposed when the tab closes.
 - `stores/packs.ts` (pack list), `stores/vanilla.ts` (installs and versions), `stores/jobs.ts` (progress).
+- `stores/editor.ts` creates one pixel-editor store per open pack (`editor/<packId>`); see [editor.md](editor.md).
+- `src/shared/image/` is the pure image core (RGBA buffers, transforms, drawing, colors, PNG); see
+  [image-core.md](image-core.md). It runs unchanged in the renderer, in main and in tests.
 - `router/` uses hash history (works with `file://`).
 
 ## Updates

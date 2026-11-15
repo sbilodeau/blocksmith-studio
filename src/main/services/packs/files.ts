@@ -39,6 +39,11 @@ export class FileInfoCache {
     return info
   }
 
+  /** Drops the entry of one absolute file path (file rewritten in-process). */
+  delete(abs: string): void {
+    this.entries.delete(abs)
+  }
+
   /** Drops every entry under an absolute folder path (pack deleted or workspace changed). */
   forget(folderAbs: string): void {
     const prefix = folderAbs.endsWith(sep) ? folderAbs : folderAbs + sep

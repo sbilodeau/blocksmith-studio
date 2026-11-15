@@ -5,6 +5,20 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M2 - Pixel editor
+
+- 1:1 editor in the pack tab: pencil, eraser, paint bucket (tolerance, contiguous), eyedropper, line, rectangle
+  (outline or filled), selection with move, copy, cut, paste and delete
+- Mirror painting, rotate 90° and flip for the selection or the whole texture, integer zoom around the cursor,
+  scroll/space-drag panning, pixel grid, frame guides for animated strips
+- Color pickers with alpha, texture palette, recent colors, keyboard shortcuts
+- Unsaved edits with undo/redo (minimal patches), saved pack history with undo/redo that refuses to overwrite
+  files changed outside the app
+- Compare with vanilla side by side or hold C, revert to vanilla, previous/next texture, unsaved-changes prompt
+- Shared image core (`src/shared/image`): transforms, drawing, flood fill, palette, color adjustments, patches,
+  exact PNG decode/encode for every PNG color type
+- Fix: invisible Naive UI spinners no longer block clicks
+
 ### M1 - Vanilla assets, packs, tabs and browsing
 
 - Minecraft detection (official launcher, Prism, MultiMC, Modrinth App, CurseForge) plus folders added by hand

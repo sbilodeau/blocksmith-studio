@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NH3, NSpace, NSpin, NTag, NText } from 'naive-ui'
+import { NAlert, NButton, NH3, NSpace, NTag, NText } from 'naive-ui'
+import LoadingOverlay from '../components/common/LoadingOverlay.vue'
 import type { ExportReport } from '@shared/model/pack'
 import CategorySidebar from '../components/pack/CategorySidebar.vue'
 import CategoryOverview from '../components/pack/CategoryOverview.vue'
 import TextureGrid from '../components/pack/TextureGrid.vue'
+import TextureEditor from '../components/editor/TextureEditor.vue'
 import ExportDialog from '../components/pack/ExportDialog.vue'
 import ReportDialog from '../components/common/ReportDialog.vue'
 import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
@@ -85,9 +87,10 @@ const exportItems = computed(() => [
 </script>
 
 <template>
-  <n-spin :show="store.loading && !store.loaded" class="spin">
+  <div class="spin">
+    <loading-overlay :show="store.loading && !store.loaded" />
     <div class="pack" data-testid="pack-view">
-      <aside class="side">
+      <aside v-if="!store.editing" class="side">
         <category-sidebar
           :categories="store.categories"
           :active="store.category"
@@ -128,6 +131,7 @@ const exportItems = computed(() => [
             </n-alert>
             <vanilla-prepare :version-id="missingVanilla" @ready="load" />
           </div>
+          <texture-editor v-else-if="store.editing" :pack-id="packId" />
           <category-overview
             v-else-if="store.category === null"
             :categories="store.categories"
@@ -145,12 +149,12 @@ const exportItems = computed(() => [
       :summary="exportSummary"
       :items="exportItems"
     />
-  </n-spin>
+  </div>
 </template>
 
 <style scoped>
-.spin,
-.spin :deep(.n-spin-content) {
+.spin {
+  position: relative;
   height: 100%;
 }
 .pack {

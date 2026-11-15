@@ -91,7 +91,8 @@
     "packs": {
       "notFound": "Ce pack n'existe plus.",
       "unsupportedVersion": "Minecraft {version} n'est pas pris en charge.",
-      "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes."
+      "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes.",
+      "unsafePath": "Cette modification écrirait en dehors du dossier du pack ; elle a été refusée."
     },
     "workspace": {
       "invalidPath": "Ce dossier ne peut pas servir d'espace de travail."
@@ -104,6 +105,19 @@
       "notAPack": "Ce .zip ne contient pas de resource pack (pas de pack.mcmeta).",
       "unsafePath": "L'archive contient un chemin dangereux : {path}",
       "tooLarge": "L'archive est trop volumineuse ({reason}, limite {limit})."
+    },
+    "texture": {
+      "invalidPng": "Cette image n'a pas pu être enregistrée (PNG invalide).",
+      "notInPack": "Cette texture n'a aucune modification à annuler.",
+      "invalidPath": "Ce chemin de texture n'est pas valide.",
+      "noVanilla": "Cette texture n'a pas de version vanilla vers laquelle revenir."
+    },
+    "history": {
+      "conflict": "Le fichier {path} a été modifié en dehors de Blocksmith Studio : cette étape ne peut pas être annulée sans risque.",
+      "nothingToUndo": "Rien à annuler.",
+      "nothingToRedo": "Rien à rétablir.",
+      "blobMissing": "La copie enregistrée de {path} est introuvable : cette étape ne peut pas être annulée.",
+      "invalidPath": "L'historique contient un chemin invalide."
     }
   },
   "common": {
@@ -250,5 +264,81 @@
       "animationMismatch": "La hauteur de la texture animée ne correspond pas à ses images"
     },
     "identicalToVanilla": "Ignoré : identique à vanilla"
+  },
+  "editor": {
+    "back": "Retour aux textures",
+    "prev": "Précédente",
+    "next": "Suivante",
+    "save": "Enregistrer",
+    "discard": "Abandonner",
+    "revert": "Revenir à vanilla",
+    "unsaved": "Non enregistré",
+    "unsavedTitle": "Modifications non enregistrées",
+    "unsavedBody": "Enregistrer les modifications de « {name} » avant de quitter ?",
+    "revertTitle": "Revenir à vanilla",
+    "revertBody": "Remplacer « {name} » par la texture d'origine de Minecraft ? Vous pourrez annuler depuis l'historique enregistré.",
+    "compare": "Comparer",
+    "compareHint": "Afficher la texture vanilla côte à côte. Maintenez C pour voir vanilla sur place.",
+    "vanilla": "Vanilla",
+    "yours": "Votre pack",
+    "showingVanilla": "Affichage de vanilla (relâchez C)",
+    "tools": {
+      "pencil": "Crayon",
+      "eraser": "Gomme",
+      "bucket": "Pot de peinture",
+      "eyedropper": "Pipette",
+      "line": "Ligne",
+      "rect": "Rectangle",
+      "select": "Sélection"
+    },
+    "mirrorX": "Peinture en miroir gauche/droite",
+    "mirrorY": "Peinture en miroir haut/bas",
+    "rotateCw": "Rotation 90° horaire (])",
+    "rotateCcw": "Rotation 90° antihoraire ([)",
+    "flipH": "Miroir horizontal (Maj+H)",
+    "flipV": "Miroir vertical (Maj+V)",
+    "grid": "Grille de pixels",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "fit": "Ajuster à la fenêtre",
+    "zoomLevel": "Zoom {zoom}x",
+    "swapColors": "Inverser les couleurs",
+    "colorHint": "Le clic gauche utilise la première couleur, le clic droit la seconde.",
+    "fillShapes": "Rectangles pleins",
+    "tolerance": "Tolérance : {value}",
+    "contiguous": "Zone contiguë seulement",
+    "palette": "Palette de la texture",
+    "recent": "Couleurs récentes",
+    "unsavedEdits": "Modifications (non enregistrées)",
+    "savedHistory": "Historique enregistré",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "noEdits": "Aucune modification.",
+    "noSavedHistory": "Rien d'enregistré pour l'instant",
+    "size": "{width} x {height} px",
+    "frames": "{count} images",
+    "hoverInfo": "{x}, {y}  {color}",
+    "edit": {
+      "draw": "Dessin",
+      "erase": "Gomme",
+      "fill": "Remplissage",
+      "line": "Ligne",
+      "rect": "Rectangle",
+      "move": "Déplacement de la sélection",
+      "delete": "Suppression de la sélection",
+      "rotateCw": "Rotation 90° horaire",
+      "rotateCcw": "Rotation 90° antihoraire",
+      "flipH": "Miroir horizontal",
+      "flipV": "Miroir vertical",
+      "paste": "Collage"
+    },
+    "shortcut": "{label} ({key})",
+    "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer."
+  },
+  "history": {
+    "label": {
+      "save": "{name} enregistrée",
+      "revert": "{name} remise à vanilla"
+    }
   }
 }

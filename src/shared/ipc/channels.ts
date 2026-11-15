@@ -29,7 +29,14 @@ export const INVOKE_CHANNELS = [
   'pack.get',
   'pack.textures',
   'pack.categories',
-  'pack.export'
+  'pack.export',
+  // Texture editing and pack history
+  'texture.read',
+  'texture.save',
+  'texture.revert',
+  'history.get',
+  'history.undo',
+  'history.redo'
 ] as const
 
 /** Event channels (main -> renderer, via webContents.send). */

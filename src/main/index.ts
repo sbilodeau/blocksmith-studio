@@ -4,13 +4,15 @@ import { hardenSession, hardenWebContents } from './security'
 import { registerIpcHandlers } from './ipc/handlers'
 import { registerVanillaHandlers } from './ipc/vanilla-handlers'
 import { registerPackHandlers } from './ipc/pack-handlers'
+import { registerTextureHandlers } from './ipc/texture-handlers'
 import { send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
 import { createJobReporter } from './jobs'
 import { SettingsService } from './services/settings'
 import { createUpdaterService } from './services/updater'
 import { createDefaultVanillaStore } from './services/vanilla'
-import { createPackService } from './services/packs'
+import { createPackService, createTextureEditService } from './services/packs'
+import { createHistoryService } from './services/history'
 
 const isDev = !app.isPackaged
 
@@ -62,6 +64,17 @@ if (!app.requestSingleInstanceLock()) {
       },
       trashItem: (path) => shell.trashItem(path),
       showItemInFolder: (path) => shell.showItemInFolder(path),
+      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+    })
+    const history = createHistoryService({
+      locate: (id) => packs.locate(id),
+      onFilesChanged: (location, paths) => packs.invalidate(location, paths),
+      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+    })
+    const textures = createTextureEditService({
+      packs,
+      vanilla,
+      history,
       notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
     })
 
@@ -116,6 +129,7 @@ if (!app.requestSingleInstanceLock()) {
         }
       }
     })
+    registerTextureHandlers({ textures, history })
     handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 
     mainWindow = createMainWindow()

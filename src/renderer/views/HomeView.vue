@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NButton, NEmpty, NH2, NInput, NSpace, NSpin, NText, useDialog } from 'naive-ui'
+import { NButton, NEmpty, NH2, NInput, NSpace, NText, useDialog } from 'naive-ui'
+import LoadingOverlay from '../components/common/LoadingOverlay.vue'
 import type { PackSummary } from '@shared/model/pack'
 import PackCard from '../components/packs/PackCard.vue'
 import NewPackDialog from '../components/packs/NewPackDialog.vue'
@@ -136,7 +137,8 @@ onMounted(() => {
       class="filter"
     />
 
-    <n-spin :show="packs.loading && packs.packs.length === 0">
+    <div class="list-area">
+      <loading-overlay :show="packs.loading && packs.packs.length === 0" />
       <n-empty
         v-if="!packs.loading && packs.packs.length === 0"
         :description="t('home.empty')"
@@ -158,7 +160,7 @@ onMounted(() => {
           @delete="confirmDelete(pack)"
         />
       </div>
-    </n-spin>
+    </div>
 
     <new-pack-dialog v-model:show="showNew" @created="open" />
     <report-dialog
@@ -191,6 +193,10 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 12px;
+}
+.list-area {
+  position: relative;
+  min-height: 120px;
 }
 .empty {
   margin-top: 64px;

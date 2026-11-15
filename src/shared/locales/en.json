@@ -91,7 +91,8 @@
     "packs": {
       "notFound": "This pack no longer exists.",
       "unsupportedVersion": "Minecraft {version} is not supported.",
-      "vanillaNotReady": "The Minecraft {version} textures are not set up yet."
+      "vanillaNotReady": "The Minecraft {version} textures are not set up yet.",
+      "unsafePath": "This change would write outside the pack folder and was refused."
     },
     "workspace": {
       "invalidPath": "This folder cannot be used as a workspace."
@@ -104,6 +105,19 @@
       "notAPack": "This .zip does not contain a resource pack (no pack.mcmeta).",
       "unsafePath": "The archive contains an unsafe path: {path}",
       "tooLarge": "The archive is too large ({reason}, limit {limit})."
+    },
+    "texture": {
+      "invalidPng": "This image could not be saved (invalid PNG).",
+      "notInPack": "This texture has no changes to revert.",
+      "invalidPath": "This texture path is not valid.",
+      "noVanilla": "This texture has no vanilla version to revert to."
+    },
+    "history": {
+      "conflict": "The file {path} was changed outside Blocksmith Studio, so this step cannot be undone safely.",
+      "nothingToUndo": "Nothing to undo.",
+      "nothingToRedo": "Nothing to redo.",
+      "blobMissing": "The saved copy of {path} is missing, so this step cannot be undone.",
+      "invalidPath": "The history contains an invalid path."
     }
   },
   "common": {
@@ -250,5 +264,81 @@
       "animationMismatch": "Animated texture height does not match its frames"
     },
     "identicalToVanilla": "Skipped: identical to vanilla"
+  },
+  "editor": {
+    "back": "Back to textures",
+    "prev": "Previous",
+    "next": "Next",
+    "save": "Save",
+    "discard": "Discard",
+    "revert": "Revert to vanilla",
+    "unsaved": "Unsaved",
+    "unsavedTitle": "Unsaved changes",
+    "unsavedBody": "Save the changes to \"{name}\" before leaving?",
+    "revertTitle": "Revert to vanilla",
+    "revertBody": "Replace \"{name}\" with the original Minecraft texture? You can undo this from the saved history.",
+    "compare": "Compare",
+    "compareHint": "Show the vanilla texture side by side. Hold C to preview vanilla in place.",
+    "vanilla": "Vanilla",
+    "yours": "Your pack",
+    "showingVanilla": "Showing vanilla (release C)",
+    "tools": {
+      "pencil": "Pencil",
+      "eraser": "Eraser",
+      "bucket": "Paint bucket",
+      "eyedropper": "Eyedropper",
+      "line": "Line",
+      "rect": "Rectangle",
+      "select": "Select"
+    },
+    "mirrorX": "Mirror painting left/right",
+    "mirrorY": "Mirror painting top/bottom",
+    "rotateCw": "Rotate 90° clockwise (])",
+    "rotateCcw": "Rotate 90° counterclockwise ([)",
+    "flipH": "Flip horizontally (Shift+H)",
+    "flipV": "Flip vertically (Shift+V)",
+    "grid": "Pixel grid",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit to window",
+    "zoomLevel": "Zoom {zoom}x",
+    "swapColors": "Swap colors",
+    "colorHint": "Left click uses the first color, right click the second.",
+    "fillShapes": "Filled rectangles",
+    "tolerance": "Tolerance: {value}",
+    "contiguous": "Contiguous area only",
+    "palette": "Texture palette",
+    "recent": "Recent colors",
+    "unsavedEdits": "Edits (not saved)",
+    "savedHistory": "Saved history",
+    "undo": "Undo",
+    "redo": "Redo",
+    "noEdits": "No edits yet.",
+    "noSavedHistory": "Nothing saved yet",
+    "size": "{width} x {height} px",
+    "frames": "{count} frames",
+    "hoverInfo": "{x}, {y}  {color}",
+    "edit": {
+      "draw": "Draw",
+      "erase": "Erase",
+      "fill": "Fill",
+      "line": "Line",
+      "rect": "Rectangle",
+      "move": "Move selection",
+      "delete": "Delete selection",
+      "rotateCw": "Rotate 90° clockwise",
+      "rotateCcw": "Rotate 90° counterclockwise",
+      "flipH": "Flip horizontally",
+      "flipV": "Flip vertically",
+      "paste": "Paste"
+    },
+    "shortcut": "{label} ({key})",
+    "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan."
+  },
+  "history": {
+    "label": {
+      "save": "Saved {name}",
+      "revert": "Reverted {name} to vanilla"
+    }
   }
 }

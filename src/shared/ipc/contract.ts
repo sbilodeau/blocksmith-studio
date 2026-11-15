@@ -12,6 +12,7 @@ import {
   type TextureEntry
 } from '../model/pack'
 import type { JobProgress } from '../model/jobs'
+import type { HistoryState, TextureData } from '../model/history'
 
 /** Typed, i18n-keyed error returned across IPC (message key: `errors.<code>`). */
 export interface AppError {
@@ -34,6 +35,14 @@ export interface AppInfo {
 
 const NoInput = z.undefined()
 const PackRef = z.object({ packId: z.string().min(1).max(64) }).strict()
+/** POSIX pack-relative path of a texture: assets/<namespace>/textures/...png (validated again in main). */
+const TexturePathSchema = z
+  .string()
+  .max(512)
+  .regex(/^assets\/[a-z0-9_.-]+\/textures\/[a-z0-9_./-]+\.png$/)
+  .refine((p) => !p.split('/').some((s) => s === '..' || s === '.' || s === ''))
+const TextureRef = PackRef.extend({ path: TexturePathSchema }).strict()
+const MAX_PNG_BYTES = 16 * 1024 * 1024
 const VersionId = z.string().regex(/^[0-9][0-9a-z.-]{0,31}$/)
 
 /** Runtime input validation for every invoke channel. Main validates each payload against this. */
@@ -60,7 +69,15 @@ export const inputSchemas = {
   'pack.get': PackRef,
   'pack.textures': PackRef,
   'pack.categories': PackRef,
-  'pack.export': PackRef.extend({ targetVersion: VersionId }).strict()
+  'pack.export': PackRef.extend({ targetVersion: VersionId }).strict(),
+  'texture.read': TextureRef,
+  'texture.save': TextureRef.extend({
+    png: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES)
+  }).strict(),
+  'texture.revert': TextureRef,
+  'history.get': PackRef,
+  'history.undo': PackRef,
+  'history.redo': PackRef
 } satisfies Record<InvokeChannel, z.ZodType>
 
 /** Output types (compile-time only; main is trusted). */
@@ -97,6 +114,14 @@ export interface InvokeOutputs {
   'pack.categories': CategorySummary[]
   /** Opens a save dialog; null when cancelled. Emits job.progress. */
   'pack.export': ExportReport | null
+  'texture.read': TextureData
+  /** Writes the PNG into the pack (records a history entry) and returns the updated texture entry. */
+  'texture.save': TextureEntry
+  /** Deletes the pack's copy so the vanilla texture is used again (records a history entry). */
+  'texture.revert': TextureEntry
+  'history.get': HistoryState
+  'history.undo': HistoryState
+  'history.redo': HistoryState
 }
 
 export type InvokeInput<C extends InvokeChannel> = z.input<(typeof inputSchemas)[C]>
