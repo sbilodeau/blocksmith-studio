@@ -60,7 +60,10 @@ describe('pack service: workspace and packs', () => {
     })
     expect(summary.iconUrl).toMatch(/^bs-asset:\/\/pack\/pack0001\/pack\.png\?v=/)
 
-    const files = (await readdir(summary.folder, { recursive: true })).sort()
+    // readdir returns native separators (backslashes on Windows); compare POSIX paths.
+    const files = (await readdir(summary.folder, { recursive: true }))
+      .map((f) => f.split('\\').join('/'))
+      .sort()
     expect(files).toEqual(['.blocksmith', '.blocksmith/project.json', 'pack.mcmeta', 'pack.png'])
 
     const project = JSON.parse(

@@ -169,5 +169,6 @@ describe('texture index', () => {
       `pack.textures: cold ${coldMs.toFixed(0)} ms, warm (+categories) ${warmMs.toFixed(0)} ms`
     )
     expect(warmMs).toBeLessThan(300)
-  })
+    // Writing 5000 fixture files is slow on Windows CI disks; only the timed section above has a budget.
+  }, 60_000)
 })
