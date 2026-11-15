@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NForm, NFormItem, NInputNumber, NSelect, NSpace, NSwitch, NText } from 'naive-ui'
-import type { AgentKind, ImageMode, ModelRef } from '@shared/ai/types'
+import { NButton, NForm, NFormItem, NInputNumber, NSelect, NSpace, NText } from 'naive-ui'
+import type { AgentKind, ImageMode, ModelRef, ReasoningLevel } from '@shared/ai/types'
 import ModelPicker from './ModelPicker.vue'
 import { useAiStore } from '../../stores/ai'
 import { useSettingsStore } from '../../stores/settings'
@@ -19,7 +19,7 @@ const current = computed(() => settingsStore.settings.ai.agents[props.agent])
 
 function patch(values: {
   model?: ModelRef
-  thinking?: boolean
+  thinking?: ReasoningLevel
   maxIterations?: number
   imageMode?: ImageMode
 }): void {
@@ -38,7 +38,14 @@ const imageModes = computed(() =>
   }))
 )
 
-function onThinking(v: boolean): void {
+const reasoningLevels = computed(() =>
+  (['off', 'low', 'medium', 'high'] as const).map((v) => ({
+    value: v,
+    label: t(`ai.reasoning.${v}`)
+  }))
+)
+
+function onThinking(v: ReasoningLevel): void {
   patch({ thinking: v })
 }
 function onIterations(v: number | null): void {
@@ -71,7 +78,13 @@ function refresh(): void {
         <model-picker v-model="model" />
       </n-form-item>
       <n-form-item :label="t('ai.thinking')" :feedback="t('ai.thinkingHint')">
-        <n-switch :value="current.thinking" @update:value="onThinking" />
+        <n-select
+          :value="current.thinking"
+          :options="reasoningLevels"
+          style="width: 180px"
+          data-testid="agent-settings-reasoning"
+          @update:value="onThinking"
+        />
       </n-form-item>
       <n-form-item :label="t('ai.maxIterations')" :feedback="t('ai.maxIterationsHint')">
         <n-input-number

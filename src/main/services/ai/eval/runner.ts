@@ -105,7 +105,7 @@ export async function runEvalCase(
   const phrase = c[language]
   const settings: AgentSettings = {
     model: opts.model,
-    thinking: false,
+    thinking: 'off',
     maxIterations: opts.maxIterations ?? 3,
     imageMode: 'vision+grid'
   }

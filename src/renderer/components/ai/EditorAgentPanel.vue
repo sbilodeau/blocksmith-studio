@@ -9,6 +9,7 @@ import {
   NEmpty,
   NInput,
   NScrollbar,
+  NSelect,
   NSpace,
   NTag,
   NText,
@@ -16,7 +17,7 @@ import {
   useMessage
 } from 'naive-ui'
 import { encodePng } from '@shared/image'
-import type { ModelRef } from '@shared/ai/types'
+import type { ModelRef, ReasoningLevel } from '@shared/ai/types'
 import ModelPicker from './ModelPicker.vue'
 import ProposalReview from './ProposalReview.vue'
 import { useAiStore, type ChatItem } from '../../stores/ai'
@@ -48,6 +49,21 @@ watch(
   }
 )
 
+/** Reasoning level for this tab: starts from the editor agent default, can be changed per request. */
+const thinking = ref<ReasoningLevel>(settings.settings.ai.agents.editor.thinking)
+watch(
+  () => settings.settings.ai.agents.editor.thinking,
+  (level) => (thinking.value = level)
+)
+/** Shown only for models that can reason (unknown capabilities: shown, the provider ignores it otherwise). */
+const canThink = computed(() => ai.findModel(model.value)?.capabilities.thinking !== false)
+const reasoningOptions = computed(() =>
+  (['off', 'low', 'medium', 'high'] as const).map((v) => ({
+    value: v,
+    label: t(`ai.reasoning.${v}`)
+  }))
+)
+
 const running = computed(() => !!session.value.runId)
 const canSend = computed(
   () =>
@@ -71,7 +87,8 @@ async function send(): Promise<void> {
       message: text,
       model: model.value,
       texture: { path: editor.value.path, png: new Uint8Array(encodePng(editor.value.image)) },
-      language: settings.settings.language
+      language: settings.settings.language,
+      thinking: canThink.value ? thinking.value : 'off'
     })
   } catch (err) {
     showError(err)
@@ -196,8 +213,25 @@ onMounted(async () => {
       }}</n-button>
     </n-alert>
 
+    <model-picker v-model="model" size="tiny" />
     <n-space justify="space-between" align="center" :wrap="false" class="head">
-      <model-picker v-model="model" size="tiny" class="picker" />
+      <n-tooltip v-if="canThink">
+        <template #trigger>
+          <span class="reasoning-row">
+            <n-text depth="3" class="reasoning-label">{{ t('ai.thinking') }}</n-text>
+            <n-select
+              v-model:value="thinking"
+              :options="reasoningOptions"
+              size="tiny"
+              :consistent-menu-width="false"
+              class="reasoning"
+              data-testid="agent-reasoning"
+            />
+          </span>
+        </template>
+        {{ t('ai.reasoning.tooltip') }}
+      </n-tooltip>
+      <span v-else />
       <n-tooltip>
         <template #trigger>
           <n-button
@@ -338,9 +372,16 @@ onMounted(async () => {
   margin: 0 0 6px;
   font-size: 12px;
 }
-.picker {
-  flex: 1;
-  min-width: 0;
+.reasoning-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.reasoning-label {
+  font-size: 12px;
+}
+.reasoning {
+  width: 100px;
 }
 .messages {
   flex: 1;

@@ -434,8 +434,8 @@
     "editorAgent": "Agent Éditeur",
     "refreshModels": "Actualiser les modèles",
     "defaultModel": "Modèle par défaut",
-    "thinking": "Afficher le raisonnement",
-    "thinkingHint": "Demande le raisonnement du modèle s'il le permet (plus lent, plus de jetons).",
+    "thinking": "Raisonnement",
+    "thinkingHint": "Combien le modèle réfléchit avant de répondre, pour les modèles qui savent raisonner. Plus c'est élevé, plus c'est lent et plus ça consomme de jetons ; les niveaux ne changent l'effort que sur les modèles qui les gèrent (gpt-oss), les autres sont simplement activés ou non.",
     "maxIterations": "Allers-retours max",
     "maxIterationsHint": "Nombre de fois où l'IA peut appeler des outils et regarder le résultat pour une demande.",
     "imageMode": "Ce que voit l'IA",
@@ -464,7 +464,7 @@
     },
     "noProvider": "Ajoutez une clé d'API Ollama Cloud (ou un autre fournisseur) dans les Paramètres pour utiliser l'IA.",
     "openSettings": "Ouvrir les Paramètres",
-    "clear": "Nouvelle conversation",
+    "clear": "Effacer",
     "clearHint": "Oublier cette conversation (le brief de style est conservé).",
     "emptyEditor": "Demandez une modification, par exemple : « tourne de 90° à gauche et ajoute des flammes au bout ».",
     "thinkingTitle": "Raisonnement",
@@ -513,6 +513,13 @@
       "copy": "Copier le rapport (Markdown)",
       "copied": "Rapport copié.",
       "weakGap": "Résultats inégaux : {gap} points d'écart entre le français et l'anglais. L'agent risque de mal comprendre les demandes dans l'une des langues."
+    },
+    "reasoning": {
+      "off": "Désactivé",
+      "low": "Faible",
+      "medium": "Moyen",
+      "high": "Élevé",
+      "tooltip": "Niveau de raisonnement pour cet onglet (la valeur par défaut est dans les Paramètres)"
     }
   },
   "brief": {

@@ -18,6 +18,7 @@ All notable changes to this project are documented here. Versions follow CalVer 
   propose changes as plan steps
 - Ollama Cloud provider (native API: streaming, tools, images, thinking, model capabilities); self-hosted Ollama on
   localhost without a key; API keys encrypted with the system keychain, never sent to the renderer
+- Reasoning level (off, low, medium, high) as a default in Settings and per tab in the AI panel
 - Settings > AI: providers, keys, connection test, default model and options for the editor agent, and
   "Test a model" (quick or full FR/EN evaluation)
 - FR/EN evaluation suite (60 phrases), `npm run test:ai`, and a CI job on pull requests that touch AI code

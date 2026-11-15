@@ -13,7 +13,7 @@ const { createEditorAgentService, createConversationStore } =
 const { createBriefService } = await import('../../src/main/services/brief')
 
 const PATH = 'assets/minecraft/textures/block/stone.png'
-const SETTINGS: AgentSettings = { thinking: false, maxIterations: 6, imageMode: 'vision+grid' }
+const SETTINGS: AgentSettings = { thinking: 'off', maxIterations: 6, imageMode: 'vision+grid' }
 
 function texture(): Uint8Array {
   const img = createImage(2, 1)

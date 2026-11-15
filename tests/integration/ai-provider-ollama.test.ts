@@ -12,7 +12,7 @@ import {
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
-const { createOllamaAdapter, SHOW_CONCURRENCY } =
+const { createOllamaAdapter, ollamaThink, SHOW_CONCURRENCY } =
   await import('../../src/main/services/ai/providers/ollama')
 
 const API_KEY = 'test-key-9f8e7d6c5b4a'
@@ -139,6 +139,14 @@ describe('Ollama adapter (local fake server)', () => {
       // Non-thinking model: never sent (Ollama would answer 400).
       await collect(a.chat(request({ think: true }), new AbortController().signal))
       expect(chatRequests()[2]!.body).not.toHaveProperty('think')
+      // Levels: kept for gpt-oss models, plain true for other thinking models.
+      expect(ollamaThink('gpt-oss:120b', 'high')).toBe('high')
+      expect(ollamaThink('qwen3:32b', 'low')).toBe(true)
+      expect(ollamaThink('gpt-oss:20b', false)).toBe(false)
+      await collect(
+        a.chat(request({ model: 'qwen3:32b', think: 'high' }), new AbortController().signal)
+      )
+      expect((chatRequests()[3]!.body as { think?: unknown }).think).toBe(true)
       // /api/show is cached per model.
       expect(server.requests.filter((r) => r.path === '/api/show')).toHaveLength(2)
     })

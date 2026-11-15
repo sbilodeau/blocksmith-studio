@@ -5,9 +5,11 @@ import type {
   AgentEvent,
   AgentSettings,
   ChatMessage,
+  ChatRequest,
   ConversationTurn,
   EditorAgentRequest,
   ProposalStep,
+  ReasoningLevel,
   ToolCall,
   ToolKind
 } from '@shared/ai/types'
@@ -62,6 +64,11 @@ export interface RunResult {
 }
 
 type Emit = (event: AgentEvent) => void
+
+/** Reasoning level -> ChatRequest.think ('off' is sent explicitly: thinking models think by default). */
+export function thinkValue(level: ReasoningLevel): NonNullable<ChatRequest['think']> {
+  return level === 'off' ? false : level
+}
 
 /** AppError-like value of any thrown error ('ai.agentFailed' when it carries no code). */
 export function errorOf(err: unknown): { code: string; params?: Record<string, string | number> } {
@@ -264,7 +271,7 @@ export async function runEditorAgent(
           model: request.model.modelId,
           messages: sent,
           tools,
-          ...(settings.thinking ? { think: true } : {})
+          think: thinkValue(request.thinking ?? settings.thinking)
         },
         signal
       )) {

@@ -14,7 +14,12 @@ import {
 import type { JobProgress } from '../model/jobs'
 import type { HistoryState, TextureData } from '../model/history'
 import type { PreviewModel } from '../model/preview'
-import { ProviderConfigSchema, ModelRefSchema, LanguageSchema } from '../model/settings'
+import {
+  ProviderConfigSchema,
+  ModelRefSchema,
+  LanguageSchema,
+  ReasoningLevelSchema
+} from '../model/settings'
 import { StyleBriefPatchSchema, type StyleBrief } from '../model/brief'
 import type {
   AgentEvent,
@@ -115,7 +120,8 @@ export const inputSchemas = {
             .refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES)
         })
         .strict(),
-      language: LanguageSchema
+      language: LanguageSchema,
+      thinking: ReasoningLevelSchema.optional()
     })
     .strict(),
   'ai.agent.stop': z.object({ runId: z.string().min(1).max(64) }).strict(),

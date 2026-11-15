@@ -47,7 +47,9 @@ Verified against https://docs.ollama.com/api (chat, tags, errors, streaming), ht
   `{ role: 'tool', content, tool_name, tool_call_id }` (`tool_call_id` is optional for Ollama, sent when known);
   tools as `[{ type: 'function', function: { name, description, parameters } }]`; `temperature` goes in `options`.
 - `think`: sent only when `/api/show` lists `thinking` for the model (Ollama answers 400 otherwise). For those
-  models it is sent explicitly as `true` or `false`, because thinking models think by default.
+  models it is always sent, because thinking models think by default: `false` for the reasoning level "off";
+  for "low" / "medium" / "high", the level itself on models that accept levels (gpt-oss family, `ollamaThink`),
+  `true` on the others.
 - Stream mapping: `message.thinking` -> `thinking`, `message.content` -> `text`, each `message.tool_calls` entry ->
   `tool_call`, final chunk `prompt_eval_count` / `eval_count` -> `usage`, then `done` with `tool_calls` when calls
   were emitted, `length` for `done_reason: "length"`, else `end`.

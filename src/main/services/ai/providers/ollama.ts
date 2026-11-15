@@ -137,6 +137,16 @@ function contextLengthOf(
   return undefined
 }
 
+/** Models whose `think` takes a level ("low" | "medium" | "high"); other thinking models take true/false. */
+const THINK_LEVEL_MODELS = /gpt-oss/i
+
+/** ChatRequest.think -> Ollama's `think` for a model that can think. */
+export function ollamaThink(model: string, think: ChatRequest['think']): boolean | string {
+  if (!think) return false
+  if (think === true) return true
+  return THINK_LEVEL_MODELS.test(model) ? think : true
+}
+
 export function createOllamaAdapter(deps: AdapterDeps): ProviderAdapterImpl {
   const { config, logger = console } = deps
   const http: HttpClient = createHttpClient({
@@ -231,8 +241,10 @@ export function createOllamaAdapter(deps: AdapterDeps): ProviderAdapterImpl {
         function: { name: t.name, description: t.description, parameters: t.parameters }
       }))
     }
-    // Thinking models think by default: send an explicit true/false only when the model supports it.
-    if (await supportsThinking(request.model, signal)) body['think'] = request.think === true
+    // Thinking models think by default: send an explicit value only when the model supports it (else 400).
+    if (await supportsThinking(request.model, signal)) {
+      body['think'] = ollamaThink(request.model, request.think)
+    }
     if (request.temperature !== undefined) body['options'] = { temperature: request.temperature }
 
     const response = await http.request('/api/chat', {

@@ -79,8 +79,11 @@ export interface ChatRequest {
   model: string
   messages: ChatMessage[]
   tools?: ToolSpec[]
-  /** Ask for reasoning output when the model supports it. */
-  think?: boolean
+  /**
+   * Reasoning for thinking models: false = off, true = on, or a level. Adapters map levels to what the model
+   * accepts (a level for models that support levels, else on). Ignored by models that cannot think.
+   */
+  think?: boolean | 'low' | 'medium' | 'high'
   temperature?: number
 }
 
@@ -103,9 +106,11 @@ export type AgentKind = 'creation' | 'navigation' | 'editor'
 
 export type ImageMode = 'vision+grid' | 'grid' | 'image'
 
+export type ReasoningLevel = 'off' | 'low' | 'medium' | 'high'
+
 export interface AgentSettings {
   model?: ModelRef
-  thinking: boolean
+  thinking: ReasoningLevel
   /** Max model round trips (tool loops) per user request. */
   maxIterations: number
   imageMode: ImageMode
@@ -119,6 +124,8 @@ export interface EditorAgentRequest {
   /** Pack path of the open texture and its CURRENT pixels (may include unsaved edits). */
   texture: { path: string; png: Uint8Array }
   language: Language
+  /** Reasoning level for this request (the AI tab's selector); defaults to the agent setting. */
+  thinking?: ReasoningLevel
 }
 
 export type ToolKind = 'read' | 'mutate' | 'memory'

@@ -22,9 +22,18 @@ export const ProviderConfigSchema = z
 
 export const ModelRefSchema = z.object({ providerId: z.string(), modelId: z.string() }).strict()
 
+/** Reasoning level asked of thinking models. 'off' disables it (thinking models think by default). */
+export const ReasoningLevelSchema = z.enum(['off', 'low', 'medium', 'high'])
+
+/** Settings saved before levels existed stored a boolean: true -> 'medium', false -> 'off'. */
+const ThinkingSettingSchema = z.preprocess(
+  (v) => (v === true ? 'medium' : v === false ? 'off' : v),
+  ReasoningLevelSchema
+)
+
 export const AgentSettingsSchema = z.object({
   model: ModelRefSchema.optional(),
-  thinking: z.boolean().default(false),
+  thinking: ThinkingSettingSchema.default('off'),
   maxIterations: z.number().int().min(1).max(20).default(6),
   imageMode: z.enum(['vision+grid', 'grid', 'image']).default('vision+grid')
 })

@@ -199,6 +199,8 @@ test('a French request becomes a plan; a partial apply is one undoable edit', as
   const user = sent.messages.find((m) => m.role === 'user')!
   expect(user.content).toContain('tourne de 90° à gauche')
   expect(sent.tools.map((t) => t.function.name)).toContain('rotate')
+  // Reasoning is off by default (sent explicitly: thinking models think by default).
+  expect((chatReq.body as { think?: unknown }).think).toBe(false)
 
   // Partial apply: keep the rotation only.
   await review.getByTestId('proposal-step-set_pixels').locator('.n-checkbox').click()
@@ -219,10 +221,16 @@ test('rejecting a plan leaves the texture untouched', async () => {
   await openTexture(page, 'stone')
   await page.locator('.side-tabs .n-tabs-tab[data-name="ai"]').click()
   const panel = page.getByTestId('editor-agent')
+  // Raise the reasoning level for this tab: the request asks the model to think.
+  await panel.getByTestId('agent-reasoning').click()
+  await page.locator('.n-base-select-option', { hasText: 'Élevé' }).click()
+  await expect(panel.getByTestId('agent-reasoning')).toContainText('Élevé')
   await panel.getByTestId('agent-input').locator('textarea').fill('rotate it to the left')
   await panel.getByTestId('agent-input').locator('textarea').press('Enter')
   const review = panel.getByTestId('proposal-review')
   await expect(review).toBeVisible({ timeout: 15_000 })
+  const chatReq = server!.requests.find((r) => r.path === '/api/chat')!
+  expect((chatReq.body as { think?: unknown }).think).toBe(true)
   await review.getByTestId('proposal-reject').click()
   await expect(review).toContainText('Refusé')
   await expect(page.getByTestId('editor-dirty')).toHaveCount(0)

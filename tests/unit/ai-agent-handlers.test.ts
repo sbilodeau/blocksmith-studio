@@ -35,7 +35,7 @@ describe('registerAiAgentHandlers', () => {
   function register(): ReturnType<typeof registerAiAgentHandlers> {
     return registerAiAgentHandlers({
       providers: fakeProvider([]).providers,
-      getAgentSettings: () => ({ thinking: false, maxIterations: 6, imageMode: 'grid' }),
+      getAgentSettings: () => ({ thinking: 'off', maxIterations: 6, imageMode: 'grid' }),
       packs: { locate: async (id) => (id === 'p1' ? { folder } : null) },
       readVanillaPng: async () => null,
       emit: () => undefined,

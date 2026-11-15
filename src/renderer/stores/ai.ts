@@ -10,6 +10,7 @@ import type {
   ProposalApplyResult,
   ProviderConfig,
   ProviderStatus,
+  ReasoningLevel,
   ToolCall,
   ToolKind
 } from '@shared/ai/types'
@@ -169,6 +170,7 @@ export const useAiStore = defineStore('ai', () => {
     model: ModelRef
     texture: { path: string; png: Uint8Array }
     language: Language
+    thinking?: ReasoningLevel
   }): Promise<void> {
     const s = session(args.packId, 'editor')
     s.items.push({ id: nextId(), role: 'user', text: args.message, thinking: '', toolCalls: [] })

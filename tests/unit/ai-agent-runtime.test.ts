@@ -39,7 +39,7 @@ function request(): EditorAgentRequest {
   }
 }
 
-const SETTINGS: AgentSettings = { thinking: false, maxIterations: 6, imageMode: 'vision+grid' }
+const SETTINGS: AgentSettings = { thinking: 'off', maxIterations: 6, imageMode: 'vision+grid' }
 
 async function run(
   scripts: Script[],
@@ -119,7 +119,7 @@ describe('editor agent runtime', () => {
     expect(req.messages[0].text).toContain('Reply in French')
     expect(req.messages.at(-1)!.text).toContain(`[Open texture: ${PATH} (2 x 1 px)]`)
     expect(req.tools!.map((t) => t.name)).toContain('rotate')
-    expect(req.think).toBeUndefined()
+    expect(req.think).toBe(false)
   })
 
   it('rotate then set_pixels across two iterations; the second request has the new grid', async () => {
@@ -350,9 +350,11 @@ describe('editor agent runtime', () => {
     expect((await run([new Error('weird')])).result.error).toEqual({ code: 'ai.agentFailed' })
   })
 
-  it('asks for thinking when enabled', async () => {
-    const { fake } = await run([[DONE_END]], { settings: { thinking: true } })
-    expect(fake.requests[0].think).toBe(true)
+  it('sends the reasoning level, explicitly off by default', async () => {
+    const off = await run([[DONE_END]])
+    expect(off.fake.requests[0].think).toBe(false)
+    const { fake } = await run([[DONE_END]], { settings: { thinking: 'high' } })
+    expect(fake.requests[0].think).toBe('high')
   })
 
   it('without vision no image is sent', async () => {

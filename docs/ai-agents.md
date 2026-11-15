@@ -115,6 +115,8 @@ are strings with an explicit sign (`"+20"`, `"-15"`, `"0"`). Colors are lowercas
 `runEditorAgent` (one call per user message):
 
 - One provider round trip per iteration. `thinking`, `text` and `usage` events are forwarded as `ai.event`.
+- Reasoning level: `request.thinking` (the AI tab's selector) or else the agent setting `thinking`
+  (`off` | `low` | `medium` | `high`; older boolean settings load as `medium` / `off`), sent as `ChatRequest.think`.
 - Tool calls are validated with zod. Invalid arguments, unknown tools and tool errors are returned to the model as
   `{ ok: false, error }` tool results (the iteration still counts toward the budget). String arguments are parsed
   as JSON first.

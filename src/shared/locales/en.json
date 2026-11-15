@@ -434,8 +434,8 @@
     "editorAgent": "Editor agent",
     "refreshModels": "Refresh models",
     "defaultModel": "Default model",
-    "thinking": "Show reasoning",
-    "thinkingHint": "Asks for the model's reasoning when it supports it (slower, more tokens).",
+    "thinking": "Reasoning",
+    "thinkingHint": "How much the model thinks before answering, for models that can reason. Higher is slower and uses more tokens; the levels only change the effort on models that support them (gpt-oss), others are simply on or off.",
     "maxIterations": "Max round trips",
     "maxIterationsHint": "How many times the AI may call tools and look at the result for one request.",
     "imageMode": "What the AI sees",
@@ -464,7 +464,7 @@
     },
     "noProvider": "Add an Ollama Cloud API key (or another provider) in Settings to use the AI.",
     "openSettings": "Open Settings",
-    "clear": "New conversation",
+    "clear": "Clear",
     "clearHint": "Forget this conversation (the style brief is kept).",
     "emptyEditor": "Ask for a change, for example: \"rotate 90° left and add flames at the tip\".",
     "thinkingTitle": "Reasoning",
@@ -513,6 +513,13 @@
       "copy": "Copy the report (Markdown)",
       "copied": "Report copied.",
       "weakGap": "Uneven fit: {gap} points between French and English. The agent may misread requests in one of the languages."
+    },
+    "reasoning": {
+      "off": "Off",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "tooltip": "Reasoning level for this tab (the default is in Settings)"
     }
   },
   "brief": {
