@@ -6,7 +6,8 @@ import { registerVanillaHandlers } from './ipc/vanilla-handlers'
 import { registerPackHandlers } from './ipc/pack-handlers'
 import { registerTextureHandlers } from './ipc/texture-handlers'
 import { registerPreviewHandlers } from './ipc/preview-handlers'
-import { send } from './ipc/registry'
+import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
+import { AppErrorException, send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
 import { createJobReporter } from './jobs'
 import { SettingsService } from './services/settings'
@@ -15,6 +16,7 @@ import { createDefaultVanillaStore } from './services/vanilla'
 import { createPackService, createTextureEditService } from './services/packs'
 import { createHistoryService } from './services/history'
 import { createPreviewService } from './services/preview'
+import type { ProviderRegistry } from './services/contracts'
 
 const isDev = !app.isPackaged
 
@@ -134,6 +136,20 @@ if (!app.requestSingleInstanceLock()) {
     })
     registerTextureHandlers({ textures, history })
     registerPreviewHandlers({ preview })
+    // PLACEHOLDER (M3): replaced by the provider stream's ProviderRegistry (src/main/services/ai/providers/).
+    const aiProviders: ProviderRegistry = {
+      getAdapter: async (providerId) => {
+        throw new AppErrorException('ai.providerNotFound', { providerId })
+      },
+      getModel: async () => undefined
+    }
+    registerAiAgentHandlers({
+      providers: aiProviders,
+      getAgentSettings: (agent) => settings.get().ai.agents[agent],
+      packs,
+      readVanillaPng: async (packId, path) => (await textures.read(packId, path)).vanillaPng,
+      emit: (event) => send(webContents(), 'ai.event', event)
+    })
     handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 
     mainWindow = createMainWindow()
