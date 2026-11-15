@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createImage, decodePng, encodePng, getPixel, setPixel, toHex } from '@shared/image'
 import { emptyBrief } from '@shared/model/brief'
-import type { AgentEvent, AgentSettings, EditorAgentRequest } from '@shared/ai/types'
+import type { AgentEvent, AgentSettings, EditorAgentRequest, ModelInfo } from '@shared/ai/types'
 import {
   DONE_END,
   DONE_TOOLS,
@@ -49,13 +49,14 @@ async function run(
     signal?: AbortSignal
     tokenBudget?: number
     vanilla?: ReturnType<typeof createImage> | null
+    model?: ModelInfo
   } = {}
 ): Promise<{
   result: Awaited<ReturnType<typeof runEditorAgent>>
   events: AgentEvent[]
   fake: ReturnType<typeof fakeProvider>
 }> {
-  const fake = fakeProvider(scripts, { vision: opts.vision })
+  const fake = fakeProvider(scripts, { vision: opts.vision, model: opts.model })
   const events: AgentEvent[] = []
   const result = await runEditorAgent(
     {
@@ -243,6 +244,44 @@ describe('editor agent runtime', () => {
     )
     expect(result.reason).toBe('budget')
     expect(result.iterations).toBe(1)
+  })
+
+  it('computes the cost from the model price when the provider returns none', async () => {
+    const model = {
+      id: 'm1',
+      providerId: 'fake',
+      label: 'M1',
+      capabilities: { tools: true },
+      pricing: { inPerMTok: 2, outPerMTok: 8, source: 'hint' as const }
+    }
+    const { events, result } = await run(
+      [[text('Ok'), { type: 'usage', inputTokens: 1000, outputTokens: 500 }, DONE_END]],
+      { model }
+    )
+    expect(events.find((e) => e.type === 'usage')).toEqual({
+      runId: 'r1',
+      type: 'usage',
+      inputTokens: 1000,
+      outputTokens: 500,
+      costUsd: 0.006
+    })
+    expect(result.turns.at(-1)!.usage).toEqual({
+      inputTokens: 1000,
+      outputTokens: 500,
+      costUsd: 0.006
+    })
+    // A provider cost (OpenRouter) wins over the price table.
+    const own = await run(
+      [
+        [
+          text('Ok'),
+          { type: 'usage', inputTokens: 1000, outputTokens: 500, costUsd: 0.01 },
+          DONE_END
+        ]
+      ],
+      { model }
+    )
+    expect(own.result.turns.at(-1)!.usage!.costUsd).toBe(0.01)
   })
 
   it('estimates tokens when the provider reports no usage', async () => {

@@ -5,6 +5,22 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M4 - OpenAI-compatible providers and AI settings
+
+- New providers: OpenAI, OpenRouter (many models with one key) and any OpenAI-compatible server (vLLM, LM Studio,
+  Groq, DeepSeek...), next to Ollama Cloud and a local Ollama; pick a preset in Settings > AI > "Add a provider",
+  edit its name, URL and extra headers at any time
+- Streaming answers, tool calls, images and reasoning work the same with every provider; the reasoning level maps
+  to what each server understands
+- Prices: from OpenRouter, from a small built-in table for well-known OpenAI models (shown as "estimated"), or your
+  own; the model picker shows `$` / `$$` / `$$$` and each AI answer shows its cost when the price is known
+- Settings > AI > Models lists every model with what it can do and its price; adjust a model when its provider gets
+  its capabilities wrong or gives no price, change the cost tier limits, or also offer models without tools
+- Default model, reasoning, round trips and image mode for each agent (navigation and creation are ready for
+  their milestones)
+- "Test models" compares several models side by side (French and English scores, gap, latency, cost) and copies a
+  Markdown report; `npm run test:ai` does the same from the command line with OpenAI and OpenRouter keys too
+
 ### M3b - Entity models read from the Minecraft jar
 
 - The 3D preview reads every entity model from your own Minecraft jar (26.1 and later): 361 models in 26.3,

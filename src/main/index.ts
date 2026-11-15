@@ -91,6 +91,10 @@ if (!app.requestSingleInstanceLock()) {
     })
     const aiProviders = createProviderRegistry({
       getProviders: () => settings.get().ai.providers,
+      getModelSettings: () => ({
+        overrides: settings.get().ai.modelOverrides,
+        costTiers: settings.get().ai.costTiers
+      }),
       secrets,
       fetch: (url, init) => net.fetch(url, init)
     })

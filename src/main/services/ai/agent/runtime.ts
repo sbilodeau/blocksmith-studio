@@ -16,6 +16,7 @@ import type {
 import type { StyleBrief, StyleBriefPatch } from '@shared/model/brief'
 import type { ProviderRegistry } from '../../contracts'
 import { applyBriefPatch } from '../../brief'
+import { costFromUsage } from '../providers/pricing'
 import { buildSystemPrompt } from './prompts'
 import {
   buildUserMessage,
@@ -268,7 +269,7 @@ export async function runEditorAgent(
       let thinking = ''
       const calls: ToolCall[] = []
       let usage: { inputTokens?: number; outputTokens?: number; costUsd?: number } | undefined
-      for await (const ev of adapter.chat(
+      for await (let ev of adapter.chat(
         {
           model: request.model.modelId,
           messages: sent,
@@ -287,6 +288,9 @@ export async function runEditorAgent(
         } else if (ev.type === 'tool_call') {
           calls.push(ev.call)
         } else if (ev.type === 'usage') {
+          // Providers that return no cost (Ollama, OpenAI): computed from the model's known price.
+          const costUsd = ev.costUsd ?? costFromUsage(ev, model?.pricing)
+          if (costUsd !== undefined) ev = { ...ev, costUsd }
           usage = {
             inputTokens: (usage?.inputTokens ?? 0) + (ev.inputTokens ?? 0),
             outputTokens: (usage?.outputTokens ?? 0) + (ev.outputTokens ?? 0),

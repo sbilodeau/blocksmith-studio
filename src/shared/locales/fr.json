@@ -149,7 +149,8 @@
   },
   "common": {
     "cancel": "Annuler",
-    "close": "Fermer"
+    "close": "Fermer",
+    "save": "Enregistrer"
   },
   "packs": {
     "noDescription": "Aucune description",
@@ -454,7 +455,9 @@
       "tools": "Peut appeler des outils",
       "toolsShort": "outils",
       "thinking": "Peut afficher son raisonnement",
-      "thinkingShort": "raisonnement"
+      "thinkingShort": "raisonnement",
+      "noTools": "N'appelle pas d'outils, donc ne peut pas faire de modifications pour les agents",
+      "noToolsShort": "pas d'outils"
     },
     "cost": {
       "tooltip": "{input} $ / {output} $ par million de jetons (entrée / sortie), {source}",
@@ -499,8 +502,8 @@
     },
     "keyNotNeeded": "Aucune clé requise (local)",
     "eval": {
-      "title": "Tester un modèle",
-      "hint": "Envoie au modèle les phrases de test en français et en anglais et vérifie qu'il choisit les bons outils. Utilise les jetons de votre fournisseur : 16 phrases pour le test rapide, 60 pour le test complet.",
+      "title": "Tester des modèles",
+      "hint": "Envoie les phrases de test en français et en anglais à chaque modèle choisi et vérifie qu'il choisit les bons outils. Choisissez plusieurs modèles pour les comparer côte à côte. Utilise les jetons de vos fournisseurs : 16 phrases par modèle pour le test rapide, 60 pour le test complet.",
       "quick": "Test rapide",
       "full": "Test complet",
       "progress": "{done} requêtes sur {total}",
@@ -515,7 +518,20 @@
       "noCall": "(aucun appel d'outil)",
       "copy": "Copier le rapport (Markdown)",
       "copied": "Rapport copié.",
-      "weakGap": "Résultats inégaux : {gap} points d'écart entre le français et l'anglais. L'agent risque de mal comprendre les demandes dans l'une des langues."
+      "weakGap": "Résultats inégaux : {gap} points d'écart entre le français et l'anglais. L'agent risque de mal comprendre les demandes dans l'une des langues.",
+      "pickModels": "Choisissez un ou plusieurs modèles",
+      "progressModel": "Modèle {index} sur {count} ({model}) : {done} requêtes sur {total}",
+      "cost": " Coût : {cost}.",
+      "frShort": "FR",
+      "enShort": "EN",
+      "gap": "Écart",
+      "latency": "Latence",
+      "costHeader": "Coût",
+      "verdictStopped": "arrêté",
+      "verdictPass": "adapté",
+      "verdictWeak": "faible",
+      "compareHint": "Le meilleur en premier : le score global le plus haut, puis le plus petit écart entre français et anglais, puis le coût le plus bas.",
+      "ms": "{ms} ms"
     },
     "reasoning": {
       "off": "Désactivé",
@@ -523,6 +539,46 @@
       "medium": "Moyen",
       "high": "Élevé",
       "tooltip": "Niveau de raisonnement pour cet onglet (la valeur par défaut est dans les Paramètres)"
+    },
+    "preset": "Fournisseur",
+    "presets": {
+      "ollama-cloud": "Ollama Cloud",
+      "openai": "OpenAI",
+      "openrouter": "OpenRouter (beaucoup de modèles, une seule clé)",
+      "ollama-local": "Ollama sur cet ordinateur",
+      "custom": "Autre (compatible OpenAI ou Ollama)"
+    },
+    "baseUrlHint": "Pour un serveur compatible OpenAI, incluez la version, par exemple https://api.example.com/v1.",
+    "extraHeaders": "En-têtes supplémentaires",
+    "extraHeadersHint": "Facultatif, un par ligne sous la forme Nom: valeur. Ne mettez jamais votre clé API ici.",
+    "invalidHeaders": "Chaque ligne doit avoir la forme Nom: valeur.",
+    "editProvider": "Modifier",
+    "agentDefaults": "Réglages par agent",
+    "agentLater": "Cet agent arrive dans une version ultérieure ; les réglages choisis ici seront alors utilisés.",
+    "models": {
+      "title": "Modèles",
+      "hint": "Tous les modèles de vos fournisseurs, avec ce qu'ils savent faire et leur prix. Ajustez un modèle quand son fournisseur se trompe ou ne donne pas de prix.",
+      "allProviders": "Tous les fournisseurs",
+      "model": "Modèle",
+      "provider": "Fournisseur",
+      "pricePerM": "Prix par million de jetons",
+      "price": "{input} $ entrée / {output} $ sortie",
+      "noPrice": "Inconnu",
+      "adjust": "Ajuster",
+      "adjustTitle": "Ajuster {model}",
+      "tiers": "Niveaux de coût ($ par million de jetons : $ en dessous, $$$ au-dessus)",
+      "tiersHint": "Prix moyen par million de jetons (une part d'entrée, trois parts de sortie) : $ sous {low} $, $$ jusqu'à {high} $, $$$ au-delà. Les modèles sans prix connu n'affichent pas de niveau.",
+      "showAll": "Proposer aussi les modèles qui n'appellent pas d'outils",
+      "search": "Chercher un modèle",
+      "auto": "Comme indiqué",
+      "yes": "Oui",
+      "no": "Non",
+      "yourPrice": "Votre prix ($ par million)",
+      "yourPriceHint": "Prix d'entrée et de sortie ; laissez vide pour utiliser le prix du fournisseur ou l'estimation.",
+      "priceBoth": "Indiquez les deux prix, ou aucun.",
+      "in": "Entrée",
+      "out": "Sortie",
+      "reset": "Revenir aux valeurs indiquées"
     }
   },
   "brief": {

@@ -38,6 +38,35 @@ export const AgentSettingsSchema = z.object({
   imageMode: z.enum(['vision+grid', 'grid', 'image']).default('vision+grid')
 })
 
+const PriceSchema = z
+  .object({ inPerMTok: z.number().min(0).max(10_000), outPerMTok: z.number().min(0).max(10_000) })
+  .strict()
+
+/** The user's corrections for one model: capabilities the provider reports wrong, or their own price. */
+export const ModelOverrideSchema = z
+  .object({
+    providerId: z.string().min(1).max(40),
+    modelId: z.string().min(1).max(200),
+    capabilities: z
+      .object({ vision: z.boolean(), tools: z.boolean(), thinking: z.boolean() })
+      .partial()
+      .strict()
+      .optional(),
+    pricing: PriceSchema.optional()
+  })
+  .strict()
+
+export type ModelOverride = z.infer<typeof ModelOverrideSchema>
+
+/** Blended $/1M tokens limits of the $ / $$ / $$$ tiers (PLAN 7.4). */
+export const CostTiersSchema = z
+  .object({
+    low: z.number().min(0).max(1000).default(1),
+    high: z.number().min(0).max(1000).default(10)
+  })
+  .strict()
+  .refine((t) => t.low <= t.high, { message: 'low must not exceed high' })
+
 /** Ollama Cloud (native API) is the default provider. The key is stored separately, encrypted. */
 export const DEFAULT_PROVIDERS = [
   {
@@ -60,7 +89,11 @@ const AiSettingsSchema = z
         navigation: AgentSettingsSchema.prefault({}),
         editor: AgentSettingsSchema.prefault({})
       })
-      .prefault({})
+      .prefault({}),
+    modelOverrides: z.array(ModelOverrideSchema).max(500).default([]),
+    costTiers: CostTiersSchema.prefault({}),
+    /** Also offer models without tool support in the pickers (they cannot run agents). */
+    showAllModels: z.boolean().default(false)
   })
   .prefault({})
 
@@ -101,7 +134,11 @@ export const SettingsPatchSchema = z
         editor: AgentSettingsSchema.partial().optional()
       })
       .strict()
-      .optional()
+      .optional(),
+    /** Sets (or, with neither capabilities nor pricing, removes) the override of one model. */
+    aiModelOverride: ModelOverrideSchema.optional(),
+    aiCostTiers: CostTiersSchema.optional(),
+    aiShowAllModels: z.boolean().optional()
   })
   .strict()
 
@@ -127,7 +164,18 @@ export function applySettingsPatch(current: Settings, patch: SettingsPatch): Set
         creation: { ...current.ai.agents.creation, ...(patch.aiAgents?.creation ?? {}) },
         navigation: { ...current.ai.agents.navigation, ...(patch.aiAgents?.navigation ?? {}) },
         editor: { ...current.ai.agents.editor, ...(patch.aiAgents?.editor ?? {}) }
-      }
+      },
+      modelOverrides: patch.aiModelOverride
+        ? upsertOverride(current.ai.modelOverrides, patch.aiModelOverride)
+        : current.ai.modelOverrides,
+      costTiers: patch.aiCostTiers ?? current.ai.costTiers,
+      showAllModels: patch.aiShowAllModels ?? current.ai.showAllModels
     }
   })
+}
+
+function upsertOverride(list: ModelOverride[], next: ModelOverride): ModelOverride[] {
+  const rest = list.filter((o) => o.providerId !== next.providerId || o.modelId !== next.modelId)
+  const empty = !next.pricing && (!next.capabilities || Object.keys(next.capabilities).length === 0)
+  return empty ? rest : [...rest, next]
 }

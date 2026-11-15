@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "description": "Approximate list prices (USD per 1M tokens) of well-known models, used only when the provider returns no price. Shown as 'estimated' in the model picker; users can enter their own price in Settings. Patterns are case-insensitive regular expressions matched against the model id (a 'vendor/' prefix is ignored); the first match wins, so put specific names first. Check each provider's pricing page when updating.",
+  "entries": [
+    { "pattern": "^gpt-4o-mini(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 0.15, "outPerMTok": 0.6 },
+    { "pattern": "^gpt-4o(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 2.5, "outPerMTok": 10 },
+    { "pattern": "^gpt-4\\.1-nano(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 0.1, "outPerMTok": 0.4 },
+    { "pattern": "^gpt-4\\.1-mini(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 0.4, "outPerMTok": 1.6 },
+    { "pattern": "^gpt-4\\.1(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 2, "outPerMTok": 8 },
+    { "pattern": "^gpt-5-nano(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 0.05, "outPerMTok": 0.4 },
+    { "pattern": "^gpt-5-mini(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 0.25, "outPerMTok": 2 },
+    { "pattern": "^gpt-5(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 1.25, "outPerMTok": 10 },
+    { "pattern": "^o4-mini(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 1.1, "outPerMTok": 4.4 },
+    { "pattern": "^o3-mini(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 1.1, "outPerMTok": 4.4 },
+    { "pattern": "^o3(-\\d{4}-\\d{2}-\\d{2})?$", "inPerMTok": 2, "outPerMTok": 8 }
+  ]
+}

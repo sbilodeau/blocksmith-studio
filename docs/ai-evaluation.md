@@ -27,29 +27,41 @@ Defaults live in `DEFAULT_THRESHOLDS` (`src/main/services/ai/eval/report.ts`).
 
 ### From the app
 
-Settings > AI > **Test a model**: pick a model, then **Quick test** (8 cases, 16 phrases) or **Full test**
-(60 phrases). Progress is shown live, **Stop** cancels, and the result shows the scores per language, the missed
-phrases with the calls the model made, and a button to copy the Markdown report. The provider's tokens are used.
+Settings > AI > **Test models**: pick one or more models, then **Quick test** (8 cases, 16 phrases per model) or
+**Full test** (60 phrases per model). Models run one after the other; progress is shown live and **Stop** cancels.
+
+- One model: the scores per language, the missed phrases with the calls the model made, tokens, latency and cost
+  (when the price is known).
+- Several models: a side-by-side table, best first (highest overall rate, then the smallest FR-EN gap, then the
+  lowest cost, then the fastest), with a verdict per model and the requests each model missed.
+
+**Copy the report** copies the Markdown (the comparison table first, then each model's report). The providers'
+tokens are used.
 
 ### From the command line
 
-Needs an Ollama Cloud key in the environment or in `.env.local` (git-ignored) at the repo root:
+Needs at least one provider key in the environment or in `.env.local` (git-ignored) at the repo root:
 
 ```bash
 echo "OLLAMA_API_KEY=..." >> .env.local
 npm run test:ai                                              # default model (gpt-oss:120b)
 BLOCKSMITH_EVAL_MODEL=qwen3-coder:480b npm run test:ai        # another Ollama Cloud model
+BLOCKSMITH_EVAL_MODEL="gpt-oss:120b,openrouter/qwen/qwen3-32b,openai/gpt-4o-mini" npm run test:ai   # compare
 BLOCKSMITH_EVAL_CASES=rotate-left-90,flip-horizontal npm run test:ai
 ```
 
-| Variable                      | Meaning                                                        |
-| ----------------------------- | -------------------------------------------------------------- |
-| `OLLAMA_API_KEY`              | Ollama Cloud key. Without it the suite is skipped              |
-| `BLOCKSMITH_EVAL_MODEL`       | `model` (Ollama Cloud) or `provider/model`                     |
-| `BLOCKSMITH_EVAL_CASES`       | Comma-separated case ids to run (default: all)                 |
-| `BLOCKSMITH_EVAL_CONCURRENCY` | Parallel requests (default 3; lower it if you get rate limits) |
+| Variable                      | Meaning                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `OLLAMA_API_KEY`              | Ollama Cloud key (provider `ollama-cloud`, the default)                  |
+| `OPENAI_API_KEY`              | OpenAI key (provider `openai`)                                           |
+| `OPENROUTER_API_KEY`          | OpenRouter key (provider `openrouter`)                                   |
+| `BLOCKSMITH_EVAL_MODEL`       | `model` (Ollama Cloud) or `provider/model`; comma-separated to compare   |
+| `BLOCKSMITH_EVAL_CASES`       | Comma-separated case ids to run (default: all)                           |
+| `BLOCKSMITH_EVAL_CONCURRENCY` | Parallel requests (default 3; lower it if you get rate limits)           |
 
-The report is printed and written to `ai-eval-report.md`. `npm test` also runs the suite when the key is set.
+Without any key the suite is skipped. The report is printed and written to `ai-eval-report.md` (with the
+side-by-side table first when several models ran); each model must meet the pass criteria. `npm test` also runs
+the suite when a key is set.
 
 ### In CI
 

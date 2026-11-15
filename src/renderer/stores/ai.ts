@@ -16,6 +16,7 @@ import type {
 } from '@shared/ai/types'
 import type { Language } from '@shared/model/settings'
 import { call, IpcError } from '../services/ipc'
+import { useSettingsStore } from './settings'
 
 /** One message bubble in the AI panel, built from persisted turns and live events. */
 export interface ChatItem {
@@ -91,6 +92,10 @@ export const useAiStore = defineStore('ai', () => {
     providers.value.some((p) => p.enabled && (p.hasKey || !p.keyRequired))
   )
   const toolModels = computed(() => models.value.filter((m) => m.capabilities.tools !== false))
+  /** Models offered by the pickers: tool-capable ones, or all of them with Settings > "show all models". */
+  const pickerModels = computed(() =>
+    useSettingsStore().settings.ai.showAllModels ? models.value : toolModels.value
+  )
 
   function init(): void {
     if (listening) return
@@ -308,6 +313,7 @@ export const useAiStore = defineStore('ai', () => {
     sessions,
     hasUsableProvider,
     toolModels,
+    pickerModels,
     init,
     loadProviders,
     loadModels,
