@@ -12,21 +12,9 @@
       "role": "head",
       "pivot": [0, 9, 4],
       "boxes": [
-        {
-          "origin": [-2, 9, 3],
-          "size": [4, 6, 3],
-          "uv": [0, 0]
-        },
-        {
-          "origin": [-2, 11, 6],
-          "size": [4, 2, 2],
-          "uv": [14, 0]
-        },
-        {
-          "origin": [-1, 9, 5],
-          "size": [2, 2, 2],
-          "uv": [14, 4]
-        }
+        { "origin": [-2, 9, 3], "size": [4, 6, 3], "uv": [0, 0] },
+        { "origin": [-2, 11, 6], "size": [4, 2, 2], "uv": [14, 0] },
+        { "origin": [-1, 9, 5], "size": [2, 2, 2], "uv": [14, 4] }
       ]
     },
     {
@@ -34,61 +22,31 @@
       "role": "body",
       "pivot": [0, 8, 0],
       "rotation": [90, 0, 0],
-      "boxes": [
-        {
-          "origin": [-3, 4, -3],
-          "size": [6, 8, 6],
-          "uv": [0, 9]
-        }
-      ]
+      "boxes": [{ "origin": [-3, 4, -3], "size": [6, 8, 6], "uv": [0, 9] }]
     },
     {
       "name": "right_leg",
       "role": "rightLeg",
       "pivot": [-2, 5, -1],
-      "boxes": [
-        {
-          "origin": [-3, 0, -1],
-          "size": [3, 5, 3],
-          "uv": [26, 0]
-        }
-      ]
+      "boxes": [{ "origin": [-3, 0, -1], "size": [3, 5, 3], "uv": [26, 0] }]
     },
     {
       "name": "left_leg",
       "role": "leftLeg",
       "pivot": [1, 5, -1],
-      "boxes": [
-        {
-          "origin": [0, 0, -1],
-          "size": [3, 5, 3],
-          "uv": [26, 0]
-        }
-      ]
+      "boxes": [{ "origin": [0, 0, -1], "size": [3, 5, 3], "uv": [26, 0] }]
     },
     {
       "name": "right_wing",
       "role": "wing",
       "pivot": [-4, 11, 0],
-      "boxes": [
-        {
-          "origin": [-4, 7, -3],
-          "size": [1, 4, 6],
-          "uv": [24, 13]
-        }
-      ]
+      "boxes": [{ "origin": [-4, 7, -3], "size": [1, 4, 6], "uv": [24, 13] }]
     },
     {
       "name": "left_wing",
       "role": "wing",
       "pivot": [4, 11, 0],
-      "boxes": [
-        {
-          "origin": [3, 7, -3],
-          "size": [1, 4, 6],
-          "uv": [24, 13]
-        }
-      ]
+      "boxes": [{ "origin": [3, 7, -3], "size": [1, 4, 6], "uv": [24, 13] }]
     }
   ]
 }

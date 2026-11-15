@@ -9,14 +9,7 @@
       "role": "wing",
       "pivot": [5, 24, 0],
       "rotation": [15, 0, 15],
-      "boxes": [
-        {
-          "origin": [-5, 4, -2],
-          "size": [10, 20, 2],
-          "uv": [22, 0],
-          "inflate": 1
-        }
-      ]
+      "boxes": [{ "origin": [-5, 4, -2], "size": [10, 20, 2], "uv": [22, 0], "inflate": 1 }]
     },
     {
       "name": "right_wing",
@@ -24,13 +17,7 @@
       "pivot": [-5, 24, 0],
       "rotation": [15, 0, -15],
       "boxes": [
-        {
-          "origin": [-5, 4, -2],
-          "size": [10, 20, 2],
-          "uv": [22, 0],
-          "inflate": 1,
-          "mirror": true
-        }
+        { "origin": [-5, 4, -2], "size": [10, 20, 2], "uv": [22, 0], "inflate": 1, "mirror": true }
       ]
     }
   ]
