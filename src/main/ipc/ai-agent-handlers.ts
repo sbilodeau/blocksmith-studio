@@ -1,4 +1,5 @@
 import type { AgentEvent, AgentKind, AgentSettings } from '@shared/ai/types'
+import type { PreviewModel } from '@shared/model/preview'
 import { handle } from './registry'
 import type { ProviderRegistry } from '../services/contracts'
 import { createBriefService, type BriefService } from '../services/brief'
@@ -15,6 +16,8 @@ export interface AiAgentHandlerDeps {
   packs: { locate: (packId: string) => Promise<{ folder: string } | null> }
   /** Vanilla PNG of a pack texture, or null when it has none (get_texture). */
   readVanillaPng: (packId: string, path: string) => Promise<Uint8Array | null>
+  /** 3D preview model of a texture, so the agent knows which pixels are which body part / block face. */
+  previewModel?: (packId: string, path: string) => Promise<PreviewModel | null>
   /** Main forwards these to the window as 'ai.event'. */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -36,6 +39,7 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
     brief,
     conversations,
     readVanillaPng: deps.readVanillaPng,
+    previewModel: deps.previewModel,
     emit: deps.emit,
     now: deps.now,
     newId: deps.newId

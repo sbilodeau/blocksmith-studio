@@ -81,12 +81,15 @@ export function buildUserMessage(
   message: string,
   texturePath: string,
   img: RgbaImage,
-  plan: ImagePlan
+  plan: ImagePlan,
+  /** How the texture wraps its 3D model (src/shared/preview/layout.ts), when known. */
+  layout?: string
 ): ChatMessage {
   const state = textureState(img, plan)
+  const model = layout ? `\n\n${layout}` : ''
   return {
     role: 'user',
-    text: `[Open texture: ${texturePath} (${img.width} x ${img.height} px)]\n${state.text}\n\nUser request:\n${message}`,
+    text: `[Open texture: ${texturePath} (${img.width} x ${img.height} px)]\n${state.text}${model}\n\nUser request:\n${message}`,
     ...(state.png ? { images: [state.png] } : {})
   }
 }

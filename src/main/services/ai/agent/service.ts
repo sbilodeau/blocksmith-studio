@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { decodePng, type RgbaImage } from '@shared/image'
+import type { PreviewModel } from '@shared/model/preview'
+import { describeModelLayout } from '@shared/preview/layout'
 import type {
   AgentEvent,
   AgentKind,
@@ -27,6 +29,8 @@ export interface EditorAgentServiceDeps {
   conversations: ConversationStore
   /** Vanilla PNG of a pack texture (for get_texture), or null when it has none. */
   readVanillaPng: (packId: string, path: string) => Promise<Uint8Array | null>
+  /** 3D preview model of a pack texture (same as 'texture.preview'), described to the agent. */
+  previewModel?: (packId: string, path: string) => Promise<PreviewModel | null>
   /** Default sink for background runs (main forwards it as 'ai.event'). */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -90,6 +94,20 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     }
   }
 
+  /** Body part / block face layout of the texture, or undefined (never fails the run). */
+  async function modelLayout(
+    packId: string,
+    path: string,
+    img: RgbaImage
+  ): Promise<string | undefined> {
+    if (!deps.previewModel) return undefined
+    try {
+      return describeModelLayout(await deps.previewModel(packId, path), path, img.width, img.height)
+    } catch {
+      return undefined
+    }
+  }
+
   async function run(
     request: EditorAgentRequest,
     emit: (event: AgentEvent) => void,
@@ -103,10 +121,11 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     try {
       const base = decode(request.texture.png)
       proposals.expireFor(packId, 'editor')
-      const [brief, vanilla, history] = await Promise.all([
+      const [brief, vanilla, history, layout] = await Promise.all([
         deps.brief.get(packId),
         readVanilla(packId, request.texture.path),
-        deps.conversations.read(packId, 'editor')
+        deps.conversations.read(packId, 'editor'),
+        modelLayout(packId, request.texture.path, base)
       ])
       const userTurn: ConversationTurn = {
         id: newId(),
@@ -125,7 +144,8 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
           settings: deps.getAgentSettings('editor'),
           brief,
           vanilla,
-          history
+          history,
+          ...(layout ? { modelLayout: layout } : {})
         },
         { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
         emit,

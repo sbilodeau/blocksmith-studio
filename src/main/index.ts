@@ -154,6 +154,7 @@ if (!app.requestSingleInstanceLock()) {
       getAgentSettings: (agent) => settings.get().ai.agents[agent],
       packs,
       readVanillaPng: async (packId, path) => (await textures.read(packId, path)).vanillaPng,
+      previewModel: (packId, path) => preview.preview(packId, path),
       emit: (event) => send(webContents(), 'ai.event', event)
     })
     registerAiEvalHandlers({

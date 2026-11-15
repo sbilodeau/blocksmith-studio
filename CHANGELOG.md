@@ -14,6 +14,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
   model comes from your game files
 - Older versions keep the built-in models; textures without a model keep the flat view with its notice
 - `npm run test:real-jar` checks the extraction and the table against your local jar (never in CI)
+- The editor AI receives the 3D model layout of the open texture (which rectangle is the head front, the left leg,
+  the top of the block...), so changes like "give it red eyes" land on the right pixels and on every face
 
 ### M3 - Editor AI agent (MVP complete)
 
