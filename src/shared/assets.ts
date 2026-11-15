@@ -45,7 +45,11 @@ export function parseAssetUrl(url: string): ParsedAssetUrl | null {
     return null
   }
   const [root, ...rest] = decoded
-  if (rest.some((s) => s === '..' || s === '.' || s.includes('\\') || s.includes('/') || s.includes('\0'))) {
+  if (
+    rest.some(
+      (s) => s === '..' || s === '.' || s.includes('\\') || s.includes('/') || s.includes('\0')
+    )
+  ) {
     return null
   }
   const path = rest.join('/')

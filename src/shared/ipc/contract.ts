@@ -34,7 +34,7 @@ export interface AppInfo {
 
 const NoInput = z.undefined()
 const PackRef = z.object({ packId: z.string().min(1).max(64) }).strict()
-const VersionId = z.string().regex(/^[0-9][0-9a-z.\-]{0,31}$/)
+const VersionId = z.string().regex(/^[0-9][0-9a-z.-]{0,31}$/)
 
 /** Runtime input validation for every invoke channel. Main validates each payload against this. */
 export const inputSchemas = {

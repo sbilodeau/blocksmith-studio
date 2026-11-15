@@ -65,7 +65,10 @@ export class SettingsService {
   /** Main-process only: remembers a Minecraft folder or jar added by hand (deduplicated). */
   async addMinecraftPath(path: string): Promise<Settings> {
     if (this.settings.minecraftPaths.includes(path)) return this.settings
-    return this.replace({ ...this.settings, minecraftPaths: [...this.settings.minecraftPaths, path] })
+    return this.replace({
+      ...this.settings,
+      minecraftPaths: [...this.settings.minecraftPaths, path]
+    })
   }
 
   async removeMinecraftPath(path: string): Promise<Settings> {

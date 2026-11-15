@@ -11,10 +11,12 @@
   "home": {
     "title": "Your packs",
     "empty": "No packs yet",
-    "emptyHint": "Pack creation and import arrive in the next milestone.",
+    "emptyHint": "Create a pack from the vanilla textures or import an existing .zip.",
     "newPack": "New pack",
     "importPack": "Import .zip",
-    "comingSoon": "Coming soon"
+    "workspace": "Workspace:",
+    "changeWorkspace": "Change",
+    "filter": "Filter packs"
   },
   "settings": {
     "title": "Settings",
@@ -72,6 +74,134 @@
       "installFailed": "the installer could not be started",
       "noUpdate": "no update is available",
       "failed": "unknown error"
+    },
+    "withCode": "Something went wrong ({code})."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "packs": {
+    "noDescription": "No description",
+    "minecraft": "Minecraft {version}",
+    "changed": "no changed files | 1 changed file | {count} changed files",
+    "updated": "Updated {date}",
+    "open": "Open",
+    "reveal": "Show folder",
+    "delete": "Delete",
+    "deleteTitle": "Delete pack",
+    "deleteConfirm": "Move \"{name}\" to the trash? You can restore it from the trash."
+  },
+  "newPack": {
+    "title": "New pack",
+    "name": "Name",
+    "namePlaceholder": "My fire pack",
+    "description": "Description",
+    "base": "Start from",
+    "baseVanilla": "Vanilla textures (edit the game's textures)",
+    "baseEmpty": "Empty pack (add your own files)",
+    "version": "Minecraft version",
+    "versionHint": "You edit against this version. Exporting to older versions comes later.",
+    "vanillaRequired": "Vanilla textures needed",
+    "create": "Create"
+  },
+  "vanilla": {
+    "foundLocal": "Minecraft {version} was found on this computer. Its textures will be extracted (nothing is uploaded).",
+    "notInstalled": "Minecraft {version} is not installed on this computer.",
+    "allowDownload": "Allow downloading the game files from Mojang",
+    "downloadHint": "Used only when a version is missing locally. Files come straight from Mojang's servers and stay on this computer.",
+    "extract": "Extract textures",
+    "download": "Download from Mojang",
+    "version": "Version",
+    "status": "Status",
+    "latest": "latest",
+    "state": {
+      "ready": "Ready",
+      "local": "On this computer",
+      "downloadable": "Not installed"
     }
-  }
+  },
+  "minecraft": {
+    "title": "Minecraft",
+    "installs": "Detected installations",
+    "addFolder": "Add folder...",
+    "noInstalls": "No Minecraft installation found. Add a folder or allow downloads from Mojang.",
+    "launchers": {
+      "official": "Minecraft Launcher",
+      "prism": "Prism Launcher",
+      "multimc": "MultiMC",
+      "modrinth": "Modrinth App",
+      "curseforge": "CurseForge",
+      "custom": "Added by you"
+    }
+  },
+  "pack": {
+    "overview": "Overview",
+    "allTextures": "All textures",
+    "changedTotal": "{count} changed",
+    "textureCount": "no textures | 1 texture | {count} textures",
+    "modifiedCount": "{count} modified",
+    "animated": "Animated texture",
+    "status": {
+      "vanilla": "Vanilla",
+      "modified": "Modified",
+      "added": "Added"
+    }
+  },
+  "grid": {
+    "search": "Search textures",
+    "zoom": "Zoom",
+    "count": "{shown} of {total}",
+    "filter": {
+      "all": "All",
+      "changed": "Changed",
+      "vanilla": "Vanilla"
+    },
+    "selected": "no texture selected | 1 texture selected | {count} textures selected",
+    "selectAll": "Select all",
+    "clearSelection": "Clear",
+    "empty": "No texture matches."
+  },
+  "export": {
+    "open": "Export",
+    "title": "Export pack",
+    "target": "Minecraft version",
+    "targetHint": "Other versions will be available once version migration is added.",
+    "changedOnly": "Only changed and added files are exported. Minecraft uses its own textures for everything else.",
+    "run": "Export .zip",
+    "done": "Export complete",
+    "summary": "{files} files exported for Minecraft {version} to {path}"
+  },
+  "import": {
+    "title": "Import complete",
+    "summary": "\"{name}\" imported: {files} files kept, {identical} identical to vanilla dropped."
+  },
+  "report": {
+    "warnings": "Warnings ({count})"
+  },
+  "jobs": {
+    "phase": {
+      "download": "Downloading",
+      "extract": "Extracting",
+      "index": "Indexing",
+      "read": "Reading",
+      "write": "Writing",
+      "collect": "Collecting files"
+    }
+  },
+  "category": {
+    "blocks": "Blocks",
+    "ores": "Ores",
+    "tools": "Tools",
+    "weapons": "Weapons",
+    "armor": "Armor",
+    "food": "Food",
+    "materials": "Materials",
+    "entities": "Entities",
+    "gui": "GUI",
+    "particles": "Particles",
+    "environment": "Environment",
+    "other": "Other"
+  },
+  "warnings": {}
 }

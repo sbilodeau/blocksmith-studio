@@ -20,6 +20,7 @@ import {
 import { LANGUAGES, THEMES, type Language, type Theme } from '@shared/model/settings'
 import type { AppInfo } from '@shared/ipc/contract'
 import UpdateActions from '../components/UpdateActions.vue'
+import MinecraftSettings from '../components/vanilla/MinecraftSettings.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useUpdaterStore } from '../stores/updater'
 import { useUpdaterMessage } from '../composables/useUpdaterMessage'
@@ -88,6 +89,8 @@ onMounted(async () => {
         </n-form>
       </n-card>
 
+      <minecraft-settings />
+
       <n-card :title="t('settings.updates')" size="small">
         <n-form label-placement="left" label-width="160">
           <n-form-item :label="t('settings.currentVersion')">
@@ -140,6 +143,9 @@ onMounted(async () => {
 .settings {
   max-width: 820px;
   margin: 0 auto;
+  height: 100%;
   overflow-y: auto;
+  padding-bottom: 24px;
+  box-sizing: border-box;
 }
 </style>
