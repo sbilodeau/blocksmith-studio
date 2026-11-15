@@ -24,7 +24,13 @@ const pending = computed(() => props.proposal.status === 'pending')
 
 function label(step: ProposalStep): string {
   const key = step.description.key
-  return te(key) ? t(key, step.description.params) : `${step.tool}(${JSON.stringify(step.args)})`
+  if (!te(key)) return `${step.tool}(${JSON.stringify(step.args)})`
+  // Enum values (clockwise, horizontal, inside...) are translated through ops.value.*.
+  const params: Record<string, string | number> = {}
+  for (const [k, v] of Object.entries(step.description.params)) {
+    params[k] = typeof v === 'string' && te(`ops.value.${v}`) ? t(`ops.value.${v}`) : v
+  }
+  return t(key, params)
 }
 
 function toggle(id: string, on: boolean): void {

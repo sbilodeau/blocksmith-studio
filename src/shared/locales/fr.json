@@ -510,5 +510,47 @@
       "navigation": "Navigation",
       "creation": "Création"
     }
+  },
+  "ops": {
+    "rotate": "Rotation {degrees}° {direction}",
+    "flip": "Miroir {axis}",
+    "shift": "Décalage de ({dx}, {dy})",
+    "shiftWrap": "Décalage de ({dx}, {dy}) avec retour au bord opposé",
+    "resize": "Redimensionner à {width}×{height}",
+    "setPixels": "Modifier des pixels ({count})",
+    "drawLine": "Ligne de ({x1}, {y1}) à ({x2}, {y2}) en {color}",
+    "drawRect": "Contour de rectangle à ({x}, {y}), {width}×{height}, en {color}",
+    "fillRect": "Rectangle plein à ({x}, {y}), {width}×{height}, en {color}",
+    "fill": "Remplissage depuis ({x}, {y}) en {color} (tolérance {tolerance})",
+    "fillAll": "Remplacer toutes les couleurs semblables à ({x}, {y}) par {color} (tolérance {tolerance})",
+    "erasePixels": "Effacer des pixels ({count})",
+    "eraseRect": "Effacer la zone à ({x}, {y}), {width}×{height}",
+    "erasePixelsAndRect": "Effacer des pixels ({count}) et la zone à ({x}, {y}), {width}×{height}",
+    "replaceColor": "Remplacer {from} par {to} (tolérance {tolerance})",
+    "applyPalette": "Appliquer une palette de {count} couleurs",
+    "applyPaletteRegion": "Appliquer une palette de {count} couleurs à ({x}, {y}), {width}×{height}",
+    "hueShift": "Décaler la teinte de {degrees}°",
+    "hueShiftRegion": "Décaler la teinte de {degrees}° dans ({x}, {y}), {width}×{height}",
+    "saturation": "Saturation {percent} %",
+    "saturationRegion": "Saturation {percent} % dans ({x}, {y}), {width}×{height}",
+    "brightness": "Luminosité {percent} %",
+    "brightnessRegion": "Luminosité {percent} % dans ({x}, {y}), {width}×{height}",
+    "outline": "Contour ({mode}) en {color}",
+    "getPixels": "Lire les pixels",
+    "getPixelsRect": "Lire les pixels à ({x}, {y}), {width}×{height}",
+    "getPalette": "Lire la palette",
+    "getTexture": "Consulter la texture {source}",
+    "readStyleBrief": "Lire le brief de style",
+    "updateStyleBrief": "Modifier le brief de style ({fields})",
+    "value": {
+      "clockwise": "horaire",
+      "counterclockwise": "antihoraire",
+      "horizontal": "horizontal",
+      "vertical": "vertical",
+      "inside": "intérieur",
+      "outside": "extérieur",
+      "vanilla": "vanilla",
+      "pack": "du pack"
+    }
   }
 }

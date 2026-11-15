@@ -71,3 +71,24 @@ describe('ProposalReview', () => {
     expect(wrapper.text()).toContain('Rejected')
   })
 })
+
+describe('ProposalReview descriptions', () => {
+  it('localizes step descriptions and enum values in both languages', () => {
+    const p = proposal()
+    p.steps[0]!.description = {
+      key: 'ops.rotate',
+      params: { degrees: 90, direction: 'counterclockwise' }
+    }
+    const fr = createAppI18n('fr')
+    const wrapperFr = mount(ProposalReview, {
+      props: { proposal: p },
+      global: { plugins: [fr] }
+    })
+    expect(wrapperFr.text()).toContain('Rotation 90° antihoraire')
+    const wrapperEn = mount(ProposalReview, {
+      props: { proposal: p },
+      global: { plugins: [createAppI18n()] }
+    })
+    expect(wrapperEn.text()).toContain('Rotate 90° counterclockwise')
+  })
+})

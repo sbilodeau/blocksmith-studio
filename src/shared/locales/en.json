@@ -510,5 +510,47 @@
       "navigation": "Navigation",
       "creation": "Creation"
     }
+  },
+  "ops": {
+    "rotate": "Rotate {degrees}° {direction}",
+    "flip": "Flip {axis}",
+    "shift": "Shift by ({dx}, {dy})",
+    "shiftWrap": "Shift by ({dx}, {dy}) with wrap-around",
+    "resize": "Resize to {width}×{height}",
+    "setPixels": "Set pixels ({count})",
+    "drawLine": "Line from ({x1}, {y1}) to ({x2}, {y2}) in {color}",
+    "drawRect": "Rectangle outline at ({x}, {y}), {width}×{height}, in {color}",
+    "fillRect": "Filled rectangle at ({x}, {y}), {width}×{height}, in {color}",
+    "fill": "Fill from ({x}, {y}) with {color} (tolerance {tolerance})",
+    "fillAll": "Replace every matching color at ({x}, {y}) with {color} (tolerance {tolerance})",
+    "erasePixels": "Erase pixels ({count})",
+    "eraseRect": "Erase the area at ({x}, {y}), {width}×{height}",
+    "erasePixelsAndRect": "Erase pixels ({count}) and the area at ({x}, {y}), {width}×{height}",
+    "replaceColor": "Replace {from} with {to} (tolerance {tolerance})",
+    "applyPalette": "Apply a palette of {count} colors",
+    "applyPaletteRegion": "Apply a palette of {count} colors to ({x}, {y}), {width}×{height}",
+    "hueShift": "Shift hue {degrees}°",
+    "hueShiftRegion": "Shift hue {degrees}° in ({x}, {y}), {width}×{height}",
+    "saturation": "Saturation {percent}%",
+    "saturationRegion": "Saturation {percent}% in ({x}, {y}), {width}×{height}",
+    "brightness": "Brightness {percent}%",
+    "brightnessRegion": "Brightness {percent}% in ({x}, {y}), {width}×{height}",
+    "outline": "Outline ({mode}) in {color}",
+    "getPixels": "Read the pixels",
+    "getPixelsRect": "Read the pixels at ({x}, {y}), {width}×{height}",
+    "getPalette": "Read the palette",
+    "getTexture": "Look at the {source} texture",
+    "readStyleBrief": "Read the style brief",
+    "updateStyleBrief": "Update the style brief ({fields})",
+    "value": {
+      "clockwise": "clockwise",
+      "counterclockwise": "counterclockwise",
+      "horizontal": "horizontally",
+      "vertical": "vertically",
+      "inside": "inside",
+      "outside": "outside",
+      "vanilla": "vanilla",
+      "pack": "pack"
+    }
   }
 }
