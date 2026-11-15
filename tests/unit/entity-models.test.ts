@@ -10,8 +10,9 @@ import { globToRegExp } from '@shared/categories/glob'
 const MODELS_DIR = resolve(__dirname, '../../resources/data/entity-models')
 
 /**
- * Known vanilla 1.21.4 entity textures (pack path -> PNG size) that the built-in definitions are expected to
- * cover, read from the 1.21.4 client jar listing. Paths only: no asset is copied into the repository.
+ * Known vanilla entity textures (pack path -> PNG size) that the built-in definitions are expected to cover, read
+ * from the 1.21.4 and 26.3 client jar listings (26.3 renamed or resized some: farm animal variants, equipment).
+ * Paths only: no asset is copied into the repository.
  */
 const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
   ['entity', [64, 32], ['chicken', 'spider_eyes']],
@@ -139,7 +140,50 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
       'wolf_woods_tame'
     ]
   ],
-  ['entity/zombie', [64, 64], ['drowned', 'drowned_outer_layer', 'husk', 'zombie']]
+  ['entity/zombie', [64, 64], ['drowned', 'drowned_outer_layer', 'husk', 'zombie']],
+  // 26.3
+  ['entity/chicken', [64, 32], ['chicken_cold', 'chicken_temperate', 'chicken_warm']],
+  [
+    'entity/cow',
+    [64, 64],
+    ['cow_cold', 'cow_temperate', 'cow_warm', 'mooshroom_brown', 'mooshroom_red']
+  ],
+  ['entity/pig', [64, 64], ['pig_cold', 'pig_temperate', 'pig_warm']],
+  ['entity/sheep', [64, 32], ['sheep_wool', 'sheep_wool_undercoat']],
+  [
+    'entity/horse',
+    [64, 64],
+    [
+      'donkey',
+      'horse_black',
+      'horse_brown',
+      'horse_chestnut',
+      'horse_creamy',
+      'horse_darkbrown',
+      'horse_gray',
+      'horse_markings_blackdots',
+      'horse_markings_white',
+      'horse_markings_whitedots',
+      'horse_markings_whitefield',
+      'horse_skeleton',
+      'horse_white',
+      'horse_zombie',
+      'mule'
+    ]
+  ],
+  [
+    'entity/equipment/horse_body',
+    [64, 64],
+    ['copper', 'diamond', 'gold', 'iron', 'leather', 'leather_overlay', 'netherite']
+  ],
+  ['entity/equipment/horse_saddle', [64, 64], ['saddle']],
+  ['entity/equipment/donkey_saddle', [64, 64], ['saddle']],
+  ['entity/equipment/mule_saddle', [64, 64], ['saddle']],
+  ['entity/equipment/skeleton_horse_saddle', [64, 64], ['saddle']],
+  ['entity/equipment/zombie_horse_saddle', [64, 64], ['saddle']],
+  ['entity/equipment/wolf_body', [64, 32], ['armadillo_scute', 'armadillo_scute_overlay']],
+  ['entity/equipment/wings', [64, 32], ['elytra']],
+  ['entity/equipment/pig_saddle', [64, 64], ['saddle']]
 ]
 
 const tex = (key: string): string => `assets/minecraft/textures/${key}`
@@ -156,7 +200,11 @@ const UNCOVERED_ENTITY_TEXTURES: readonly string[] = [
   tex('entity/piglin/piglin.png'),
   tex('entity/zombie_villager/zombie_villager.png'),
   tex('entity/creeper/creeper_armor.png'),
-  tex('entity/horse/horse_white.png'),
+  tex('entity/llama/creamy.png'),
+  tex('entity/equipment/llama_body/blue.png'),
+  // Baby mobs have their own layouts since 26.1.
+  tex('entity/wolf/wolf_baby.png'),
+  tex('entity/cow/cow_temperate_baby.png'),
   tex('block/stone.png')
 ]
 
@@ -309,6 +357,11 @@ const EXPECTED_HEIGHTS: Record<string, number> = {
   cat: 12,
   chicken: 15,
   cow: 25,
+  cow_variants: 24,
+  donkey: 36.334,
+  elytra: 24.5,
+  horse: 34.624,
+  pig_variants: 16,
   creeper: 26,
   drowned: 32,
   enderman: 46,
@@ -367,7 +420,7 @@ describe('entity model files', () => {
 describe('entity textures', () => {
   const known = [...KNOWN_ENTITY_TEXTURES.keys()]
 
-  it('every texture glob matches at least one known 1.21.4 texture', () => {
+  it('every texture glob matches at least one known vanilla texture', () => {
     for (const def of definitions) {
       for (const glob of def.textures) {
         const re = globToRegExp(glob)
@@ -461,6 +514,9 @@ describe('entity rest-pose geometry', () => {
       if (def.id === 'sheep_wool') {
         // The wool only covers the upper half of the 12 px legs.
         expect(min[1], def.id).toBe(6)
+      } else if (def.id === 'elytra') {
+        // Worn on the back: hangs from the shoulders (y = 24), tilted, so it ends above the ground.
+        expect(min[1], def.id).toBeGreaterThan(0)
       } else if (def.id === 'spider') {
         expect(min[1], def.id).toBeGreaterThanOrEqual(0)
         expect(min[1], def.id).toBeLessThan(1)

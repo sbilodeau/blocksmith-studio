@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { NButton, NButtonGroup, NSelect, NSpace, NSwitch, NText, NTooltip } from 'naive-ui'
 import { decodePng, type RgbaImage } from '@shared/image'
 import type { PreviewModel } from '@shared/model/preview'
+import { entityFitsTexture } from '@shared/preview/entities'
 import {
   buildBlock,
   buildEntity,
@@ -28,7 +29,17 @@ const { t } = useI18n()
 const editor = computed(() => useEditorStore(props.packId))
 
 const host = ref<HTMLDivElement | null>(null)
-const model = shallowRef<PreviewModel | null>(null)
+const rawModel = shallowRef<PreviewModel | null>(null)
+const FLAT: PreviewModel = { kind: 'flat' }
+/** The model to draw: an entity whose UV layout does not fit the texture's size is shown flat instead. */
+const model = computed<PreviewModel | null>(() => {
+  const m = rawModel.value
+  const img = editor.value.image
+  if (m?.kind === 'entity' && img && !entityFitsTexture(m.definition, img.width, img.height)) {
+    return FLAT
+  }
+  return m
+})
 const loadingModel = ref(false)
 const failed = ref(false)
 
@@ -173,7 +184,7 @@ async function loadModel(): Promise<void> {
   loadingModel.value = true
   failed.value = false
   try {
-    model.value = await call('texture.preview', { packId: props.packId, path })
+    rawModel.value = await call('texture.preview', { packId: props.packId, path })
     await loadOtherTextures()
     rebuild()
     view('iso')

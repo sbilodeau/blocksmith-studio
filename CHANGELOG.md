@@ -18,6 +18,9 @@ All notable changes to this project are documented here. Versions follow CalVer 
   propose changes as plan steps
 - Ollama Cloud provider (native API: streaming, tools, images, thinking, model capabilities); self-hosted Ollama on
   localhost without a key; API keys encrypted with the system keychain, never sent to the renderer
+- 3D preview matches 26.3 textures: new models for horses, donkeys and mules (with horse armor and saddles), elytra,
+  26.3 cow and pig variants (64 x 64, with the cold fur layer), wolf armor; new chicken and sheep wool paths; a model
+  whose layout does not fit the texture size, and baby mob textures, now use the flat view instead of a wrong render
 - Reasoning level (off, low, medium, high) as a default in Settings and per tab in the AI panel
 - Settings > AI: providers, keys, connection test, default model and options for the editor agent, and
   "Test a model" (quick or full FR/EN evaluation)

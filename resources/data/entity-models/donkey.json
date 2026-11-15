@@ -1,0 +1,143 @@
+{
+  "id": "donkey",
+  "textureSize": [64, 64],
+  "animation": "quadruped",
+  "textures": [
+    "assets/minecraft/textures/entity/horse/{donkey,mule}.png",
+    "assets/minecraft/textures/entity/equipment/{donkey,mule}_saddle/*.png"
+  ],
+  "parts": [
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 13, -5],
+      "boxes": [
+        {
+          "origin": [-5, 11, -10],
+          "size": [10, 10, 22],
+          "uv": [0, 32],
+          "inflate": 0.05
+        }
+      ],
+      "children": [
+        {
+          "name": "tail",
+          "role": "tail",
+          "pivot": [0, 18, -7],
+          "rotation": [30, 0, 0],
+          "boxes": [
+            {
+              "origin": [-1.5, 4, -11],
+              "size": [3, 14, 4],
+              "uv": [42, 36]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 20, 12],
+      "rotation": [30, 0, 0],
+      "boxes": [
+        {
+          "origin": [-2, 14, 7],
+          "size": [4, 12, 7],
+          "uv": [0, 35]
+        },
+        {
+          "origin": [-3, 26, 7],
+          "size": [6, 5, 7],
+          "uv": [0, 13]
+        },
+        {
+          "origin": [-1, 15, 4.99],
+          "size": [2, 16, 2],
+          "uv": [56, 36]
+        },
+        {
+          "origin": [-2, 26, 14],
+          "size": [4, 5, 5],
+          "uv": [0, 25]
+        }
+      ],
+      "children": [
+        {
+          "name": "left_ear",
+          "pivot": [1.25, 30, 8],
+          "rotation": [15, 0, -15],
+          "boxes": [
+            {
+              "origin": [0.25, 30, 7],
+              "size": [2, 7, 1],
+              "uv": [0, 12]
+            }
+          ]
+        },
+        {
+          "name": "right_ear",
+          "pivot": [-1.25, 30, 8],
+          "rotation": [15, 0, 15],
+          "boxes": [
+            {
+              "origin": [-2.25, 30, 7],
+              "size": [2, 7, 1],
+              "uv": [0, 12]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "left_hind_leg",
+      "role": "backLeftLeg",
+      "pivot": [4, 10, -7],
+      "boxes": [
+        {
+          "origin": [1, 0, -10],
+          "size": [4, 11, 4],
+          "uv": [48, 21],
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "name": "right_hind_leg",
+      "role": "backRightLeg",
+      "pivot": [-4, 10, -7],
+      "boxes": [
+        {
+          "origin": [-5, 0, -10],
+          "size": [4, 11, 4],
+          "uv": [48, 21]
+        }
+      ]
+    },
+    {
+      "name": "left_front_leg",
+      "role": "frontLeftLeg",
+      "pivot": [4, 10, 10],
+      "boxes": [
+        {
+          "origin": [1, 0, 7.9],
+          "size": [4, 11, 4],
+          "uv": [48, 21],
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "name": "right_front_leg",
+      "role": "frontRightLeg",
+      "pivot": [-4, 10, 10],
+      "boxes": [
+        {
+          "origin": [-5, 0, 7.9],
+          "size": [4, 11, 4],
+          "uv": [48, 21]
+        }
+      ]
+    }
+  ]
+}

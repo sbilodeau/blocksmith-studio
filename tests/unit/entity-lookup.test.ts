@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { entityDefinitions, findEntityDefinition } from '@shared/preview/entities'
+import {
+  entityDefinitions,
+  entityFitsTexture,
+  findEntityDefinition
+} from '@shared/preview/entities'
 
 const tex = (key: string): string => `assets/minecraft/textures/${key}`
 const idOf = (key: string): string | undefined => findEntityDefinition(tex(key))?.id
@@ -57,7 +61,8 @@ describe('findEntityDefinition', () => {
   })
 
   it('returns undefined for unknown entities and non-entity textures', () => {
-    expect(idOf('entity/horse/horse_white.png')).toBeUndefined()
+    expect(idOf('entity/llama/creamy.png')).toBeUndefined()
+    expect(idOf('entity/wolf/wolf_baby.png')).toBeUndefined()
     expect(idOf('entity/zombie/zombie.png.mcmeta')).toBeUndefined()
     expect(idOf('block/stone.png')).toBeUndefined()
     expect(findEntityDefinition('')).toBeUndefined()
@@ -72,5 +77,16 @@ describe('findEntityDefinition', () => {
 
   it('returns the shared definition objects of entityDefinitions()', () => {
     expect(entityDefinitions()).toContain(findEntityDefinition(tex('entity/pig/pig.png')))
+  })
+})
+
+describe('entityFitsTexture', () => {
+  const wolf = findEntityDefinition('assets/minecraft/textures/entity/wolf/wolf.png')!
+
+  it('accepts the layout size and HD multiples, rejects another aspect ratio', () => {
+    expect(entityFitsTexture(wolf, 64, 32)).toBe(true)
+    expect(entityFitsTexture(wolf, 128, 64)).toBe(true)
+    expect(entityFitsTexture(wolf, 64, 64)).toBe(false)
+    expect(entityFitsTexture(wolf, 32, 32)).toBe(false)
   })
 })

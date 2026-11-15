@@ -1,0 +1,37 @@
+{
+  "id": "elytra",
+  "textureSize": [64, 32],
+  "animation": "none",
+  "textures": ["assets/minecraft/textures/entity/equipment/wings/*.png"],
+  "parts": [
+    {
+      "name": "left_wing",
+      "role": "wing",
+      "pivot": [5, 24, 0],
+      "rotation": [15, 0, 15],
+      "boxes": [
+        {
+          "origin": [-5, 4, -2],
+          "size": [10, 20, 2],
+          "uv": [22, 0],
+          "inflate": 1
+        }
+      ]
+    },
+    {
+      "name": "right_wing",
+      "role": "wing",
+      "pivot": [-5, 24, 0],
+      "rotation": [15, 0, -15],
+      "boxes": [
+        {
+          "origin": [-5, 4, -2],
+          "size": [10, 20, 2],
+          "uv": [22, 0],
+          "inflate": 1,
+          "mirror": true
+        }
+      ]
+    }
+  ]
+}
