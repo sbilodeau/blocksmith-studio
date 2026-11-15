@@ -34,6 +34,12 @@ Thanks for your interest in Blocksmith Studio. This file describes the conventio
 | Integration | `tests/integration/` | Vitest (node)            | Main services against temporary folders              |
 | Component   | `tests/component/`   | Vitest (happy-dom)       | Vue components and stores with a fake preload bridge |
 | E2E         | `tests/e2e/`         | Playwright (`_electron`) | Launches the real built app with an isolated profile |
+| AI eval     | `tests/ai-eval/`     | Vitest (node)            | Live model, skipped without `OLLAMA_API_KEY`         |
+
+AI code is tested without a network: the agent runtime against a scripted fake adapter
+(`tests/unit/ai-agent-fakes.ts`), the Ollama adapter and the E2E specs against a local fake HTTP server
+(`tests/fixtures/ai/server.ts`). Only `tests/ai-eval/` calls a real model (see
+[docs/ai-evaluation.md](docs/ai-evaluation.md)).
 
 Code that touches Electron APIs should keep its logic in pure functions (see `src/main/security-policy.ts`) or use
 dependency injection (see `src/main/services/updater.ts`) so it can be unit-tested without Electron.

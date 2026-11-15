@@ -118,6 +118,33 @@
       "nothingToRedo": "Rien à rétablir.",
       "blobMissing": "La copie enregistrée de {path} est introuvable : cette étape ne peut pas être annulée.",
       "invalidPath": "L'historique contient un chemin invalide."
+    },
+    "ai": {
+      "unauthorized": "Le fournisseur a refusé la clé d'API. Vérifiez-la dans les Paramètres.",
+      "rateLimited": "Trop de requêtes ; réessayez dans un instant.",
+      "modelNotFound": "Le modèle « {model} » n'est pas disponible chez ce fournisseur.",
+      "providerError": "Le fournisseur d'IA a renvoyé une erreur ({status}).",
+      "network": "Impossible de joindre le fournisseur d'IA. Vérifiez votre connexion.",
+      "invalidResponse": "Le fournisseur d'IA a envoyé une réponse illisible.",
+      "secretsUnavailable": "Le stockage sécurisé n'est pas disponible sur ce système : la clé n'a pas été enregistrée.",
+      "providerNotFound": "Ce fournisseur d'IA n'existe plus.",
+      "providerDisabled": "Ce fournisseur d'IA est désactivé.",
+      "noApiKey": "Aucune clé d'API pour ce fournisseur. Ajoutez-la dans les Paramètres.",
+      "providerKindUnsupported": "Ce type de fournisseur n'est pas encore pris en charge.",
+      "budgetReached": "Arrêt après le nombre maximal d'allers-retours ; voici ce qui a été fait jusqu'ici.",
+      "stopped": "Arrêté.",
+      "proposalNotFound": "Ce plan a expiré. Redemandez.",
+      "runFailed": "La requête à l'IA a échoué.",
+      "insecureBaseUrl": "L'adresse du fournisseur doit utiliser https (http est permis seulement pour localhost).",
+      "invalidHeader": "L'en-tête supplémentaire « {name} » n'est pas permis.",
+      "timeout": "Le fournisseur d'IA a mis trop de temps à répondre.",
+      "aborted": "Arrêté.",
+      "invalidTexture": "La texture n'a pas pu être lue.",
+      "textureTooLarge": "Cette texture est trop grande pour l'IA (max {max} pixels par côté).",
+      "proposalNotPending": "Ce plan a déjà été appliqué ou refusé.",
+      "replayFailed": "L'étape {step} ({tool}) n'a pas pu être appliquée.",
+      "agentFailed": "L'agent IA s'est arrêté à cause d'une erreur inattendue.",
+      "evalBusy": "Un test de modèle est déjà en cours."
     }
   },
   "common": {
@@ -330,10 +357,13 @@
       "rotateCcw": "Rotation 90° antihoraire",
       "flipH": "Miroir horizontal",
       "flipV": "Miroir vertical",
-      "paste": "Collage"
+      "paste": "Collage",
+      "ai": "Modification IA"
     },
     "shortcut": "{label} ({key})",
-    "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer."
+    "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer.",
+    "tabDraw": "Dessin",
+    "tabAi": "IA"
   },
   "history": {
     "label": {
@@ -372,6 +402,189 @@
       "item": "Objet",
       "entity": "Entité",
       "flat": "À plat"
+    },
+    "noEntityModel": "Pas encore de modèle 3D pour cette texture d'entité : elle est affichée à plat, comme dans l'éditeur."
+  },
+  "ai": {
+    "title": "IA",
+    "kind": {
+      "ollama": "Ollama (API native)",
+      "openai-compatible": "Compatible OpenAI"
+    },
+    "keySet": "Clé enregistrée",
+    "keyMissing": "Pas de clé",
+    "enterKey": "Clé d'API",
+    "replaceKey": "Remplacer la clé d'API",
+    "saveKey": "Enregistrer la clé",
+    "removeKey": "Supprimer la clé",
+    "keySaved": "Clé d'API enregistrée (chiffrée sur cet ordinateur).",
+    "keyHint": "Les clés sont chiffrées avec le trousseau du système et ne quittent jamais le processus principal.",
+    "test": "Tester",
+    "testOk": "Connecté : {count} modèles disponibles.",
+    "deleteProvider": "Supprimer",
+    "newProvider": "Ajouter un fournisseur",
+    "providerName": "Nom",
+    "providerType": "Type",
+    "baseUrl": "URL de base",
+    "addProvider": "Ajouter",
+    "agents": {
+      "editor": "Agent Éditeur",
+      "navigation": "Agent Navigation",
+      "creation": "Agent Création"
+    },
+    "editorAgent": "Agent Éditeur",
+    "refreshModels": "Actualiser les modèles",
+    "defaultModel": "Modèle par défaut",
+    "thinking": "Raisonnement",
+    "thinkingHint": "Combien le modèle réfléchit avant de répondre, pour les modèles qui savent raisonner. Plus c'est élevé, plus c'est lent et plus ça consomme de jetons ; les niveaux ne changent l'effort que sur les modèles qui les gèrent (gpt-oss), les autres sont simplement activés ou non.",
+    "maxIterations": "Allers-retours max",
+    "maxIterationsHint": "Nombre de fois où l'IA peut appeler des outils et regarder le résultat pour une demande.",
+    "imageMode": "Ce que voit l'IA",
+    "imageModes": {
+      "vision+grid": "Image + grille de pixels",
+      "grid": "Grille de pixels seulement",
+      "image": "Image seulement"
+    },
+    "pickModel": "Choisir un modèle",
+    "cap": {
+      "vision": "Peut voir les images",
+      "visionShort": "vision",
+      "tools": "Peut appeler des outils",
+      "toolsShort": "outils",
+      "thinking": "Peut afficher son raisonnement",
+      "thinkingShort": "raisonnement"
+    },
+    "cost": {
+      "tooltip": "{input} $ / {output} $ par million de jetons (entrée / sortie), {source}",
+      "source": {
+        "provider": "selon le fournisseur",
+        "hint": "estimation",
+        "user": "votre prix"
+      },
+      "unknown": "Prix inconnu"
+    },
+    "noProvider": "Ajoutez une clé d'API Ollama Cloud (ou un autre fournisseur) dans les Paramètres pour utiliser l'IA.",
+    "openSettings": "Ouvrir les Paramètres",
+    "clear": "Effacer",
+    "clearHint": "Oublier cette conversation (le brief de style est conservé).",
+    "emptyEditor": "Demandez une modification, par exemple : « tourne de 90° à gauche et ajoute des flammes au bout ».",
+    "thinkingTitle": "Raisonnement",
+    "toolCallsTitle": "Appels d'outils ({count})",
+    "working": "En cours...",
+    "usage": "{input} en entrée / {output} en sortie (jetons)",
+    "usageCost": " · {cost} $",
+    "placeholder": "Décrivez la modification (français ou anglais)...",
+    "sendHint": "Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne, Haut/Bas pour les messages précédents",
+    "send": "Envoyer",
+    "stop": "Arrêter",
+    "proposal": {
+      "title": "Plan proposé ({count} étapes)",
+      "before": "Avant",
+      "after": "Après",
+      "brief": "brief de style",
+      "dependencyWarning": "{count} étape(s) conservée(s) ont été calculées après une étape décochée ; le résultat peut différer de l'aperçu.",
+      "reject": "Refuser",
+      "applyAll": "Tout appliquer",
+      "applySome": "Appliquer {count} sur {total}",
+      "applied": "{count} étape(s) appliquée(s) à la texture. Enregistrez pour la conserver.",
+      "briefUpdated": "Le brief de style a été mis à jour.",
+      "status": {
+        "pending": "En attente",
+        "applied": "Appliqué",
+        "partially-applied": "Appliqué en partie",
+        "rejected": "Refusé"
+      }
+    },
+    "keyNotNeeded": "Aucune clé requise (local)",
+    "eval": {
+      "title": "Tester un modèle",
+      "hint": "Envoie au modèle les phrases de test en français et en anglais et vérifie qu'il choisit les bons outils. Utilise les jetons de votre fournisseur : 16 phrases pour le test rapide, 60 pour le test complet.",
+      "quick": "Test rapide",
+      "full": "Test complet",
+      "progress": "{done} requêtes sur {total}",
+      "stopped": "Test arrêté avant la fin ; les scores ne couvrent que ce qui a été exécuté.",
+      "good": "Bon choix : {rate} % des requêtes ont donné les bons outils dans les deux langues.",
+      "weak": "Choix faible : seulement {rate} % des requêtes ont donné les bons outils. L'agent risque de mal comprendre certaines demandes avec ce modèle.",
+      "overall": "Global",
+      "french": "Français",
+      "english": "Anglais",
+      "stats": "Moyenne de {latency} ms par requête. Jetons : {input} en entrée, {output} en sortie.",
+      "failures": "Requêtes ratées ({count})",
+      "noCall": "(aucun appel d'outil)",
+      "copy": "Copier le rapport (Markdown)",
+      "copied": "Rapport copié.",
+      "weakGap": "Résultats inégaux : {gap} points d'écart entre le français et l'anglais. L'agent risque de mal comprendre les demandes dans l'une des langues."
+    },
+    "reasoning": {
+      "off": "Désactivé",
+      "low": "Faible",
+      "medium": "Moyen",
+      "high": "Élevé",
+      "tooltip": "Niveau de raisonnement pour cet onglet (la valeur par défaut est dans les Paramètres)"
+    }
+  },
+  "brief": {
+    "open": "Brief de style",
+    "title": "Brief de style",
+    "intro": "Mémoire partagée par tous les agents IA de ce pack : ils la suivent et peuvent proposer des mises à jour (que vous validez).",
+    "theme": "Thème",
+    "themePlaceholder": "ex. Feu et volcanique",
+    "palette": "Palette",
+    "rolePlaceholder": "Rôle (ex. reflets)",
+    "rules": "Règles visuelles",
+    "rulePlaceholder": "ex. Garder les silhouettes vanilla",
+    "save": "Enregistrer le brief",
+    "saved": "Brief de style enregistré.",
+    "decisions": "Décisions",
+    "requests": "Demandes récentes à l'IA",
+    "none": "Rien pour l'instant",
+    "by": {
+      "user": "Vous",
+      "editor": "Éditeur",
+      "navigation": "Navigation",
+      "creation": "Création"
+    }
+  },
+  "ops": {
+    "rotate": "Rotation {degrees}° {direction}",
+    "flip": "Miroir {axis}",
+    "shift": "Décalage de ({dx}, {dy})",
+    "shiftWrap": "Décalage de ({dx}, {dy}) avec retour au bord opposé",
+    "resize": "Redimensionner à {width}×{height}",
+    "setPixels": "Modifier des pixels ({count})",
+    "drawLine": "Ligne de ({x1}, {y1}) à ({x2}, {y2}) en {color}",
+    "drawRect": "Contour de rectangle à ({x}, {y}), {width}×{height}, en {color}",
+    "fillRect": "Rectangle plein à ({x}, {y}), {width}×{height}, en {color}",
+    "fill": "Remplissage depuis ({x}, {y}) en {color} (tolérance {tolerance})",
+    "fillAll": "Remplacer toutes les couleurs semblables à ({x}, {y}) par {color} (tolérance {tolerance})",
+    "erasePixels": "Effacer des pixels ({count})",
+    "eraseRect": "Effacer la zone à ({x}, {y}), {width}×{height}",
+    "erasePixelsAndRect": "Effacer des pixels ({count}) et la zone à ({x}, {y}), {width}×{height}",
+    "replaceColor": "Remplacer {from} par {to} (tolérance {tolerance})",
+    "applyPalette": "Appliquer une palette de {count} couleurs",
+    "applyPaletteRegion": "Appliquer une palette de {count} couleurs à ({x}, {y}), {width}×{height}",
+    "hueShift": "Décaler la teinte de {degrees}°",
+    "hueShiftRegion": "Décaler la teinte de {degrees}° dans ({x}, {y}), {width}×{height}",
+    "saturation": "Saturation {percent} %",
+    "saturationRegion": "Saturation {percent} % dans ({x}, {y}), {width}×{height}",
+    "brightness": "Luminosité {percent} %",
+    "brightnessRegion": "Luminosité {percent} % dans ({x}, {y}), {width}×{height}",
+    "outline": "Contour ({mode}) en {color}",
+    "getPixels": "Lire les pixels",
+    "getPixelsRect": "Lire les pixels à ({x}, {y}), {width}×{height}",
+    "getPalette": "Lire la palette",
+    "getTexture": "Consulter la texture {source}",
+    "readStyleBrief": "Lire le brief de style",
+    "updateStyleBrief": "Modifier le brief de style ({fields})",
+    "value": {
+      "clockwise": "horaire",
+      "counterclockwise": "antihoraire",
+      "horizontal": "horizontal",
+      "vertical": "vertical",
+      "inside": "intérieur",
+      "outside": "extérieur",
+      "vanilla": "vanilla",
+      "pack": "du pack"
     }
   }
 }

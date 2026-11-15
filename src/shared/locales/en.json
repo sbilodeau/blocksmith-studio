@@ -118,6 +118,33 @@
       "nothingToRedo": "Nothing to redo.",
       "blobMissing": "The saved copy of {path} is missing, so this step cannot be undone.",
       "invalidPath": "The history contains an invalid path."
+    },
+    "ai": {
+      "unauthorized": "The provider refused the API key. Check it in Settings.",
+      "rateLimited": "Too many requests; try again in a moment.",
+      "modelNotFound": "The model \"{model}\" is not available on this provider.",
+      "providerError": "The AI provider returned an error ({status}).",
+      "network": "Could not reach the AI provider. Check your connection.",
+      "invalidResponse": "The AI provider sent an unreadable response.",
+      "secretsUnavailable": "Secure storage is not available on this system, so the key was not saved.",
+      "providerNotFound": "This AI provider no longer exists.",
+      "providerDisabled": "This AI provider is disabled.",
+      "noApiKey": "No API key for this provider. Add it in Settings.",
+      "providerKindUnsupported": "This provider type is not supported yet.",
+      "budgetReached": "Stopped after the maximum number of round trips; here is what was done so far.",
+      "stopped": "Stopped.",
+      "proposalNotFound": "This plan expired. Ask again.",
+      "runFailed": "The AI request failed.",
+      "insecureBaseUrl": "The provider address must use https (http is allowed only for localhost).",
+      "invalidHeader": "The extra header \"{name}\" is not allowed.",
+      "timeout": "The AI provider took too long to answer.",
+      "aborted": "Stopped.",
+      "invalidTexture": "The texture could not be read.",
+      "textureTooLarge": "This texture is too large for the AI (max {max} pixels per side).",
+      "proposalNotPending": "This plan was already applied or refused.",
+      "replayFailed": "Step {step} ({tool}) could not be applied.",
+      "agentFailed": "The AI agent stopped because of an unexpected error.",
+      "evalBusy": "A model test is already running."
     }
   },
   "common": {
@@ -330,10 +357,13 @@
       "rotateCcw": "Rotate 90° counterclockwise",
       "flipH": "Flip horizontally",
       "flipV": "Flip vertically",
-      "paste": "Paste"
+      "paste": "Paste",
+      "ai": "AI edit"
     },
     "shortcut": "{label} ({key})",
-    "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan."
+    "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan.",
+    "tabDraw": "Draw",
+    "tabAi": "AI"
   },
   "history": {
     "label": {
@@ -372,6 +402,189 @@
       "item": "Item",
       "entity": "Entity",
       "flat": "Flat"
+    },
+    "noEntityModel": "No 3D model for this entity texture yet: it is shown flat, as in the editor."
+  },
+  "ai": {
+    "title": "AI",
+    "kind": {
+      "ollama": "Ollama (native API)",
+      "openai-compatible": "OpenAI-compatible"
+    },
+    "keySet": "Key saved",
+    "keyMissing": "No key",
+    "enterKey": "API key",
+    "replaceKey": "Replace the API key",
+    "saveKey": "Save key",
+    "removeKey": "Remove key",
+    "keySaved": "API key saved (encrypted on this computer).",
+    "keyHint": "Keys are encrypted with your system keychain and never leave the main process.",
+    "test": "Test",
+    "testOk": "Connected: {count} models available.",
+    "deleteProvider": "Delete",
+    "newProvider": "Add a provider",
+    "providerName": "Name",
+    "providerType": "Type",
+    "baseUrl": "Base URL",
+    "addProvider": "Add",
+    "agents": {
+      "editor": "Editor agent",
+      "navigation": "Navigation agent",
+      "creation": "Creation agent"
+    },
+    "editorAgent": "Editor agent",
+    "refreshModels": "Refresh models",
+    "defaultModel": "Default model",
+    "thinking": "Reasoning",
+    "thinkingHint": "How much the model thinks before answering, for models that can reason. Higher is slower and uses more tokens; the levels only change the effort on models that support them (gpt-oss), others are simply on or off.",
+    "maxIterations": "Max round trips",
+    "maxIterationsHint": "How many times the AI may call tools and look at the result for one request.",
+    "imageMode": "What the AI sees",
+    "imageModes": {
+      "vision+grid": "Image + pixel grid",
+      "grid": "Pixel grid only",
+      "image": "Image only"
+    },
+    "pickModel": "Choose a model",
+    "cap": {
+      "vision": "Can see images",
+      "visionShort": "vision",
+      "tools": "Can call tools",
+      "toolsShort": "tools",
+      "thinking": "Can show its reasoning",
+      "thinkingShort": "thinking"
+    },
+    "cost": {
+      "tooltip": "${input} / ${output} per million tokens (in / out), {source}",
+      "source": {
+        "provider": "from the provider",
+        "hint": "estimated",
+        "user": "your price"
+      },
+      "unknown": "Price unknown"
+    },
+    "noProvider": "Add an Ollama Cloud API key (or another provider) in Settings to use the AI.",
+    "openSettings": "Open Settings",
+    "clear": "Clear",
+    "clearHint": "Forget this conversation (the style brief is kept).",
+    "emptyEditor": "Ask for a change, for example: \"rotate 90° left and add flames at the tip\".",
+    "thinkingTitle": "Reasoning",
+    "toolCallsTitle": "Tool calls ({count})",
+    "working": "Working...",
+    "usage": "{input} in / {output} out tokens",
+    "usageCost": " · ${cost}",
+    "placeholder": "Describe the change (English or French)...",
+    "sendHint": "Enter to send, Shift+Enter for a new line, Up/Down for earlier messages",
+    "send": "Send",
+    "stop": "Stop",
+    "proposal": {
+      "title": "Proposed plan ({count} steps)",
+      "before": "Before",
+      "after": "After",
+      "brief": "style brief",
+      "dependencyWarning": "{count} kept step(s) were computed on top of a step you unchecked; the result may differ from the preview.",
+      "reject": "Reject",
+      "applyAll": "Apply all",
+      "applySome": "Apply {count} of {total}",
+      "applied": "Applied {count} step(s) to the texture. Save to keep it.",
+      "briefUpdated": "The style brief was updated.",
+      "status": {
+        "pending": "Pending",
+        "applied": "Applied",
+        "partially-applied": "Partly applied",
+        "rejected": "Rejected"
+      }
+    },
+    "keyNotNeeded": "No key needed (local)",
+    "eval": {
+      "title": "Test a model",
+      "hint": "Sends the French and English test phrases to the model and checks that it picks the right tools. Uses your provider tokens: 16 phrases for the quick test, 60 for the full test.",
+      "quick": "Quick test",
+      "full": "Full test",
+      "progress": "{done} of {total} requests",
+      "stopped": "Test stopped before the end; the scores cover only what ran.",
+      "good": "Good fit: {rate} % of requests mapped to the right tools in both languages.",
+      "weak": "Weak fit: only {rate} % of requests mapped to the right tools. The agent may misread some requests with this model.",
+      "overall": "Overall",
+      "french": "French",
+      "english": "English",
+      "stats": "Average {latency} ms per request. Tokens: {input} in, {output} out.",
+      "failures": "Missed requests ({count})",
+      "noCall": "(no tool call)",
+      "copy": "Copy the report (Markdown)",
+      "copied": "Report copied.",
+      "weakGap": "Uneven fit: {gap} points between French and English. The agent may misread requests in one of the languages."
+    },
+    "reasoning": {
+      "off": "Off",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "tooltip": "Reasoning level for this tab (the default is in Settings)"
+    }
+  },
+  "brief": {
+    "open": "Style brief",
+    "title": "Style brief",
+    "intro": "Shared memory for every AI agent of this pack: they follow it and may propose updates (you approve them).",
+    "theme": "Theme",
+    "themePlaceholder": "e.g. Fire and volcanic",
+    "palette": "Palette",
+    "rolePlaceholder": "Role (e.g. highlights)",
+    "rules": "Visual rules",
+    "rulePlaceholder": "e.g. Keep vanilla silhouettes",
+    "save": "Save brief",
+    "saved": "Style brief saved.",
+    "decisions": "Decisions",
+    "requests": "Recent AI requests",
+    "none": "Nothing yet",
+    "by": {
+      "user": "You",
+      "editor": "Editor",
+      "navigation": "Navigation",
+      "creation": "Creation"
+    }
+  },
+  "ops": {
+    "rotate": "Rotate {degrees}° {direction}",
+    "flip": "Flip {axis}",
+    "shift": "Shift by ({dx}, {dy})",
+    "shiftWrap": "Shift by ({dx}, {dy}) with wrap-around",
+    "resize": "Resize to {width}×{height}",
+    "setPixels": "Set pixels ({count})",
+    "drawLine": "Line from ({x1}, {y1}) to ({x2}, {y2}) in {color}",
+    "drawRect": "Rectangle outline at ({x}, {y}), {width}×{height}, in {color}",
+    "fillRect": "Filled rectangle at ({x}, {y}), {width}×{height}, in {color}",
+    "fill": "Fill from ({x}, {y}) with {color} (tolerance {tolerance})",
+    "fillAll": "Replace every matching color at ({x}, {y}) with {color} (tolerance {tolerance})",
+    "erasePixels": "Erase pixels ({count})",
+    "eraseRect": "Erase the area at ({x}, {y}), {width}×{height}",
+    "erasePixelsAndRect": "Erase pixels ({count}) and the area at ({x}, {y}), {width}×{height}",
+    "replaceColor": "Replace {from} with {to} (tolerance {tolerance})",
+    "applyPalette": "Apply a palette of {count} colors",
+    "applyPaletteRegion": "Apply a palette of {count} colors to ({x}, {y}), {width}×{height}",
+    "hueShift": "Shift hue {degrees}°",
+    "hueShiftRegion": "Shift hue {degrees}° in ({x}, {y}), {width}×{height}",
+    "saturation": "Saturation {percent}%",
+    "saturationRegion": "Saturation {percent}% in ({x}, {y}), {width}×{height}",
+    "brightness": "Brightness {percent}%",
+    "brightnessRegion": "Brightness {percent}% in ({x}, {y}), {width}×{height}",
+    "outline": "Outline ({mode}) in {color}",
+    "getPixels": "Read the pixels",
+    "getPixelsRect": "Read the pixels at ({x}, {y}), {width}×{height}",
+    "getPalette": "Read the palette",
+    "getTexture": "Look at the {source} texture",
+    "readStyleBrief": "Read the style brief",
+    "updateStyleBrief": "Update the style brief ({fields})",
+    "value": {
+      "clockwise": "clockwise",
+      "counterclockwise": "counterclockwise",
+      "horizontal": "horizontally",
+      "vertical": "vertically",
+      "inside": "inside",
+      "outside": "outside",
+      "vanilla": "vanilla",
+      "pack": "pack"
     }
   }
 }

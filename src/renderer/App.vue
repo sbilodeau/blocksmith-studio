@@ -52,7 +52,12 @@ watch(
   >
     <n-message-provider>
       <n-dialog-provider>
-        <n-layout class="app-layout">
+        <!-- NLayout wraps its children in an inner container: make that one the flex column, so the content area
+             has a bounded height and the editor fits the window instead of growing with the AI conversation. -->
+        <n-layout
+          class="app-layout"
+          content-style="display: flex; flex-direction: column; height: 100%; min-height: 0;"
+        >
           <n-layout-header bordered>
             <app-header />
           </n-layout-header>
@@ -73,10 +78,6 @@ watch(
 .app-root,
 .app-layout {
   height: 100%;
-}
-.app-layout {
-  display: flex;
-  flex-direction: column;
 }
 .app-content {
   flex: 1;

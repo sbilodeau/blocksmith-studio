@@ -85,3 +85,12 @@ test('item textures preview as an extruded sprite', async () => {
   await page.keyboard.press('3')
   await expect(page.getByTestId('preview3d-kind')).toHaveText('Item')
 })
+
+test('entity textures without a model are shown flat, facing the camera, with a notice', async () => {
+  launched = await setup()
+  const { page } = launched
+  await openTexture(page, 'normal')
+  await page.keyboard.press('3')
+  await expect(page.getByTestId('preview3d-kind')).toHaveText('Flat')
+  await expect(page.getByTestId('preview3d-no-model')).toBeVisible()
+})

@@ -2,7 +2,11 @@
   "id": "sheep_wool",
   "textureSize": [64, 32],
   "animation": "quadruped",
-  "textures": ["assets/minecraft/textures/entity/sheep/sheep_fur.png"],
+  "textures": [
+    "assets/minecraft/textures/entity/sheep/sheep_fur.png",
+    "assets/minecraft/textures/entity/sheep/sheep_wool.png",
+    "assets/minecraft/textures/entity/sheep/sheep_wool_undercoat.png"
+  ],
   "parts": [
     {
       "name": "head",

@@ -1,0 +1,8 @@
+{
+  "details": { "format": "gguf", "family": "gemma3", "parameter_size": "27.4B" },
+  "model_info": {
+    "general.architecture": "gemma3",
+    "gemma3.context_length": 131072
+  },
+  "capabilities": ["completion", "vision"]
+}

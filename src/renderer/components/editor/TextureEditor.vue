@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NButtonGroup, NSpace, NTag, NText, NTooltip, useDialog } from 'naive-ui'
+import {
+  NButton,
+  NTabs,
+  NTabPane,
+  NButtonGroup,
+  NSpace,
+  NTag,
+  NText,
+  NTooltip,
+  useDialog
+} from 'naive-ui'
 import LoadingOverlay from '../common/LoadingOverlay.vue'
 import { toHex, type Rgba } from '@shared/image'
 import PixelCanvas from './PixelCanvas.vue'
@@ -10,6 +20,8 @@ import ColorPanel from './ColorPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import EditorIcon from './EditorIcon.vue'
 import Preview3d from '../preview3d/Preview3D.vue'
+import EditorAgentPanel from '../ai/EditorAgentPanel.vue'
+import { useRouter } from 'vue-router'
 import { useEditorStore, type EditorTool } from '../../stores/editor'
 import { usePackStore } from '../../stores/pack'
 import { useErrorMessage } from '../../composables/useErrorMessage'
@@ -22,6 +34,13 @@ const { showError } = useErrorMessage()
 const pack = computed(() => usePackStore(props.packId))
 const editor = computed(() => useEditorStore(props.packId))
 const canvasRef = ref<InstanceType<typeof PixelCanvas> | null>(null)
+const router = useRouter()
+/** Right panel tab: drawing tools or the AI agent. */
+const sideTab = ref<'draw' | 'ai'>('draw')
+
+function openSettings(): void {
+  guardUnsaved(() => void router.push({ name: 'settings' }))
+}
 
 /** Width of the 3D preview pane, adjusted with the drag handle. */
 const previewWidth = ref(380)
@@ -331,8 +350,22 @@ const statusTag = computed(() => {
         </div>
       </div>
       <aside class="side">
-        <color-panel :pack-id="packId" />
-        <history-panel :pack-id="packId" />
+        <n-tabs v-model:value="sideTab" type="segment" size="small" class="side-tabs" animated>
+          <n-tab-pane name="draw" :tab="t('editor.tabDraw')" display-directive="show">
+            <div class="side-scroll">
+              <color-panel :pack-id="packId" />
+              <history-panel :pack-id="packId" />
+            </div>
+          </n-tab-pane>
+          <n-tab-pane
+            name="ai"
+            :tab="t('editor.tabAi')"
+            display-directive="show:lazy"
+            data-testid="side-tab-ai"
+          >
+            <editor-agent-panel :pack-id="packId" @open-settings="openSettings" />
+          </n-tab-pane>
+        </n-tabs>
       </aside>
     </div>
   </div>
@@ -422,13 +455,33 @@ const statusTag = computed(() => {
   font-size: 11px;
 }
 .side {
-  width: 250px;
+  width: 310px;
   flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-left: 8px;
+  border-left: 1px solid rgba(128, 128, 128, 0.2);
+}
+.side-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.side-tabs :deep(.n-tabs-pane-wrapper),
+.side-tabs :deep(.n-tab-pane) {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+.side-tabs :deep(.n-tab-pane) {
+  box-sizing: border-box;
+}
+.side-scroll {
+  height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-left: 8px;
-  border-left: 1px solid rgba(128, 128, 128, 0.2);
 }
 </style>

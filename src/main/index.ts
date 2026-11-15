@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, shell } from 'electron'
+import { app, BrowserWindow, dialog, net, safeStorage, shell } from 'electron'
 import { createMainWindow } from './window'
 import { hardenSession, hardenWebContents } from './security'
 import { registerIpcHandlers } from './ipc/handlers'
@@ -6,6 +6,9 @@ import { registerVanillaHandlers } from './ipc/vanilla-handlers'
 import { registerPackHandlers } from './ipc/pack-handlers'
 import { registerTextureHandlers } from './ipc/texture-handlers'
 import { registerPreviewHandlers } from './ipc/preview-handlers'
+import { registerAiProviderHandlers } from './ipc/ai-provider-handlers'
+import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
+import { registerAiEvalHandlers } from './ipc/ai-eval-handlers'
 import { send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
 import { createJobReporter } from './jobs'
@@ -15,6 +18,8 @@ import { createDefaultVanillaStore } from './services/vanilla'
 import { createPackService, createTextureEditService } from './services/packs'
 import { createHistoryService } from './services/history'
 import { createPreviewService } from './services/preview'
+import { createSecretsStore, secretsFilePath } from './services/secrets'
+import { createProviderRegistry } from './services/ai/providers'
 
 const isDev = !app.isPackaged
 
@@ -80,6 +85,15 @@ if (!app.requestSingleInstanceLock()) {
       notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
     })
     const preview = createPreviewService({ packs, vanilla })
+    const secrets = createSecretsStore({
+      filePath: secretsFilePath(app.getPath('userData')),
+      safeStorage
+    })
+    const aiProviders = createProviderRegistry({
+      getProviders: () => settings.get().ai.providers,
+      secrets,
+      fetch: (url, init) => net.fetch(url, init)
+    })
 
     // Dialogs are looked up at call time (E2E tests replace them on the dialog module).
     const parent = (): BrowserWindow | undefined => mainWindow ?? undefined
@@ -134,6 +148,18 @@ if (!app.requestSingleInstanceLock()) {
     })
     registerTextureHandlers({ textures, history })
     registerPreviewHandlers({ preview })
+    registerAiProviderHandlers({ settings, secrets, registry: aiProviders })
+    registerAiAgentHandlers({
+      providers: aiProviders,
+      getAgentSettings: (agent) => settings.get().ai.agents[agent],
+      packs,
+      readVanillaPng: async (packId, path) => (await textures.read(packId, path)).vanillaPng,
+      emit: (event) => send(webContents(), 'ai.event', event)
+    })
+    registerAiEvalHandlers({
+      providers: aiProviders,
+      emit: (progress) => send(webContents(), 'ai.eval.progress', progress)
+    })
     handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 
     mainWindow = createMainWindow()

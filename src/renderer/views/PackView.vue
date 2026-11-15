@@ -10,6 +10,7 @@ import TextureGrid from '../components/pack/TextureGrid.vue'
 import TextureEditor from '../components/editor/TextureEditor.vue'
 import ExportDialog from '../components/pack/ExportDialog.vue'
 import ReportDialog from '../components/common/ReportDialog.vue'
+import StyleBriefDrawer from '../components/ai/StyleBriefDrawer.vue'
 import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
 import { IpcError } from '../services/ipc'
 import { useVanillaStore } from '../stores/vanilla'
@@ -27,6 +28,7 @@ const { showError } = useErrorMessage()
 // The same view instance is reused across pack tabs; each pack has its own store (state survives tab switches).
 const store = computed(() => usePackStore(props.packId))
 const showExport = ref(false)
+const showBrief = ref(false)
 /** Set when a vanilla-based pack's vanilla textures are missing on this computer. */
 const missingVanilla = ref<string | null>(null)
 const vanilla = useVanillaStore()
@@ -114,6 +116,9 @@ const exportItems = computed(() => [
             <n-button size="small" @click="packs.reveal(packId).catch(showError)">{{
               t('packs.reveal')
             }}</n-button>
+            <n-button size="small" data-testid="brief-open" @click="showBrief = true">
+              {{ t('brief.open') }}
+            </n-button>
             <n-button
               size="small"
               type="primary"
@@ -141,6 +146,7 @@ const exportItems = computed(() => [
         </div>
       </section>
     </div>
+    <style-brief-drawer v-model:show="showBrief" :pack-id="packId" />
     <export-dialog v-model:show="showExport" :store="store" @exported="(r) => (exportReport = r)" />
     <report-dialog
       v-if="exportReport"

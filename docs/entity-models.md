@@ -19,6 +19,10 @@ texture mapping is the Minecraft "box UV" layout implemented in
 - `entityDefinitions()`: all definitions, validated once (an invalid file throws with its file name).
 - `findEntityDefinition(packPath)`: the first definition whose `textures` globs match the pack path
   (`assets/minecraft/textures/entity/zombie/zombie.png`), or `undefined` (the preview then falls back to the flat view).
+  Baby textures (`*_baby.png`, own layouts since 26.1) never match: they use the flat view until they get definitions.
+- `entityFitsTexture(definition, width, height)`: whether the texture has the aspect ratio of the definition's
+  `textureSize`. The preview draws the flat view instead of a model whose layout does not fit (a texture whose layout
+  changed between versions), while HD textures (a multiple of the size) still fit.
 
 The files are plain static imports rather than `import.meta.glob`, because `import.meta.glob` has no types in the node
 tsconfig and is not guaranteed outside Vite. Static JSON imports work the same in the main process, the renderer,
@@ -27,7 +31,8 @@ file of the folder is not registered there, or when a file is not named `<id>.js
 
 Globs use the shared matcher of [`src/shared/categories/glob.ts`](../src/shared/categories/glob.ts) (`*`, `**`, `?`,
 `{a,b}`), matched against the whole pack path. A texture path must match at most one definition (tested against the
-known 1.21.4 entity textures).
+known 1.21.4 and 26.3 entity textures). When Minecraft changes a layout (26.3 farm animal variants are 64 x 64), the
+old paths keep their definition and the new paths get a new one (`pig` / `pig_variants`, `cow` / `cow_variants`).
 
 ## Format
 
@@ -149,10 +154,17 @@ spider's leg angles, the cat's tail, the zombie's raised arms).
 2. Register it in `src/shared/preview/entities.ts` (one import and one entry in `RAW_DEFINITIONS`).
 3. Add its known texture paths and PNG sizes to `KNOWN_ENTITY_TEXTURES` and its height to `EXPECTED_HEIGHTS` in
    `tests/unit/entity-models.test.ts`, and a lookup case to `tests/unit/entity-lookup.test.ts`.
-4. Run `npx vitest run tests/unit/entity-` and check the model visually in the preview.
+4. Check the UV layout against the real texture from your extracted vanilla cache:
+   `node scripts/entity-uv-overlay.mjs resources/data/entity-models/<id>.json <vanilla>/.../texture.png out.png`
+   draws every box's faces over the texture; all painted pixels must sit inside the outlines. Never commit the
+   output (Mojang pixels).
+5. Run `npx vitest run tests/unit/entity-` and check the model visually in the preview.
+
+`node scripts/audit-entity-models.mjs <userData>/vanilla/<version>` lists, for an extracted version, the textures
+each definition matches, the ones with another size than its layout, and the entity folders without a definition.
 
 The tests check: schema validity; unique ids, part names and roles; the roles needed by the animation; that every glob
-matches a known 1.21.4 texture and every known texture matches exactly one definition with the right texture size;
+matches a known vanilla texture and every known texture matches exactly one definition with the right texture size;
 that every UV layout is inside the texture and does not overlap another layout; that the model stands on `y = 0`, has
 its expected height and is symmetric around `x = 0`; for bipeds, head on the body, legs under it and arms beside it.
 
@@ -465,6 +477,21 @@ Texture 64 x 32, animation `quadruped`. Textures: `entity/cat/*.png`.
 | `left_hind_leg`   | backLeftLeg   | 2 x 6 x 2        | 8, 13 | 8,13 - 16,21   |                            |
 | `right_front_leg` | frontRightLeg | 2 x 10 x 2       | 40, 0 | 40,0 - 48,12   |                            |
 | `left_front_leg`  | frontLeftLeg  | 2 x 10 x 2       | 40, 0 | 40,0 - 48,12   |                            |
+
+### 26.3 additions
+
+Checked with `scripts/entity-uv-overlay.mjs` against the 26.3 textures; positions and pivots are in the JSON files.
+
+| Definition     | Texture | Textures                                                                             | Notes                                                                                  |
+| -------------- | ------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `horse`        | 64 x 64 | `entity/horse/horse_*.png` (coats, markings, skeleton, zombie), horse armor, saddles | body 10x10x22 `uv(0,32)`, neck/head/mouth/mane/ears tilted 30 degrees, legs 4x11x4     |
+| `donkey`       | 64 x 64 | `entity/horse/{donkey,mule}.png`, donkey and mule saddles                            | horse geometry with long ears 2x7x1 `uv(0,12)`; chests not modeled                     |
+| `cow_variants` | 64 x 64 | `entity/cow/cow_{cold,temperate,warm}.png`, `mooshroom_{red,brown}.png`              | cow geometry plus muzzle 6x3x1 `uv(1,33)` and fur layer `uv(20,32)`; horns not modeled |
+| `pig_variants` | 64 x 64 | `entity/pig/pig_{cold,temperate,warm}.png`, `equipment/pig_saddle/*.png`             | pig geometry plus the cold pig's fur layer `uv(28,32)` (inflate 0.5)                   |
+| `elytra`       | 64 x 32 | `entity/equipment/wings/*.png`                                                       | two wings 10x20x2 `uv(22,0)`, inflate 1, tilted 15 degrees out                         |
+
+Also extended: `chicken` (`chicken_{cold,temperate,warm}.png`), `sheep_wool` (`sheep_wool.png`,
+`sheep_wool_undercoat.png`), `wolf` (wolf armor `equipment/wolf_body/*.png`).
 
 ## Visual checks
 

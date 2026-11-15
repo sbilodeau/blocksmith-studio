@@ -1,0 +1,564 @@
+{
+  "schemaVersion": 1,
+  "description": "FR/EN phrase -> expected tool calls for the editor agent (PLAN 6.8). Fixture: a 16x16 texture.",
+  "cases": [
+    {
+      "id": "rotate-left-90",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "tourne de 90 à gauche",
+      "en": "rotate it 90 degrees to the left",
+      "expect": [
+        {
+          "tool": "rotate",
+          "args": {
+            "degrees": 90,
+            "direction": "counterclockwise"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rotate-right-90",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "pivote de 90 degrés vers la droite",
+      "en": "turn it 90° to the right",
+      "expect": [
+        {
+          "tool": "rotate",
+          "args": {
+            "degrees": 90,
+            "direction": "clockwise"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rotate-180",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "retourne-la à l'envers, 180 degrés",
+      "en": "rotate it 180 degrees",
+      "expect": [
+        {
+          "tool": "rotate",
+          "args": {
+            "degrees": 180
+          }
+        }
+      ]
+    },
+    {
+      "id": "rotate-270-cw",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "fais une rotation de 270° dans le sens horaire",
+      "en": "rotate it 270 degrees clockwise",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "rotate",
+              "args": {
+                "degrees": 270,
+                "direction": "clockwise"
+              }
+            },
+            {
+              "tool": "rotate",
+              "args": {
+                "degrees": 90,
+                "direction": "counterclockwise"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flip-horizontal",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "fais un miroir horizontal",
+      "en": "flip it horizontally",
+      "expect": [
+        {
+          "tool": "flip",
+          "args": {
+            "axis": "horizontal"
+          }
+        }
+      ]
+    },
+    {
+      "id": "flip-vertical",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "retourne-la verticalement",
+      "en": "flip it vertically",
+      "expect": [
+        {
+          "tool": "flip",
+          "args": {
+            "axis": "vertical"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mirror-left-right",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "inverse la gauche et la droite",
+      "en": "mirror it left to right",
+      "expect": [
+        {
+          "tool": "flip",
+          "args": {
+            "axis": "horizontal"
+          }
+        }
+      ]
+    },
+    {
+      "id": "shift-right",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "décale tout de 2 pixels vers la droite",
+      "en": "shift everything 2 pixels to the right",
+      "expect": [
+        {
+          "tool": "shift",
+          "args": {
+            "dx": 2,
+            "dy": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "shift-up",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "monte l'image d'un pixel",
+      "en": "move the image up by one pixel",
+      "expect": [
+        {
+          "tool": "shift",
+          "args": {
+            "dx": 0,
+            "dy": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "resize-32",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "redimensionne en 32x32",
+      "en": "resize it to 32 by 32",
+      "expect": [
+        {
+          "tool": "resize",
+          "args": {
+            "width": 32,
+            "height": 32
+          }
+        }
+      ]
+    },
+    {
+      "id": "pixel-top-left-red",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "mets le pixel en haut à gauche en rouge",
+      "en": "make the top-left pixel red",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "set_pixels",
+              "args": {
+                "pixels.0.x": 0,
+                "pixels.0.y": 0,
+                "pixels.0.color": {
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "tool": "fill_rect",
+              "args": {
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1,
+                "color": {
+                  "color": "red"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "line-diagonal",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "trace une ligne noire du coin en haut à gauche au coin en bas à droite",
+      "en": "draw a black line from the top-left corner to the bottom-right corner",
+      "expect": [
+        {
+          "tool": "draw_line",
+          "args": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 15,
+            "y2": 15,
+            "color": {
+              "color": "black"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "rect-border",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "dessine un contour de rectangle bleu tout autour du bord",
+      "en": "draw a blue rectangle outline around the whole border",
+      "expect": [
+        {
+          "tool": "draw_rect",
+          "args": {
+            "x": 0,
+            "y": 0,
+            "width": 16,
+            "height": 16,
+            "color": {
+              "color": "blue"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fill-quarter",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "remplis le quart en haut à gauche en vert",
+      "en": "fill the top-left quarter with green",
+      "expect": [
+        {
+          "tool": "fill_rect",
+          "args": {
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8,
+            "color": {
+              "color": "green"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bucket",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "utilise le pot de peinture en jaune sur le pixel 5,5",
+      "en": "use the paint bucket with yellow at pixel 5,5",
+      "expect": [
+        {
+          "tool": "fill",
+          "args": {
+            "x": 5,
+            "y": 5,
+            "color": {
+              "color": "yellow"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "erase-corner",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "efface le pixel en bas à droite",
+      "en": "erase the bottom-right pixel",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "erase",
+              "args": {
+                "pixels.0.x": 15,
+                "pixels.0.y": 15
+              }
+            },
+            {
+              "tool": "erase",
+              "args": {
+                "rect.x": 15,
+                "rect.y": 15
+              }
+            },
+            {
+              "tool": "set_pixels",
+              "args": {
+                "pixels.0.x": 15,
+                "pixels.0.y": 15,
+                "pixels.0.color": {
+                  "color": "transparent"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "replace-gray",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "remplace le gris par du rouge",
+      "en": "replace the gray with red",
+      "expect": [
+        {
+          "tool": "replace_color",
+          "args": {
+            "to": {
+              "color": "red"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "make-redder",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "rends tout plus rouge",
+      "en": "make everything redder",
+      "expect": [
+        {
+          "anyTool": ["hue_shift", "replace_color", "apply_palette"]
+        }
+      ]
+    },
+    {
+      "id": "darker",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "assombris la texture",
+      "en": "make the texture darker",
+      "expect": [
+        {
+          "tool": "brightness",
+          "args": {
+            "delta": {
+              "lt": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "brighter",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "éclaircis-la un peu",
+      "en": "make it a bit brighter",
+      "expect": [
+        {
+          "tool": "brightness",
+          "args": {
+            "delta": {
+              "gt": 0,
+              "lte": 0.6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "grayscale",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "enlève les couleurs, en niveaux de gris",
+      "en": "remove the colors, make it grayscale",
+      "expect": [
+        {
+          "tool": "saturation",
+          "args": {
+            "delta": {
+              "lte": -0.8
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "more-vivid",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "rends les couleurs plus vives",
+      "en": "make the colors more vivid",
+      "expect": [
+        {
+          "tool": "saturation",
+          "args": {
+            "delta": {
+              "gt": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hue-120",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "décale la teinte de 120 degrés",
+      "en": "shift the hue by 120 degrees",
+      "expect": [
+        {
+          "tool": "hue_shift",
+          "args": {
+            "degrees": 120
+          }
+        }
+      ]
+    },
+    {
+      "id": "outline-outside",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "ajoute un contour noir à l'extérieur de la forme",
+      "en": "add a black outline outside the shape",
+      "expect": [
+        {
+          "tool": "outline",
+          "args": {
+            "color": {
+              "color": "black"
+            },
+            "mode": "outside"
+          }
+        }
+      ]
+    },
+    {
+      "id": "outline-inside",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "ajoute un contour blanc à l'intérieur des bords",
+      "en": "add a white outline on the inner edge",
+      "expect": [
+        {
+          "tool": "outline",
+          "args": {
+            "color": {
+              "color": "white"
+            },
+            "mode": "inside"
+          }
+        }
+      ]
+    },
+    {
+      "id": "apply-palette",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "applique la palette #000000, #ffffff et #ff0000",
+      "en": "apply the palette #000000, #ffffff and #ff0000",
+      "expect": [
+        {
+          "tool": "apply_palette",
+          "args": {
+            "palette": {
+              "containsAll": ["#000000", "#ffffff", "#ff0000"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "remember-theme",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "retiens que le thème du pack est le feu",
+      "en": "remember that the pack theme is fire",
+      "expect": [
+        {
+          "tool": "update_style_brief",
+          "args": {
+            "patch.theme": {
+              "containsAny": ["feu", "fire"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "read-brief",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "quel est le brief de style du pack ?",
+      "en": "what is the pack's style brief?",
+      "expect": [
+        {
+          "tool": "read_style_brief"
+        }
+      ]
+    },
+    {
+      "id": "rotate-and-flames",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "tourne de 90° à gauche et ajoute des flammes au bout",
+      "en": "rotate 90° left and add flames at the tip",
+      "expect": [
+        {
+          "tool": "rotate",
+          "args": {
+            "degrees": 90,
+            "direction": "counterclockwise"
+          }
+        },
+        {
+          "anyTool": ["set_pixels", "draw_line", "fill_rect", "fill", "draw_rect"]
+        }
+      ]
+    },
+    {
+      "id": "flip-then-darker",
+      "context": "editor",
+      "fixture": "sample16",
+      "fr": "fais un miroir vertical puis assombris",
+      "en": "flip it vertically, then make it darker",
+      "expect": [
+        {
+          "tool": "flip",
+          "args": {
+            "axis": "vertical"
+          }
+        },
+        {
+          "tool": "brightness",
+          "args": {
+            "delta": {
+              "lt": 0
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -17,7 +17,8 @@ today; [PLAN.md](../PLAN.md) describes where it is going.
 +---------------------------+                              +-------------------------------+
 ```
 
-- **Main** (`src/main/`) owns the file system, settings, updates, vanilla assets and packs (and, later, AI providers).
+- **Main** (`src/main/`) owns the file system, settings, updates, vanilla assets, packs, API keys and every AI provider call (see
+  [ai-providers.md](ai-providers.md) and [ai-agents.md](ai-agents.md)).
 - **Preload** (`src/preload/index.ts`) exposes exactly two functions on `window.blocksmith`: `invoke` and `on`.
   It rejects any channel not listed in `src/shared/ipc/channels.ts`.
 - **Renderer** (`src/renderer/`) is a Vue 3 app. It never talks to the network or the disk directly.

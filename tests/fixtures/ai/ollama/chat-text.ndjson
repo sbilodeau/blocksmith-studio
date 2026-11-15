@@ -1,0 +1,4 @@
+{"model":"gemma3:27b","created_at":"2026-11-01T10:00:00.000Z","message":{"role":"assistant","content":"Rotated"},"done":false}
+{"model":"gemma3:27b","created_at":"2026-11-01T10:00:00.050Z","message":{"role":"assistant","content":" the texture"},"done":false}
+{"model":"gemma3:27b","created_at":"2026-11-01T10:00:00.100Z","message":{"role":"assistant","content":" 90 degrees."},"done":false}
+{"model":"gemma3:27b","created_at":"2026-11-01T10:00:00.150Z","message":{"role":"assistant","content":""},"done":true,"done_reason":"stop","total_duration":174560334,"load_duration":101397084,"prompt_eval_count":42,"prompt_eval_duration":13074791,"eval_count":7,"eval_duration":52479709}

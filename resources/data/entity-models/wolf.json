@@ -2,7 +2,10 @@
   "id": "wolf",
   "textureSize": [64, 32],
   "animation": "quadruped",
-  "textures": ["assets/minecraft/textures/entity/wolf/*.png"],
+  "textures": [
+    "assets/minecraft/textures/entity/wolf/*.png",
+    "assets/minecraft/textures/entity/equipment/wolf_body/*.png"
+  ],
   "parts": [
     {
       "name": "head",

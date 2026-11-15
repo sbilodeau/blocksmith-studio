@@ -2,7 +2,10 @@
   "id": "chicken",
   "textureSize": [64, 32],
   "animation": "none",
-  "textures": ["assets/minecraft/textures/entity/chicken.png"],
+  "textures": [
+    "assets/minecraft/textures/entity/chicken.png",
+    "assets/minecraft/textures/entity/chicken/chicken_{cold,temperate,warm}.png"
+  ],
   "parts": [
     {
       "name": "head",

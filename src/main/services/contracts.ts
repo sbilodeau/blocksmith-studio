@@ -41,3 +41,17 @@ export interface VanillaStore {
   /** Absolute path of an extracted vanilla file (validated to stay in the cache), or null if absent. */
   resolveFile(versionId: string, packPath: string): string | null
 }
+
+// ---------- AI (M3) ----------
+import type { ModelInfo, ModelRef, ProviderAdapter } from '@shared/ai/types'
+
+/**
+ * Provider registry (src/main/services/ai/providers/). The agent runtime asks it for an adapter and model info;
+ * keys are resolved internally from the encrypted secrets store and never exposed.
+ */
+export interface ProviderRegistry {
+  /** Throws AppErrorException('ai.providerNotFound' | 'ai.noApiKey' | 'ai.providerDisabled'). */
+  getAdapter(providerId: string): Promise<ProviderAdapter>
+  /** Model info from the (cached) model list, if known. */
+  getModel(ref: ModelRef): Promise<ModelInfo | undefined>
+}
