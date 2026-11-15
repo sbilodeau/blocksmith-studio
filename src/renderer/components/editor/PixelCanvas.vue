@@ -213,6 +213,14 @@ function render(): void {
     ctx.setLineDash([])
   }
 
+  // Pixel hovered on the 3D preview.
+  const linked = editor.value.linkedHover
+  if (linked?.source === '3d' && inBounds(img, linked.x, linked.y)) {
+    ctx.lineWidth = 2
+    ctx.strokeStyle = '#ff2fb3'
+    ctx.strokeRect(ox + linked.x * z + 1, oy + linked.y * z + 1, z - 2, z - 2)
+  }
+
   // Hovered pixel.
   if (hover.value && !props.readonly && inBounds(img, hover.value.x, hover.value.y)) {
     ctx.lineWidth = 1
@@ -373,12 +381,10 @@ function onPointerMove(e: PointerEvent): void {
   hover.value = p
   if (changed) {
     const shown = displayed.value
-    emit(
-      'hover',
-      shown && inBounds(shown, p.x, p.y)
-        ? { x: p.x, y: p.y, color: getPixel(shown, p.x, p.y) }
-        : null
-    )
+    const inside = !!shown && inBounds(shown, p.x, p.y)
+    emit('hover', inside && shown ? { x: p.x, y: p.y, color: getPixel(shown, p.x, p.y) } : null)
+    // Publish the hovered pixel so the 3D preview can highlight it.
+    if (!props.readonly) editor.value.linkedHover = inside ? { x: p.x, y: p.y, source: '2d' } : null
   }
   if (!gesture) {
     if (changed) schedule()
@@ -478,6 +484,7 @@ function onWheel(e: WheelEvent): void {
 function onLeave(): void {
   hover.value = null
   emit('hover', null)
+  if (!props.readonly && editor.value.linkedHover?.source === '2d') editor.value.linkedHover = null
   schedule()
 }
 
@@ -508,7 +515,8 @@ watch(
     editor.value.peekVanilla,
     editor.value.floating,
     zoom.value,
-    props.source
+    props.source,
+    editor.value.linkedHover
   ],
   schedule
 )

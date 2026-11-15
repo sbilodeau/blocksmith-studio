@@ -340,5 +340,38 @@
       "save": "Saved {name}",
       "revert": "Reverted {name} to vanilla"
     }
+  },
+  "preview": {
+    "toggle": "3D",
+    "toggleHint": "Live 3D preview",
+    "loading": "Loading 3D model...",
+    "failed": "No 3D preview for this texture.",
+    "autoRotate": "Rotate",
+    "walk": "Walk",
+    "floor": "Floor",
+    "shading": {
+      "game": "In-game light",
+      "studio": "Studio light"
+    },
+    "background": {
+      "dark": "Dark",
+      "light": "Light",
+      "checker": "Checker",
+      "sky": "Sky"
+    },
+    "view": {
+      "front": "Front",
+      "back": "Back",
+      "left": "Left",
+      "right": "Right",
+      "top": "Top",
+      "iso": "3/4"
+    },
+    "kind": {
+      "block": "Block model",
+      "item": "Item",
+      "entity": "Entity",
+      "flat": "Flat"
+    }
   }
 }
