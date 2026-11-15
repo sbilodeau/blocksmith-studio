@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type -- plain JS: return types are in JSDoc */
 /**
  * CalVer helpers for Blocksmith Studio releases.
  *

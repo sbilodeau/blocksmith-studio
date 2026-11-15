@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/explicit-function-return-type -- plain JS: return types are in JSDoc */
 /**
  * Prints the next CalVer release version computed from the git tags of the current repository.
  * The date defaults to today (UTC).
@@ -10,7 +11,10 @@ import { nextVersion, parseDate } from './lib/calver.mjs'
 
 const USAGE = 'Usage: node scripts/calver.mjs [--date YYYY-MM-DD]'
 
-/** @param {string[]} argv */
+/**
+ * @param {string[]} argv
+ * @returns {void}
+ */
 function main(argv) {
   let date = new Date()
   for (let i = 0; i < argv.length; i++) {
