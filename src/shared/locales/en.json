@@ -1,0 +1,77 @@
+{
+  "app": {
+    "name": "Blocksmith Studio",
+    "tagline": "Resource packs, pixel by pixel"
+  },
+  "nav": {
+    "home": "Packs",
+    "settings": "Settings",
+    "closeTab": "Close tab"
+  },
+  "home": {
+    "title": "Your packs",
+    "empty": "No packs yet",
+    "emptyHint": "Pack creation and import arrive in the next milestone.",
+    "newPack": "New pack",
+    "importPack": "Import .zip",
+    "comingSoon": "Coming soon"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "language": "Language",
+    "languageHint": "Interface language. AI agents will also reply in this language.",
+    "theme": "Theme",
+    "themes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "updates": "Updates",
+    "autoCheck": "Check for updates automatically",
+    "currentVersion": "Current version",
+    "checkNow": "Check now",
+    "about": "About",
+    "electron": "Electron",
+    "chrome": "Chromium",
+    "node": "Node.js",
+    "platform": "Platform"
+  },
+  "languages": {
+    "en": "English",
+    "fr": "Français"
+  },
+  "updater": {
+    "disabledDev": "Updates are disabled in development builds.",
+    "disabledUnsupported": "Automatic updates are not supported on this platform.",
+    "idle": "Not checked yet.",
+    "checking": "Checking for updates...",
+    "notAvailable": "You are up to date ({version}).",
+    "available": "Version {version} is available.",
+    "downloading": "Downloading version {version}... {percent}%",
+    "downloadedAuto": "Version {version} is ready. Restart to install it.",
+    "downloadedManual": "Version {version} was downloaded. Open it and drag Blocksmith Studio into Applications.",
+    "error": "Update failed: {reason}",
+    "download": "Download",
+    "restart": "Restart and install",
+    "openInstaller": "Open installer"
+  },
+  "errors": {
+    "unexpected": "Something went wrong.",
+    "ipc": {
+      "invalidInput": "Invalid request ({channel}).",
+      "unknownChannel": "Unknown request.",
+      "untrustedSender": "Request refused."
+    },
+    "app": {
+      "urlNotAllowed": "This link cannot be opened."
+    },
+    "updater": {
+      "checkFailed": "could not check for updates",
+      "downloadFailed": "the download failed",
+      "installFailed": "the installer could not be started",
+      "noUpdate": "no update is available",
+      "failed": "unknown error"
+    }
+  }
+}

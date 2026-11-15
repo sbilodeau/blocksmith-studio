@@ -1,0 +1,77 @@
+{
+  "app": {
+    "name": "Blocksmith Studio",
+    "tagline": "Des resource packs, pixel par pixel"
+  },
+  "nav": {
+    "home": "Packs",
+    "settings": "Paramètres",
+    "closeTab": "Fermer l'onglet"
+  },
+  "home": {
+    "title": "Vos packs",
+    "empty": "Aucun pack pour l'instant",
+    "emptyHint": "La création et l'importation de packs arrivent au prochain jalon.",
+    "newPack": "Nouveau pack",
+    "importPack": "Importer un .zip",
+    "comingSoon": "Bientôt disponible"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "general": "Général",
+    "language": "Langue",
+    "languageHint": "Langue de l'interface. Les agents IA répondront aussi dans cette langue.",
+    "theme": "Thème",
+    "themes": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "updates": "Mises à jour",
+    "autoCheck": "Rechercher les mises à jour automatiquement",
+    "currentVersion": "Version actuelle",
+    "checkNow": "Vérifier maintenant",
+    "about": "À propos",
+    "electron": "Electron",
+    "chrome": "Chromium",
+    "node": "Node.js",
+    "platform": "Plateforme"
+  },
+  "languages": {
+    "en": "English",
+    "fr": "Français"
+  },
+  "updater": {
+    "disabledDev": "Les mises à jour sont désactivées dans les versions de développement.",
+    "disabledUnsupported": "Les mises à jour automatiques ne sont pas prises en charge sur cette plateforme.",
+    "idle": "Pas encore vérifié.",
+    "checking": "Recherche de mises à jour...",
+    "notAvailable": "Vous êtes à jour ({version}).",
+    "available": "La version {version} est disponible.",
+    "downloading": "Téléchargement de la version {version}... {percent} %",
+    "downloadedAuto": "La version {version} est prête. Redémarrez pour l'installer.",
+    "downloadedManual": "La version {version} a été téléchargée. Ouvrez-la et glissez Blocksmith Studio dans Applications.",
+    "error": "Échec de la mise à jour : {reason}",
+    "download": "Télécharger",
+    "restart": "Redémarrer et installer",
+    "openInstaller": "Ouvrir l'installateur"
+  },
+  "errors": {
+    "unexpected": "Une erreur est survenue.",
+    "ipc": {
+      "invalidInput": "Requête invalide ({channel}).",
+      "unknownChannel": "Requête inconnue.",
+      "untrustedSender": "Requête refusée."
+    },
+    "app": {
+      "urlNotAllowed": "Ce lien ne peut pas être ouvert."
+    },
+    "updater": {
+      "checkFailed": "impossible de rechercher les mises à jour",
+      "downloadFailed": "le téléchargement a échoué",
+      "installFailed": "l'installateur n'a pas pu être lancé",
+      "noUpdate": "aucune mise à jour disponible",
+      "failed": "erreur inconnue"
+    }
+  }
+}
