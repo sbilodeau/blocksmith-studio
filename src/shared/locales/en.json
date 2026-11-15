@@ -51,7 +51,7 @@
     "downloading": "Downloading version {version}... {percent}%",
     "downloadedAuto": "Version {version} is ready. Restart to install it.",
     "downloadedManual": "Version {version} was downloaded. Open it and drag Blocksmith Studio into Applications.",
-    "error": "Update failed: {code}",
+    "error": "Update failed: {reason}",
     "download": "Download",
     "restart": "Restart and install",
     "openInstaller": "Open installer"
@@ -65,6 +65,13 @@
     },
     "app": {
       "urlNotAllowed": "This link cannot be opened."
+    },
+    "updater": {
+      "checkFailed": "could not check for updates",
+      "downloadFailed": "the download failed",
+      "installFailed": "the installer could not be started",
+      "noUpdate": "no update is available",
+      "failed": "unknown error"
     }
   }
 }

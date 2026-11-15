@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable @typescript-eslint/explicit-function-return-type -- plain JS: return types are in JSDoc */
 /**
  * Prints the next CalVer release version computed from the git tags of the current repository.
  * The date defaults to today (UTC).

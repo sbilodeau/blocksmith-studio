@@ -51,7 +51,7 @@
     "downloading": "Téléchargement de la version {version}... {percent} %",
     "downloadedAuto": "La version {version} est prête. Redémarrez pour l'installer.",
     "downloadedManual": "La version {version} a été téléchargée. Ouvrez-la et glissez Blocksmith Studio dans Applications.",
-    "error": "Échec de la mise à jour : {code}",
+    "error": "Échec de la mise à jour : {reason}",
     "download": "Télécharger",
     "restart": "Redémarrer et installer",
     "openInstaller": "Ouvrir l'installateur"
@@ -65,6 +65,13 @@
     },
     "app": {
       "urlNotAllowed": "Ce lien ne peut pas être ouvert."
+    },
+    "updater": {
+      "checkFailed": "impossible de rechercher les mises à jour",
+      "downloadFailed": "le téléchargement a échoué",
+      "installFailed": "l'installateur n'a pas pu être lancé",
+      "noUpdate": "aucune mise à jour disponible",
+      "failed": "erreur inconnue"
     }
   }
 }

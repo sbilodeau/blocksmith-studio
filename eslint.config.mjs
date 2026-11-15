@@ -40,6 +40,11 @@ export default defineConfig(
     }
   },
   // i18n: no hard-coded UI text in components; every key used must exist in the locale files.
+  // Node scripts (.mjs) document their types with JSDoc instead of TypeScript annotations.
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    rules: { '@typescript-eslint/explicit-function-return-type': 'off' }
+  },
   // Only the plugin registration and its recommended rules; the plugin's JSON/YAML parser setups are not needed.
   {
     files: ['src/renderer/**/*.{vue,ts}'],

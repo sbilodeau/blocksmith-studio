@@ -4,7 +4,7 @@ import type { UpdaterStatus } from '@shared/model/updater'
 
 /** Localized one-line description of the current update status. */
 export function useUpdaterMessage(status: Ref<UpdaterStatus>): ComputedRef<string> {
-  const { t } = useI18n()
+  const { t, te } = useI18n()
   return computed((): string => {
     const s = status.value
     switch (s.state) {
@@ -25,7 +25,9 @@ export function useUpdaterMessage(status: Ref<UpdaterStatus>): ComputedRef<strin
           ? t('updater.downloadedAuto', { version: s.version })
           : t('updater.downloadedManual', { version: s.version })
       case 'error':
-        return t('updater.error', { code: s.code })
+        return t('updater.error', {
+          reason: te(`errors.${s.code}`) ? t(`errors.${s.code}`) : s.code
+        })
       default:
         return ''
     }
