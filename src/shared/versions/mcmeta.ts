@@ -17,14 +17,45 @@ import type { McVersion } from '../model/versions'
  * - 'minmax' style:      `{ pack: { min_format: [major, minor], max_format: major, description } }`
  *   min_format pins the exact format of the target (content may rely on its minor features) and max_format
  *   accepts any later minor revision of the same major format. No legacy field, since the range is >= 65.
+ *
+ * With `acceptNewer` (export option "also accept newer versions", for snapshots and releases the app does not
+ * know yet) the range stays open to OPEN_MAX_FORMAT, so newer games list the pack as compatible:
+ * - 'minmax' style:      `max_format: OPEN_MAX_FORMAT`
+ * - 'pack_format' style: the range now spans the 1.21.9 boundary, so both declarations are written and must agree:
+ *   `{ pack_format: N, supported_formats: [N, OPEN], min_format: N, max_format: OPEN }` (old games read the first
+ *   two, new games the last two).
  */
+export const OPEN_MAX_FORMAT = 999
+
+export interface McmetaOptions {
+  /** Also declare every newer format as supported (snapshots, future releases). */
+  acceptNewer?: boolean
+}
+
 export function buildResourcePackMcmeta(
   description: string,
-  target: McVersion
+  target: McVersion,
+  options: McmetaOptions = {}
 ): Record<string, unknown> {
   const { major, minor } = target.resourcePack
   if (target.mcmetaStyle === 'pack_format') {
-    return { pack: { pack_format: major, description } }
+    return options.acceptNewer
+      ? {
+          pack: {
+            pack_format: major,
+            supported_formats: [major, OPEN_MAX_FORMAT],
+            min_format: major,
+            max_format: OPEN_MAX_FORMAT,
+            description
+          }
+        }
+      : { pack: { pack_format: major, description } }
   }
-  return { pack: { min_format: [major, minor], max_format: major, description } }
+  return {
+    pack: {
+      min_format: [major, minor],
+      max_format: options.acceptNewer ? OPEN_MAX_FORMAT : major,
+      description
+    }
+  }
 }

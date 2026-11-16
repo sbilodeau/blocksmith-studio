@@ -91,6 +91,26 @@ describe('export .zip', () => {
     )
   })
 
+  it('"accept newer versions" opens max_format in the exported pack.mcmeta', async () => {
+    const pack = await env.service.create({
+      name: 'Open',
+      description: '',
+      base: 'vanilla',
+      authoringVersion: '26.3'
+    })
+    const out = join(env.root, 'open.zip')
+    await env.service.exportPack(pack.id, '26.3', out, { acceptNewer: true })
+    const mcmeta = JSON.parse(
+      strFromU8(unzipSync(new Uint8Array(await readFile(out)))['pack.mcmeta'])
+    )
+    // min_format stays the target's format (97.x in the fixture), only max_format opens.
+    expect(mcmeta.pack.min_format[0]).toBe(97)
+    expect(mcmeta.pack.max_format).toBe(999)
+    // The pack folder's own pack.mcmeta is untouched.
+    const own = JSON.parse(await readFile(join(pack.folder, 'pack.mcmeta'), 'utf8'))
+    expect(own.pack.max_format).toBe(97)
+  })
+
   it('produces byte-identical zips for the same content', async () => {
     await put(pack.folder, T('block/stone.png'), makePng(16, 16, [255, 0, 0, 255]))
     await put(pack.folder, T('item/zzz.png'), makePng(16, 16, [0, 255, 0, 255]))

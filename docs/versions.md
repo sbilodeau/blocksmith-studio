@@ -112,6 +112,22 @@ target accepts:
 1.21.9+ target never includes a format below 65. Multi-version ranges (export to older versions) come in M7 and
 must follow the compatibility rules above.
 
+### Export option "Also accept newer Minecraft versions"
+
+A pack whose `max_format` is below the game's format is listed as "made for an older version" (for example a
+26.3 pack, format 97.1, in a 26.4 snapshot, format 103.0). With the export option ticked (`pack.export`
+`acceptNewer: true`), `max_format` becomes `OPEN_MAX_FORMAT` (999), so newer games list the pack as compatible:
+
+| Target style  | Output with the option                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `minmax`      | `{ "min_format": [97, 1], "max_format": 999 }`                                               |
+| `pack_format` | `{ "pack_format": 46, "supported_formats": [46, 999], "min_format": 46, "max_format": 999 }` |
+
+For a pre-1.21.9 target the open range spans format 65, so both declarations are written and agree: old games
+read `pack_format` / `supported_formats`, newer games `min_format` / `max_format` (the game refuses a pack whose
+two declarations disagree). The app cannot check that the textures still match versions it does not know; the
+dialog says so. The option only changes the exported zip, never the pack folder's own `pack.mcmeta`.
+
 ## Finding client jars
 
 `detectInstalls` (`src/main/services/vanilla/detect.ts`) looks in these folders. Missing folders are skipped.

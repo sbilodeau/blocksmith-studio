@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildResourcePackMcmeta, findVersion, versionTable } from '@shared/versions'
+import {
+  buildResourcePackMcmeta,
+  findVersion,
+  OPEN_MAX_FORMAT,
+  versionTable
+} from '@shared/versions'
 import type { McVersion } from '@shared/model/versions'
 
 function version(id: string): McVersion {
@@ -54,6 +59,34 @@ describe('buildResourcePackMcmeta', () => {
       expect(major).toBeLessThanOrEqual(pack.max_format)
       expect(minMajor).toBeGreaterThanOrEqual(65)
     }
+  })
+
+  describe('acceptNewer (export option for snapshots and future versions)', () => {
+    it('opens max_format for 1.21.9+ targets, keeping min_format exact', () => {
+      expect(buildResourcePackMcmeta('x', version('26.3'), { acceptNewer: true })).toEqual({
+        pack: { min_format: [97, 1], max_format: OPEN_MAX_FORMAT, description: 'x' }
+      })
+      // 26.4 snapshot 8 uses format 103.0: inside the range.
+      expect(OPEN_MAX_FORMAT).toBeGreaterThan(103)
+    })
+
+    it('writes both declarations, in agreement, for pre-1.21.9 targets (the range spans format 65)', () => {
+      expect(buildResourcePackMcmeta('x', version('1.21.4'), { acceptNewer: true })).toEqual({
+        pack: {
+          pack_format: 46,
+          supported_formats: [46, OPEN_MAX_FORMAT],
+          min_format: 46,
+          max_format: OPEN_MAX_FORMAT,
+          description: 'x'
+        }
+      })
+    })
+
+    it('changes nothing when off', () => {
+      expect(buildResourcePackMcmeta('x', version('26.3'), { acceptNewer: false })).toEqual(
+        buildResourcePackMcmeta('x', version('26.3'))
+      )
+    })
   })
 
   it('keeps the description as given and serializes to valid JSON', () => {

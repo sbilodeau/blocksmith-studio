@@ -79,7 +79,12 @@ export interface PackService {
   importZip(zipPath: string): Promise<ImportReport>
   /** Checks that `targetVersion` can be exported and returns the default file name "<slug>-<version>.zip". */
   exportFileName(packId: string, targetVersion: string): Promise<string>
-  exportPack(packId: string, targetVersion: string, outputPath: string): Promise<ExportReport>
+  exportPack(
+    packId: string,
+    targetVersion: string,
+    outputPath: string,
+    options?: { acceptNewer?: boolean }
+  ): Promise<ExportReport>
 }
 
 /**
@@ -332,11 +337,17 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       return `${slugify(location.project.name)}-${targetVersion}.zip`
     },
 
-    async exportPack(packId, targetVersion, outputPath) {
+    async exportPack(packId, targetVersion, outputPath, options = {}) {
       const location = await requireLocation(packId)
       const target = checkExportTarget(location, targetVersion)
       const onProgress = deps.jobs.start('pack.export')
-      return exportPackZip(location, target, outputPath, { vanilla: deps.vanilla, onProgress })
+      return exportPackZip(
+        location,
+        target,
+        outputPath,
+        { vanilla: deps.vanilla, onProgress },
+        options
+      )
     }
   }
 

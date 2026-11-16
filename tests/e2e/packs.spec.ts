@@ -137,7 +137,21 @@ test('imports a zip, marks modified textures and exports only changed files', as
   ])
   const mcmeta = JSON.parse(strFromU8(files['pack.mcmeta']))
   expect(mcmeta.pack.min_format).toEqual([97, 1])
+  expect(mcmeta.pack.max_format).toBe(97)
   expect(mcmeta.pack.description).toBe('Red stone')
+
+  // "Also accept newer versions" (snapshots) opens the range.
+  const openPath = join(root, 'export-open.zip')
+  await stubSaveDialog(app, openPath)
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await page.getByTestId('export-open').click()
+  await page.getByTestId('export-accept-newer').click()
+  await page.getByTestId('export-run').click()
+  await expect(page.getByTestId('report-dialog')).toContainText('26.3')
+  const open = JSON.parse(
+    strFromU8(unzipSync(new Uint8Array(await readFile(openPath)))['pack.mcmeta'])
+  )
+  expect(open.pack).toMatchObject({ min_format: [97, 1], max_format: 999 })
 })
 
 test('deleting a pack moves it out of the list', async () => {

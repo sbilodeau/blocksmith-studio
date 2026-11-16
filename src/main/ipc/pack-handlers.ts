@@ -41,11 +41,11 @@ export function registerPackHandlers({ packs, dialogs }: PackHandlerDeps): void 
   handle('pack.textures', ({ packId }) => packs.textures(packId))
   handle('pack.categories', ({ packId }) => packs.categories(packId))
 
-  handle('pack.export', async ({ packId, targetVersion }) => {
+  handle('pack.export', async ({ packId, targetVersion, acceptNewer }) => {
     // Validates the target before showing the dialog.
     const fileName = await packs.exportFileName(packId, targetVersion)
     const outputPath = await dialogs.saveZip(fileName)
     if (!outputPath) return null
-    return packs.exportPack(packId, targetVersion, outputPath)
+    return packs.exportPack(packId, targetVersion, outputPath, { acceptNewer })
   })
 }

@@ -42,6 +42,8 @@ export function usePackStore(packId: string) {
     const lastEdited = ref<string | null>(null)
     /** Navigation agent panel next to the grid. */
     const aiPanel = ref(false)
+    /** Export option "also accept newer versions" (kept while the tab is open). */
+    const exportAcceptNewer = ref(false)
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
 
@@ -131,9 +133,16 @@ export function usePackStore(packId: string) {
       editing.value = null
     }
 
-    async function exportPack(targetVersion: string): Promise<ExportReport | null> {
+    async function exportPack(
+      targetVersion: string,
+      options: { acceptNewer?: boolean } = {}
+    ): Promise<ExportReport | null> {
       try {
-        return await call('pack.export', { packId, targetVersion })
+        return await call('pack.export', {
+          packId,
+          targetVersion,
+          ...(options.acceptNewer ? { acceptNewer: true } : {})
+        })
       } finally {
         useJobsStore().clear('pack.export')
       }
@@ -155,6 +164,7 @@ export function usePackStore(packId: string) {
       gridScroll,
       lastEdited,
       aiPanel,
+      exportAcceptNewer,
       changedCount,
       visible,
       load,

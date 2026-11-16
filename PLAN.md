@@ -667,7 +667,8 @@ Values from current references (verified at implementation time against the jars
 
 ### 8.5 Export
 
-- Dialog: target version(s), file name pattern (`{name}-{mc}.zip`), option "one zip per target" (multi-target export).
+- Dialog: target version(s), file name pattern (`{name}-{mc}.zip`), option "one zip per target" (multi-target export),
+  option "also accept newer Minecraft versions (snapshots)" (open `max_format`, see docs/versions.md; built after M5).
 - Pipeline per target (in a worker):
   1. Collect pack files (exclude `.blocksmith/`, OS junk, files identical to the target version's vanilla).
   2. **Migrate down** from the authoring version to the target using `migrations/<from>__<to>.json` chains:

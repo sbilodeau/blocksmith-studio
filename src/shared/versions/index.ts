@@ -8,4 +8,4 @@ export {
   supportedVersions,
   versionForPackFormat
 } from './support'
-export { buildResourcePackMcmeta } from './mcmeta'
+export { buildResourcePackMcmeta, OPEN_MAX_FORMAT, type McmetaOptions } from './mcmeta'

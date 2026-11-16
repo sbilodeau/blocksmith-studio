@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import {
   NAlert,
   NButton,
+  NCheckbox,
   NForm,
   NFormItem,
   NModal,
@@ -26,6 +27,11 @@ const vanilla = useVanillaStore()
 const { showError } = useErrorMessage()
 const target = ref<string | null>(null)
 const exporting = ref(false)
+/** Export option: also mark the pack compatible with newer versions (snapshots). Remembered per pack tab. */
+const acceptNewer = computed({
+  get: () => props.store.exportAcceptNewer,
+  set: (v: boolean) => (props.store.exportAcceptNewer = v)
+})
 
 const authoring = computed(() => props.store.summary?.authoringVersion ?? null)
 // Exporting to other versions arrives with the migration tables (M7); they are listed but disabled for now.
@@ -47,7 +53,7 @@ async function run(): Promise<void> {
   if (!target.value) return
   exporting.value = true
   try {
-    const report = await props.store.exportPack(target.value)
+    const report = await props.store.exportPack(target.value, { acceptNewer: acceptNewer.value })
     if (report) {
       show.value = false
       emit('exported', report)
@@ -72,6 +78,11 @@ async function run(): Promise<void> {
     <n-form label-placement="top">
       <n-form-item :label="t('export.target')" :feedback="t('export.targetHint')">
         <n-select v-model:value="target" :options="options" data-testid="export-target" />
+      </n-form-item>
+      <n-form-item :show-label="false" :feedback="t('export.acceptNewerHint')">
+        <n-checkbox v-model:checked="acceptNewer" data-testid="export-accept-newer">
+          {{ t('export.acceptNewer') }}
+        </n-checkbox>
       </n-form-item>
     </n-form>
     <n-alert type="info" :show-icon="false">{{ t('export.changedOnly') }}</n-alert>

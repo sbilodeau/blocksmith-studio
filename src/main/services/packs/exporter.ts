@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import type { ExportReport } from '@shared/model/pack'
 import type { McVersion } from '@shared/model/versions'
-import { buildResourcePackMcmeta } from '@shared/versions/mcmeta'
+import { buildResourcePackMcmeta, type McmetaOptions } from '@shared/versions/mcmeta'
 import type { ProgressFn, VanillaStore } from '../contracts'
 import { mapLimit, writeFileAtomic } from './files'
 import { mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
@@ -37,7 +37,8 @@ export async function exportPackZip(
   location: PackLocation,
   target: McVersion,
   outputPath: string,
-  deps: ExportDeps
+  deps: ExportDeps,
+  options: McmetaOptions = {}
 ): Promise<ExportReport> {
   const { vanilla, onProgress } = deps
   const warnings: ExportReport['warnings'] = []
@@ -75,7 +76,7 @@ export async function exportPackZip(
   }
 
   const mcmeta = mergeMcmeta(
-    buildResourcePackMcmeta(location.project.description, target),
+    buildResourcePackMcmeta(location.project.description, target, options),
     existingMcmeta
   )
   files.push({ path: 'pack.mcmeta', data: toJsonBytes(mcmeta) })
