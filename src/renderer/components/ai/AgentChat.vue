@@ -15,7 +15,7 @@ import {
   NText,
   NTooltip
 } from 'naive-ui'
-import type { AnyProposal, ModelRef, ReasoningLevel } from '@shared/ai/types'
+import type { AgentKind, AnyProposal, ModelRef, ReasoningLevel } from '@shared/ai/types'
 import ModelPicker from './ModelPicker.vue'
 import { useAiStore, type ChatItem } from '../../stores/ai'
 import { useSettingsStore } from '../../stores/settings'
@@ -28,7 +28,7 @@ import { useErrorMessage } from '../../composables/useErrorMessage'
  */
 const props = defineProps<{
   packId: string
-  agent: 'editor' | 'navigation'
+  agent: AgentKind
   /** Extra condition for sending (an open texture, a non-empty selection). */
   ready: boolean
   emptyText: string

@@ -56,7 +56,12 @@ export interface BulkService {
   compute(
     packId: string,
     targets: BulkTarget[],
-    options?: { before?: ReadonlyMap<string, Uint8Array>; kind?: 'bulk.preview' | 'bulk.apply' }
+    options?: {
+      before?: ReadonlyMap<string, Uint8Array>
+      kind?: 'bulk.preview' | 'bulk.apply'
+      /** Textures the targets may be (default: the pack's textures; the creation agent passes its catalog). */
+      entries?: readonly TextureEntry[]
+    }
   ): Promise<BulkComputed>
   /** Writes computed textures as one history entry. */
   write(
@@ -83,9 +88,15 @@ export function createBulkService(deps: BulkServiceDeps): BulkService {
   async function compute(
     packId: string,
     targets: BulkTarget[],
-    options: { before?: ReadonlyMap<string, Uint8Array>; kind?: 'bulk.preview' | 'bulk.apply' } = {}
+    options: {
+      before?: ReadonlyMap<string, Uint8Array>
+      kind?: 'bulk.preview' | 'bulk.apply'
+      entries?: readonly TextureEntry[]
+    } = {}
   ): Promise<BulkComputed> {
-    const entries = new Map((await deps.packs.textures(packId)).map((e) => [e.path, e]))
+    const entries = new Map(
+      (options.entries ?? (await deps.packs.textures(packId))).map((e) => [e.path, e])
+    )
     const failed: BulkComputed['failed'] = []
     const items: Array<{
       path: string

@@ -42,10 +42,26 @@ Each tool runs on a draft and tells you how many textures changed, so you can ch
 of earlier ones. Keep Minecraft's pixel-art look: limited colors, no smoothing, consistent light from the top-left.
 When you are done, stop calling tools and reply with one or two short sentences.`
 
+export const CREATION_INSTRUCTIONS = `Your scope is the whole pack ({{count}} textures). You get the pack name, its categories with texture counts and a
+few representative textures (vision models also get a contact sheet of them).
+First establish or refine the style brief with update_style_brief: a theme, a palette of 4 to 12 colors with roles,
+and a few visual rules. When the request is vague (for example "make a fire pack"), propose a brief and a first set of
+steps rather than asking many questions.
+Then change textures with apply_to_all: ONE color or transform operation per call, applied to every texture matching a
+filter (category ids from the list, folders, or a name glob such as "*_ore"). Work category by category, a few
+well-chosen steps rather than many; later steps apply on top of earlier ones. Use list_textures to check what a filter
+covers. Do not try to redraw textures one by one: there is no per-pixel drawing in this scope.
+Use set_pack_meta when the user wants a new pack name or description.
+When the pack started empty, "create" or "make" an element (for example "un squelette en glace" / "an ice skeleton")
+means transforming its vanilla textures (entity/skeleton/...) so they keep the right shape and layout.
+Each step is previewed on the representative textures and applied to the whole pack only if the user accepts it, one
+category step at a time. Keep Minecraft's pixel-art look: limited colors, no smoothing, light from the top-left.
+When you are done, stop calling tools and reply with one or two short sentences.`
+
 const SCOPE_INSTRUCTIONS: Record<AgentKind, string> = {
   editor: EDITOR_INSTRUCTIONS,
   navigation: NAVIGATION_INSTRUCTIONS,
-  creation: ''
+  creation: CREATION_INSTRUCTIONS
 }
 
 function fill(template: string, values: Record<string, string | number>): string {
@@ -72,6 +88,8 @@ export interface SystemPromptInput {
   texture?: { width: number; height: number }
   /** Navigation agent: number of selected textures. */
   selection?: { count: number }
+  /** Creation agent: number of textures in the pack. */
+  pack?: { count: number }
 }
 
 export function buildSystemPrompt(input: SystemPromptInput): string {
@@ -82,7 +100,7 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
   const scope = fill(SCOPE_INSTRUCTIONS[input.agent], {
     width: input.texture?.width ?? '?',
     height: input.texture?.height ?? '?',
-    count: input.selection?.count ?? '?'
+    count: input.selection?.count ?? input.pack?.count ?? '?'
   })
   return scope ? `${preamble}\n\n${scope}` : preamble
 }

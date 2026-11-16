@@ -89,6 +89,29 @@ describe('pack service: workspace and packs', () => {
     expect([icon.width, icon.height]).toEqual([64, 64])
   })
 
+  it('updateMeta renames the pack and changes the description in project.json and pack.mcmeta', async () => {
+    const pack = await env.service.create({
+      name: 'Old',
+      description: 'Before',
+      base: 'empty',
+      authoringVersion: '26.3'
+    })
+    const mcmetaPath = join(pack.folder, 'pack.mcmeta')
+    const before = JSON.parse(await readFile(mcmetaPath, 'utf8'))
+    await writeFile(mcmetaPath, JSON.stringify({ ...before, language: { xx: {} } }))
+
+    const renamed = await env.service.updateMeta(pack.id, { name: 'Fire Pack' })
+    expect(renamed).toMatchObject({ name: 'Fire Pack', description: 'Before', folder: pack.folder })
+    expect(JSON.parse(await readFile(mcmetaPath, 'utf8')).pack.description).toBe('Before')
+
+    const described = await env.service.updateMeta(pack.id, { description: 'Volcanic' })
+    expect(described).toMatchObject({ name: 'Fire Pack', description: 'Volcanic' })
+    const mcmeta = JSON.parse(await readFile(mcmetaPath, 'utf8'))
+    expect(mcmeta.pack).toMatchObject({ ...before.pack, description: 'Volcanic' })
+    expect(mcmeta.language).toEqual({ xx: {} })
+    expect((await env.service.get(pack.id)).name).toBe('Fire Pack')
+  })
+
   it('rejects unsupported versions and a vanilla base whose vanilla is not extracted', async () => {
     await expect(
       env.service.create({ name: 'X', base: 'empty', authoringVersion: '1.20.1' })

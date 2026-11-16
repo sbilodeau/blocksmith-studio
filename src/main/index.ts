@@ -170,6 +170,18 @@ if (!app.requestSingleInstanceLock()) {
         readPng: async (packId, path) => (await textures.read(packId, path)).png,
         bulk
       },
+      creation: {
+        catalog: (packId) => packs.catalog(packId),
+        readPng: (packId, path) => textures.readCatalog(packId, path),
+        meta: async (packId) => {
+          const { name, description, base } = await packs.get(packId)
+          return { name, description, base }
+        },
+        setMeta: async (packId, patch) => {
+          await packs.updateMeta(packId, patch)
+        },
+        jobs
+      },
       providers: aiProviders,
       getAgentSettings: (agent) => settings.get().ai.agents[agent],
       packs,

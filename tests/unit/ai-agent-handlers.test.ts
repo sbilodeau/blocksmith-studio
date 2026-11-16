@@ -55,6 +55,9 @@ describe('registerAiAgentHandlers', () => {
         'ai.proposal.reject',
         'ai.navigation.send',
         'ai.navigation.apply',
+        'ai.creation.send',
+        'ai.creation.apply',
+        'ai.creation.stopApply',
         'brief.get',
         'brief.update'
       ].sort()

@@ -5,6 +5,21 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M6 - Creation agent
+
+- Creation agent for the whole pack: on the pack overview, **Ask the AI (whole pack)** and describe the pack you
+  want, in French or English ("fais un pack de feu", "make every ore glow red"). It proposes a style brief (theme,
+  palette, rules), category-by-category operations (`apply_to_all` on categories, folders or name patterns) and a
+  new pack name or description
+- Plans are reviewed step by step: what each step covers (categories, number of textures) with a few sample
+  textures before and after. Each applied step is its own history entry (checkpoint), so the last steps can be
+  undone without losing the others; **Stop after this step** halts a long plan
+- Works on empty packs too: the agent starts from Minecraft's textures ("un squelette en glace" finds the skeleton
+  textures) and adds the transformed ones to the pack
+- The creation agent's requests are logged in the shared style brief, like the other agents', so the editor and
+  navigation agents know what was done
+- FR/EN evaluation: 6 creation cases (42 cases in total)
+
 ### Export
 
 - Exported file names say what they are: `<name>-<version>-resource-pack.zip`, and the dialog says to install it

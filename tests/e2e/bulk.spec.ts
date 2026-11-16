@@ -12,6 +12,7 @@ import {
 /**
  * M5 end to end: a manual bulk edit of a grid selection (preview, review, apply, undo from History), and the
  * navigation agent changing a selection through a plan reviewed texture by texture (fake Ollama server).
+ * M6: the creation agent changing a whole category and the pack name through a plan reviewed step by step.
  */
 
 type MakeFixtureJar = (outPath: string, versionId: string) => Promise<void>
@@ -49,7 +50,10 @@ async function setup(ai?: { url: string }): Promise<LaunchedApp> {
       providers: [
         { id: 'local', kind: 'ollama', label: 'Ollama local', baseUrl: ai.url, enabled: true }
       ],
-      agents: { navigation: { model: { providerId: 'local', modelId: MODEL } } }
+      agents: {
+        navigation: { model: { providerId: 'local', modelId: MODEL } },
+        creation: { model: { providerId: 'local', modelId: MODEL } }
+      }
     }
   }
   await writeFile(settingsPath, JSON.stringify(settings))
@@ -166,4 +170,161 @@ test('the navigation agent changes a selection through a reviewed plan', async (
   await expect(page.getByTestId('tile-dirt')).toHaveAttribute('data-status', 'modified')
   await page.getByTestId('pack-history-open').click()
   await expect(page.getByTestId('pack-history')).toContainText('AI plan on 2 textures')
+})
+
+/** Creation agent: brighten every block and rename the pack; after the tool results, a short French reply. */
+const creationChat: RouteHandler = (req, res) => {
+  const body = req.body as { messages: Array<{ role: string }> }
+  const last = body.messages[body.messages.length - 1]
+  const message =
+    last?.role === 'tool'
+      ? { role: 'assistant', content: 'Voici le plan.' }
+      : {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'apply_to_all',
+                arguments: {
+                  operation: { tool: 'brightness', args: { delta: 0.3 } },
+                  filter: { categories: ['blocks'] }
+                }
+              }
+            },
+            { function: { name: 'set_pack_meta', arguments: { name: 'Fire Pack' } } }
+          ]
+        }
+  const lines = [
+    { model: MODEL, message, done: false },
+    {
+      model: MODEL,
+      message: { role: 'assistant', content: '' },
+      done: true,
+      done_reason: 'stop',
+      prompt_eval_count: 300,
+      eval_count: 20
+    }
+  ]
+  res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
+  res.end(lines.map((l) => JSON.stringify(l)).join('\n') + '\n')
+}
+
+test('the creation agent changes a whole category and the pack name through a plan', async () => {
+  server = await startFakeProviderServer()
+  server.on('GET', '/api/tags', jsonFixture('ollama/tags.json'))
+  server.on('POST', '/api/show', jsonFixture('ollama/show-qwen3.json'))
+  server.on('POST', '/api/chat', creationChat)
+  launched = await setup({ url: server.url })
+  const { page } = launched
+
+  // On the pack overview the AI button opens the creation agent (whole pack).
+  await page.getByTestId('creation-toggle').click()
+  const panel = page.getByTestId('creation-agent')
+  await expect(panel.getByTestId('creation-context')).toContainText('Whole pack:')
+  await panel.getByTestId('agent-input').locator('textarea').fill('fais un pack de feu')
+  await panel.getByTestId('agent-send').click()
+
+  const review = panel.getByTestId('creation-review')
+  await expect(review).toBeVisible({ timeout: 15_000 })
+  await expect(review.getByTestId('plan-step-brightness')).toContainText('Blocks')
+  await expect(review.getByTestId('plan-step-set_pack_meta')).toContainText('Name: Fire Pack')
+  await expect(panel.getByTestId('agent-text')).toContainText('Voici le plan')
+
+  // The request described the pack by category; the tools are the creation scope's.
+  const sent = server.requests.find((r) => r.path === '/api/chat')!.body as {
+    messages: Array<{ role: string; content: string }>
+    tools: Array<{ function: { name: string } }>
+  }
+  const user = sent.messages.filter((m) => m.role === 'user').at(-1)!
+  expect(user.content).toContain('[Pack: "Bulk pack"]')
+  expect(user.content).toMatch(/- blocks: \d+/)
+  expect(sent.tools.map((t) => t.function.name)).toEqual([
+    'apply_to_all',
+    'list_textures',
+    'set_pack_meta',
+    'update_style_brief'
+  ])
+
+  await review.getByTestId('plan-apply').click()
+  await expect(page.getByTestId('pack-name')).toHaveText('Fire Pack')
+  await expect(review).toContainText('Applied')
+  await page.getByTestId('cat-blocks').click()
+  await expect(page.getByTestId('tile-stone')).toHaveAttribute('data-status', 'modified')
+  await page.getByTestId('pack-history-open').click()
+  await expect(page.getByTestId('pack-history')).toContainText('AI plan, step 1 of 1')
+})
+
+/** Creation agent on an empty pack: turn the vanilla zombie into an ice zombie. */
+const iceChat: RouteHandler = (req, res) => {
+  const body = req.body as { messages: Array<{ role: string }> }
+  const last = body.messages[body.messages.length - 1]
+  const message =
+    last?.role === 'tool'
+      ? { role: 'assistant', content: 'Zombie de glace prêt.' }
+      : {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'apply_to_all',
+                arguments: {
+                  operation: { tool: 'brightness', args: { delta: 0.4 } },
+                  filter: { folders: ['entity/zombie'] }
+                }
+              }
+            }
+          ]
+        }
+  const lines = [
+    { model: MODEL, message, done: false },
+    {
+      model: MODEL,
+      message: { role: 'assistant', content: '' },
+      done: true,
+      done_reason: 'stop',
+      prompt_eval_count: 300,
+      eval_count: 20
+    }
+  ]
+  res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
+  res.end(lines.map((l) => JSON.stringify(l)).join('\n') + '\n')
+}
+
+test('the creation agent creates textures in an empty pack from vanilla', async () => {
+  server = await startFakeProviderServer()
+  server.on('GET', '/api/tags', jsonFixture('ollama/tags.json'))
+  server.on('POST', '/api/show', jsonFixture('ollama/show-qwen3.json'))
+  server.on('POST', '/api/chat', iceChat)
+  launched = await setup({ url: server.url })
+  const { page } = launched
+  await page.getByTestId('tab-home').click()
+  await page.getByTestId('new-pack').click()
+  await page.getByTestId('new-pack-name').locator('input').fill('Ice pack')
+  await page.getByTestId('new-pack-base-empty').click()
+  await page.getByTestId('new-pack-create').click()
+  await expect(page.getByTestId('pack-name')).toHaveText('Ice pack')
+
+  await page.getByTestId('creation-toggle').click()
+  const panel = page.getByTestId('creation-agent')
+  await expect(panel.getByTestId('creation-context')).toContainText('Empty pack')
+  await panel.getByTestId('agent-input').locator('textarea').fill('fais un zombie en glace')
+  await panel.getByTestId('agent-send').click()
+
+  const review = panel.getByTestId('creation-review')
+  await expect(review).toBeVisible({ timeout: 15_000 })
+  await expect(review.getByTestId('plan-step-brightness')).toContainText('1 texture')
+  const sent = server.requests.find((r) => r.path === '/api/chat')!.body as {
+    messages: Array<{ role: string; content: string }>
+  }
+  expect(sent.messages.filter((m) => m.role === 'user').at(-1)!.content).toContain(
+    'This pack started EMPTY'
+  )
+
+  await review.getByTestId('plan-apply').click()
+  await expect(review).toContainText('Applied')
+  await page.getByTestId('cat-all').click()
+  await expect(page.getByTestId('tile-zombie')).toBeVisible()
+  await expect(page.locator('[data-testid^="tile-"]')).toHaveCount(1)
 })

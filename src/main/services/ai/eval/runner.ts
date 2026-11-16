@@ -3,10 +3,11 @@ import type { AgentEvent, AgentSettings, EvalReport, ModelRef, ToolCall } from '
 import { encodePng } from '@shared/image'
 import { emptyBrief } from '@shared/model/brief'
 import type { ProviderRegistry } from '../../contracts'
-import { runEditorAgent, runNavigationAgent } from '../agent'
+import { runCreationAgent, runEditorAgent, runNavigationAgent } from '../agent'
 import { EvalFileSchema, matchCalls, type EvalCase } from './match'
 import {
   evalFixture,
+  evalPack,
   evalSelection,
   summarize,
   toMarkdown,
@@ -143,8 +144,24 @@ export async function runEvalCase(
   const started = Date.now()
   try {
     const deps = { providers: opts.providers, newId, now: () => new Date() }
-    const result =
-      c.context === 'navigation'
+    const pack = c.context === 'creation' ? evalPack(c.fixture) : undefined
+    const result = pack
+      ? await runCreationAgent(
+          {
+            runId: newId(),
+            request: { packId: 'eval', message: phrase, model: opts.model, language },
+            textures: pack.textures,
+            samples: pack.samples,
+            pack: { name: 'Eval pack', description: '' },
+            settings,
+            brief: emptyBrief(),
+            history: []
+          },
+          deps,
+          emit,
+          controller.signal
+        )
+      : c.context === 'navigation'
         ? await runNavigationAgent(
             {
               runId: newId(),

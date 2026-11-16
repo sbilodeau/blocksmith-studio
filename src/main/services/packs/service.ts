@@ -21,7 +21,7 @@ import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
 import { FileInfoCache, writeFileAtomic } from './files'
 import { importPackZip, type ImportLimits } from './importer'
-import { toJsonBytes } from './mcmeta'
+import { isRecord, parseJson, toJsonBytes } from './mcmeta'
 import { comparePaths, createUniqueFolder, slugify } from './paths'
 import { createDefaultPackIcon } from './png'
 import { newPackId, readProject, writeProject, type PackLocation } from './project'
@@ -78,6 +78,17 @@ export interface PackService {
   delete(packId: string): Promise<void>
   reveal(packId: string): Promise<void>
   textures(packId: string): Promise<TextureEntry[]>
+  /**
+   * What the creation agent can change: the pack's textures plus every vanilla texture of its authoring version,
+   * whatever the base (for an empty pack, its own files plus vanilla). Throws packs.vanillaNotReady when the vanilla
+   * textures are not extracted.
+   */
+  catalog(packId: string): Promise<TextureEntry[]>
+  /**
+   * Renames the pack and/or changes its description (project.json and the pack folder's pack.mcmeta description;
+   * exports regenerate pack.mcmeta from the project anyway). The folder name does not change.
+   */
+  updateMeta(packId: string, patch: { name?: string; description?: string }): Promise<PackSummary>
   categories(packId: string): Promise<CategorySummary[]>
   importZip(zipPath: string): Promise<ImportReport>
   /** Checks that `targetVersion` can be exported and returns the default file name "<slug>-<version>.zip". */
@@ -285,6 +296,33 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
 
     async get(packId) {
       return summarize(await requireLocation(packId))
+    },
+
+    async catalog(packId) {
+      return indexer.textures(await requireLocation(packId), { catalog: true })
+    },
+
+    async updateMeta(packId, patch) {
+      const location = await requireLocation(packId)
+      const project: Project = {
+        ...location.project,
+        ...(patch.name !== undefined ? { name: patch.name } : {}),
+        ...(patch.description !== undefined ? { description: patch.description } : {}),
+        updatedAt: now().toISOString()
+      }
+      await writeProject(location.folder, project)
+      if (patch.description !== undefined) {
+        const file = join(location.folder, 'pack.mcmeta')
+        const current = parseJson(await fs.readFile(file).catch(() => new Uint8Array()))
+        const mcmeta = isRecord(current) ? current : {}
+        const pack = isRecord(mcmeta['pack']) ? mcmeta['pack'] : {}
+        await writeFileAtomic(
+          file,
+          toJsonBytes({ ...mcmeta, pack: { ...pack, description: patch.description } })
+        )
+      }
+      deps.notifyChanged(packId)
+      return summarize({ ...location, project })
     },
 
     locate,

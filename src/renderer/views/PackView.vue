@@ -13,6 +13,7 @@ import ExportDialog from '../components/pack/ExportDialog.vue'
 import ReportDialog from '../components/common/ReportDialog.vue'
 import StyleBriefDrawer from '../components/ai/StyleBriefDrawer.vue'
 import NavigationAgentPanel from '../components/ai/NavigationAgentPanel.vue'
+import CreationAgentPanel from '../components/ai/CreationAgentPanel.vue'
 import PackHistoryDrawer from '../components/pack/PackHistoryDrawer.vue'
 import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
 import { IpcError } from '../services/ipc'
@@ -34,10 +35,12 @@ const showExport = ref(false)
 const showBrief = ref(false)
 const showHistory = ref(false)
 const router = useRouter()
-/** The navigation agent panel sits next to the grid (not the overview or the editor). */
-const showAiPanel = computed(
-  () => store.value.aiPanel && !store.value.editing && store.value.category !== null
-)
+/**
+ * The AI panel sits next to the overview (creation agent, whole pack) or the grid (navigation agent, selection),
+ * not the editor (which has its own AI tab).
+ */
+const showAiPanel = computed(() => store.value.aiPanel && !store.value.editing)
+const onOverview = computed(() => store.value.category === null)
 /** Set when a vanilla-based pack's vanilla textures are missing on this computer. */
 const missingVanilla = ref<string | null>(null)
 const vanilla = useVanillaStore()
@@ -133,14 +136,14 @@ const exportItems = computed(() => [
               {{ t('history.title') }}
             </n-button>
             <n-button
-              v-if="!store.editing && store.category !== null"
+              v-if="!store.editing"
               size="small"
               :type="store.aiPanel ? 'primary' : 'default'"
               :secondary="store.aiPanel"
-              data-testid="navigation-toggle"
+              :data-testid="onOverview ? 'creation-toggle' : 'navigation-toggle'"
               @click="store.aiPanel = !store.aiPanel"
             >
-              {{ t('ai.navigationPanel') }}
+              {{ onOverview ? t('ai.creationPanel') : t('ai.navigationPanel') }}
             </n-button>
             <n-button
               size="small"
@@ -169,7 +172,13 @@ const exportItems = computed(() => [
         </div>
       </section>
       <aside v-if="showAiPanel" class="ai-side">
+        <creation-agent-panel
+          v-if="onOverview"
+          :pack-id="packId"
+          @open-settings="router.push({ name: 'settings' })"
+        />
         <navigation-agent-panel
+          v-else
           :pack-id="packId"
           @open-settings="router.push({ name: 'settings' })"
         />

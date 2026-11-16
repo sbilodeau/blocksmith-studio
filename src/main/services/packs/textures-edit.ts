@@ -36,6 +36,11 @@ export interface TextureEditServiceDeps {
 
 export interface TextureEditService {
   read(packId: string, path: string): Promise<TextureData>
+  /**
+   * PNG of a catalog texture (creation agent): the pack's file, else the vanilla file of the authoring version even
+   * for an empty pack (what Minecraft shows when the pack has no file). Null when neither exists.
+   */
+  readCatalog(packId: string, path: string): Promise<Uint8Array | null>
   save(packId: string, path: string, png: Uint8Array): Promise<TextureEntry>
   revert(packId: string, path: string): Promise<TextureEntry>
   /**
@@ -124,6 +129,14 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
         vanillaPng,
         mcmeta: mcmeta ? new TextDecoder().decode(mcmeta) : null
       }
+    },
+
+    async readCatalog(packId, path) {
+      const location = await requireLocation(packId)
+      const packPng = await readOptional(texturePath(location, path))
+      if (packPng) return packPng
+      const vanilla = deps.vanilla.resolveFile(location.project.authoringVersion, path)
+      return vanilla ? readOptional(vanilla) : null
     },
 
     async save(packId, path, png) {
