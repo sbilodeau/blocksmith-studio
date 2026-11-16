@@ -109,6 +109,12 @@ part or block face. `src/shared/preview/layout.ts` turns the model into a short 
   listed.
 - **Blocks**: the texture rectangles of every element face that uses this texture, grouped by rectangle, with
   rotation and tint notes; UVs refer to one frame for animated strips.
+- **Animated textures** (M9): the request carries the whole strip with its frame height and the frame the user is
+  editing. The model sees that frame only (image and grid) and an animation note in the system prompt. Image tools
+  (every mutate tool, `get_pixels`, `get_palette`, `get_texture`) get an optional `frame` (0-based) in their JSON
+  Schema: with it a step changes or reads that frame; without it a change applies to every frame and a read looks at
+  the user's frame. A change that would resize a frame is refused. Each step records its `frame` (number or `all`,
+  shown in the plan) and the apply replays it on the same frame (`src/shared/ai/tools/frames.ts`).
 - **Items**: one line about the extruded in-hand sprite. Flat textures (GUI, particles) get nothing.
 
 A failing preview never fails the run; the block is simply left out. The editor instructions tell the model to use

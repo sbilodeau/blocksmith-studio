@@ -5,13 +5,14 @@
 Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs, with a pixel editor,
 a live 3D preview and AI agents that propose changes you review before anything is applied.
 
-> Status: early development (milestone M8 - merge and send to pack). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M9 - animated textures). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
 - Multiple packs open at once, one tab per pack, with merging between packs
 - Textures browsed by category (Blocks, Ores, Tools, Weapons, Armor, Food, Entities, GUI...)
 - Pixel editor with undo/redo, compare with vanilla, and a live 3D preview for blocks, items and entities
+- Animated textures edited frame by frame: timeline, playback, onion skin, frame timing, GIF import
 - Bulk edits of a selection (hue, brightness, palette, outline, flip...) reviewed texture by texture
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
 - Export to any Minecraft Java version released in the last two years

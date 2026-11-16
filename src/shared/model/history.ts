@@ -29,4 +29,9 @@ export interface TextureData {
   vanillaPng: Uint8Array | null
   /** Sibling .png.mcmeta text (pack first, then vanilla), if any. */
   mcmeta: string | null
+  /**
+   * Where `mcmeta` came from. Minecraft only reads a texture's .mcmeta from the pack that provides the PNG (or a
+   * pack above it), so a pack PNG with a vanilla-only .mcmeta loses its animation: saving copies it into the pack.
+   */
+  mcmetaOrigin: 'pack' | 'vanilla' | 'none'
 }

@@ -155,7 +155,21 @@ if (!app.requestSingleInstanceLock()) {
         }
       }
     })
-    registerTextureHandlers({ textures, history })
+    registerTextureHandlers({
+      textures,
+      history,
+      openGif: async () => {
+        const options: Electron.OpenDialogOptions = {
+          properties: ['openFile'],
+          filters: [{ name: 'GIF', extensions: ['gif'] }]
+        }
+        const win = parent()
+        const r = win
+          ? await dialog.showOpenDialog(win, options)
+          : await dialog.showOpenDialog(options)
+        return r.canceled ? null : (r.filePaths[0] ?? null)
+      }
+    })
     registerPreviewHandlers({ preview })
     registerAiProviderHandlers({ settings, secrets, registry: aiProviders })
     const bulk = createBulkService({

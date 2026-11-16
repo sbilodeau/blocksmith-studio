@@ -35,6 +35,7 @@ and/or top/bottom) applies to the pencil, eraser, line and rectangle tools.
 | Move around                    | Scroll, or Space + drag, or middle drag |
 | Preview vanilla in place       | Hold C                                  |
 | Previous / next texture        | Page Up / Page Down (or Alt+Left/Right) |
+| Previous / next frame          | , and . (animated textures)             |
 
 Rotate and flip apply to the selection when there is one, otherwise to the whole texture.
 
@@ -46,9 +47,30 @@ Rotate and flip apply to the selection when there is one, otherwise to the whole
 
 ## Animated textures
 
-Animated textures are vertical strips (for example `block/fire_0.png`, 16 x 512 = 32 frames). The editor shows the
-whole strip with red dashed lines between frames and fits the first frame to the view; scroll to move along the
-strip. A frame timeline with playback comes in a later milestone (M9).
+Animated textures are vertical strips of frames (for example `block/fire_0.png`, 16 x 512 = 32 frames of 16 x 16)
+described by a `.png.mcmeta` file. The editor edits **one frame at a time**: the canvas shows the current frame, and
+every tool (pencil, fill, mirror, selection, rotate, flip, paste) stays inside it. A timeline under the canvas holds:
+
+- the frames as thumbnails with their number and duration (click one to edit it; `,` and `.` move between frames);
+- **Play / Pause**: plays the animation in the small preview next to the frames (with **Smooth** on, frames blend
+  into each other as in the game), and in the 3D view. When paused, the 3D view shows the frame you are editing;
+- **Add frame** (blank, after the current one), **Duplicate**, **Delete frame**, **◀ Move / Move ▶**;
+- **Onion skin**: the previous frame drawn faintly over the current one, to line up movements;
+- **Frame time** (ticks per frame, 1 tick = 1/20 s), the current frame's own duration (empty: the frame time) and
+  **Smooth** (`interpolate`);
+- **Import GIF...**: replaces the frames with the GIF's frames, fitted to the frame size (nearest neighbor, aspect
+  kept, centered) with their delays converted to ticks (the most common delay becomes the frame time);
+- **Remove animation**: keeps the current frame as a still texture.
+
+**Animate** in the editor header turns a still texture into a one-frame animation to start from. Every timeline
+action is one unsaved edit (undo restores frames and timing together; undoing a drawing step shows its frame again).
+
+Saving writes the strip and its `.png.mcmeta` as one entry in the saved history. Minecraft reads a texture's
+`.mcmeta` only from the pack that provides the PNG (or a pack above it), so when the animation came from vanilla, the
+save copies it into the pack: without it, an edited vanilla animation would show the whole strip at once in game.
+A custom playback order in the `.mcmeta` (`frames` with repeats) is kept and follows its images when frames move.
+Only vertical strips of full-width frames are edited frame by frame; frames laid out in a grid are edited as one
+image.
 
 ## Undo levels
 
@@ -64,6 +86,11 @@ strip. A frame timeline with playback comes in a later milestone (M9).
 - `src/renderer/stores/editor.ts`: one Pinia store per pack tab (`editor/<packId>`) holding the working image
   (straight RGBA, from `@shared/image`), the saved image, the vanilla image, the local undo/redo stacks, tool state,
   colors, selection and floating selection. A shared clipboard lets you paste between packs.
+- Animated textures: the store keeps the frames (`frames`, `frameIndex`) with `image` pointing at the current frame,
+  the parsed `.mcmeta` (`meta`) and computed `strip` / `mcmeta` for saving, the 3D view and the AI agent. The pure
+  parts (parse and write `.mcmeta`, split and join frames, keep a custom playback order on the same images when frames
+  are added, removed or moved, playback timing) are in `src/shared/animation/`. GIF decoding (with frame disposal)
+  runs in main (`src/main/services/packs/gif.ts`, channel `texture.importGif`).
 - `src/renderer/components/editor/PixelCanvas.vue`: Canvas 2D rendering at integer zoom with smoothing disabled,
   input handling for every tool. Pixel data is never read back from the canvas: the image core buffer is the source of
   truth, so colors stay exact (no premultiplied-alpha or color-management rounding).

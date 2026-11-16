@@ -38,12 +38,13 @@ const preview = ref<{ from: Point; to: Point } | null>(null)
 
 let srcCanvas: HTMLCanvasElement | null = null
 let floatCanvas: HTMLCanvasElement | null = null
+let onionCanvas: HTMLCanvasElement | null = null
 let raf = 0
 let resizeObserver: ResizeObserver | null = null
 
 const displayed = computed<RgbaImage | null>(() => {
   void editor.value.revision
-  if (props.source === 'vanilla' || editor.value.peekVanilla) return editor.value.vanilla
+  if (props.source === 'vanilla' || editor.value.peekVanilla) return editor.value.vanillaView
   return editor.value.image
 })
 
@@ -72,16 +73,20 @@ function imageToCanvas(img: RgbaImage, target: HTMLCanvasElement | null): HTMLCa
 function fit(): void {
   const img = displayed.value
   if (!img || size.value.width === 0) return
-  // Animated strips fit one frame and start at the top; scroll (wheel) to move along the strip.
-  const frame = editor.value.frameSize
-  const fitHeight = frame ?? img.height
   const fitZoom = Math.max(
     1,
-    Math.floor(Math.min((size.value.width - 48) / img.width, (size.value.height - 48) / fitHeight))
+    Math.floor(Math.min((size.value.width - 48) / img.width, (size.value.height - 48) / img.height))
   )
   zoom.value = ZOOM_LEVELS.filter((z) => z <= fitZoom).pop() ?? 1
   center()
-  if (frame) offset.value = { ...offset.value, y: 24 }
+}
+
+/** Onion skin: the frame before the current one (the last frame before the first), when it applies. */
+function onionFrame(): RgbaImage | null {
+  const ed = editor.value
+  const frames = ed.frames
+  if (props.readonly || !ed.onionSkin || !frames || frames.length < 2 || ed.peekVanilla) return null
+  return frames[(ed.frameIndex - 1 + frames.length) % frames.length] ?? null
 }
 
 function center(): void {
@@ -141,6 +146,14 @@ function render(): void {
   srcCanvas = imageToCanvas(img, srcCanvas)
   ctx.drawImage(srcCanvas, ox, oy, w, h)
 
+  const onion = onionFrame()
+  if (onion && onion.width === img.width && onion.height === img.height) {
+    onionCanvas = imageToCanvas(onion, onionCanvas)
+    ctx.globalAlpha = 0.35
+    ctx.drawImage(onionCanvas, ox, oy, w, h)
+    ctx.globalAlpha = 1
+  }
+
   const f = editor.value.floating
   if (f && !props.readonly && displayed.value === editor.value.image) {
     floatCanvas = imageToCanvas(f.image, floatCanvas)
@@ -174,21 +187,6 @@ function render(): void {
     }
   }
 
-  // Animation frame guides.
-  const frame = editor.value.frameSize
-  if (frame) {
-    ctx.strokeStyle = 'rgba(220, 60, 60, 0.9)'
-    ctx.lineWidth = 2
-    ctx.setLineDash([6, 4])
-    for (let y = frame; y < img.height; y += frame) {
-      ctx.beginPath()
-      ctx.moveTo(ox, oy + y * z)
-      ctx.lineTo(ox + w, oy + y * z)
-      ctx.stroke()
-    }
-    ctx.setLineDash([])
-  }
-
   // Selection marquee.
   const sel = editor.value.selection
   if (sel && !props.readonly) {
@@ -213,12 +211,13 @@ function render(): void {
     ctx.setLineDash([])
   }
 
-  // Pixel hovered on the 3D preview.
+  // Pixel hovered on the 3D preview (strip coordinates: only shown when it is in the current frame).
   const linked = editor.value.linkedHover
-  if (linked?.source === '3d' && inBounds(img, linked.x, linked.y)) {
+  const ly = linked ? linked.y - editor.value.frameOffset : -1
+  if (linked?.source === '3d' && inBounds(img, linked.x, ly)) {
     ctx.lineWidth = 2
     ctx.strokeStyle = '#ff2fb3'
-    ctx.strokeRect(ox + linked.x * z + 1, oy + linked.y * z + 1, z - 2, z - 2)
+    ctx.strokeRect(ox + linked.x * z + 1, oy + ly * z + 1, z - 2, z - 2)
   }
 
   // Hovered pixel.
@@ -383,8 +382,12 @@ function onPointerMove(e: PointerEvent): void {
     const shown = displayed.value
     const inside = !!shown && inBounds(shown, p.x, p.y)
     emit('hover', inside && shown ? { x: p.x, y: p.y, color: getPixel(shown, p.x, p.y) } : null)
-    // Publish the hovered pixel so the 3D preview can highlight it.
-    if (!props.readonly) editor.value.linkedHover = inside ? { x: p.x, y: p.y, source: '2d' } : null
+    // Publish the hovered pixel so the 3D preview can highlight it (in strip coordinates).
+    if (!props.readonly) {
+      editor.value.linkedHover = inside
+        ? { x: p.x, y: p.y + editor.value.frameOffset, source: '2d' }
+        : null
+    }
   }
   if (!gesture) {
     if (changed) schedule()
@@ -516,7 +519,8 @@ watch(
     editor.value.floating,
     zoom.value,
     props.source,
-    editor.value.linkedHover
+    editor.value.linkedHover,
+    editor.value.onionSkin
   ],
   schedule
 )
@@ -529,7 +533,7 @@ watch(
 )
 // The vanilla pane follows texture changes of the main pane.
 watch(
-  () => [editor.value.vanilla, editor.value.frameSize],
+  () => [editor.value.vanilla, editor.value.frameCount],
   () => {
     if (props.readonly) {
       localZoom.value = 0

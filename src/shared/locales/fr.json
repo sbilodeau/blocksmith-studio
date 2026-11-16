@@ -111,7 +111,8 @@
       "invalidPng": "Cette image n'a pas pu être enregistrée (PNG invalide).",
       "notInPack": "Cette texture n'a aucune modification à annuler.",
       "invalidPath": "Ce chemin de texture n'est pas valide.",
-      "noVanilla": "Cette texture n'a pas de version vanilla vers laquelle revenir."
+      "noVanilla": "Cette texture n'a pas de version vanilla vers laquelle revenir.",
+      "invalidGif": "Ce fichier n’a pas pu être lu comme un GIF (ou il est trop gros)."
     },
     "history": {
       "conflict": "Le fichier {path} a été modifié en dehors de Blocksmith Studio : cette étape ne peut pas être annulée sans risque.",
@@ -330,7 +331,8 @@
       "conflict": "Non déplacée : une texture porte déjà son nouveau nom (les deux sont gardées)"
     },
     "doctor": {
-      "proportions": "Proportions différentes de la texture de Minecraft : les modèles l’afficheront étirée ou coupée"
+      "proportions": "Proportions différentes de la texture de Minecraft : les modèles l’afficheront étirée ou coupée",
+      "missingAnimation": "Animée dans Minecraft, mais le pack n’a pas de .png.mcmeta : l’animation ne jouera pas. Ouvrez-la dans l’éditeur et enregistrez pour la copier"
     }
   },
   "editor": {
@@ -384,7 +386,7 @@
     "noEdits": "Aucune modification.",
     "noSavedHistory": "Rien d'enregistré pour l'instant",
     "size": "{width} x {height} px",
-    "frames": "{count} images",
+    "frameOf": "Image {n} sur {count}",
     "hoverInfo": "{x}, {y}  {color}",
     "edit": {
       "draw": "Dessin",
@@ -399,12 +401,49 @@
       "flipH": "Miroir horizontal",
       "flipV": "Miroir vertical",
       "paste": "Collage",
-      "ai": "Modification IA"
+      "ai": "Modification IA",
+      "frameAdd": "Ajout d’une image",
+      "frameDuplicate": "Duplication d’une image",
+      "frameDelete": "Suppression d’une image",
+      "frameMove": "Déplacement d’une image",
+      "frameTiming": "Durées de l’animation",
+      "animate": "Animation",
+      "unanimate": "Retrait de l’animation",
+      "importGif": "Import d’un GIF"
     },
     "shortcut": "{label} ({key})",
     "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer.",
     "tabDraw": "Dessin",
     "tabAi": "IA"
+  },
+  "animation": {
+    "animate": "Animer",
+    "animateHint": "Transformer cette texture en animation (ajoutez des images dans la frise sous le canevas)",
+    "play": "Lire",
+    "pause": "Pause",
+    "frame": "Image {n}",
+    "seconds": "{s} s",
+    "add": "Ajouter une image",
+    "duplicate": "Dupliquer",
+    "delete": "Supprimer l’image",
+    "moveLeft": "Déplacer cette image plus tôt",
+    "moveRight": "Déplacer cette image plus tard",
+    "moveLeftShort": "◀ Déplacer",
+    "moveRightShort": "Déplacer ▶",
+    "onion": "Pelure d’oignon",
+    "onionHint": "Affiche l’image précédente en transparence par-dessus celle que vous dessinez",
+    "frametime": "Durée par image",
+    "ticksHint": "Durée d’affichage de chaque image, en ticks : 1 tick = 1/20 s (50 ms)",
+    "frameDuration": "Image {n}",
+    "frameDurationHint": "Durée propre de cette image, en ticks (vide : la durée par image)",
+    "interpolate": "Fondu",
+    "interpolateHint": "Fond chaque image dans la suivante (« interpolate » de Minecraft)",
+    "importGif": "Importer un GIF…",
+    "imported": "Aucune image importée depuis {name} | 1 image importée depuis {name} | {count} images importées depuis {name}",
+    "truncated": "Des images ont été laissées de côté : la texture dépasserait 4096 pixels de haut.",
+    "remove": "Retirer l’animation",
+    "customOrder": "Cette animation joue ses images dans un ordre personnalisé (de son .mcmeta), qui est conservé.",
+    "unsupported": "Animée (images en grille : modifiée comme une seule image)"
   },
   "history": {
     "label": {
@@ -544,7 +583,9 @@
         "applied": "Appliqué",
         "partially-applied": "Appliqué en partie",
         "rejected": "Refusé"
-      }
+      },
+      "onFrame": "{op} (image {n})",
+      "onAllFrames": "{op} (toutes les images)"
     },
     "keyNotNeeded": "Aucune clé requise (local)",
     "eval": {

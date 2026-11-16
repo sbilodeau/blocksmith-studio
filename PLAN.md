@@ -26,7 +26,7 @@ Repository: `github.com/sbilodeau/blocksmith-studio` - License: MIT
 | Multi-pack        | Tab-based, 1 tab = 1 pack, several open at once                                                               |
 | Merge             | Priority-ordered sources + per-file conflict review, deep-merge for mergeable JSON, undoable                  |
 | Data packs        | Resource packs first. Data packs in a later milestone                                                         |
-| Animated textures | Strip editing with frame guides in MVP. Timeline/playback in a later milestone                                |
+| Animated textures | Strip editing with frame guides in MVP. Timeline/playback in M9 (frame-by-frame editing)                      |
 | UI library        | Naive UI                                                                                                      |
 | AI providers      | Ollama Cloud (native API) by default, any OpenAI-compatible endpoint as an option                             |
 | Releases          | Manual "Release" GitHub Actions workflow, assets on **GitHub Releases**                                       |
@@ -925,6 +925,10 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 
 ### M9 - Animated textures
 - Frame timeline, playback, onion skin, frametime/interpolate editing in `.png.mcmeta`, add/duplicate/reorder frames, GIF import; agent tools gain a `frame` parameter.
+- Built (see docs/editor.md "Animated textures"): the editor works on the current frame of a vertical strip (grid
+  layouts stay whole-image); custom playback orders are kept on the same images; saving copies a vanilla `.mcmeta`
+  into the pack (Minecraft reads it only from the pack providing the PNG), with a Pack Doctor check for older packs;
+  the `frame` parameter is added to image tools only when the open texture is animated.
 
 ### M10 - Data packs
 - Data pack projects (or combined resource+data), JSON editors with schema validation (recipes, loot tables, tags, advancements), `write_json` tool, data pack format in mcmeta/export.

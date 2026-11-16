@@ -111,7 +111,8 @@
       "invalidPng": "This image could not be saved (invalid PNG).",
       "notInPack": "This texture has no changes to revert.",
       "invalidPath": "This texture path is not valid.",
-      "noVanilla": "This texture has no vanilla version to revert to."
+      "noVanilla": "This texture has no vanilla version to revert to.",
+      "invalidGif": "This file could not be read as a GIF (or it is too big)."
     },
     "history": {
       "conflict": "The file {path} was changed outside Blocksmith Studio, so this step cannot be undone safely.",
@@ -330,7 +331,8 @@
       "conflict": "Not moved: a texture with its new name already exists (both kept)"
     },
     "doctor": {
-      "proportions": "Proportions differ from the Minecraft texture: models will show it stretched or cut"
+      "proportions": "Proportions differ from the Minecraft texture: models will show it stretched or cut",
+      "missingAnimation": "Animated in Minecraft but the pack has no .png.mcmeta: the animation will not play. Open it in the editor and save to copy it"
     }
   },
   "editor": {
@@ -384,7 +386,7 @@
     "noEdits": "No edits yet.",
     "noSavedHistory": "Nothing saved yet",
     "size": "{width} x {height} px",
-    "frames": "{count} frames",
+    "frameOf": "Frame {n} of {count}",
     "hoverInfo": "{x}, {y}  {color}",
     "edit": {
       "draw": "Draw",
@@ -399,12 +401,49 @@
       "flipH": "Flip horizontally",
       "flipV": "Flip vertically",
       "paste": "Paste",
-      "ai": "AI edit"
+      "ai": "AI edit",
+      "frameAdd": "Add frame",
+      "frameDuplicate": "Duplicate frame",
+      "frameDelete": "Delete frame",
+      "frameMove": "Move frame",
+      "frameTiming": "Animation timing",
+      "animate": "Animate",
+      "unanimate": "Remove animation",
+      "importGif": "Import GIF"
     },
     "shortcut": "{label} ({key})",
     "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan.",
     "tabDraw": "Draw",
     "tabAi": "AI"
+  },
+  "animation": {
+    "animate": "Animate",
+    "animateHint": "Turn this texture into an animation (add frames in the timeline below the canvas)",
+    "play": "Play",
+    "pause": "Pause",
+    "frame": "Frame {n}",
+    "seconds": "{s} s",
+    "add": "Add frame",
+    "duplicate": "Duplicate",
+    "delete": "Delete frame",
+    "moveLeft": "Move this frame earlier",
+    "moveRight": "Move this frame later",
+    "moveLeftShort": "◀ Move",
+    "moveRightShort": "Move ▶",
+    "onion": "Onion skin",
+    "onionHint": "Show the previous frame faintly over the one you are drawing",
+    "frametime": "Frame time",
+    "ticksHint": "How long each frame shows, in ticks: 1 tick = 1/20 s (50 ms)",
+    "frameDuration": "Frame {n}",
+    "frameDurationHint": "Own duration of this frame, in ticks (empty: the frame time)",
+    "interpolate": "Smooth",
+    "interpolateHint": "Blend each frame into the next one (Minecraft's \"interpolate\")",
+    "importGif": "Import GIF…",
+    "imported": "No frames imported from {name} | 1 frame imported from {name} | {count} frames imported from {name}",
+    "truncated": "Some frames were left out: the texture would be taller than 4096 pixels.",
+    "remove": "Remove animation",
+    "customOrder": "This animation plays its frames in a custom order (from its .mcmeta), which is kept.",
+    "unsupported": "Animated (frames in a grid: edited as one image)"
   },
   "history": {
     "label": {
@@ -544,7 +583,9 @@
         "applied": "Applied",
         "partially-applied": "Partly applied",
         "rejected": "Rejected"
-      }
+      },
+      "onFrame": "{op} (frame {n})",
+      "onAllFrames": "{op} (every frame)"
     },
     "keyNotNeeded": "No key needed (local)",
     "eval": {

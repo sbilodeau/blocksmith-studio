@@ -220,7 +220,9 @@ version (keeping its other sections) and updates `authoringVersion`. Textures th
 - `issues`: the export checks (`export.invalidPng`, `invalidJson`, `invalidPath`, `nonPowerOfTwo`,
   `animationMismatch`, `missingPackPng`, `invalidMcmeta`, `vanillaNotReady`) plus `doctor.proportions`: a texture
   whose proportions differ from the vanilla texture of the same path (a 32x16 stone; 32x32 is fine), which models
-  show stretched or cut. Animated vanilla strips are compared by width.
+  show stretched or cut. Animated vanilla strips are compared by width. `doctor.missingAnimation`: a texture animated
+  in vanilla whose pack PNG has no `.png.mcmeta` (Minecraft would not play the animation; saving the texture in the
+  editor copies the `.mcmeta` into the pack).
 - `targets`: for every other export target, how many textures an export would rename and which ones it would skip.
 
 The drawer groups issues by type; texture paths open in the editor.
