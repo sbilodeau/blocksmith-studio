@@ -171,9 +171,11 @@ if (!app.requestSingleInstanceLock()) {
         bulk
       },
       creation: {
+        catalog: (packId) => packs.catalog(packId),
+        readPng: (packId, path) => textures.readCatalog(packId, path),
         meta: async (packId) => {
-          const { name, description } = await packs.get(packId)
-          return { name, description }
+          const { name, description, base } = await packs.get(packId)
+          return { name, description, base }
         },
         setMeta: async (packId, patch) => {
           await packs.updateMeta(packId, patch)

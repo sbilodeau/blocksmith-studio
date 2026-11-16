@@ -67,7 +67,7 @@ export interface CreationRunInput {
   textures: TextureEntry[]
   /** Representative textures, decoded (contact sheet and previews). */
   samples: CreationSample[]
-  pack: { name: string; description: string }
+  pack: { name: string; description: string; base?: 'vanilla' | 'empty' }
   settings: AgentSettings
   brief: StyleBrief
   history: ConversationTurn[]
@@ -306,6 +306,11 @@ export function buildCreationMessage(
   }
   const parts = [
     `[Pack: "${pack.name}"${pack.description ? ` - ${pack.description}` : ''}]`,
+    ...(pack.base === 'empty'
+      ? [
+          "This pack started EMPTY: the textures below are Minecraft's vanilla textures, most not in the pack yet. Create the elements the user asks for by transforming their vanilla textures with apply_to_all; accepted steps add the results to the pack."
+        ]
+      : []),
     `${textures.length} textures, ${textures.filter((t) => t.status !== 'vanilla').length} already modified or added.`,
     'Categories (id: textures, modified):',
     ...Object.entries(counts)

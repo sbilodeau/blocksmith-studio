@@ -71,6 +71,37 @@ describe('texture editing and pack history', () => {
     await env.cleanup()
   })
 
+  describe('catalog (creation agent)', () => {
+    it('an empty pack lists every vanilla texture plus its own files, read from vanilla until written', async () => {
+      const empty = await packs.create({
+        name: 'Ice',
+        description: '',
+        base: 'empty',
+        authoringVersion: '26.3'
+      })
+      expect(await packs.textures(empty.id)).toEqual([])
+      const catalog = await packs.catalog(empty.id)
+      expect(catalog.length).toBe((await packs.textures(packId)).length)
+      expect(catalog.find((e) => e.path === STONE)).toMatchObject({ status: 'vanilla' })
+      // The editor's read keeps the empty pack empty; the catalog read falls back to vanilla.
+      expect((await textures.read(empty.id, STONE)).png).toBeNull()
+      expect(await textures.readCatalog(empty.id, STONE)).toEqual(vanillaFiles()[STONE])
+
+      await textures.saveMany(empty.id, [{ path: STONE, png: RED }], {
+        source: 'ai',
+        label: { key: 'aiPlanStep', params: { step: 1, total: 1, count: 1 } }
+      })
+      expect(await textures.readCatalog(empty.id, STONE)).toEqual(RED)
+      expect((await packs.textures(empty.id)).map((e) => e.path)).toEqual([STONE])
+      expect((await packs.catalog(empty.id)).find((e) => e.path === STONE)).toMatchObject({
+        status: 'modified'
+      })
+      await expect(textures.readCatalog(empty.id, '../escape.png')).rejects.toMatchObject({
+        code: 'texture.invalidPath'
+      })
+    })
+  })
+
   describe('texture.read', () => {
     it('falls back to vanilla, then prefers the pack copy', async () => {
       const vanillaStone = vanillaFiles()[STONE]

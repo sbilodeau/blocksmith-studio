@@ -33,7 +33,9 @@ color and transform operations by hand. Both write one change you can undo from 
 On the pack overview, **Ask the AI (whole pack)** opens the creation agent: describe the pack you want ("fais un
 pack de feu", "make every ore glow red"). It proposes a style brief and category-by-category steps, each with a few
 sample textures before and after. Tick the steps you want and apply: each step is written as its own entry in
-**History** (you can stop between steps, and undo the last steps without losing the others).
+**History** (you can stop between steps, and undo the last steps without losing the others). It also works on an
+empty pack: "un squelette en glace" starts from Minecraft's skeleton textures and adds the icy versions to your
+pack.
 
 To use the agents, open Settings > AI, paste your [Ollama Cloud](https://ollama.com) API key and pick a model (models that
 support tools are listed, with badges for vision and reasoning, and `$` / `$$` / `$$$` when the price is known).

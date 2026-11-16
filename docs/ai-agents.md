@@ -212,6 +212,12 @@ Lives next to the pack overview (**Ask the AI (whole pack)** in the pack header 
 conversation per pack tab (`creation.jsonl`); it works on the whole pack, which can hold thousands of textures, so a
 run never decodes them all.
 
+What it can change is the pack's **catalog** (`packs.catalog`): the pack's textures plus every vanilla texture of
+its authoring version, whatever the base. For a vanilla-based pack that is the grid's list; for an empty pack it is
+all of Minecraft's textures, so "un squelette en glace" finds `entity/skeleton/*` and the accepted steps ADD the
+transformed textures to the pack (starting from vanilla keeps entity UV layouts right). Pixels come from
+`textures.readCatalog`: the pack's file, else the vanilla file. The user message says when the pack started empty.
+
 - **Tools** (scope-specific, in `creation.ts`):
   - `apply_to_all { operation: { tool, args }, filter: { categories?, folders?, match? } }`: one color or transform
     operation (the bulk tools: `hue_shift`, `saturation`, `brightness`, `replace_color`, `apply_palette`,
@@ -236,7 +242,8 @@ run never decodes them all.
   shows a warning.
 - **Apply** (`ai.creation.apply { proposalId, acceptedStepIds }`): brief patches and pack meta (`packs.updateMeta`:
   project.json and the pack folder's pack.mcmeta description) first, then each accepted texture step in order on
-  the CURRENT pixels of its targets (bulk worker), written as its own history entry ("AI plan, step k of n (N
+  the CURRENT pixels of its targets (catalog read, so vanilla for textures an empty pack does not have yet; bulk
+  worker), written as its own history entry ("AI plan, step k of n (N
   textures)"): these are the checkpoints, so the last steps can be undone without losing the first ones.
   Progress: `job.progress` `ai.plan.apply` (one tick per step) and `bulk.apply` (textures of the current step).
   `ai.creation.stopApply { proposalId }` stops after the current step; the result says `stopped`. The request log

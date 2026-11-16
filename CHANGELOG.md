@@ -14,6 +14,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
 - Plans are reviewed step by step: what each step covers (categories, number of textures) with a few sample
   textures before and after. Each applied step is its own history entry (checkpoint), so the last steps can be
   undone without losing the others; **Stop after this step** halts a long plan
+- Works on empty packs too: the agent starts from Minecraft's textures ("un squelette en glace" finds the skeleton
+  textures) and adds the transformed ones to the pack
 - The creation agent's requests are logged in the shared style brief, like the other agents', so the editor and
   navigation agents know what was done
 - FR/EN evaluation: 6 creation cases (42 cases in total)

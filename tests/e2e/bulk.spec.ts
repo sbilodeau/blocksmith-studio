@@ -254,3 +254,77 @@ test('the creation agent changes a whole category and the pack name through a pl
   await page.getByTestId('pack-history-open').click()
   await expect(page.getByTestId('pack-history')).toContainText('AI plan, step 1 of 1')
 })
+
+/** Creation agent on an empty pack: turn the vanilla zombie into an ice zombie. */
+const iceChat: RouteHandler = (req, res) => {
+  const body = req.body as { messages: Array<{ role: string }> }
+  const last = body.messages[body.messages.length - 1]
+  const message =
+    last?.role === 'tool'
+      ? { role: 'assistant', content: 'Zombie de glace prêt.' }
+      : {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'apply_to_all',
+                arguments: {
+                  operation: { tool: 'brightness', args: { delta: 0.4 } },
+                  filter: { folders: ['entity/zombie'] }
+                }
+              }
+            }
+          ]
+        }
+  const lines = [
+    { model: MODEL, message, done: false },
+    {
+      model: MODEL,
+      message: { role: 'assistant', content: '' },
+      done: true,
+      done_reason: 'stop',
+      prompt_eval_count: 300,
+      eval_count: 20
+    }
+  ]
+  res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
+  res.end(lines.map((l) => JSON.stringify(l)).join('\n') + '\n')
+}
+
+test('the creation agent creates textures in an empty pack from vanilla', async () => {
+  server = await startFakeProviderServer()
+  server.on('GET', '/api/tags', jsonFixture('ollama/tags.json'))
+  server.on('POST', '/api/show', jsonFixture('ollama/show-qwen3.json'))
+  server.on('POST', '/api/chat', iceChat)
+  launched = await setup({ url: server.url })
+  const { page } = launched
+  await page.getByTestId('tab-home').click()
+  await page.getByTestId('new-pack').click()
+  await page.getByTestId('new-pack-name').locator('input').fill('Ice pack')
+  await page.getByTestId('new-pack-base-empty').click()
+  await page.getByTestId('new-pack-create').click()
+  await expect(page.getByTestId('pack-name')).toHaveText('Ice pack')
+
+  await page.getByTestId('creation-toggle').click()
+  const panel = page.getByTestId('creation-agent')
+  await expect(panel.getByTestId('creation-context')).toContainText('Empty pack')
+  await panel.getByTestId('agent-input').locator('textarea').fill('fais un zombie en glace')
+  await panel.getByTestId('agent-send').click()
+
+  const review = panel.getByTestId('creation-review')
+  await expect(review).toBeVisible({ timeout: 15_000 })
+  await expect(review.getByTestId('plan-step-brightness')).toContainText('1 texture')
+  const sent = server.requests.find((r) => r.path === '/api/chat')!.body as {
+    messages: Array<{ role: string; content: string }>
+  }
+  expect(sent.messages.filter((m) => m.role === 'user').at(-1)!.content).toContain(
+    'This pack started EMPTY'
+  )
+
+  await review.getByTestId('plan-apply').click()
+  await expect(review).toContainText('Applied')
+  await page.getByTestId('cat-all').click()
+  await expect(page.getByTestId('tile-zombie')).toBeVisible()
+  await expect(page.locator('[data-testid^="tile-"]')).toHaveCount(1)
+})

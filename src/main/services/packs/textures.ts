@@ -83,13 +83,19 @@ export class TextureIndexer {
 
   forget(packId?: string): void {
     if (packId === undefined) this.cache.clear()
-    else this.cache.delete(packId)
+    else {
+      this.cache.delete(packId)
+      this.cache.delete(`${packId}:catalog`)
+    }
   }
 
-  /** Vanilla index of the pack's authoring version; throws packs.vanillaNotReady when missing. */
-  async vanillaIndexFor(location: PackLocation): Promise<VanillaIndex | null> {
+  /**
+   * Vanilla index of the pack's authoring version (vanilla base, or any base with `catalog`); throws
+   * packs.vanillaNotReady when missing.
+   */
+  async vanillaIndexFor(location: PackLocation, catalog = false): Promise<VanillaIndex | null> {
     const { project } = location
-    if (project.base !== 'vanilla') return null
+    if (project.base !== 'vanilla' && !catalog) return null
     const index = await this.vanilla.getIndex(project.authoringVersion)
     if (!index) {
       throw new AppErrorException('packs.vanillaNotReady', { version: project.authoringVersion })
@@ -97,17 +103,25 @@ export class TextureIndexer {
     return index
   }
 
-  async textures(location: PackLocation): Promise<TextureEntry[]> {
-    const index = await this.vanillaIndexFor(location)
+  /**
+   * The pack's textures. With `catalog`, vanilla textures are included whatever the base (an empty pack's catalog is
+   * every vanilla texture plus its own files): what the creation agent can change.
+   */
+  async textures(
+    location: PackLocation,
+    options: { catalog?: boolean } = {}
+  ): Promise<TextureEntry[]> {
+    const index = await this.vanillaIndexFor(location, options.catalog === true)
+    const key = options.catalog ? `${location.id}:catalog` : location.id
     const files = await scanPackTextures(location.folder)
     const signature =
       `${index ? `${index.versionId}@${index.createdAt}` : '-'}\n` +
       files.map((f) => `${f.path}\0${f.size}\0${f.mtimeMs}`).join('\n')
-    const hit = this.cache.get(location.id)
+    const hit = this.cache.get(key)
     if (hit && hit.signature === signature) return hit.entries
 
     const entries = await this.build(location, index, files)
-    this.cache.set(location.id, { signature, entries })
+    this.cache.set(key, { signature, entries })
     return entries
   }
 

@@ -52,6 +52,8 @@ filter (category ids from the list, folders, or a name glob such as "*_ore"). Wo
 well-chosen steps rather than many; later steps apply on top of earlier ones. Use list_textures to check what a filter
 covers. Do not try to redraw textures one by one: there is no per-pixel drawing in this scope.
 Use set_pack_meta when the user wants a new pack name or description.
+When the pack started empty, "create" or "make" an element (for example "un squelette en glace" / "an ice skeleton")
+means transforming its vanilla textures (entity/skeleton/...) so they keep the right shape and layout.
 Each step is previewed on the representative textures and applied to the whole pack only if the user accepts it, one
 category step at a time. Keep Minecraft's pixel-art look: limited colors, no smoothing, light from the top-left.
 When you are done, stop calling tools and reply with one or two short sentences.`

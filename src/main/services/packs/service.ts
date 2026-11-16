@@ -79,6 +79,12 @@ export interface PackService {
   reveal(packId: string): Promise<void>
   textures(packId: string): Promise<TextureEntry[]>
   /**
+   * What the creation agent can change: the pack's textures plus every vanilla texture of its authoring version,
+   * whatever the base (for an empty pack, its own files plus vanilla). Throws packs.vanillaNotReady when the vanilla
+   * textures are not extracted.
+   */
+  catalog(packId: string): Promise<TextureEntry[]>
+  /**
    * Renames the pack and/or changes its description (project.json and the pack folder's pack.mcmeta description;
    * exports regenerate pack.mcmeta from the project anyway). The folder name does not change.
    */
@@ -290,6 +296,10 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
 
     async get(packId) {
       return summarize(await requireLocation(packId))
+    },
+
+    async catalog(packId) {
+      return indexer.textures(await requireLocation(packId), { catalog: true })
     },
 
     async updateMeta(packId, patch) {

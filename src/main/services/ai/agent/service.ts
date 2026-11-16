@@ -60,7 +60,11 @@ export interface EditorAgentServiceDeps {
   }
   /** Creation agent (uses `navigation` for textures and writes): pack name / description, plan progress. */
   creation?: {
-    meta(packId: string): Promise<{ name: string; description: string }>
+    /** Textures the agent can change: the pack's plus vanilla, whatever the base (see PackService.catalog). */
+    catalog(packId: string): Promise<TextureEntry[]>
+    /** PNG of a catalog texture: the pack's file, else vanilla. */
+    readPng(packId: string, path: string): Promise<Uint8Array | null>
+    meta(packId: string): Promise<{ name: string; description: string; base: 'vanilla' | 'empty' }>
     setMeta(packId: string, patch: PackMetaPatch): Promise<void>
     jobs?: JobReporter
   }
@@ -282,10 +286,10 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
 
   /** Representative textures of the pack, decoded (unreadable ones are skipped). */
   async function loadSamples(packId: string, entries: TextureEntry[]): Promise<CreationSample[]> {
-    const nav = navigationDeps()
+    const creation = creationDeps()
     const samples: CreationSample[] = []
     for (const entry of pickSamples(entries)) {
-      const png = await nav.readPng(packId, entry.path)
+      const png = await creation.readPng(packId, entry.path)
       if (!png) continue
       try {
         const image = decodePng(png)
@@ -310,9 +314,8 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     let proposal: CreationProposal | undefined
     try {
       proposals.expireFor(packId, 'creation')
-      const nav = navigationDeps()
       const creation = creationDeps()
-      const textures = await nav.textures(packId)
+      const textures = await creation.catalog(packId)
       if (textures.length === 0) throw new AppErrorException('ai.emptyPack')
       const [samples, brief, history, pack] = await Promise.all([
         loadSamples(packId, textures),
@@ -404,6 +407,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       let written = 0
       let checkpoints = 0
       let stopped = false
+      const catalog = textureSteps.length ? await creation.catalog(proposal.packId) : []
       for (const [i, step] of textureSteps.entries()) {
         if (flag.stop) {
           stopped = true
@@ -411,10 +415,16 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         }
         progress?.('step', i, textureSteps.length)
         const op = { tool: step.tool, args: step.args } as BulkOperation
+        // Current pixels: the pack's file, or vanilla for textures the pack does not have yet (empty pack).
+        const before = new Map<string, Uint8Array>()
+        for (const path of step.targets ?? []) {
+          const png = await creation.readPng(proposal.packId, path)
+          if (png) before.set(path, png)
+        }
         const computed = await nav.bulk.compute(
           proposal.packId,
           (step.targets ?? []).map((path) => ({ path, ops: [op] })),
-          { kind: 'bulk.apply' }
+          { kind: 'bulk.apply', before, entries: catalog }
         )
         if (computed.items.length > 0) {
           written += await nav.bulk.write(

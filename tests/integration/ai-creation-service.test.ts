@@ -73,7 +73,7 @@ describe('creation agent service', () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  function setup(options: { stopAfterFirstStep?: boolean } = {}): {
+  function setup(options: { stopAfterFirstStep?: boolean; empty?: boolean } = {}): {
     agent: ReturnType<typeof createEditorAgentService>
     files: Map<string, Uint8Array>
     saves: Array<{ paths: string[]; change: unknown }>
@@ -81,9 +81,11 @@ describe('creation agent service', () => {
     progress: Array<[string, number, number]>
     brief: ReturnType<typeof createBriefService>
   } {
-    const files = new Map<string, Uint8Array>(
+    const gray = (): [string, Uint8Array][] =>
       ENTRIES.map((e) => [e.path, encodePng(createImage(2, 2, [128, 128, 128, 255]))])
-    )
+    // An empty pack has no file: its textures come from vanilla until a step writes them.
+    const files = new Map<string, Uint8Array>(options.empty ? [] : gray())
+    const vanilla = new Map<string, Uint8Array>(gray())
     const saves: Array<{ paths: string[]; change: unknown }> = []
     const meta: PackMetaPatch[] = []
     const progress: Array<[string, number, number]> = []
@@ -125,7 +127,13 @@ describe('creation agent service', () => {
         }
       },
       creation: {
-        meta: async () => ({ name: 'Pack', description: '' }),
+        catalog: async () => ENTRIES,
+        readPng: async (_p, path) => files.get(path) ?? vanilla.get(path) ?? null,
+        meta: async () => ({
+          name: 'Pack',
+          description: '',
+          base: options.empty ? 'empty' : 'vanilla'
+        }),
         setMeta: async (_p, patch) => {
           meta.push(patch)
         },
@@ -235,6 +243,25 @@ describe('creation agent service', () => {
       (t) => t.role === 'tool' && t.text
     )
     expect(notes.at(-1)!.text).toContain('stopped the plan')
+  })
+
+  it('creates textures in an empty pack from their vanilla pixels', async () => {
+    const { agent, files, saves } = setup({ empty: true })
+    const proposal = await send(agent)
+    expect(proposal.steps[1]!.samples!.map((x) => x.name)).toEqual(['stone', 'iron_ore'])
+    expect(files.size).toBe(0)
+    const result = await agent.applyCreation(
+      proposal.id,
+      proposal.steps.map((x) => x.id)
+    )
+    expect(result).toMatchObject({ texturesWritten: 3, checkpoints: 2 })
+    expect(saves).toHaveLength(2)
+    expect([...files.keys()].map((p) => p.split('/').pop()).sort()).toEqual([
+      'iron_ore.png',
+      'iron_pickaxe.png',
+      'stone.png'
+    ])
+    expect(toHex(getPixel(decodePng(files.get(P('block', 'stone'))!), 0, 0))).toBe('#c00000ff')
   })
 
   it('refuses an unknown pack and reports an empty pack', async () => {

@@ -631,7 +631,8 @@
       "checkpoints": "({count} history entries) | (1 history entry) | ({count} history entries)",
       "metaUpdated": "Pack name / description updated."
     },
-    "creationNoTextures": "This pack has no textures yet (it was created with an empty base), so there is nothing for the AI to change. Create a pack from vanilla to work on the Minecraft textures."
+    "creationNoTextures": "No textures found for this pack yet. Prepare the Minecraft textures of its version in Settings.",
+    "creationEmptyBase": "Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack (1 texture so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack."
   },
   "brief": {
     "open": "Style brief",

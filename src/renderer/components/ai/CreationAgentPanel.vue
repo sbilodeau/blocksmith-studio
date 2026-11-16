@@ -26,6 +26,16 @@ const applying = ref<string | null>(null)
 const stopping = ref(false)
 
 const count = computed(() => pack.value.textures.length)
+/** An empty pack works from Minecraft's textures: the agent adds the ones it changes. */
+const emptyBase = computed(() => pack.value.summary?.base === 'empty')
+const ready = computed(() => count.value > 0 || emptyBase.value)
+const contextText = computed(() =>
+  emptyBase.value
+    ? t('ai.creationEmptyBase', { count: count.value }, count.value)
+    : count.value
+      ? t('ai.creationContext', { count: count.value }, count.value)
+      : t('ai.creationNoTextures')
+)
 
 async function send(request: {
   text: string
@@ -92,19 +102,19 @@ async function reject(proposalId: string): Promise<void> {
     <agent-chat
       :pack-id="packId"
       agent="creation"
-      :ready="count > 0"
+      :ready="ready"
       :empty-text="t('ai.emptyCreation')"
       @send="send"
       @open-settings="emit('openSettings')"
     >
       <template #context>
         <n-text
-          :type="count ? 'default' : 'warning'"
+          :type="ready ? 'default' : 'warning'"
           depth="2"
           class="context"
           data-testid="creation-context"
         >
-          {{ count ? t('ai.creationContext', { count }, count) : t('ai.creationNoTextures') }}
+          {{ contextText }}
         </n-text>
       </template>
       <template #proposal="{ proposalId, proposal }">

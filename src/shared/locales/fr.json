@@ -631,7 +631,8 @@
       "checkpoints": "({count} entrées d'historique) | (1 entrée d'historique) | ({count} entrées d'historique)",
       "metaUpdated": "Nom / description du pack mis à jour."
     },
-    "creationNoTextures": "Ce pack n'a encore aucune texture (il a été créé avec une base vide) : l'IA n'a rien à modifier. Créez un pack à partir de vanilla pour travailler sur les textures de Minecraft."
+    "creationNoTextures": "Aucune texture trouvée pour ce pack. Préparez les textures Minecraft de sa version dans les Paramètres.",
+    "creationEmptyBase": "Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide (1 texture pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie."
   },
   "brief": {
     "open": "Brief de style",

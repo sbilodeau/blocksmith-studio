@@ -22,7 +22,8 @@ describe('registerTextureHandlers', () => {
         read: vi.fn(async () => ({ path: PATH }) as never),
         save: vi.fn(async () => ({ path: PATH, status: 'modified' }) as never),
         revert: vi.fn(async () => ({ path: PATH, status: 'vanilla' }) as never),
-        saveMany: vi.fn(async () => null)
+        saveMany: vi.fn(async () => null),
+        readCatalog: vi.fn(async () => null)
       },
       history: {
         get: vi.fn(async () => STATE),
