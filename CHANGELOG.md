@@ -20,6 +20,11 @@ All notable changes to this project are documented here. Versions follow CalVer 
   navigation agents know what was done
 - FR/EN evaluation: 6 creation cases (42 cases in total)
 
+### App
+
+- The Blocksmith anvil icon now shows in the macOS Dock (and the Windows/Linux taskbar) when running from source
+  (`npm run dev`), instead of the Electron icon
+
 ### Export
 
 - Exported file names say what they are: `<name>-<version>-resource-pack.zip`, and the dialog says to install it

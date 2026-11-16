@@ -1,6 +1,14 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
+
+/**
+ * Shows the Blocksmith icon while running unpackaged (`npm run dev`): the stock Electron binary would show its own
+ * icon in the macOS Dock and the Windows taskbar. Packaged builds get the icon from electron-builder (build/).
+ */
+export function useAppIconInDev(): void {
+  if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(icon)
+}
 
 export function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -11,7 +19,8 @@ export function createMainWindow(): BrowserWindow {
     show: false,
     title: 'Blocksmith Studio',
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    // macOS takes the window icon from the app bundle (or the Dock, see useAppIconInDev).
+    ...(process.platform === 'darwin' ? {} : { icon }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

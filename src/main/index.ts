@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, net, safeStorage, shell } from 'electron'
-import { createMainWindow } from './window'
+import { createMainWindow, useAppIconInDev } from './window'
 import { hardenSession, hardenWebContents } from './security'
 import { registerIpcHandlers } from './ipc/handlers'
 import { registerVanillaHandlers } from './ipc/vanilla-handlers'
@@ -50,6 +50,7 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(async () => {
     app.setAppUserModelId('com.sbilodeau.blocksmithstudio')
+    useAppIconInDev()
     hardenSession(isDev)
 
     const settings = SettingsService.forUserData(app.getPath('userData'))
