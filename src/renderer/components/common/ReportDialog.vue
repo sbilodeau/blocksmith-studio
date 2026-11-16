@@ -45,6 +45,8 @@ function label(code: string): string {
 <style scoped>
 .summary {
   margin-bottom: 12px;
+  /* One line per exported zip. */
+  white-space: pre-line;
 }
 .list ul {
   margin: 6px 0 0;

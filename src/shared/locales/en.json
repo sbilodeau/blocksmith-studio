@@ -245,7 +245,7 @@
     "open": "Export",
     "title": "Export pack",
     "target": "Minecraft version",
-    "targetHint": "Only versions the pack can be exported to are listed. Snapshots get your textures as they are, with the snapshot's pack format. Other versions will be available once version migration is added.",
+    "targetHint": "Pick one or more versions (one .zip each). For other versions, renamed textures are moved and textures that do not exist there are skipped.",
     "changedOnly": "Only changed and added files are exported. Minecraft uses its own textures for everything else.",
     "run": "Export .zip",
     "done": "Export complete",
@@ -257,7 +257,10 @@
       "resource": "Resource pack",
       "data": "Data pack"
     },
-    "installHint": "Install it from Options > Resource Packs (not from a world's Data Packs screen)."
+    "installHint": "Install it from Options > Resource Packs (not from a world's Data Packs screen).",
+    "packVersionLabel": "{version} (pack version)",
+    "runMany": "Export {count} .zip files",
+    "renamedNote": "{count} textures were renamed for this version. | 1 texture was renamed for this version. | {count} textures were renamed for this version."
   },
   "import": {
     "title": "Import complete",
@@ -309,9 +312,11 @@
       "animationMismatch": "Animated texture height does not match its frames",
       "dataLeftOut": "The pack's data/ files were left out (export a data pack for them).",
       "assetsLeftOut": "Textures and other assets/ files were left out: Minecraft does not load them from a data pack.",
-      "noDataFiles": "This pack has no data/ files yet, so the data pack is empty."
+      "noDataFiles": "This pack has no data/ files yet, so the data pack is empty.",
+      "otherFilesAsIs": "Models, block states and other JSON files are exported as they are; check them in this version."
     },
-    "identicalToVanilla": "Skipped: identical to vanilla"
+    "identicalToVanilla": "Skipped: identical to vanilla",
+    "notInTarget": "Skipped: this texture does not exist in this version"
   },
   "editor": {
     "back": "Back to textures",

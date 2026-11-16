@@ -245,7 +245,7 @@
     "open": "Exporter",
     "title": "Exporter le pack",
     "target": "Version de Minecraft",
-    "targetHint": "Seules les versions vers lesquelles le pack peut être exporté sont listées. Les snapshots reçoivent vos textures telles quelles, avec le format de pack du snapshot. Les autres versions seront disponibles quand la migration de versions sera ajoutée.",
+    "targetHint": "Choisissez une ou plusieurs versions (un .zip chacune). Pour les autres versions, les textures renommées sont déplacées et celles qui n'existent pas sont ignorées.",
     "changedOnly": "Seuls les fichiers modifiés et ajoutés sont exportés. Minecraft utilise ses propres textures pour tout le reste.",
     "run": "Exporter le .zip",
     "done": "Export terminé",
@@ -257,7 +257,10 @@
       "resource": "Pack de ressources",
       "data": "Pack de données"
     },
-    "installHint": "Installez-le depuis Options > Packs de ressources (pas depuis l'écran Packs de données d'un monde)."
+    "installHint": "Installez-le depuis Options > Packs de ressources (pas depuis l'écran Packs de données d'un monde).",
+    "packVersionLabel": "{version} (version du pack)",
+    "runMany": "Exporter {count} fichiers .zip",
+    "renamedNote": "{count} textures ont été renommées pour cette version. | 1 texture a été renommée pour cette version. | {count} textures ont été renommées pour cette version."
   },
   "import": {
     "title": "Importation terminée",
@@ -309,9 +312,11 @@
       "animationMismatch": "La hauteur de la texture animée ne correspond pas à ses images",
       "dataLeftOut": "Les fichiers data/ du pack n'ont pas été inclus (exportez un pack de données pour eux).",
       "assetsLeftOut": "Les textures et autres fichiers assets/ n'ont pas été inclus : Minecraft ne les charge pas depuis un pack de données.",
-      "noDataFiles": "Ce pack n'a pas encore de fichiers data/ : le pack de données est vide."
+      "noDataFiles": "Ce pack n'a pas encore de fichiers data/ : le pack de données est vide.",
+      "otherFilesAsIs": "Les modèles, états de blocs et autres fichiers JSON sont exportés tels quels ; vérifiez-les dans cette version."
     },
-    "identicalToVanilla": "Ignoré : identique à vanilla"
+    "identicalToVanilla": "Ignoré : identique à vanilla",
+    "notInTarget": "Ignorée : cette texture n'existe pas dans cette version"
   },
   "editor": {
     "back": "Retour aux textures",

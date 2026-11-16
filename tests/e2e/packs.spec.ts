@@ -165,13 +165,18 @@ test('imports a zip, marks modified textures and exports only changed files', as
   await page.getByTestId('report-dialog').getByRole('button').last().click()
   await page.getByTestId('export-open').click()
   await page.getByTestId('export-accept-newer').click()
-  await page.getByTestId('export-target').click()
-  // Only the targets checked against real jars: the authoring version and the newer snapshot.
-  await expect(page.locator('.n-base-select-option')).toHaveText([
-    '26.3',
-    '26.4-snapshot-8 (snapshot)'
+  await page.getByTestId('export-target').locator('.n-base-suffix').click()
+  // Newer snapshots first, then the pack's version and the older releases of the support window.
+  const optionTexts = await page.locator('.n-base-select-option').allTextContents()
+  expect(optionTexts.slice(0, 3)).toEqual([
+    '26.4-snapshot-8 (snapshot)',
+    '26.3 (pack version)',
+    '26.2'
   ])
+  // Multiple choice: untick the preselected pack version, tick the snapshot.
+  await page.locator('.n-base-select-option', { hasText: '26.3 (pack version)' }).click()
   await page.locator('.n-base-select-option', { hasText: '26.4-snapshot-8 (snapshot)' }).click()
+  await page.keyboard.press('Escape')
   await page.getByTestId('export-run').click()
   await expect(page.getByTestId('report-dialog')).toContainText('26.4-snapshot-8')
   const snap = JSON.parse(
@@ -179,6 +184,30 @@ test('imports a zip, marks modified textures and exports only changed files', as
   )
   expect(snap.pack).toMatchObject({ pack_format: 103, min_format: [103, 0], max_format: [103, 0] })
   expect(await lastSaveDefaultName(app)).toBe('my-pack-26.4-snapshot-8-resource-pack.zip')
+
+  // Several versions: one zip each in a folder; the older one gets its own pack format.
+  const folder = join(root, 'exports')
+  await mkdir(folder, { recursive: true })
+  await stubOpenDialog(app, folder)
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await page.getByTestId('export-open').click()
+  await page.getByTestId('export-target').locator('.n-base-suffix').click()
+  // The dialog remembered the last export (the snapshot): replace it with 26.3 and 1.21.4.
+  await page.locator('.n-base-select-option', { hasText: '26.4-snapshot-8 (snapshot)' }).click()
+  await page.locator('.n-base-select-option', { hasText: '26.3 (pack version)' }).click()
+  // The list is long (only visible options are rendered): type to filter.
+  await page.getByTestId('export-target').locator('input').fill('1.21.4')
+  await page.locator('.n-base-select-option', { hasText: /^1\.21\.4$/ }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('export-run')).toHaveText('Export 2 .zip files')
+  await page.getByTestId('export-run').click()
+  await expect(page.getByTestId('report-dialog')).toContainText('1.21.4')
+  const old = unzipSync(
+    new Uint8Array(await readFile(join(folder, 'my-pack-1.21.4-resource-pack.zip')))
+  )
+  expect(JSON.parse(strFromU8(old['pack.mcmeta'])).pack.pack_format).toBe(46)
+  expect(Object.keys(old)).toContain('assets/minecraft/textures/block/stone.png')
+  await readFile(join(folder, 'my-pack-26.3-resource-pack.zip'))
 
   // The data pack choice is hidden until data pack editing (M10).
   await page.getByTestId('report-dialog').getByRole('button').last().click()

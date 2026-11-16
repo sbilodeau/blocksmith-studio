@@ -44,11 +44,11 @@ const onOverview = computed(() => store.value.category === null)
 /** Set when a vanilla-based pack's vanilla textures are missing on this computer. */
 const missingVanilla = ref<string | null>(null)
 const vanilla = useVanillaStore()
-const exportReport = ref<ExportReport | null>(null)
+const exportReports = ref<ExportReport[] | null>(null)
 const showReport = computed({
-  get: () => exportReport.value !== null,
+  get: () => exportReports.value !== null,
   set: (v: boolean) => {
-    if (!v) exportReport.value = null
+    if (!v) exportReports.value = null
   }
 })
 
@@ -86,19 +86,28 @@ const off = window.blocksmith.on('packs.changed', ({ packId }) => {
 onBeforeUnmount(off)
 
 const exportSummary = computed(() =>
-  exportReport.value
-    ? t('export.summary', {
-        type: t(`export.packTypes.${exportReport.value.packType}`),
-        files: exportReport.value.filesWritten,
-        version: exportReport.value.targetVersion,
-        path: exportReport.value.outputPath
-      })
-    : ''
+  (exportReports.value ?? [])
+    .map(
+      (r) =>
+        t('export.summary', {
+          type: t(`export.packTypes.${r.packType}`),
+          files: r.filesWritten,
+          version: r.targetVersion,
+          path: r.outputPath
+        }) + (r.renamed ? ` ${t('export.renamedNote', { count: r.renamed }, r.renamed)}` : '')
+    )
+    .join('\n')
 )
-const exportItems = computed(() => [
-  ...(exportReport.value?.warnings ?? []),
-  ...(exportReport.value?.skipped.map((s) => ({ code: s.reason, path: s.path })) ?? [])
-])
+/** Warnings and skipped files; with several zips each line says which version it is about. */
+const exportItems = computed(() => {
+  const reports = exportReports.value ?? []
+  const tag = (r: ExportReport, path?: string): string | undefined =>
+    reports.length > 1 ? `[${r.targetVersion}]${path ? ` ${path}` : ''}` : path
+  return reports.flatMap((r) => [
+    ...r.warnings.map((w) => ({ code: w.code, path: tag(r, w.path) })),
+    ...r.skipped.map((s) => ({ code: s.reason, path: tag(r, s.path) }))
+  ])
+})
 </script>
 
 <template>
@@ -186,9 +195,13 @@ const exportItems = computed(() => [
     </div>
     <style-brief-drawer v-model:show="showBrief" :pack-id="packId" />
     <pack-history-drawer v-model:show="showHistory" :pack-id="packId" />
-    <export-dialog v-model:show="showExport" :store="store" @exported="(r) => (exportReport = r)" />
+    <export-dialog
+      v-model:show="showExport"
+      :store="store"
+      @exported="(r) => (exportReports = r)"
+    />
     <report-dialog
-      v-if="exportReport"
+      v-if="exportReports"
       v-model:show="showReport"
       :title="t('export.done')"
       :summary="exportSummary"

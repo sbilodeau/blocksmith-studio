@@ -153,6 +153,22 @@ export function usePackStore(packId: string) {
       }
     }
 
+    /** One zip per version in a folder the user picks; null when cancelled. */
+    async function exportMany(
+      targetVersions: string[],
+      options: { acceptNewer?: boolean } = {}
+    ): Promise<ExportReport[] | null> {
+      try {
+        return await call('pack.exportMany', {
+          packId,
+          targetVersions: [...targetVersions],
+          ...(options.acceptNewer ? { acceptNewer: true } : {})
+        })
+      } finally {
+        useJobsStore().clear('pack.export')
+      }
+    }
+
     return {
       packId,
       summary,
@@ -180,7 +196,8 @@ export function usePackStore(packId: string) {
       clearSelection,
       openEditor,
       closeEditor,
-      exportPack
+      exportPack,
+      exportMany
     }
   })()
 }

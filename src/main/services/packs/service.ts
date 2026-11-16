@@ -431,6 +431,8 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     async saveExportProfile(packId, profile) {
       const location = await requireLocation(packId)
       await writeProject(location.folder, { ...location.project, exportProfile: profile })
+      // The open tab reloads its summary, so the dialog preselects these settings next time.
+      deps.notifyChanged(packId)
     }
   }
 
