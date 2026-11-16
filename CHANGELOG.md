@@ -5,6 +5,19 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M9 - Animated textures
+
+- Animated textures are edited one frame at a time, with a timeline under the canvas: frame thumbnails, play/pause
+  (also in the 3D view), onion skin, add, duplicate, delete and move frames
+- Frame time, a frame's own duration and smooth blending (`interpolate`) are edited in place and saved in the
+  texture's `.png.mcmeta`
+- **Animate** turns a still texture into an animation, **Import GIF...** brings in the frames and delays of a GIF
+- The AI agent works on animated textures: it can change one frame or every frame ("ajoute une flamme sur la 3e
+  image"), and the plan says which
+- Fix: saving an edited vanilla animation now copies its `.png.mcmeta` into the pack (Minecraft only reads it from
+  the pack providing the PNG, so the animation stopped playing); Pack Doctor lists packs saved before this fix, and
+  reverting a texture also removes the pack's `.png.mcmeta`
+
 ### M8 - Merge and send to pack
 
 - **Merge packs...** on the Packs screen: pick source packs in priority order (the first one wins, like the top of
