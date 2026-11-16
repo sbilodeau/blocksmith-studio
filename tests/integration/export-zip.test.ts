@@ -31,8 +31,11 @@ describe('export .zip', () => {
     await env.cleanup()
   })
 
-  it('suggests "<slug>-<version>.zip" and only allows the authoring version (M1)', async () => {
+  it('suggests "<slug>-<version>.zip" and only allows the authoring version or a newer snapshot', async () => {
     await expect(env.service.exportFileName(pack.id, '26.3')).resolves.toBe('fire-pack-26.3.zip')
+    await expect(env.service.exportFileName(pack.id, '26.4-snapshot-8')).resolves.toBe(
+      'fire-pack-26.4-snapshot-8.zip'
+    )
     await expect(env.service.exportFileName(pack.id, '1.21.4')).rejects.toMatchObject({
       code: 'export.targetNotSupported',
       params: { target: '1.21.4', authoring: '26.3' }
@@ -109,6 +112,23 @@ describe('export .zip', () => {
     // The pack folder's own pack.mcmeta is untouched.
     const own = JSON.parse(await readFile(join(pack.folder, 'pack.mcmeta'), 'utf8'))
     expect(own.pack.max_format).toBe(97)
+  })
+
+  it('exports to a newer snapshot with its pack format, skipping files identical to the authoring vanilla', async () => {
+    const vanilla = vanillaFiles()
+    await put(pack.folder, T('block/stone.png'), makePng(16, 16, [255, 0, 0, 255]))
+    await put(pack.folder, T('block/dirt.png'), vanilla[T('block/dirt.png')])
+    const out = join(env.root, 'snap.zip')
+    const report = await env.service.exportPack(pack.id, '26.4-snapshot-8', out)
+    const zip = unzipSync(new Uint8Array(await readFile(out)))
+    expect(Object.keys(zip)).toEqual(['pack.mcmeta', 'pack.png', T('block/stone.png')])
+    const mcmeta = JSON.parse(strFromU8(zip['pack.mcmeta']))
+    expect(mcmeta.pack).toEqual({ min_format: [103, 0], max_format: 103, description: 'Hot stuff' })
+    expect(report).toMatchObject({
+      targetVersion: '26.4-snapshot-8',
+      skipped: [{ path: T('block/dirt.png'), reason: 'identicalToVanilla' }],
+      warnings: []
+    })
   })
 
   it('produces byte-identical zips for the same content', async () => {

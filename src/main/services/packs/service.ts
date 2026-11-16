@@ -13,6 +13,7 @@ import {
   type TextureEntry
 } from '@shared/model/pack'
 import { buildResourcePackMcmeta } from '@shared/versions/mcmeta'
+import { canExportTo } from '@shared/versions/support'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
@@ -351,13 +352,21 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     }
   }
 
-  /** M1: only the authoring version can be exported (multi-version export comes with migrations in M7). */
+  /**
+   * Only the authoring version, or a snapshot newer than it, can be exported (multi-version export comes with
+   * migrations in M7). See canExportTo.
+   */
   function checkExportTarget(
     location: PackLocation,
     targetVersion: string
   ): NonNullable<ReturnType<VanillaStore['getVersion']>> {
     const authoring = location.project.authoringVersion
-    const target = targetVersion === authoring ? deps.vanilla.getVersion(targetVersion) : undefined
+    const authoringVersion = deps.vanilla.getVersion(authoring)
+    const candidate = deps.vanilla.getVersion(targetVersion)
+    const target =
+      authoringVersion && candidate && canExportTo(authoringVersion, candidate)
+        ? candidate
+        : undefined
     if (!target) {
       throw new AppErrorException(PackErrorCode.exportTargetNotSupported, {
         target: targetVersion,

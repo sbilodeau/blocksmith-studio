@@ -1,8 +1,11 @@
 export { versionTable } from './table'
 export {
+  canExportTo,
   comparePackFormats,
   findVersion,
+  isSnapshot,
   latest,
+  snapshotTargets,
   sortNewestFirst,
   supportWindowStart,
   supportedVersions,

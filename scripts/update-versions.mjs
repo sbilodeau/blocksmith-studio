@@ -7,7 +7,8 @@
  *   node scripts/update-versions.mjs --dry-run    # print the table instead of writing it
  *
  * Sources:
- * - Mojang version manifest (release ids and release dates):
+ * - Mojang version manifest (release ids and release dates; the latest snapshot, kept as an export target
+ *   when it is newer than the latest release and misode already lists its formats):
  *   https://piston-meta.mojang.com/mc/game/version_manifest_v2.json
  * - misode/mcmeta summary (pack formats per version, fields `resource_pack_version`,
  *   `resource_pack_version_minor`, `data_pack_version`, `data_pack_version_minor`):
@@ -36,8 +37,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUTPUT = join(root, 'resources', 'data', 'versions.json')
 
 /**
- * Builds the version table from Mojang's manifest and misode's summary.
- * @param {{ versions: Array<{ id: string, type: string, releaseTime: string }> }} manifest
+ * Builds the version table from Mojang's manifest and misode's summary: releases from FIRST_RELEASE on, plus the
+ * latest snapshot (`type: 'snapshot'`) when it is newer than the latest release.
+ * @param {{ latest?: { snapshot?: string }, versions: Array<{ id: string, type: string, releaseTime: string }> }} manifest
  * @param {Array<Record<string, unknown>>} summary
  * @param {string} updatedAt YYYY-MM-DD
  */
@@ -48,22 +50,41 @@ export function buildVersionTable(manifest, summary, updatedAt) {
   const firstTime = Date.parse(first.releaseTime)
   const byId = new Map(summary.map((entry) => [entry.id, entry]))
 
+  /** @param {{ id: string, releaseTime: string }} v @param {Record<string, unknown>} s @param {boolean} snapshot */
+  const entry = (v, s, snapshot) => {
+    const resourcePack = format(s.resource_pack_version, s.resource_pack_version_minor, v.id)
+    const dataPack = format(s.data_pack_version, s.data_pack_version_minor, v.id)
+    return {
+      id: v.id,
+      ...(snapshot ? { type: 'snapshot' } : {}),
+      releaseTime: v.releaseTime,
+      resourcePack,
+      dataPack,
+      mcmetaStyle: resourcePack.major >= MINMAX_RESOURCE_FORMAT ? 'minmax' : 'pack_format'
+    }
+  }
+
   const versions = releases
     .filter((v) => Date.parse(v.releaseTime) >= firstTime)
     .sort((a, b) => Date.parse(b.releaseTime) - Date.parse(a.releaseTime))
     .map((v) => {
       const s = byId.get(v.id)
       if (!s) throw new Error(`No pack formats for ${v.id} in the misode summary`)
-      const resourcePack = format(s.resource_pack_version, s.resource_pack_version_minor, v.id)
-      const dataPack = format(s.data_pack_version, s.data_pack_version_minor, v.id)
-      return {
-        id: v.id,
-        releaseTime: v.releaseTime,
-        resourcePack,
-        dataPack,
-        mcmetaStyle: resourcePack.major >= MINMAX_RESOURCE_FORMAT ? 'minmax' : 'pack_format'
-      }
+      return entry(v, s, false)
     })
+
+  const snapshot = manifest.versions.find(
+    (v) => v.type === 'snapshot' && v.id === manifest.latest?.snapshot
+  )
+  const snapshotFormats = snapshot && byId.get(snapshot.id)
+  if (
+    snapshot &&
+    snapshotFormats &&
+    versions[0] &&
+    Date.parse(snapshot.releaseTime) > Date.parse(versions[0].releaseTime)
+  ) {
+    versions.unshift(entry(snapshot, snapshotFormats, true))
+  }
 
   return { schemaVersion: 1, updatedAt, versions }
 }
@@ -143,7 +164,7 @@ async function main() {
   ])
   const today = new Date().toISOString().slice(0, 10)
   const table = buildVersionTable(manifest, summary, today)
-  const latest = table.versions[0]
+  const latest = table.versions.find((v) => v.type !== 'snapshot')
 
   if (latest.id !== manifest.latest.release) {
     throw new Error(
@@ -176,7 +197,7 @@ async function main() {
   }
   await writeFile(OUTPUT, json)
   console.log(
-    `Wrote ${table.versions.length} releases (${table.versions.at(-1).id} -> ${latest.id})`
+    `Wrote ${table.versions.length} versions (${table.versions.at(-1).id} -> ${table.versions[0].id})`
   )
 }
 

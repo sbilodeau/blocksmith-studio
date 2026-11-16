@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { VersionTableSchema, type McVersion, type VersionTable } from '@shared/model/versions'
 import {
+  canExportTo,
   comparePackFormats,
   findVersion,
   latest,
+  snapshotTargets,
   supportWindowStart,
   supportedVersions,
   versionForPackFormat,
@@ -43,8 +45,9 @@ describe('bundled version table', () => {
     expect(() => VersionTableSchema.parse(rawTable)).not.toThrow()
   })
 
-  it('lists every release from 1.21 to 26.3, newest first', () => {
+  it('lists the newer 26.4 snapshot and every release from 1.21 to 26.3, newest first', () => {
     expect(ids(versionTable.versions)).toEqual([
+      '26.4-snapshot-8',
       '26.3',
       '26.2',
       '26.1.2',
@@ -77,7 +80,8 @@ describe('bundled version table', () => {
     ['1.21.11', 75, 0, 94, 'minmax'],
     ['26.1.2', 84, 0, 101, 'minmax'],
     ['26.2', 88, 0, 107, 'minmax'],
-    ['26.3', 97, 1, 121, 'minmax'] // matches the 26.3 client jar's version.json
+    ['26.3', 97, 1, 121, 'minmax'], // matches the 26.3 client jar's version.json
+    ['26.4-snapshot-8', 103, 0, 127, 'minmax'] // Minecraft Wiki, 26.4 Snapshot 8
   ] as const)('%s has resource %i.%i, data %i, style %s', (id, rMaj, rMin, dMaj, style) => {
     const version = findVersion(versionTable, id)
     expect(version).toBeDefined()
@@ -97,6 +101,44 @@ describe('bundled version table', () => {
     expect(supported[0].id).toBe('26.3')
     expect(supported.at(-1)?.id).toBe('1.21.4')
     expect(supported).toHaveLength(13)
+  })
+
+  it('keeps 26.3 as the latest release and offers the snapshot as an export target only', () => {
+    expect(latest(versionTable).id).toBe('26.3')
+    expect(ids(snapshotTargets(versionTable))).toEqual(['26.4-snapshot-8'])
+    expect(versionForPackFormat(versionTable, { major: 103 })).toBeUndefined()
+  })
+})
+
+describe('snapshots', () => {
+  const snap = {
+    ...v('26.4-snapshot-8', '2026-11-10T14:20:05+00:00', 103),
+    type: 'snapshot' as const
+  }
+  const oldSnap = {
+    ...v('26.3-snapshot-2', '2026-08-01T00:00:00+00:00', 95),
+    type: 'snapshot' as const
+  }
+  const withSnaps: VersionTable = { ...table, versions: [oldSnap, ...table.versions, snap] }
+  const at = (id: string): McVersion => findVersion(withSnaps, id)!
+
+  it('never become the latest release or enter the support window', () => {
+    expect(latest(withSnaps).id).toBe('26.3')
+    const supported = supportedVersions(withSnaps, new Date('2026-11-15T12:00:00Z'))
+    expect(supported.some((x) => x.type === 'snapshot')).toBe(false)
+  })
+
+  it('snapshotTargets keeps only snapshots newer than the latest release', () => {
+    expect(ids(snapshotTargets(withSnaps))).toEqual(['26.4-snapshot-8'])
+    expect(snapshotTargets(table)).toEqual([])
+  })
+
+  it('canExportTo allows the authoring version and newer snapshots only', () => {
+    expect(canExportTo(at('26.3'), at('26.3'))).toBe(true)
+    expect(canExportTo(at('26.3'), snap)).toBe(true)
+    expect(canExportTo(at('26.2'), snap)).toBe(true)
+    expect(canExportTo(at('26.3'), at('26.2'))).toBe(false)
+    expect(canExportTo(at('26.3'), oldSnap)).toBe(false)
   })
 })
 

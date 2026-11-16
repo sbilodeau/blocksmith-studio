@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs'
 import type { ExportReport } from '@shared/model/pack'
 import type { McVersion } from '@shared/model/versions'
 import { buildResourcePackMcmeta, type McmetaOptions } from '@shared/versions/mcmeta'
+import { isSnapshot } from '@shared/versions/support'
 import type { ProgressFn, VanillaStore } from '../contracts'
 import { mapLimit, writeFileAtomic } from './files'
 import { mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
@@ -27,9 +28,10 @@ export interface ExportDeps {
 }
 
 /**
- * Exports a pack folder as a resource pack zip for `target` (M1: the authoring version only).
+ * Exports a pack folder as a resource pack zip for `target` (the authoring version, or a newer snapshot).
  * - collects the pack files, excluding hidden entries (.blocksmith/, .git...), OS junk and files byte-identical to
- *   the target's vanilla (Minecraft falls back to vanilla for those)
+ *   the target's vanilla (Minecraft falls back to vanilla for those). For a snapshot target the authoring
+ *   version's vanilla is used: snapshots are not extracted.
  * - regenerates pack.mcmeta for the target, keeping extra top-level sections of the pack's own file
  * - validates (Pack Doctor basics) and writes a deterministic zip
  */
@@ -47,7 +49,9 @@ export async function exportPackZip(
   const scanned = await scanFiles(location.folder)
   onProgress('collect', 0, scanned.length)
 
-  const index = await vanilla.getIndex(target.id)
+  const index = await vanilla.getIndex(
+    isSnapshot(target) ? location.project.authoringVersion : target.id
+  )
   if (!index) warnings.push({ code: ExportWarningCode.vanillaNotReady })
 
   let existingMcmeta: unknown

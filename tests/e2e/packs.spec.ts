@@ -152,6 +152,21 @@ test('imports a zip, marks modified textures and exports only changed files', as
     strFromU8(unzipSync(new Uint8Array(await readFile(openPath)))['pack.mcmeta'])
   )
   expect(open.pack).toMatchObject({ min_format: [97, 1], max_format: 999 })
+
+  // The newest snapshot is an export target with its own pack format.
+  const snapPath = join(root, 'export-snapshot.zip')
+  await stubSaveDialog(app, snapPath)
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await page.getByTestId('export-open').click()
+  await page.getByTestId('export-accept-newer').click()
+  await page.getByTestId('export-target').click()
+  await page.locator('.n-base-select-option', { hasText: '26.4-snapshot-8 (snapshot)' }).click()
+  await page.getByTestId('export-run').click()
+  await expect(page.getByTestId('report-dialog')).toContainText('26.4-snapshot-8')
+  const snap = JSON.parse(
+    strFromU8(unzipSync(new Uint8Array(await readFile(snapPath)))['pack.mcmeta'])
+  )
+  expect(snap.pack).toMatchObject({ min_format: [103, 0], max_format: 103 })
 })
 
 test('deleting a pack moves it out of the list', async () => {

@@ -6,8 +6,8 @@ How Blocksmith Studio knows which Minecraft Java releases exist, which ones it s
 
 ## Version table
 
-`resources/data/versions.json` lists every Java **release** from 1.21 to the latest one, newest first. It is
-validated by `VersionTableSchema` (`src/shared/model/versions.ts`) and imported statically by
+`resources/data/versions.json` lists every Java **release** from 1.21 to the latest one, newest first, plus the
+latest **snapshot** when it is newer than the latest release (see [Snapshots](#snapshots)). It is validated by `VersionTableSchema` (`src/shared/model/versions.ts`) and imported statically by
 `src/shared/versions/table.ts`, so electron-vite bundles it into main and the renderer.
 
 ```json
@@ -20,21 +20,22 @@ validated by `VersionTableSchema` (`src/shared/model/versions.ts`) and imported 
 }
 ```
 
-Values as of 2026-11-15:
+Values as of 2026-11-16:
 
-| Minecraft      | Released   | Resource pack | Data pack | pack.mcmeta style |
-| -------------- | ---------- | ------------- | --------- | ----------------- |
-| 26.3           | 2026-09-15 | 97.1          | 121.0     | `minmax`          |
-| 26.2           | 2026-06-16 | 88.0          | 107.1     | `minmax`          |
-| 26.1 - 26.1.2  | 2026-03-24 | 84.0          | 101.1     | `minmax`          |
-| 1.21.11        | 2025-12-09 | 75.0          | 94.1      | `minmax`          |
-| 1.21.9-1.21.10 | 2025-09-30 | 69.0          | 88.0      | `minmax`          |
-| 1.21.7-1.21.8  | 2025-06-30 | 64            | 81        | `pack_format`     |
-| 1.21.6         | 2025-06-17 | 63            | 80        | `pack_format`     |
-| 1.21.5         | 2025-03-25 | 55            | 71        | `pack_format`     |
-| 1.21.4         | 2024-12-03 | 46            | 61        | `pack_format`     |
-| 1.21.2-1.21.3  | 2024-10-22 | 42            | 57        | `pack_format`     |
-| 1.21-1.21.1    | 2024-06-13 | 34            | 48        | `pack_format`     |
+| Minecraft       | Released   | Resource pack | Data pack | pack.mcmeta style |
+| --------------- | ---------- | ------------- | --------- | ----------------- |
+| 26.4-snapshot-8 | 2026-11-10 | 103.0         | 127.0     | `minmax`          |
+| 26.3            | 2026-09-15 | 97.1          | 121.0     | `minmax`          |
+| 26.2            | 2026-06-16 | 88.0          | 107.1     | `minmax`          |
+| 26.1 - 26.1.2   | 2026-03-24 | 84.0          | 101.1     | `minmax`          |
+| 1.21.11         | 2025-12-09 | 75.0          | 94.1      | `minmax`          |
+| 1.21.9-1.21.10  | 2025-09-30 | 69.0          | 88.0      | `minmax`          |
+| 1.21.7-1.21.8   | 2025-06-30 | 64            | 81        | `pack_format`     |
+| 1.21.6          | 2025-06-17 | 63            | 80        | `pack_format`     |
+| 1.21.5          | 2025-03-25 | 55            | 71        | `pack_format`     |
+| 1.21.4          | 2024-12-03 | 46            | 61        | `pack_format`     |
+| 1.21.2-1.21.3   | 2024-10-22 | 42            | 57        | `pack_format`     |
+| 1.21-1.21.1     | 2024-06-13 | 34            | 48        | `pack_format`     |
 
 ### Regenerating it
 
@@ -47,7 +48,8 @@ node scripts/update-versions.mjs --dry-run  # print instead of writing
 Sources:
 
 - Release ids and dates: Mojang's manifest
-  `https://piston-meta.mojang.com/mc/game/version_manifest_v2.json` (`type: "release"` only).
+  `https://piston-meta.mojang.com/mc/game/version_manifest_v2.json` (`type: "release"`, plus `latest.snapshot`
+  when it is newer than the latest release and misode already lists its formats).
 - Pack formats: `https://raw.githubusercontent.com/misode/mcmeta/summary/versions/data.json`, fields
   `resource_pack_version`, `resource_pack_version_minor`, `data_pack_version`, `data_pack_version_minor`.
 - `mcmetaStyle` is `minmax` when the resource pack format is 65 or more (1.21.9+), else `pack_format`.
@@ -66,6 +68,22 @@ and main logs a warning if it differs from the table. Two shapes exist (checked 
 | 1.21.9 (25w31a) | `{ "resource_major": 97, "resource_minor": 1, "data_major": 121, "data_minor": 0 }` |
 
 Source: <https://minecraft.wiki/w/Version.json> (history entry for 1.21.9 / 25w31a).
+
+### Snapshots
+
+A snapshot entry has `"type": "snapshot"` (releases have no `type`). Snapshots are **export targets only**:
+
+- `latest()`, `supportedVersions()` and `versionForPackFormat()` ignore them, so a snapshot is never the
+  authoring version of a new pack, never in the support window and never used to map an imported pack.
+- `snapshotTargets(table)` returns the snapshots newer than the latest release; the export dialog lists them
+  first, labelled "26.4-snapshot-8 (snapshot)".
+- `canExportTo(authoring, target)` allows the authoring version or a snapshot newer than it. The zip gets the
+  snapshot's pack format (`{ "min_format": [103, 0], "max_format": 103 }` for 26.4-snapshot-8), so it is meant for
+  that snapshot; tick "Also accept newer Minecraft versions" to keep the range open.
+- Snapshots are not extracted: files identical to the **authoring** version's vanilla are skipped.
+
+Source for 26.4-snapshot-8: <https://minecraft.wiki/w/Java_Edition_26.4-snapshot-8> (resource pack 103.0, data
+pack 127.0); release time from the launcher's `versions/26.4-snapshot-8/26.4-snapshot-8.json`.
 
 ## Support window
 

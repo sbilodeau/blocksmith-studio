@@ -42,6 +42,16 @@ export const VERSIONS: McVersion[] = [
   }
 ]
 
+/** A snapshot newer than every release in VERSIONS (export target only). */
+export const SNAPSHOT: McVersion = {
+  id: '26.4-snapshot-8',
+  type: 'snapshot',
+  releaseTime: '2026-11-10T14:20:05+00:00',
+  resourcePack: { major: 103, minor: 0 },
+  dataPack: { major: 127, minor: 0 },
+  mcmetaStyle: 'minmax'
+}
+
 /** Solid-colour PNG (optionally with a second colour on the first pixel to make variants). */
 export function makePng(
   width: number,
@@ -76,7 +86,7 @@ export class FakeVanillaStore implements VanillaStore {
     return VERSIONS[0]
   }
   getVersion(versionId: string): McVersion | undefined {
-    return VERSIONS.find((v) => v.id === versionId)
+    return [...VERSIONS, SNAPSHOT].find((v) => v.id === versionId)
   }
   versionForPackFormat(format: PackFormat): McVersion | undefined {
     return VERSIONS.find((v) => v.resourcePack.major === format.major)

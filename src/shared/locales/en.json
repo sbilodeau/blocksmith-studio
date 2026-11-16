@@ -244,13 +244,14 @@
     "open": "Export",
     "title": "Export pack",
     "target": "Minecraft version",
-    "targetHint": "Other versions will be available once version migration is added.",
+    "targetHint": "Snapshots export your textures as they are, with the snapshot's pack format. Other versions will be available once version migration is added.",
     "changedOnly": "Only changed and added files are exported. Minecraft uses its own textures for everything else.",
     "run": "Export .zip",
     "done": "Export complete",
     "summary": "{files} files exported for Minecraft {version} to {path}",
     "acceptNewer": "Also accept newer Minecraft versions (snapshots)",
-    "acceptNewerHint": "Newer versions, such as snapshots, will list the pack as compatible instead of \"made for an older version\". The app cannot check that your textures still match those versions."
+    "acceptNewerHint": "Newer versions, such as snapshots, will list the pack as compatible instead of \"made for an older version\". The app cannot check that your textures still match those versions.",
+    "snapshotLabel": "{version} (snapshot)"
   },
   "import": {
     "title": "Import complete",

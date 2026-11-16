@@ -9,15 +9,23 @@ function releaseMs(version: McVersion): number {
   return Date.parse(version.releaseTime)
 }
 
-/** Releases sorted newest first (by release time; the table order is not trusted). */
+export function isSnapshot(version: McVersion): boolean {
+  return version.type === 'snapshot'
+}
+
+function releases(table: VersionTable): McVersion[] {
+  return table.versions.filter((v) => !isSnapshot(v))
+}
+
+/** Versions sorted newest first (by release time; the table order is not trusted). */
 export function sortNewestFirst(versions: readonly McVersion[]): McVersion[] {
   return [...versions].sort((a, b) => releaseMs(b) - releaseMs(a))
 }
 
-/** The most recent release of the table. Throws if the table is empty. */
+/** The most recent release of the table (snapshots excluded). Throws if the table has no release. */
 export function latest(table: VersionTable): McVersion {
-  const [newest] = sortNewestFirst(table.versions)
-  if (!newest) throw new Error('The version table is empty')
+  const [newest] = sortNewestFirst(releases(table))
+  if (!newest) throw new Error('The version table has no release')
   return newest
 }
 
@@ -42,7 +50,23 @@ export function supportWindowStart(now: Date, months = SUPPORT_WINDOW_MONTHS): D
 export function supportedVersions(table: VersionTable, now: Date): McVersion[] {
   const startMs = supportWindowStart(now).getTime()
   const newest = latest(table)
-  return sortNewestFirst(table.versions).filter((v) => v === newest || releaseMs(v) >= startMs)
+  return sortNewestFirst(releases(table)).filter((v) => v === newest || releaseMs(v) >= startMs)
+}
+
+/** Snapshots newer than the latest release (export targets), newest first. */
+export function snapshotTargets(table: VersionTable): McVersion[] {
+  const newestMs = releaseMs(latest(table))
+  return sortNewestFirst(table.versions).filter((v) => isSnapshot(v) && releaseMs(v) > newestMs)
+}
+
+/**
+ * Whether a pack authored against `authoring` can be exported to `target`: the authoring version itself, or a
+ * snapshot newer than it (the textures are the authoring version's; Minecraft fills the rest from its own).
+ * Other releases need the migration tables (M7).
+ */
+export function canExportTo(authoring: McVersion, target: McVersion): boolean {
+  if (target.id === authoring.id) return true
+  return isSnapshot(target) && releaseMs(target) > releaseMs(authoring)
 }
 
 export function findVersion(table: VersionTable, versionId: string): McVersion | undefined {
@@ -57,7 +81,7 @@ export function versionForPackFormat(
   table: VersionTable,
   format: Pick<PackFormat, 'major'>
 ): McVersion | undefined {
-  return sortNewestFirst(table.versions).find((v) => v.resourcePack.major === format.major)
+  return sortNewestFirst(releases(table)).find((v) => v.resourcePack.major === format.major)
 }
 
 /** Compares two pack formats: negative if a < b, 0 if equal, positive if a > b. */

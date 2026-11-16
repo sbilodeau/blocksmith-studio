@@ -11,6 +11,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
   compatible by newer versions such as 26.4 snapshots (format 103) instead of "made for an older version". Pack
   formats were re-checked against the 26.3 jar, the Minecraft Wiki and the game code: 26.3 is format 97.1 and the
   app's `min_format` / `max_format` values are correct for it
+- **26.4-snapshot-8** is now in the export version list. The zip gets the snapshot's format (103.0); textures are
+  exported as they are. Snapshots are export targets only: new packs still use the latest release (26.3)
 
 ### M5 - Navigation agent and bulk operations
 

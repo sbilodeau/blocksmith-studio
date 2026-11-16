@@ -649,17 +649,18 @@ Retries: exponential backoff on 429/5xx with a cap; user-visible error with i18n
 
 Values from current references (verified at implementation time against the jars):
 
-| Minecraft      | Resource pack format | pack.mcmeta style       |
-| -------------- | -------------------- | ----------------------- |
-| 1.21.4         | 46                   | `pack_format`           |
-| 1.21.5         | 55                   | `pack_format`           |
-| 1.21.6         | 63                   | `pack_format`           |
-| 1.21.7-1.21.8  | 64                   | `pack_format`           |
-| 1.21.9-1.21.10 | 69.0                 | `min_format/max_format` |
-| 1.21.11        | 75.0                 | `min_format/max_format` |
-| 26.1-26.1.2    | 84.0                 | `min_format/max_format` |
-| 26.2           | 88.0                 | `min_format/max_format` |
-| 26.3           | 97.x                 | `min_format/max_format` |
+| Minecraft                     | Resource pack format | pack.mcmeta style       |
+| ----------------------------- | -------------------- | ----------------------- |
+| 1.21.4                        | 46                   | `pack_format`           |
+| 1.21.5                        | 55                   | `pack_format`           |
+| 1.21.6                        | 63                   | `pack_format`           |
+| 1.21.7-1.21.8                 | 64                   | `pack_format`           |
+| 1.21.9-1.21.10                | 69.0                 | `min_format/max_format` |
+| 1.21.11                       | 75.0                 | `min_format/max_format` |
+| 26.1-26.1.2                   | 84.0                 | `min_format/max_format` |
+| 26.2                          | 88.0                 | `min_format/max_format` |
+| 26.3                          | 97.x                 | `min_format/max_format` |
+| 26.4-snapshot-8 (export only) | 103.0                | `min_format/max_format` |
 
 - **Support window** is a rule, not a hard-coded list: release versions whose `releaseTime` falls within the last 24 months, plus the latest.
   As of 2026-11-15 that is 1.21.4 -> 26.3. Older versions disappear from export targets automatically as time passes.
