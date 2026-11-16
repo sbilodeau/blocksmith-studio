@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "FR/EN phrase -> expected tool calls (PLAN 6.8). Editor cases run on one 16x16 texture (fixture = image name); navigation cases run on a selection of textures (fixture = selection name, see evalSelection in src/main/services/ai/eval/report.ts).",
+  "description": "FR/EN phrase -> expected tool calls (PLAN 6.8). Editor cases run on one 16x16 texture (fixture = image name); navigation cases run on a selection of textures (fixture = selection name, see evalSelection in src/main/services/ai/eval/report.ts); creation cases run on a whole pack (fixture = pack name, see evalPack in the same file).",
   "cases": [
     {
       "id": "rotate-left-90",
@@ -348,7 +348,11 @@
       "en": "make everything redder",
       "expect": [
         {
-          "anyTool": ["hue_shift", "replace_color", "apply_palette"]
+          "anyTool": [
+            "hue_shift",
+            "replace_color",
+            "apply_palette"
+          ]
         }
       ]
     },
@@ -483,7 +487,11 @@
           "tool": "apply_palette",
           "args": {
             "palette": {
-              "containsAll": ["#000000", "#ffffff", "#ff0000"]
+              "containsAll": [
+                "#000000",
+                "#ffffff",
+                "#ff0000"
+              ]
             }
           }
         }
@@ -500,7 +508,10 @@
           "tool": "update_style_brief",
           "args": {
             "patch.theme": {
-              "containsAny": ["feu", "fire"]
+              "containsAny": [
+                "feu",
+                "fire"
+              ]
             }
           }
         }
@@ -533,7 +544,13 @@
           }
         },
         {
-          "anyTool": ["set_pixels", "draw_line", "fill_rect", "fill", "draw_rect"]
+          "anyTool": [
+            "set_pixels",
+            "draw_line",
+            "fill_rect",
+            "fill",
+            "draw_rect"
+          ]
         }
       ]
     },
@@ -568,7 +585,11 @@
       "en": "make all these textures redder",
       "expect": [
         {
-          "anyTool": ["hue_shift", "apply_palette", "replace_color"]
+          "anyTool": [
+            "hue_shift",
+            "apply_palette",
+            "replace_color"
+          ]
         }
       ]
     },
@@ -588,7 +609,9 @@
                   "lt": 0
                 },
                 "textures.match": {
-                  "containsAny": ["ore"]
+                  "containsAny": [
+                    "ore"
+                  ]
                 }
               }
             },
@@ -599,7 +622,10 @@
                   "lt": 0
                 },
                 "textures.indices": {
-                  "containsAll": ["2", "3"]
+                  "containsAll": [
+                    "2",
+                    "3"
+                  ]
                 }
               }
             }
@@ -640,7 +666,9 @@
                   "color": "black"
                 },
                 "textures.match": {
-                  "containsAny": ["plank"]
+                  "containsAny": [
+                    "plank"
+                  ]
                 }
               }
             },
@@ -651,7 +679,9 @@
                   "color": "black"
                 },
                 "textures.indices": {
-                  "containsAll": ["4"]
+                  "containsAll": [
+                    "4"
+                  ]
                 }
               }
             }
@@ -699,6 +729,175 @@
           "tool": "flip",
           "args": {
             "axis": "horizontal"
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-ores-redder",
+      "context": "creation",
+      "fixture": "sample_pack",
+      "fr": "rends tous les minerais du pack plus rouges",
+      "en": "make all the ores of the pack redder",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "apply_to_all",
+              "args": {
+                "operation.tool": {
+                  "containsAny": [
+                    "hue_shift",
+                    "replace_color",
+                    "apply_palette"
+                  ]
+                },
+                "filter.categories": {
+                  "containsAny": [
+                    "ores"
+                  ]
+                }
+              }
+            },
+            {
+              "tool": "apply_to_all",
+              "args": {
+                "operation.tool": {
+                  "containsAny": [
+                    "hue_shift",
+                    "replace_color",
+                    "apply_palette"
+                  ]
+                },
+                "filter.match": {
+                  "containsAny": [
+                    "ore"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "creation-darken-blocks",
+      "context": "creation",
+      "fixture": "sample_pack",
+      "fr": "assombris tous les blocs",
+      "en": "darken all the blocks",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "apply_to_all",
+              "args": {
+                "operation.tool": "brightness",
+                "operation.args.delta": {
+                  "lt": 0
+                },
+                "filter.categories": {
+                  "containsAny": [
+                    "blocks"
+                  ]
+                }
+              }
+            },
+            {
+              "tool": "apply_to_all",
+              "args": {
+                "operation.tool": "brightness",
+                "operation.args.delta": {
+                  "lt": 0
+                },
+                "filter.folders": {
+                  "containsAny": [
+                    "block"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "creation-outline-tools",
+      "context": "creation",
+      "fixture": "sample_pack",
+      "fr": "ajoute un contour noir à tous les outils",
+      "en": "add a black outline to all the tools",
+      "expect": [
+        {
+          "tool": "apply_to_all",
+          "args": {
+            "operation.tool": "outline",
+            "operation.args.color": {
+              "color": "black"
+            },
+            "filter.categories": {
+              "containsAny": [
+                "tools"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-more-vivid",
+      "context": "creation",
+      "fixture": "sample_pack",
+      "fr": "rends les couleurs de tout le pack un peu plus vives",
+      "en": "make the colors of the whole pack a bit more vivid",
+      "expect": [
+        {
+          "tool": "apply_to_all",
+          "args": {
+            "operation.tool": "saturation",
+            "operation.args.delta": {
+              "gt": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-theme-fire",
+      "context": "creation",
+      "fixture": "sample_pack",
+      "fr": "le thème de ce pack, c'est le feu",
+      "en": "the theme of this pack is fire",
+      "expect": [
+        {
+          "tool": "update_style_brief",
+          "args": {
+            "patch.theme": {
+              "containsAny": [
+                "fire",
+                "feu"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-rename",
+      "context": "creation",
+      "fixture": "sample_pack",
+      "fr": "appelle le pack \"Pack de feu\"",
+      "en": "name the pack \"Fire Pack\"",
+      "expect": [
+        {
+          "tool": "set_pack_meta",
+          "args": {
+            "name": {
+              "containsAny": [
+                "feu",
+                "fire"
+              ]
+            }
           }
         }
       ]

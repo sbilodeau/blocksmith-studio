@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   evalFixture,
   summarize,
@@ -6,6 +6,8 @@ import {
   type EvalResult
 } from '../../src/main/services/ai/eval/report'
 import { getPixel, toHex } from '@shared/image'
+
+vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
 function r(caseId: string, language: 'fr' | 'en', pass: boolean): EvalResult {
   return {
@@ -78,5 +80,40 @@ describe('eval fixture', () => {
     expect(toHex(getPixel(a, 0, 0))).toMatch(/^#bdbdbd/)
     expect(toHex(getPixel(a, 15, 15))).toMatch(/^#7f7f7f/)
     expect(() => evalFixture('nope')).toThrow()
+  })
+})
+
+describe('creation eval cases', () => {
+  it('run on the sample pack and match apply_to_all calls by operation and filter', async () => {
+    const { evalPack } = await import('../../src/main/services/ai/eval/report')
+    const { runEvalCase, bundledEvalCases } = await import('../../src/main/services/ai/eval/runner')
+    const { DONE_END, DONE_TOOLS, fakeProvider, text, toolCall } = await import('./ai-agent-fakes')
+    const pack = evalPack('sample_pack')
+    expect(pack.textures.filter((t) => t.categories.includes('ores')).map((t) => t.name)).toEqual([
+      'iron_ore',
+      'gold_ore'
+    ])
+    const ores = bundledEvalCases().find((c) => c.id === 'creation-ores-redder')!
+    const fake = fakeProvider([
+      [
+        toolCall('apply_to_all', {
+          operation: { tool: 'hue_shift', args: { degrees: -20 } },
+          filter: { categories: ['ores'] }
+        }),
+        DONE_TOOLS
+      ],
+      [text('ok'), DONE_END],
+      [
+        toolCall('apply_to_all', { operation: { tool: 'hue_shift', args: { degrees: -20 } } }),
+        DONE_TOOLS
+      ],
+      [text('ok'), DONE_END]
+    ])
+    const model = { providerId: 'fake', modelId: 'm1' }
+    const pass = await runEvalCase(ores, 'en', { providers: fake.providers, model })
+    expect(pass).toMatchObject({ pass: true })
+    // Without a filter on ores the case fails.
+    const fail = await runEvalCase(ores, 'fr', { providers: fake.providers, model })
+    expect(fail).toMatchObject({ pass: false })
   })
 })
