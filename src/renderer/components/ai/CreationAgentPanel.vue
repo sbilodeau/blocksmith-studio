@@ -98,8 +98,13 @@ async function reject(proposalId: string): Promise<void> {
       @open-settings="emit('openSettings')"
     >
       <template #context>
-        <n-text depth="2" class="context" data-testid="creation-context">
-          {{ t('ai.creationContext', { count }, count) }}
+        <n-text
+          :type="count ? 'default' : 'warning'"
+          depth="2"
+          class="context"
+          data-testid="creation-context"
+        >
+          {{ count ? t('ai.creationContext', { count }, count) : t('ai.creationNoTextures') }}
         </n-text>
       </template>
       <template #proposal="{ proposalId, proposal }">

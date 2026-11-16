@@ -630,7 +630,8 @@
       "stoppedResult": "Plan arrêté : {count} textures écrites. | Plan arrêté : 1 texture écrite. | Plan arrêté : {count} textures écrites.",
       "checkpoints": "({count} entrées d'historique) | (1 entrée d'historique) | ({count} entrées d'historique)",
       "metaUpdated": "Nom / description du pack mis à jour."
-    }
+    },
+    "creationNoTextures": "Ce pack n'a encore aucune texture (il a été créé avec une base vide) : l'IA n'a rien à modifier. Créez un pack à partir de vanilla pour travailler sur les textures de Minecraft."
   },
   "brief": {
     "open": "Brief de style",

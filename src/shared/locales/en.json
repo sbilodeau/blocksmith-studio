@@ -630,7 +630,8 @@
       "stoppedResult": "Plan stopped: {count} textures written. | Plan stopped: 1 texture written. | Plan stopped: {count} textures written.",
       "checkpoints": "({count} history entries) | (1 history entry) | ({count} history entries)",
       "metaUpdated": "Pack name / description updated."
-    }
+    },
+    "creationNoTextures": "This pack has no textures yet (it was created with an empty base), so there is nothing for the AI to change. Create a pack from vanilla to work on the Minecraft textures."
   },
   "brief": {
     "open": "Style brief",
