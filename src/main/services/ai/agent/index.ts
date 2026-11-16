@@ -30,4 +30,5 @@ export {
   MAX_LISTED_TEXTURES
 } from './navigation'
 export { runAgentLoop, type AgentScope, type CallOutcome } from './loop'
+export { runCreationAgent, matchTextures, pickSamples, type CreationSample } from './creation'
 export { renderContactSheet, contactSheetPngs, TILES_PER_SHEET, MAX_SHEETS } from './contact-sheet'

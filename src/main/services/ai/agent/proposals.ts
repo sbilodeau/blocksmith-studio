@@ -2,6 +2,7 @@ import { decodePng, encodePng, type RgbaImage } from '@shared/image'
 import { getTool } from '@shared/ai/tools'
 import {
   isBulkProposal,
+  isCreationProposal,
   type AgentKind,
   type AnyProposal,
   type Proposal,
@@ -143,7 +144,9 @@ export function requestSummary(
   const tools = [...new Set(applied.map((s) => s.tool))].join(', ')
   const where = isBulkProposal(proposal)
     ? `${textureCount ?? proposal.items.length} selected textures`
-    : shortTexturePath(proposal.texturePath)
+    : isCreationProposal(proposal)
+      ? `whole pack (${textureCount ?? 0} texture writes)`
+      : shortTexturePath(proposal.texturePath)
   return clip(
     `${where}: "${clip(item.request, 100)}" -> ${tools} (${applied.length} of ${proposal.steps.length} steps)`,
     300
@@ -164,6 +167,8 @@ export function decisionNote(
   }. ${
     isBulkProposal(proposal)
       ? `${textureCount ?? 0} of ${proposal.items.length} changed textures were written; they now reflect only the applied steps.`
-      : 'The texture now reflects only the applied steps.'
+      : isCreationProposal(proposal)
+        ? `${textureCount ?? 0} texture writes, one history entry per applied step.`
+        : 'The texture now reflects only the applied steps.'
   }`
 }

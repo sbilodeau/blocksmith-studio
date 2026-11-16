@@ -24,7 +24,8 @@ function fakeService(): PackService {
     categories: vi.fn(async () => []),
     importZip: vi.fn(async () => ({ filesImported: 1 }) as never),
     exportFileName: vi.fn(async () => 'p-26.3.zip'),
-    exportPack: vi.fn(async () => ({ filesWritten: 2 }) as never)
+    exportPack: vi.fn(async () => ({ filesWritten: 2 }) as never),
+    updateMeta: vi.fn(async () => ({}) as never)
   }
 }
 

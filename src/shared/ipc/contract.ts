@@ -36,6 +36,7 @@ import type {
   EvalReport,
   ModelInfo,
   BulkProposalApplyResult,
+  CreationApplyResult,
   ProposalApplyResult,
   ProviderStatus
 } from '../ai/types'
@@ -171,6 +172,22 @@ export const inputSchemas = {
       acceptedPaths: z.array(TexturePathSchema).max(MAX_BULK_TEXTURES)
     })
     .strict(),
+  'ai.creation.send': z
+    .object({
+      packId: z.string().min(1).max(64),
+      message: z.string().trim().min(1).max(4000),
+      model: ModelRefSchema,
+      language: LanguageSchema,
+      thinking: ReasoningLevelSchema.optional()
+    })
+    .strict(),
+  'ai.creation.apply': z
+    .object({
+      proposalId: z.string().min(1).max(64),
+      acceptedStepIds: z.array(z.string().max(64)).max(200)
+    })
+    .strict(),
+  'ai.creation.stopApply': z.object({ proposalId: z.string().min(1).max(64) }).strict(),
   'bulk.preview': BulkPreviewInputSchema,
   'bulk.apply': BulkApplyInputSchema,
   'bulk.discard': z.object({ previewId: z.string().min(1).max(64) }).strict(),
@@ -246,6 +263,10 @@ export interface InvokeOutputs {
   'ai.navigation.send': { runId: string }
   /** Replays the accepted steps on the accepted textures and writes them as one history entry. */
   'ai.navigation.apply': BulkProposalApplyResult
+  'ai.creation.send': { runId: string }
+  /** Resolves when every accepted step is written (or after Stop); emits job.progress 'ai.plan.apply'. */
+  'ai.creation.apply': CreationApplyResult
+  'ai.creation.stopApply': void
   /** Computes a manual bulk action (worker thread, emits job.progress). Nothing is written. */
   'bulk.preview': BulkPreview
   /** Writes the ticked textures of a preview as one undoable history entry. */
