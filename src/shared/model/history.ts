@@ -4,7 +4,7 @@ import type { PackPath } from './pack'
 export interface HistoryEntry {
   id: string
   at: string
-  source: 'editor' | 'revert' | 'ai' | 'import' | 'merge'
+  source: 'editor' | 'revert' | 'ai' | 'bulk' | 'import' | 'merge'
   /** i18n key under `history.label.*` plus params, e.g. { key: 'save', params: { name: 'stone' } } */
   label: { key: string; params?: Record<string, string | number> }
   paths: PackPath[]

@@ -2,7 +2,8 @@
  * Long-running operations (vanilla extraction, import, export) resolve their invoke() when finished and
  * report progress meanwhile through the 'job.progress' event.
  */
-export type JobKind = 'vanilla.prepare' | 'packs.import' | 'pack.export'
+export type JobKind =
+  'vanilla.prepare' | 'packs.import' | 'pack.export' | 'bulk.preview' | 'bulk.apply'
 
 export interface JobProgress {
   jobId: string

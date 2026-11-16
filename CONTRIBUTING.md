@@ -1,6 +1,7 @@
 # Contributing
 
-Thanks for your interest in Blocksmith Studio. This file describes the conventions the codebase follows.
+Thanks for your interest in Blocksmith Studio. This file describes the conventions the codebase follows. AI coding
+agents also read [AGENTS.md](AGENTS.md).
 
 ## Ground rules
 
@@ -34,7 +35,7 @@ Thanks for your interest in Blocksmith Studio. This file describes the conventio
 | Integration | `tests/integration/` | Vitest (node)            | Main services against temporary folders                   |
 | Component   | `tests/component/`   | Vitest (happy-dom)       | Vue components and stores with a fake preload bridge      |
 | E2E         | `tests/e2e/`         | Playwright (`_electron`) | Launches the real built app with an isolated profile      |
-| AI eval     | `tests/ai-eval/`     | Vitest (node)            | Live model, skipped without `OLLAMA_API_KEY`              |
+| AI eval     | `tests/ai-eval/`     | Vitest (node)            | Live models, skipped without a provider key               |
 | Real jar    | `tests/real-jar/`    | Vitest (node)            | Your Minecraft jar, skipped without `BLOCKSMITH_REAL_JAR` |
 
 AI code is tested without a network: the agent runtime against a scripted fake adapter

@@ -12,6 +12,13 @@ import {
   type TextureEntry
 } from '../model/pack'
 import type { JobProgress } from '../model/jobs'
+import {
+  BulkApplyInputSchema,
+  BulkPreviewInputSchema,
+  MAX_BULK_TEXTURES,
+  type BulkApplyResult,
+  type BulkPreview
+} from '../model/bulk'
 import type { HistoryState, TextureData } from '../model/history'
 import type { PreviewModel } from '../model/preview'
 import {
@@ -27,6 +34,7 @@ import type {
   EvalProgress,
   EvalReport,
   ModelInfo,
+  BulkProposalApplyResult,
   ProposalApplyResult,
   ProviderStatus
 } from '../ai/types'
@@ -138,6 +146,27 @@ export const inputSchemas = {
     })
     .strict(),
   'ai.proposal.reject': z.object({ proposalId: z.string().min(1).max(64) }).strict(),
+  'ai.navigation.send': z
+    .object({
+      packId: z.string().min(1).max(64),
+      message: z.string().trim().min(1).max(4000),
+      model: ModelRefSchema,
+      /** The grid selection the agent works on. */
+      paths: z.array(TexturePathSchema).min(1).max(MAX_BULK_TEXTURES),
+      language: LanguageSchema,
+      thinking: ReasoningLevelSchema.optional()
+    })
+    .strict(),
+  'ai.navigation.apply': z
+    .object({
+      proposalId: z.string().min(1).max(64),
+      acceptedStepIds: z.array(z.string().max(64)).max(200),
+      acceptedPaths: z.array(TexturePathSchema).max(MAX_BULK_TEXTURES)
+    })
+    .strict(),
+  'bulk.preview': BulkPreviewInputSchema,
+  'bulk.apply': BulkApplyInputSchema,
+  'bulk.discard': z.object({ previewId: z.string().min(1).max(64) }).strict(),
   'brief.get': PackRef,
   'brief.update': PackRef.extend({ patch: StyleBriefPatchSchema }).strict(),
   'ai.eval.run': z.object({ model: ModelRefSchema, quick: z.boolean().default(true) }).strict(),
@@ -206,6 +235,15 @@ export interface InvokeOutputs {
   'ai.agent.clear': void
   'ai.proposal.apply': ProposalApplyResult
   'ai.proposal.reject': void
+  /** Starts a navigation-agent run on a selection; progress arrives as 'ai.event'. */
+  'ai.navigation.send': { runId: string }
+  /** Replays the accepted steps on the accepted textures and writes them as one history entry. */
+  'ai.navigation.apply': BulkProposalApplyResult
+  /** Computes a manual bulk action (worker thread, emits job.progress). Nothing is written. */
+  'bulk.preview': BulkPreview
+  /** Writes the ticked textures of a preview as one undoable history entry. */
+  'bulk.apply': BulkApplyResult
+  'bulk.discard': void
   'brief.get': StyleBrief
   'brief.update': StyleBrief
   /** Runs the FR/EN evaluation against a model (quick: a subset). Progress arrives as 'ai.eval.progress'. */

@@ -1,17 +1,19 @@
 import { decodePng, encodePng, type RgbaImage } from '@shared/image'
 import { getTool } from '@shared/ai/tools'
-import type { AgentKind, Proposal, ProposalStep } from '@shared/ai/types'
+import { isBulkProposal, type AgentKind, type AnyProposal, type Proposal, type ProposalStep } from '@shared/ai/types'
 import type { StyleBrief, StyleBriefPatch } from '@shared/model/brief'
 import { AppErrorException } from '../../../ipc/registry'
 
 /** Pending proposals expire after this long. */
 export const PROPOSAL_TTL_MS = 60 * 60 * 1000
 
-export interface StoredProposal {
-  proposal: Proposal
+export interface StoredProposal<P extends AnyProposal = AnyProposal> {
+  proposal: P
   createdAt: number
   /** The user message that produced it (for the request log). */
   request: string
+  /** Bulk proposals: the PNG of every selected texture as the agent saw it (replayed on apply). */
+  bases?: ReadonlyMap<string, Uint8Array>
 }
 
 /**
@@ -26,9 +28,14 @@ export class ProposalStore {
     private readonly ttlMs = PROPOSAL_TTL_MS
   ) {}
 
-  add(proposal: Proposal, request: string): void {
+  add(proposal: AnyProposal, request: string, bases?: ReadonlyMap<string, Uint8Array>): void {
     this.prune()
-    this.items.set(proposal.id, { proposal, createdAt: this.now(), request })
+    this.items.set(proposal.id, {
+      proposal,
+      createdAt: this.now(),
+      request,
+      ...(bases ? { bases } : {})
+    })
   }
 
   /** Throws ai.proposalNotFound (unknown or expired). */
@@ -121,21 +128,36 @@ function clip(text: string, max: number): string {
 }
 
 /** One line for the brief's requestLog (app-generated). */
-export function requestSummary(item: StoredProposal, applied: ProposalStep[]): string {
+export function requestSummary(
+  item: StoredProposal,
+  applied: ProposalStep[],
+  textureCount?: number
+): string {
   const { proposal } = item
   const tools = [...new Set(applied.map((s) => s.tool))].join(', ')
+  const where = isBulkProposal(proposal)
+    ? `${textureCount ?? proposal.items.length} selected textures`
+    : shortTexturePath(proposal.texturePath)
   return clip(
-    `${shortTexturePath(proposal.texturePath)}: "${clip(item.request, 100)}" -> ${tools} (${applied.length} of ${proposal.steps.length} steps)`,
+    `${where}: "${clip(item.request, 100)}" -> ${tools} (${applied.length} of ${proposal.steps.length} steps)`,
     300
   )
 }
 
 /** Conversation note so the agent knows what the user did with its plan. */
-export function decisionNote(proposal: Proposal, applied: ProposalStep[]): string {
+export function decisionNote(
+  proposal: AnyProposal,
+  applied: ProposalStep[],
+  textureCount?: number
+): string {
   const total = proposal.steps.length
   if (applied.length === 0) return `The user rejected the proposal (applied 0 of ${total} steps).`
   const skipped = proposal.steps.filter((s) => !applied.includes(s)).map((s) => s.tool)
   return `The user applied ${applied.length} of ${total} steps (${applied.map((s) => s.tool).join(', ')})${
     skipped.length ? `; not applied: ${skipped.join(', ')}` : ''
-  }. The texture now reflects only the applied steps.`
+  }. ${
+    isBulkProposal(proposal)
+      ? `${textureCount ?? 0} of ${proposal.items.length} changed textures were written; they now reflect only the applied steps.`
+      : 'The texture now reflects only the applied steps.'
+  }`
 }
