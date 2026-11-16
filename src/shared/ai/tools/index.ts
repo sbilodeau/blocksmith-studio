@@ -11,6 +11,7 @@ import { DRAW_TOOLS } from './draw'
 import { COLOR_TOOLS } from './color'
 import { READ_TOOLS } from './read'
 import { MEMORY_TOOLS } from './memory'
+import { isFrameTool, withFrameParam } from './frames'
 
 export {
   defineTool,
@@ -26,6 +27,15 @@ export {
 export { encodeGrid, paletteSummary, GRID_CHARS, TRANSPARENT_HEX, type PaletteGrid } from './grid'
 export { MAX_PIXELS_PER_CALL } from './draw'
 export { MAX_GRID_PIXELS } from './read'
+export {
+  executeOnFrames,
+  frameCount,
+  isFrameTool,
+  parseFrame,
+  takeFrame,
+  withFrameParam,
+  type FrameLayout
+} from './frames'
 
 export const TOOLS: readonly AnyTool[] = [
   ...TRANSFORM_TOOLS,
@@ -52,11 +62,16 @@ export function toolJsonSchema(tool: AnyTool): Record<string, unknown> {
   return schema
 }
 
-/** Tool definitions sent to the model for an agent scope. */
-export function toolSpecs(scope: AgentKind): ToolSpec[] {
+/**
+ * Tool definitions sent to the model for an agent scope. `frames`: the open texture is an animation with that many
+ * frames, so image tools get a `frame` parameter.
+ */
+export function toolSpecs(scope: AgentKind, options: { frames?: number } = {}): ToolSpec[] {
+  const frames = options.frames
   return toolsForScope(scope).map((t) => ({
     name: t.name,
     description: t.description,
-    parameters: toolJsonSchema(t)
+    parameters:
+      frames && isFrameTool(t) ? withFrameParam(toolJsonSchema(t), t, frames) : toolJsonSchema(t)
   }))
 }

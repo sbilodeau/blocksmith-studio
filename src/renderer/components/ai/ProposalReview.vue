@@ -25,7 +25,11 @@ watch(
 const pending = computed(() => props.proposal.status === 'pending')
 
 function label(step: ProposalStep): string {
-  return opLabel(step.description, `${step.tool}(${JSON.stringify(step.args)})`)
+  const op = opLabel(step.description, `${step.tool}(${JSON.stringify(step.args)})`)
+  // Animated texture: which frame the step changes (frames are numbered from 1 in the UI).
+  if (step.frame === 'all') return t('ai.proposal.onAllFrames', { op })
+  if (typeof step.frame === 'number') return t('ai.proposal.onFrame', { op, n: step.frame + 1 })
+  return op
 }
 
 function toggle(id: string, on: boolean): void {

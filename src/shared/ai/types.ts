@@ -122,11 +122,21 @@ export interface EditorAgentRequest {
   packId: string
   message: string
   model: ModelRef
-  /** Pack path of the open texture and its CURRENT pixels (may include unsaved edits). */
-  texture: { path: string; png: Uint8Array }
+  /**
+   * Pack path of the open texture and its CURRENT pixels (may include unsaved edits). An animated texture is the
+   * whole strip, with its frame height and the frame the user is editing.
+   */
+  texture: { path: string; png: Uint8Array; animation?: TextureAnimation }
   language: Language
   /** Reasoning level for this request (the AI tab's selector); defaults to the agent setting. */
   thinking?: ReasoningLevel
+}
+
+/** Animated texture sent to the editor agent: a vertical strip of full-width frames. */
+export interface TextureAnimation {
+  frameHeight: number
+  /** Frame the user is editing (0-based). */
+  frame: number
 }
 
 /** A request to the creation agent about the whole pack (PLAN 6.3, M6). */
@@ -174,6 +184,8 @@ export interface ProposalStep {
   samples?: BulkItem[]
   /** Creation agent set_pack_meta: the proposed name and/or description. */
   packMeta?: PackMetaPatch
+  /** Animated texture: the frame the step changes (0-based), or 'all' for every frame. */
+  frame?: number | 'all'
 }
 
 /** Filter of a creation-agent step (categories AND folders AND name glob) and how many textures it matched. */
@@ -199,6 +211,8 @@ export interface Proposal {
   texturePath: string
   /** Texture before the first step. */
   basePng: Uint8Array
+  /** Animated texture: steps with a `frame` replay on that frame (or every frame). */
+  animation?: TextureAnimation
   steps: ProposalStep[]
   status: 'pending' | 'applied' | 'partially-applied' | 'rejected'
 }

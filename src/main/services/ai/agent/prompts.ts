@@ -31,6 +31,12 @@ which pixels are which body part or block face before drawing, and edit every fa
 For textures larger than 64 px, call get_pixels with a rect to read exact pixels before drawing details.
 When you are done, stop calling tools and reply with one or two short sentences.`
 
+export const ANIMATION_INSTRUCTIONS = `The open texture is an ANIMATION: {{frames}} frames of {{width}} x {{height}} px stacked vertically (frame 0 at
+the top). You see the frame the user is editing; coordinates are always inside one frame. Image tools take an optional
+"frame" (0-based): pass it to change or read one frame. Without "frame", a change applies to EVERY frame (good for
+colors and global edits) and a read looks at the user's frame. To animate something, change each frame a little
+differently (one call per frame). "image 3" / "la 3e image" / "frame 3" means frame 2.`
+
 export const NAVIGATION_INSTRUCTIONS = `Your scope is the user's current selection of {{count}} textures. They are listed by number with their path,
 size and main colors; vision models also get contact sheets where each tile shows a texture with its number.
 Every color and transform tool applies to EVERY selected texture at once, or only to the textures you name in
@@ -86,6 +92,8 @@ export interface SystemPromptInput {
   language: Language
   brief: StyleBrief
   texture?: { width: number; height: number }
+  /** Editor agent on an animated texture: frame count (`texture` is then one frame). */
+  animation?: { frames: number }
   /** Navigation agent: number of selected textures. */
   selection?: { count: number }
   /** Creation agent: number of textures in the pack. */
@@ -102,5 +110,12 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     height: input.texture?.height ?? '?',
     count: input.selection?.count ?? input.pack?.count ?? '?'
   })
-  return scope ? `${preamble}\n\n${scope}` : preamble
+  const animation = input.animation
+    ? `\n\n${fill(ANIMATION_INSTRUCTIONS, {
+        frames: input.animation.frames,
+        width: input.texture?.width ?? '?',
+        height: input.texture?.height ?? '?'
+      })}`
+    : ''
+  return scope ? `${preamble}\n\n${scope}${animation}` : preamble
 }

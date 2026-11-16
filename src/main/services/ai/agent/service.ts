@@ -31,7 +31,7 @@ import { AppErrorException } from '../../../ipc/registry'
 import type { BriefService } from '../../brief'
 import type { ConversationStore } from './conversation'
 import { ProposalStore, decisionNote, replayProposal, requestSummary } from './proposals'
-import { errorOf, runEditorAgent } from './runtime'
+import { errorOf, frameLayoutOf, runEditorAgent } from './runtime'
 import { replayTargets, runNavigationAgent, type NavigationTexture } from './navigation'
 import type { BulkService } from '../../bulk'
 import { pickSamples, runCreationAgent, type CreationSample } from './creation'
@@ -226,6 +226,9 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
           packId,
           texturePath: request.texture.path,
           basePng: request.texture.png,
+          ...(request.texture.animation && frameLayoutOf(request, base)
+            ? { animation: request.texture.animation }
+            : {}),
           steps: result.steps,
           status: 'pending'
         }

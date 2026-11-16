@@ -36,7 +36,19 @@ async function send(request: {
       packId: props.packId,
       message: request.text,
       model: request.model,
-      texture: { path: editor.value.path, png: new Uint8Array(encodePng(editor.value.image)) },
+      texture: {
+        path: editor.value.path,
+        // The whole texture (every frame of an animation) with the frame being edited.
+        png: new Uint8Array(encodePng(editor.value.strip!)),
+        ...(editor.value.frames
+          ? {
+              animation: {
+                frameHeight: editor.value.frames[0]!.height,
+                frame: editor.value.frameIndex
+              }
+            }
+          : {})
+      },
       language: settings.settings.language,
       thinking: request.thinking
     })

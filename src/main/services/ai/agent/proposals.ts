@@ -1,5 +1,12 @@
 import { decodePng, encodePng, type RgbaImage } from '@shared/image'
-import { getTool } from '@shared/ai/tools'
+import {
+  executeOnFrames,
+  frameCount,
+  getTool,
+  isFrameTool,
+  parseFrame,
+  takeFrame
+} from '@shared/ai/tools'
 import {
   isBulkProposal,
   isCreationProposal,
@@ -112,7 +119,18 @@ export function replayProposal(
       throw new AppErrorException('ai.replayFailed', { step: step.id, tool: step.tool })
     }
     try {
-      const out = tool.execute({ image, vanilla: null, brief }, tool.params.parse(step.args))
+      const ctx = { image, vanilla: null, brief }
+      const anim = proposal.animation
+      let out
+      if (anim && image.height % anim.frameHeight === 0 && isFrameTool(tool)) {
+        // Same frame as during the run: the one in the arguments, else every frame.
+        const { frame, rest } = takeFrame(step.args)
+        const layout = { frameHeight: anim.frameHeight, current: anim.frame }
+        const n = frameCount(image, layout)
+        out = executeOnFrames(tool, ctx, tool.params.parse(rest), layout, parseFrame(frame, n))
+      } else {
+        out = tool.execute(ctx, tool.params.parse(step.args))
+      }
       if (out.image) image = out.image
     } catch {
       throw new AppErrorException('ai.replayFailed', { step: step.id, tool: step.tool })

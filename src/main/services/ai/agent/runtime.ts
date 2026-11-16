@@ -1,5 +1,17 @@
-import { encodePng, type RgbaImage } from '@shared/image'
-import { ToolError, getTool, toolSpecs, type AnyTool } from '@shared/ai/tools'
+import { cropImage, encodePng, type RgbaImage } from '@shared/image'
+import {
+  ToolError,
+  executeOnFrames,
+  frameCount,
+  getTool,
+  isFrameTool,
+  parseFrame,
+  takeFrame,
+  toolSpecs,
+  type AnyTool,
+  type FrameLayout,
+  type ToolOutput
+} from '@shared/ai/tools'
 import type {
   AgentSettings,
   ChatMessage,
@@ -48,6 +60,28 @@ export interface RunInput {
   modelLayout?: string
 }
 
+/** Frame layout of an animated request, or undefined when the strip does not match it. */
+export function frameLayoutOf(
+  request: EditorAgentRequest,
+  base: RgbaImage
+): FrameLayout | undefined {
+  const a = request.texture.animation
+  if (!a || a.frameHeight > base.height || base.height % a.frameHeight !== 0) return undefined
+  const count = base.height / a.frameHeight
+  return { frameHeight: a.frameHeight, current: Math.min(a.frame, count - 1) }
+}
+
+/** One frame of an animated strip (the whole image otherwise). */
+function frameView(img: RgbaImage, layout: FrameLayout | undefined, index: number): RgbaImage {
+  if (!layout) return img
+  return cropImage(img, {
+    x: 0,
+    y: index * layout.frameHeight,
+    width: img.width,
+    height: layout.frameHeight
+  })
+}
+
 export type RunDeps = LoopDeps
 
 export interface RunResult {
@@ -75,6 +109,11 @@ export async function runEditorAgent(
   let draft = input.base
   let brief = input.brief
   let mutateSinceImage = 0
+  const layout = frameLayoutOf(request, input.base)
+  const frames = layout ? frameCount(input.base, layout) : 0
+  /** Frame shown to the model after a change: the frame last changed (the user's frame at first). */
+  let shownFrame = layout?.current ?? 0
+  const view = (): RgbaImage => frameView(draft, layout, shownFrame)
 
   // Unknown or failing model info -> no vision (grid only).
   const model = await Promise.resolve()
@@ -82,7 +121,8 @@ export async function runEditorAgent(
     .catch(() => undefined)
   const plan: ImagePlan = planImages(model, settings.imageMode)
 
-  const tools = toolSpecs('editor')
+  const tools = toolSpecs('editor', layout ? { frames } : {})
+  const first = view()
   const messages: ChatMessage[] = [
     {
       role: 'system',
@@ -90,17 +130,28 @@ export async function runEditorAgent(
         agent: 'editor',
         language: request.language,
         brief,
-        texture: { width: draft.width, height: draft.height }
+        texture: { width: first.width, height: first.height },
+        ...(layout ? { animation: { frames } } : {})
       })
     },
     ...historyMessages(input.history),
-    buildUserMessage(request.message, request.texture.path, draft, plan, input.modelLayout)
+    buildUserMessage(
+      layout
+        ? `[Animation: ${frames} frames; the user is editing frame ${layout.current}.]\n${request.message}`
+        : request.message,
+      request.texture.path,
+      first,
+      plan,
+      input.modelLayout
+    )
   ]
 
   function execute(call: ToolCall): CallOutcome {
     const tool: AnyTool | undefined = getTool(call.name)
     if (!tool || !tool.scopes.includes('editor')) return unknownTool(call, tools)
-    const parsed = tool.params.safeParse(argsOf(call))
+    const framed = !!layout && isFrameTool(tool)
+    const split = framed ? takeFrame(argsOf(call)) : { rest: argsOf(call) }
+    const parsed = tool.params.safeParse(split.rest)
     if (!parsed.success) {
       const detail = issues(parsed.error)
       return {
@@ -110,9 +161,16 @@ export async function runEditorAgent(
         content: JSON.stringify({ ok: false, error: `Invalid arguments: ${detail}` })
       }
     }
-    let out
+    let out: ToolOutput
+    let frame: number | undefined
     try {
-      out = tool.execute({ image: draft, vanilla: input.vanilla, brief }, parsed.data)
+      const ctx = { image: draft, vanilla: input.vanilla, brief }
+      if (framed) {
+        frame = parseFrame(split.frame, frames)
+        out = executeOnFrames(tool, ctx, parsed.data, layout, frame)
+      } else {
+        out = tool.execute(ctx, parsed.data)
+      }
     } catch (err) {
       const message =
         err instanceof ToolError
@@ -156,19 +214,22 @@ export async function runEditorAgent(
     // Mutate: the draft moves forward. Every mutate step depends on all earlier mutate steps (coordinates and
     // colors of a step refer to the state the earlier steps produced).
     if (out.image) draft = out.image
+    if (frame !== undefined) shownFrame = frame
     const dependsOn = steps.filter((s) => s.kind === 'mutate').map((s) => s.id)
     steps.push({
       id: deps.newId(),
       callId: call.id,
       tool: tool.name,
-      args: parsed.data,
+      // The frame is kept with the arguments so the apply replays the step on the same frame.
+      args: frame !== undefined ? { ...(parsed.data as object), frame } : parsed.data,
       kind: 'mutate',
       description: tool.describe(parsed.data),
       dependsOn,
-      previewPng: encodePng(draft)
+      previewPng: encodePng(draft),
+      ...(framed ? { frame: frame ?? ('all' as const) } : {})
     })
     mutateSinceImage++
-    const state = textureState(draft, plan, false)
+    const state = textureState(view(), plan, false)
     return {
       ok: true,
       kind: 'mutate',
@@ -185,18 +246,20 @@ export async function runEditorAgent(
 
   /** Fresh image for vision models: every step in image mode or when the grid is not inline, else every K steps. */
   function afterTools(mutated: boolean): ChatMessage | undefined {
+    const shown = view()
     if (
       !mutated ||
       !plan.image ||
-      (plan.grid && sendsGrid(draft, plan) && mutateSinceImage < IMAGE_EVERY_STEPS)
+      (plan.grid && sendsGrid(shown, plan) && mutateSinceImage < IMAGE_EVERY_STEPS)
     ) {
       return undefined
     }
     mutateSinceImage = 0
-    const state = textureState(draft, { ...plan, grid: false }, true)
+    const state = textureState(shown, { ...plan, grid: false }, true)
+    const what = layout ? `frame ${shownFrame}` : 'texture'
     return {
       role: 'user',
-      text: `[App note] Current texture after your changes (${draft.width} x ${draft.height} px). ${state.text}`,
+      text: `[App note] Current ${what} after your changes (${shown.width} x ${shown.height} px). ${state.text}`,
       images: state.png ? [state.png] : []
     }
   }
