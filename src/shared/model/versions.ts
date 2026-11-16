@@ -15,9 +15,15 @@ export type PackFormat = z.infer<typeof PackFormatSchema>
 export const McmetaStyleSchema = z.enum(['pack_format', 'minmax'])
 export type McmetaStyle = z.infer<typeof McmetaStyleSchema>
 
-/** One Minecraft Java release in resources/data/versions.json. */
+/**
+ * One Minecraft Java version in resources/data/versions.json: a release, or the newest snapshot when it is newer
+ * than the latest release. Snapshots are export targets only: never an authoring version, never in the support
+ * window, never used to map an imported pack format.
+ */
 export const McVersionSchema = z.object({
-  id: z.string(), // "1.21.4", "26.3"
+  id: z.string(), // "1.21.4", "26.3", "26.4-snapshot-8"
+  /** Absent for releases. */
+  type: z.enum(['release', 'snapshot']).optional(),
   releaseTime: z.string(), // ISO date from Mojang's manifest
   resourcePack: PackFormatSchema,
   dataPack: PackFormatSchema,

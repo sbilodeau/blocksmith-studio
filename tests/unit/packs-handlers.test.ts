@@ -80,7 +80,16 @@ describe('registerPackHandlers', () => {
     const input = { packId: 'p', targetVersion: '26.3' }
     expect(await handlers.get('pack.export')!(input)).toEqual({ filesWritten: 2 })
     expect(dialogs.saveZip).toHaveBeenCalledWith('p-26.3.zip')
-    expect(packs.exportPack).toHaveBeenCalledWith('p', '26.3', '/out.zip')
+    expect(packs.exportPack).toHaveBeenCalledWith('p', '26.3', '/out.zip', {
+      acceptNewer: undefined
+    })
+
+    await handlers.get('pack.export')!({ ...input, packType: 'data' })
+    expect(packs.exportFileName).toHaveBeenLastCalledWith('p', '26.3', 'data')
+    expect(packs.exportPack).toHaveBeenLastCalledWith('p', '26.3', '/out.zip', {
+      acceptNewer: undefined,
+      packType: 'data'
+    })
 
     dialogs.saveZip.mockResolvedValueOnce(null)
     expect(await handlers.get('pack.export')!(input)).toBeNull()

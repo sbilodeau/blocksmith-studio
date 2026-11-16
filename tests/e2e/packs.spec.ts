@@ -3,7 +3,14 @@ import { mkdir, readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { strFromU8, unzipSync, zipSync } from 'fflate'
 import { encode } from 'fast-png'
-import { cleanup, launchApp, stubOpenDialog, stubSaveDialog, type LaunchedApp } from './app'
+import {
+  cleanup,
+  lastSaveDefaultName,
+  launchApp,
+  stubOpenDialog,
+  stubSaveDialog,
+  type LaunchedApp
+} from './app'
 
 type MakeFixtureJar = (outPath: string, versionId: string) => Promise<void>
 
@@ -136,8 +143,48 @@ test('imports a zip, marks modified textures and exports only changed files', as
     'pack.png'
   ])
   const mcmeta = JSON.parse(strFromU8(files['pack.mcmeta']))
-  expect(mcmeta.pack.min_format).toEqual([97, 1])
+  expect(mcmeta.pack).toMatchObject({ pack_format: 97, min_format: [97, 0], max_format: [97, 1] })
   expect(mcmeta.pack.description).toBe('Red stone')
+
+  // "Also accept newer versions" (snapshots) opens the range.
+  const openPath = join(root, 'export-open.zip')
+  await stubSaveDialog(app, openPath)
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await page.getByTestId('export-open').click()
+  await page.getByTestId('export-accept-newer').click()
+  await page.getByTestId('export-run').click()
+  await expect(page.getByTestId('report-dialog')).toContainText('26.3')
+  const open = JSON.parse(
+    strFromU8(unzipSync(new Uint8Array(await readFile(openPath)))['pack.mcmeta'])
+  )
+  expect(open.pack).toMatchObject({ pack_format: 97, min_format: [97, 0], max_format: 999 })
+
+  // The newest snapshot is an export target with its own pack format.
+  const snapPath = join(root, 'export-snapshot.zip')
+  await stubSaveDialog(app, snapPath)
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await page.getByTestId('export-open').click()
+  await page.getByTestId('export-accept-newer').click()
+  await page.getByTestId('export-target').click()
+  // Only the targets checked against real jars: the authoring version and the newer snapshot.
+  await expect(page.locator('.n-base-select-option')).toHaveText([
+    '26.3',
+    '26.4-snapshot-8 (snapshot)'
+  ])
+  await page.locator('.n-base-select-option', { hasText: '26.4-snapshot-8 (snapshot)' }).click()
+  await page.getByTestId('export-run').click()
+  await expect(page.getByTestId('report-dialog')).toContainText('26.4-snapshot-8')
+  const snap = JSON.parse(
+    strFromU8(unzipSync(new Uint8Array(await readFile(snapPath)))['pack.mcmeta'])
+  )
+  expect(snap.pack).toMatchObject({ pack_format: 103, min_format: [103, 0], max_format: [103, 0] })
+  expect(await lastSaveDefaultName(app)).toBe('my-pack-26.4-snapshot-8-resource-pack.zip')
+
+  // The data pack choice is hidden until data pack editing (M10).
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await page.getByTestId('export-open').click()
+  await expect(page.getByTestId('export-dialog')).toContainText('Options > Resource Packs')
+  await expect(page.getByTestId('export-pack-type')).toHaveCount(0)
 })
 
 test('deleting a pack moves it out of the list', async () => {

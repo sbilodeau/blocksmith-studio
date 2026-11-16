@@ -120,6 +120,11 @@ export function readAnimation(
 }
 
 /** Serializes JSON the way the app writes it (2-space indent, trailing newline). */
+/** Pretty JSON (2 spaces, final newline); arrays of numbers stay on one line, e.g. `"min_format": [97, 0]`. */
 export function toJsonBytes(value: unknown): Uint8Array {
-  return new TextEncoder().encode(JSON.stringify(value, null, 2) + '\n')
+  const text = JSON.stringify(value, null, 2).replace(
+    /\[\s*(-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?)*)\s*\]/g,
+    (_, items: string) => `[${items.split(/\s*,\s*/).join(', ')}]`
+  )
+  return new TextEncoder().encode(text + '\n')
 }

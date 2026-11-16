@@ -29,14 +29,17 @@ agents also read [AGENTS.md](AGENTS.md).
 
 ## Tests
 
-| Kind        | Location             | Runner                   | Notes                                                     |
-| ----------- | -------------------- | ------------------------ | --------------------------------------------------------- |
-| Unit        | `tests/unit/`        | Vitest (node)            | Pure logic: models, policies, calver, image ops           |
-| Integration | `tests/integration/` | Vitest (node)            | Main services against temporary folders                   |
-| Component   | `tests/component/`   | Vitest (happy-dom)       | Vue components and stores with a fake preload bridge      |
-| E2E         | `tests/e2e/`         | Playwright (`_electron`) | Launches the real built app with an isolated profile      |
-| AI eval     | `tests/ai-eval/`     | Vitest (node)            | Live models, skipped without a provider key               |
-| Real jar    | `tests/real-jar/`    | Vitest (node)            | Your Minecraft jar, skipped without `BLOCKSMITH_REAL_JAR` |
+| Kind        | Location             | Runner                   | Notes                                                                                  |
+| ----------- | -------------------- | ------------------------ | -------------------------------------------------------------------------------------- |
+| Unit        | `tests/unit/`        | Vitest (node)            | Pure logic: models, policies, calver, image ops                                        |
+| Integration | `tests/integration/` | Vitest (node)            | Main services against temporary folders                                                |
+| Component   | `tests/component/`   | Vitest (happy-dom)       | Vue components and stores with a fake preload bridge                                   |
+| E2E         | `tests/e2e/`         | Playwright (`_electron`) | Launches the real built app with an isolated profile                                   |
+| AI eval     | `tests/ai-eval/`     | Vitest (node)            | Live models, skipped without a provider key                                            |
+| Real jar    | `tests/real-jar/`    | Vitest (node)            | Your Minecraft install: exported packs loaded by the game's code (26.x jars + Java 25) |
+
+The real-jar pack check runs whenever a Minecraft install is found (see
+[docs/versions.md](docs/versions.md#checked-in-real-game-jars)); the entity model checks need `BLOCKSMITH_REAL_JAR`.
 
 AI code is tested without a network: the agent runtime against a scripted fake adapter
 (`tests/unit/ai-agent-fakes.ts`), the Ollama adapter and the E2E specs against a local fake HTTP server

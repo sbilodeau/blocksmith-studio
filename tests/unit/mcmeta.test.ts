@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildResourcePackMcmeta, findVersion, versionTable } from '@shared/versions'
+import {
+  buildResourcePackMcmeta,
+  findVersion,
+  OPEN_MAX_FORMAT,
+  versionTable
+} from '@shared/versions'
 import type { McVersion } from '@shared/model/versions'
 
 function version(id: string): McVersion {
@@ -20,15 +25,13 @@ describe('buildResourcePackMcmeta', () => {
     })
   })
 
-  it('emits min_format/max_format for 26.3 (97.1), without legacy fields', () => {
+  it('emits pack_format 97, min_format [97, 0], max_format [97, 1] for 26.3, without supported_formats', () => {
     const mcmeta = buildResourcePackMcmeta('My pack', version('26.3'))
     expect(mcmeta).toEqual({
-      pack: { min_format: [97, 1], max_format: 97, description: 'My pack' }
+      pack: { pack_format: 97, min_format: [97, 0], max_format: [97, 1], description: 'My pack' }
     })
-    const pack = mcmeta.pack as Record<string, unknown>
     // supported_formats must be absent when the range does not include a format below 65.
-    expect(pack).not.toHaveProperty('supported_formats')
-    expect(pack).not.toHaveProperty('pack_format')
+    expect(mcmeta.pack as Record<string, unknown>).not.toHaveProperty('supported_formats')
   })
 
   it.each([
@@ -36,24 +39,85 @@ describe('buildResourcePackMcmeta', () => {
     ['1.21.11', 75],
     ['26.1', 84],
     ['26.2', 88]
-  ])('emits min_format [major, 0] and max_format major for %s', (id, major) => {
+  ])('emits min_format [major, 0] and max_format [major, 0] for %s', (id, major) => {
     expect(buildResourcePackMcmeta('x', version(id))).toEqual({
-      pack: { min_format: [major, 0], max_format: major, description: 'x' }
+      pack: { pack_format: major, min_format: [major, 0], max_format: [major, 0], description: 'x' }
     })
   })
 
-  it('accepts the target: min_format <= target format <= max_format (any minor)', () => {
+  it('accepts the target: min_format <= target format <= max_format, pack_format inside', () => {
     for (const target of versionTable.versions.filter((x) => x.mcmetaStyle === 'minmax')) {
       const pack = buildResourcePackMcmeta('x', target).pack as {
+        pack_format: number
         min_format: [number, number]
-        max_format: number
+        max_format: [number, number]
       }
-      const [minMajor, minMinor] = pack.min_format
       const { major, minor } = target.resourcePack
-      expect(major > minMajor || (major === minMajor && minor >= minMinor)).toBe(true)
-      expect(major).toBeLessThanOrEqual(pack.max_format)
-      expect(minMajor).toBeGreaterThanOrEqual(65)
+      expect(pack.min_format).toEqual([major, 0])
+      expect(pack.max_format).toEqual([major, minor])
+      expect(pack.pack_format).toBe(major)
+      expect(major).toBeGreaterThanOrEqual(65)
     }
+  })
+
+  describe('packType data (data pack export)', () => {
+    it('writes the data pack format: 26.3 is 121.0', () => {
+      expect(buildResourcePackMcmeta('x', version('26.3'), { packType: 'data' })).toEqual({
+        pack: { pack_format: 121, min_format: [121, 0], max_format: [121, 0], description: 'x' }
+      })
+    })
+
+    it('uses pack_format alone for pre-1.21.9 targets (1.21.4 data is 61)', () => {
+      expect(buildResourcePackMcmeta('x', version('1.21.4'), { packType: 'data' })).toEqual({
+        pack: { pack_format: 61, description: 'x' }
+      })
+    })
+
+    it('combines with acceptNewer', () => {
+      expect(
+        buildResourcePackMcmeta('x', version('26.3'), { packType: 'data', acceptNewer: true })
+      ).toEqual({
+        pack: {
+          pack_format: 121,
+          min_format: [121, 0],
+          max_format: OPEN_MAX_FORMAT,
+          description: 'x'
+        }
+      })
+    })
+  })
+
+  describe('acceptNewer (export option for snapshots and future versions)', () => {
+    it('opens max_format for 1.21.9+ targets, keeping pack_format and min_format', () => {
+      expect(buildResourcePackMcmeta('x', version('26.3'), { acceptNewer: true })).toEqual({
+        pack: {
+          pack_format: 97,
+          min_format: [97, 0],
+          max_format: OPEN_MAX_FORMAT,
+          description: 'x'
+        }
+      })
+      // 26.4 snapshot 8 uses format 103.0: inside the range.
+      expect(OPEN_MAX_FORMAT).toBeGreaterThan(103)
+    })
+
+    it('writes both declarations, in agreement, for pre-1.21.9 targets (the range spans format 65)', () => {
+      expect(buildResourcePackMcmeta('x', version('1.21.4'), { acceptNewer: true })).toEqual({
+        pack: {
+          pack_format: 46,
+          supported_formats: [46, OPEN_MAX_FORMAT],
+          min_format: 46,
+          max_format: OPEN_MAX_FORMAT,
+          description: 'x'
+        }
+      })
+    })
+
+    it('changes nothing when off', () => {
+      expect(buildResourcePackMcmeta('x', version('26.3'), { acceptNewer: false })).toEqual(
+        buildResourcePackMcmeta('x', version('26.3'))
+      )
+    })
   })
 
   it('keeps the description as given and serializes to valid JSON', () => {

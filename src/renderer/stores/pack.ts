@@ -2,6 +2,7 @@ import { defineStore, getActivePinia } from 'pinia'
 import { computed, ref } from 'vue'
 import type {
   CategorySummary,
+  ExportPackType,
   ExportReport,
   PackSummary,
   TextureEntry,
@@ -42,6 +43,11 @@ export function usePackStore(packId: string) {
     const lastEdited = ref<string | null>(null)
     /** Navigation agent panel next to the grid. */
     const aiPanel = ref(false)
+    /** Export option "also accept newer versions" (kept while the tab is open). */
+    const exportAcceptNewer = ref(false)
+    function setExportAcceptNewer(on: boolean): void {
+      exportAcceptNewer.value = on
+    }
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
 
@@ -131,9 +137,17 @@ export function usePackStore(packId: string) {
       editing.value = null
     }
 
-    async function exportPack(targetVersion: string): Promise<ExportReport | null> {
+    async function exportPack(
+      targetVersion: string,
+      options: { acceptNewer?: boolean; packType?: ExportPackType } = {}
+    ): Promise<ExportReport | null> {
       try {
-        return await call('pack.export', { packId, targetVersion })
+        return await call('pack.export', {
+          packId,
+          targetVersion,
+          ...(options.acceptNewer ? { acceptNewer: true } : {}),
+          ...(options.packType ? { packType: options.packType } : {})
+        })
       } finally {
         useJobsStore().clear('pack.export')
       }
@@ -155,6 +169,8 @@ export function usePackStore(packId: string) {
       gridScroll,
       lastEdited,
       aiPanel,
+      exportAcceptNewer,
+      setExportAcceptNewer,
       changedCount,
       visible,
       load,

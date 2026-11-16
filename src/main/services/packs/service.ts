@@ -4,8 +4,10 @@ import { packAssetUrl } from '@shared/assets'
 import { getDefaultCategoryEngine, type CategoryEngine } from '@shared/categories'
 import {
   CreatePackInputSchema,
+  PACK_TYPE_FILE_SUFFIX,
   type CategorySummary,
   type CreatePackInput,
+  type ExportPackType,
   type ExportReport,
   type ImportReport,
   type PackSummary,
@@ -13,6 +15,7 @@ import {
   type TextureEntry
 } from '@shared/model/pack'
 import { buildResourcePackMcmeta } from '@shared/versions/mcmeta'
+import { canExportTo } from '@shared/versions/support'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
@@ -78,8 +81,13 @@ export interface PackService {
   categories(packId: string): Promise<CategorySummary[]>
   importZip(zipPath: string): Promise<ImportReport>
   /** Checks that `targetVersion` can be exported and returns the default file name "<slug>-<version>.zip". */
-  exportFileName(packId: string, targetVersion: string): Promise<string>
-  exportPack(packId: string, targetVersion: string, outputPath: string): Promise<ExportReport>
+  exportFileName(packId: string, targetVersion: string, packType?: ExportPackType): Promise<string>
+  exportPack(
+    packId: string,
+    targetVersion: string,
+    outputPath: string,
+    options?: { acceptNewer?: boolean; packType?: ExportPackType }
+  ): Promise<ExportReport>
 }
 
 /**
@@ -326,27 +334,41 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       return { ...report, pack: await summarize(location) }
     },
 
-    async exportFileName(packId, targetVersion) {
+    async exportFileName(packId, targetVersion, packType = 'resource') {
       const location = await requireLocation(packId)
       checkExportTarget(location, targetVersion)
-      return `${slugify(location.project.name)}-${targetVersion}.zip`
+      return `${slugify(location.project.name)}-${targetVersion}-${PACK_TYPE_FILE_SUFFIX[packType]}.zip`
     },
 
-    async exportPack(packId, targetVersion, outputPath) {
+    async exportPack(packId, targetVersion, outputPath, options = {}) {
       const location = await requireLocation(packId)
       const target = checkExportTarget(location, targetVersion)
       const onProgress = deps.jobs.start('pack.export')
-      return exportPackZip(location, target, outputPath, { vanilla: deps.vanilla, onProgress })
+      return exportPackZip(
+        location,
+        target,
+        outputPath,
+        { vanilla: deps.vanilla, onProgress },
+        options
+      )
     }
   }
 
-  /** M1: only the authoring version can be exported (multi-version export comes with migrations in M7). */
+  /**
+   * Only the authoring version, or a snapshot newer than it, can be exported (multi-version export comes with
+   * migrations in M7). See canExportTo.
+   */
   function checkExportTarget(
     location: PackLocation,
     targetVersion: string
   ): NonNullable<ReturnType<VanillaStore['getVersion']>> {
     const authoring = location.project.authoringVersion
-    const target = targetVersion === authoring ? deps.vanilla.getVersion(targetVersion) : undefined
+    const authoringVersion = deps.vanilla.getVersion(authoring)
+    const candidate = deps.vanilla.getVersion(targetVersion)
+    const target =
+      authoringVersion && candidate && canExportTo(authoringVersion, candidate)
+        ? candidate
+        : undefined
     if (!target) {
       throw new AppErrorException(PackErrorCode.exportTargetNotSupported, {
         target: targetVersion,

@@ -5,6 +5,27 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### Export
+
+- Exported file names say what they are: `<name>-<version>-resource-pack.zip`, and the dialog says to install it
+  from Options > Resource Packs (a resource pack dropped on a world's Data Packs screen shows "made for an older
+  version"). Data pack export is built and checked in the real games but stays hidden until data pack editing
+  (M10)
+- New export option **Also accept newer Minecraft versions (snapshots)**: the exported pack is listed as
+  compatible by newer versions such as 26.4 snapshots (format 103) instead of "made for an older version". Pack
+  formats were re-checked against the 26.3 jar, the Minecraft Wiki and the game code: 26.3 is format 97.1 and the
+  app's `min_format` / `max_format` values are correct for it
+- pack.mcmeta for 1.21.9+ targets now reads like a hand-written file: for 26.3,
+  `"pack_format": 97, "min_format": [97, 0], "max_format": [97, 1]`, with number arrays on one line
+- A Minecraft folder or jar added by hand in Settings now wins over the same version found in a launcher
+  folder
+- The export version list only shows versions the pack can really be exported to: the pack's version and newer
+  snapshots (no more greyed-out entries)
+- New test: every export is loaded by the game's own pack code from your real Minecraft jars (26.3 and
+  26.4-snapshot-8 checked: all 28 exports rated as expected)
+- **26.4-snapshot-8** is now in the export version list. The zip gets the snapshot's format (103.0); textures are
+  exported as they are. Snapshots are export targets only: new packs still use the latest release (26.3)
+
 ### M5 - Navigation agent and bulk operations
 
 - Navigation agent next to the grid: select textures, click **Ask the AI** and ask for a change in French or

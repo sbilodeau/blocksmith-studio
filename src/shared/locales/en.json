@@ -244,11 +244,19 @@
     "open": "Export",
     "title": "Export pack",
     "target": "Minecraft version",
-    "targetHint": "Other versions will be available once version migration is added.",
+    "targetHint": "Only versions the pack can be exported to are listed. Snapshots get your textures as they are, with the snapshot's pack format. Other versions will be available once version migration is added.",
     "changedOnly": "Only changed and added files are exported. Minecraft uses its own textures for everything else.",
     "run": "Export .zip",
     "done": "Export complete",
-    "summary": "{files} files exported for Minecraft {version} to {path}"
+    "summary": "{type}: {files} files exported for Minecraft {version} to {path}",
+    "acceptNewer": "Also accept newer Minecraft versions (snapshots)",
+    "acceptNewerHint": "Newer versions, such as snapshots, will list the pack as compatible instead of \"made for an older version\". The app cannot check that your textures still match those versions.",
+    "snapshotLabel": "{version} (snapshot)",
+    "packTypes": {
+      "resource": "Resource pack",
+      "data": "Data pack"
+    },
+    "installHint": "Install it from Options > Resource Packs (not from a world's Data Packs screen)."
   },
   "import": {
     "title": "Import complete",
@@ -296,7 +304,10 @@
       "invalidJson": "Invalid JSON file",
       "invalidPath": "Path not allowed by Minecraft (use lowercase letters, digits, _ - . /)",
       "nonPowerOfTwo": "Texture size is not a power of two",
-      "animationMismatch": "Animated texture height does not match its frames"
+      "animationMismatch": "Animated texture height does not match its frames",
+      "dataLeftOut": "The pack's data/ files were left out (export a data pack for them).",
+      "assetsLeftOut": "Textures and other assets/ files were left out: Minecraft does not load them from a data pack.",
+      "noDataFiles": "This pack has no data/ files yet, so the data pack is empty."
     },
     "identicalToVanilla": "Skipped: identical to vanilla"
   },

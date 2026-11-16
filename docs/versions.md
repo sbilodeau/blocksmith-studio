@@ -6,8 +6,9 @@ How Blocksmith Studio knows which Minecraft Java releases exist, which ones it s
 
 ## Version table
 
-`resources/data/versions.json` lists every Java **release** from 1.21 to the latest one, newest first. It is
-validated by `VersionTableSchema` (`src/shared/model/versions.ts`) and imported statically by
+`resources/data/versions.json` lists every Java **release** from 1.21 to the latest one, newest first, plus the
+latest **snapshot** when it is newer than the latest release (see [Snapshots](#snapshots)). It is validated by
+`VersionTableSchema` (`src/shared/model/versions.ts`) and imported statically by
 `src/shared/versions/table.ts`, so electron-vite bundles it into main and the renderer.
 
 ```json
@@ -20,21 +21,22 @@ validated by `VersionTableSchema` (`src/shared/model/versions.ts`) and imported 
 }
 ```
 
-Values as of 2026-11-15:
+Values as of 2026-11-16:
 
-| Minecraft      | Released   | Resource pack | Data pack | pack.mcmeta style |
-| -------------- | ---------- | ------------- | --------- | ----------------- |
-| 26.3           | 2026-09-15 | 97.1          | 121.0     | `minmax`          |
-| 26.2           | 2026-06-16 | 88.0          | 107.1     | `minmax`          |
-| 26.1 - 26.1.2  | 2026-03-24 | 84.0          | 101.1     | `minmax`          |
-| 1.21.11        | 2025-12-09 | 75.0          | 94.1      | `minmax`          |
-| 1.21.9-1.21.10 | 2025-09-30 | 69.0          | 88.0      | `minmax`          |
-| 1.21.7-1.21.8  | 2025-06-30 | 64            | 81        | `pack_format`     |
-| 1.21.6         | 2025-06-17 | 63            | 80        | `pack_format`     |
-| 1.21.5         | 2025-03-25 | 55            | 71        | `pack_format`     |
-| 1.21.4         | 2024-12-03 | 46            | 61        | `pack_format`     |
-| 1.21.2-1.21.3  | 2024-10-22 | 42            | 57        | `pack_format`     |
-| 1.21-1.21.1    | 2024-06-13 | 34            | 48        | `pack_format`     |
+| Minecraft       | Released   | Resource pack | Data pack | pack.mcmeta style |
+| --------------- | ---------- | ------------- | --------- | ----------------- |
+| 26.4-snapshot-8 | 2026-11-10 | 103.0         | 127.0     | `minmax`          |
+| 26.3            | 2026-09-15 | 97.1          | 121.0     | `minmax`          |
+| 26.2            | 2026-06-16 | 88.0          | 107.1     | `minmax`          |
+| 26.1 - 26.1.2   | 2026-03-24 | 84.0          | 101.1     | `minmax`          |
+| 1.21.11         | 2025-12-09 | 75.0          | 94.1      | `minmax`          |
+| 1.21.9-1.21.10  | 2025-09-30 | 69.0          | 88.0      | `minmax`          |
+| 1.21.7-1.21.8   | 2025-06-30 | 64            | 81        | `pack_format`     |
+| 1.21.6          | 2025-06-17 | 63            | 80        | `pack_format`     |
+| 1.21.5          | 2025-03-25 | 55            | 71        | `pack_format`     |
+| 1.21.4          | 2024-12-03 | 46            | 61        | `pack_format`     |
+| 1.21.2-1.21.3   | 2024-10-22 | 42            | 57        | `pack_format`     |
+| 1.21-1.21.1     | 2024-06-13 | 34            | 48        | `pack_format`     |
 
 ### Regenerating it
 
@@ -47,7 +49,8 @@ node scripts/update-versions.mjs --dry-run  # print instead of writing
 Sources:
 
 - Release ids and dates: Mojang's manifest
-  `https://piston-meta.mojang.com/mc/game/version_manifest_v2.json` (`type: "release"` only).
+  `https://piston-meta.mojang.com/mc/game/version_manifest_v2.json` (`type: "release"`, plus `latest.snapshot`
+  when it is newer than the latest release and misode already lists its formats).
 - Pack formats: `https://raw.githubusercontent.com/misode/mcmeta/summary/versions/data.json`, fields
   `resource_pack_version`, `resource_pack_version_minor`, `data_pack_version`, `data_pack_version_minor`.
 - `mcmetaStyle` is `minmax` when the resource pack format is 65 or more (1.21.9+), else `pack_format`.
@@ -66,6 +69,24 @@ and main logs a warning if it differs from the table. Two shapes exist (checked 
 | 1.21.9 (25w31a) | `{ "resource_major": 97, "resource_minor": 1, "data_major": 121, "data_minor": 0 }` |
 
 Source: <https://minecraft.wiki/w/Version.json> (history entry for 1.21.9 / 25w31a).
+
+### Snapshots
+
+A snapshot entry has `"type": "snapshot"` (releases have no `type`). Snapshots are **export targets only**:
+
+- `latest()`, `supportedVersions()` and `versionForPackFormat()` ignore them, so a snapshot is never the
+  authoring version of a new pack, never in the support window and never used to map an imported pack.
+- `snapshotTargets(table)` returns the snapshots newer than the latest release.
+- `exportTargets(table, authoring)` is what the export dialog lists: the authoring version, then the newer
+  snapshots, labelled "26.4-snapshot-8 (snapshot)". Versions the exporter cannot produce yet (other releases, M7)
+  are not listed at all.
+- `canExportTo(authoring, target)` allows the authoring version or a snapshot newer than it. The zip gets the
+  snapshot's pack format (`"min_format": [103, 0], "max_format": [103, 0]` for 26.4-snapshot-8), so it is meant for
+  that snapshot; tick "Also accept newer Minecraft versions" to keep the range open.
+- Snapshots are not extracted: files identical to the **authoring** version's vanilla are skipped.
+
+Source for 26.4-snapshot-8: <https://minecraft.wiki/w/Java_Edition_26.4-snapshot-8> (resource pack 103.0, data
+pack 127.0); release time from the launcher's `versions/26.4-snapshot-8/26.4-snapshot-8.json`.
 
 ## Support window
 
@@ -99,18 +120,60 @@ Verified on 2026-11-15 against <https://minecraft.wiki/w/Pack.mcmeta> and
     pack, and `supported_formats` **must be absent** otherwise.
   - Overlay entries follow the same rules (`min_format` / `max_format`, legacy `formats` only for old ranges).
 
-`buildResourcePackMcmeta(description, target)` (`src/shared/versions/mcmeta.ts`) writes the minimal file the
-target accepts:
+`buildResourcePackMcmeta(description, target, options)` (`src/shared/versions/mcmeta.ts`) writes the file the
+target accepts. With `packType: 'data'` it uses the target's data pack format instead (26.3: 121.0); data packs
+switched to `min_format` / `max_format` in the same release (1.21.9, data format 82+), so the same styles apply:
 
-| Target style  | Output                                                                          |
-| ------------- | ------------------------------------------------------------------------------- |
-| `pack_format` | `{ "pack": { "pack_format": 46, "description": "..." } }`                       |
-| `minmax`      | `{ "pack": { "min_format": [97, 1], "max_format": 97, "description": "..." } }` |
+| Target style  | Output                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------- |
+| `pack_format` | `{ "pack": { "pack_format": 46, "description": "..." } }`                                               |
+| `minmax`      | `{ "pack": { "pack_format": 97, "min_format": [97, 0], "max_format": [97, 1], "description": "..." } }` |
 
-`min_format` pins the exact format of the target (content may use features of that minor revision) and
-`max_format` accepts later minor revisions of the same major format. No legacy field is written because a single
-1.21.9+ target never includes a format below 65. Multi-version ranges (export to older versions) come in M7 and
+For a 1.21.9+ target the range is `[major, 0]` to the target's exact format, so 26.3 (97.1) gets
+`[97, 0]` - `[97, 1]`. `pack_format` is optional since 1.21.9 but allowed; it is written (inside the range)
+because tools and guides expect it. `supported_formats` is not written because a single 1.21.9+ target never
+includes a format below 65. Number arrays are written on one line (`toJsonBytes`). Multi-version ranges (export to older versions) come in M7 and
 must follow the compatibility rules above.
+
+### Export option "Also accept newer Minecraft versions"
+
+A pack whose `max_format` is below the game's format is listed as "made for an older version" (for example a
+26.3 pack, format 97.1, in a 26.4 snapshot, format 103.0). With the export option ticked (`pack.export`
+`acceptNewer: true`), `max_format` becomes `OPEN_MAX_FORMAT` (999), so newer games list the pack as compatible:
+
+| Target style  | Output with the option                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `minmax`      | `{ "pack_format": 97, "min_format": [97, 0], "max_format": 999 }`                            |
+| `pack_format` | `{ "pack_format": 46, "supported_formats": [46, 999], "min_format": 46, "max_format": 999 }` |
+
+For a pre-1.21.9 target the open range spans format 65, so both declarations are written and agree: old games
+read `pack_format` / `supported_formats`, newer games `min_format` / `max_format` (the game refuses a pack whose
+two declarations disagree). The app cannot check that the textures still match versions it does not know; the
+dialog says so. The option only changes the exported zip, never the pack folder's own `pack.mcmeta`.
+
+### Checked in real game jars
+
+`tests/real-jar/pack-compat.test.ts` exports every target the app offers (each supported release for itself,
+newer snapshots; as a resource pack and as a data pack; with and without "Also accept newer Minecraft versions")
+with the real exporter, then loads the zips with the game's own pack code from real client jars (resource packs
+with the resource pack loader, data packs with the data pack loader) (`tests/real-jar/CheckPacks.java`, which calls
+`Pack.readMetaAndCreate` and prints `COMPATIBLE`, `TOO_OLD` or `TOO_NEW`, as the resource pack screen shows it).
+Each verdict must match the range the exporter declares, and the export for the game's own version must be
+compatible.
+
+- It runs with `npm test` and `npm run test:real-jar` when a Minecraft install is found, and is skipped otherwise
+  (CI). No game file is copied into the repo.
+- Jars: `<dir>/versions/<id>/<id>.jar` (+ `<id>.json` for the libraries) in the official launcher folder, or in
+  the folders listed in `BLOCKSMITH_REAL_JAR_MINECRAFT_DIRS` (separated by `:`, `;` on Windows).
+- Java: 25 or newer with `javac`, from `BLOCKSMITH_REAL_JAR_JAVA_HOME` or the runtime the launcher installs in
+  `<dir>/runtime`.
+- Only 26.1+ jars can run the check (older jars are obfuscated); zips for older targets are still loaded by the
+  26.x games.
+
+Last run (2026-11-16): 26.3 and 26.4-snapshot-8 jars, 56 exports each (28 resource packs, 28 data packs), all as
+expected. A 26.3 export is
+compatible in 26.3 and "made for an older version" in the snapshot unless the option is ticked; a snapshot export
+is "made for a newer version" in 26.3.
 
 ## Finding client jars
 
@@ -136,6 +199,8 @@ Only release ids present in the version table are reported; snapshots and other 
   `version.json`.
 
 A manual path is saved only if it holds at least one supported release (else `minecraft.noVersionsFound`).
+When the same version is in several places, a folder or jar added by hand wins over an auto-detected launcher,
+then comes a jar downloaded from Mojang earlier.
 
 ## Vanilla cache
 

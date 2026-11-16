@@ -649,17 +649,18 @@ Retries: exponential backoff on 429/5xx with a cap; user-visible error with i18n
 
 Values from current references (verified at implementation time against the jars):
 
-| Minecraft      | Resource pack format | pack.mcmeta style       |
-| -------------- | -------------------- | ----------------------- |
-| 1.21.4         | 46                   | `pack_format`           |
-| 1.21.5         | 55                   | `pack_format`           |
-| 1.21.6         | 63                   | `pack_format`           |
-| 1.21.7-1.21.8  | 64                   | `pack_format`           |
-| 1.21.9-1.21.10 | 69.0                 | `min_format/max_format` |
-| 1.21.11        | 75.0                 | `min_format/max_format` |
-| 26.1-26.1.2    | 84.0                 | `min_format/max_format` |
-| 26.2           | 88.0                 | `min_format/max_format` |
-| 26.3           | 97.x                 | `min_format/max_format` |
+| Minecraft                     | Resource pack format | pack.mcmeta style       |
+| ----------------------------- | -------------------- | ----------------------- |
+| 1.21.4                        | 46                   | `pack_format`           |
+| 1.21.5                        | 55                   | `pack_format`           |
+| 1.21.6                        | 63                   | `pack_format`           |
+| 1.21.7-1.21.8                 | 64                   | `pack_format`           |
+| 1.21.9-1.21.10                | 69.0                 | `min_format/max_format` |
+| 1.21.11                       | 75.0                 | `min_format/max_format` |
+| 26.1-26.1.2                   | 84.0                 | `min_format/max_format` |
+| 26.2                          | 88.0                 | `min_format/max_format` |
+| 26.3                          | 97.x                 | `min_format/max_format` |
+| 26.4-snapshot-8 (export only) | 103.0                | `min_format/max_format` |
 
 - **Support window** is a rule, not a hard-coded list: release versions whose `releaseTime` falls within the last 24 months, plus the latest.
   As of 2026-11-15 that is 1.21.4 -> 26.3. Older versions disappear from export targets automatically as time passes.
@@ -667,14 +668,17 @@ Values from current references (verified at implementation time against the jars
 
 ### 8.5 Export
 
-- Dialog: target version(s), file name pattern (`{name}-{mc}.zip`), option "one zip per target" (multi-target export).
+- Dialog: target version(s), file name pattern (`{name}-{mc}.zip`), option "one zip per target" (multi-target export),
+  option "also accept newer Minecraft versions (snapshots)" (open `max_format`, see docs/versions.md; built after M5),
+  pack type "resource pack" / "data pack" (`<name>-<version>-resource-pack.zip` / `-data-pack.zip`; a data pack gets
+  only `data/` and the data pack format, see docs/packs.md; built after M5, hidden in the dialog until M10).
 - Pipeline per target (in a worker):
   1. Collect pack files (exclude `.blocksmith/`, OS junk, files identical to the target version's vanilla).
   2. **Migrate down** from the authoring version to the target using `migrations/<from>__<to>.json` chains:
      `rename` (path changes), `remove` (texture doesn't exist in target -> skipped + warning), `split/merge` (rare, handled by a script hook).
   3. Generate `pack.mcmeta` for the target:
      - target < 1.21.9: `{ "pack": { "pack_format": N, "description": ... } }`
-     - target >= 1.21.9: `{ "pack": { "min_format": N, "max_format": N, "description": ... } }` (plus `pack_format` when a range spans the boundary, per the spec)
+     - target >= 1.21.9: `{ "pack": { "pack_format": N, "min_format": [N, 0], "max_format": [N, minor], "description": ... } }` (plus `supported_formats` when a range spans the boundary, per the spec)
   4. Validate (the "Pack Doctor" checks: PNG valid, dimensions power-of-two/animation strips consistent, JSON parses, mcmeta schema, path case, no non-ASCII paths).
   5. Write the zip with fflate (deterministic order, fixed timestamps for reproducible output), forward slashes, `pack.mcmeta` at root.
 - Report: files exported, skipped (with reason), warnings. Saved as an export profile for one-click re-export.

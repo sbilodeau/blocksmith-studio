@@ -159,13 +159,28 @@ an unknown head, means every entry is applied.
 
 ## Export (.zip)
 
-M1 exports to the pack's authoring version only (`export.targetNotSupported` otherwise; multi-version export with
-migrations is M7).
+Targets: the pack's authoring version, or a snapshot newer than it (`export.targetNotSupported` otherwise;
+multi-version export with migrations is M7). See [versions.md](versions.md) for the snapshot rules.
 
-1. **Collect** every file of the pack folder except hidden entries (`.blocksmith/`, `.git/`...), OS junk and files
-   byte-identical to the target's vanilla (reported in `skipped` with reason `identicalToVanilla`).
-2. **pack.mcmeta** is always regenerated from the project description and the target version; extra top-level
-   sections of the pack's own `pack.mcmeta` (`language`, `filter`, `overlays`...) are kept.
+**Pack type** (`pack.export` `packType`). The dialog does not offer it yet: every export from the UI is a resource
+pack, and the data pack choice comes back with data pack editing (M10). The export pipeline, IPC and real-jar check
+already support both:
+
+| Pack type            | Contents                       | pack.mcmeta format         | File name                            | Installed from                                    |
+| -------------------- | ------------------------------ | -------------------------- | ------------------------------------ | ------------------------------------------------- |
+| `resource` (default) | Everything except `data/`      | Resource pack (26.3: 97.1) | `<name>-<version>-resource-pack.zip` | Options > Resource Packs, `resourcepacks/`        |
+| `data`               | Only `data/` (plus `pack.png`) | Data pack (26.3: 121.0)    | `<name>-<version>-data-pack.zip`     | A world's Data Packs screen, `<world>/datapacks/` |
+
+Minecraft never loads textures from a data pack, so a data pack export leaves `assets/` out (warning
+`export.assetsLeftOut`) and is empty until the pack has `data/` files (`export.noDataFiles`; data pack editing is
+M10). A resource pack export leaves `data/` out (`export.dataLeftOut`). A resource pack dropped on a world's Data
+Packs screen is checked against the data pack format and shows "Made for an older version".
+
+1. **Collect** every file of the pack folder for the pack type, except hidden entries (`.blocksmith/`, `.git/`...),
+   OS junk and files byte-identical to the target's vanilla (reported in `skipped` with reason
+   `identicalToVanilla`).
+2. **pack.mcmeta** is always regenerated from the project description, the target version and the pack type; extra
+   top-level sections of the pack's own `pack.mcmeta` (`language`, `filter`, `overlays`...) are kept.
 3. **Validate** (Pack Doctor basics, reported as warnings, never silently fixed).
 4. **Write** a deterministic zip: `pack.mcmeta` and `pack.png` first, then entries sorted by path, forward slashes,
    fixed timestamps, no directory entries. PNGs are stored, other files deflated. Two exports of the same content
@@ -174,6 +189,9 @@ migrations is M7).
 | Warning code               | When                                                                |
 | -------------------------- | ------------------------------------------------------------------- |
 | `export.vanillaNotReady`   | Target vanilla not extracted: identical files could not be skipped  |
+| `export.dataLeftOut`       | Resource pack export: the pack's `data/` files were left out        |
+| `export.assetsLeftOut`     | Data pack export: `assets/` files (textures...) were left out       |
+| `export.noDataFiles`       | Data pack export: the pack has no `data/` file, the zip is empty    |
 | `export.invalidMcmeta`     | The pack's own `pack.mcmeta` does not parse (it is replaced)        |
 | `export.missingPackPng`    | No `pack.png` at the root                                           |
 | `export.invalidPng`        | Bad PNG signature or IHDR                                           |

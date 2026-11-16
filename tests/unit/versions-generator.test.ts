@@ -15,6 +15,12 @@ const manifest = {
 }
 
 const summary = [
+  {
+    id: '26.4-snapshot-8',
+    resource_pack_version: 103,
+    resource_pack_version_minor: 0,
+    data_pack_version: 127
+  },
   { id: '26.3', resource_pack_version: 97, resource_pack_version_minor: 1, data_pack_version: 121 },
   { id: '1.21.9', resource_pack_version: 69, data_pack_version: 88, data_pack_version_minor: 0 },
   { id: '1.21.8', resource_pack_version: 64, data_pack_version: 81 },
@@ -22,29 +28,50 @@ const summary = [
 ]
 
 describe('buildVersionTable', () => {
-  it('keeps releases from 1.21 on, newest first, with formats and mcmeta style', () => {
+  it('keeps releases from 1.21 on and the newer latest snapshot, newest first', () => {
     const table = buildVersionTable(manifest, summary, '2026-11-15')
     expect(() => VersionTableSchema.parse(table)).not.toThrow()
     expect(table.updatedAt).toBe('2026-11-15')
     expect(table.versions.map((v: { id: string }) => v.id)).toEqual([
+      '26.4-snapshot-8',
       '26.3',
       '1.21.9',
       '1.21.8',
       '1.21'
     ])
     expect(table.versions[0]).toEqual({
+      id: '26.4-snapshot-8',
+      type: 'snapshot',
+      releaseTime: '2026-11-10T14:20:05+00:00',
+      resourcePack: { major: 103, minor: 0 },
+      dataPack: { major: 127, minor: 0 },
+      mcmetaStyle: 'minmax'
+    })
+    expect(table.versions[1]).toEqual({
       id: '26.3',
       releaseTime: '2026-09-15T11:23:02+00:00',
       resourcePack: { major: 97, minor: 1 },
       dataPack: { major: 121, minor: 0 },
       mcmetaStyle: 'minmax'
     })
-    expect(table.versions[1].mcmetaStyle).toBe('minmax')
-    expect(table.versions[2].mcmetaStyle).toBe('pack_format')
+    expect(table.versions[2].mcmetaStyle).toBe('minmax')
+    expect(table.versions[3].mcmetaStyle).toBe('pack_format')
+  })
+
+  it('skips the latest snapshot when it is older than the latest release or has no formats yet', () => {
+    const ids = (t: { versions: { id: string }[] }): string[] => t.versions.map((v) => v.id)
+    expect(ids(buildVersionTable(manifest, summary.slice(1), '2026-11-15'))[0]).toBe('26.3')
+    const old = {
+      ...manifest,
+      versions: manifest.versions.map((v) =>
+        v.type === 'snapshot' ? { ...v, releaseTime: '2026-09-01T00:00:00+00:00' } : v
+      )
+    }
+    expect(ids(buildVersionTable(old, summary, '2026-11-15'))[0]).toBe('26.3')
   })
 
   it('fails when a release has no pack formats', () => {
-    expect(() => buildVersionTable(manifest, summary.slice(1), '2026-11-15')).toThrow(/26\.3/)
+    expect(() => buildVersionTable(manifest, summary.slice(2), '2026-11-15')).toThrow(/26\.3/)
   })
 })
 
