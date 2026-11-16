@@ -145,7 +145,8 @@
       "replayFailed": "Step {step} ({tool}) could not be applied.",
       "agentFailed": "The AI agent stopped because of an unexpected error.",
       "evalBusy": "A model test is already running.",
-      "emptySelection": "None of the selected textures could be read. Select textures in the grid and try again."
+      "emptySelection": "None of the selected textures could be read. Select textures in the grid and try again.",
+      "emptyPack": "This pack has no textures to work on yet."
     },
     "bulk": {
       "aborted": "The bulk operation was stopped.",
@@ -273,7 +274,8 @@
       "read": "Reading",
       "write": "Writing",
       "collect": "Collecting files",
-      "compute": "Computing"
+      "compute": "Computing",
+      "step": "Applying step"
     }
   },
   "category": {
@@ -389,7 +391,8 @@
       "save": "Saved {name}",
       "revert": "Reverted {name} to vanilla",
       "bulk": "Bulk edit of {count} textures | Bulk edit of 1 texture | Bulk edit of {count} textures",
-      "aiBulk": "AI plan on {count} textures | AI plan on 1 texture | AI plan on {count} textures"
+      "aiBulk": "AI plan on {count} textures | AI plan on 1 texture | AI plan on {count} textures",
+      "aiPlanStep": "AI plan, step {step} of {total} ({count} textures)"
     },
     "title": "History",
     "empty": "Nothing saved yet."
@@ -606,7 +609,28 @@
     "navigationPanel": "AI assistant",
     "emptyNavigation": "Select textures in the grid, then ask for a change, for example: \"make everything redder\" or \"give the ores a dark red outline\".",
     "navigationSelection": "No texture selected | Working on 1 selected texture | Working on {count} selected textures",
-    "navigationNoSelection": "Select textures in the grid to work on them."
+    "navigationNoSelection": "Select textures in the grid to work on them.",
+    "creationPanel": "Ask the AI (whole pack)",
+    "emptyCreation": "Describe the pack you want (\"make a fire pack\", \"make every ore glow red\"). The AI proposes a style brief and category-by-category steps; you review each step before anything changes.",
+    "creationContext": "Whole pack: {count} textures | Whole pack: 1 texture | Whole pack: {count} textures",
+    "plan": {
+      "title": "Plan: {count} steps | Plan: 1 step | Plan: {count} steps",
+      "textures": "{count} textures | 1 texture | {count} textures",
+      "wholePack": "Whole pack",
+      "pack": "Pack",
+      "metaName": "Name: {name}",
+      "metaDescription": "Description: {description}",
+      "dependencyWarning": "Some ticked steps were previewed on top of a step you unticked; they will apply to the current textures.",
+      "checkpointHint": "Each step is written as its own history entry, so you can undo the last steps without losing the others.",
+      "apply": "Apply {steps} steps (up to {textures} textures) | Apply 1 step (up to {textures} textures) | Apply {steps} steps (up to {textures} textures)",
+      "applyMemory": "Apply",
+      "stop": "Stop after this step",
+      "stopping": "Stopping...",
+      "appliedResult": "Plan applied: {count} textures written. | Plan applied: 1 texture written. | Plan applied: {count} textures written.",
+      "stoppedResult": "Plan stopped: {count} textures written. | Plan stopped: 1 texture written. | Plan stopped: {count} textures written.",
+      "checkpoints": "({count} history entries) | (1 history entry) | ({count} history entries)",
+      "metaUpdated": "Pack name / description updated."
+    }
   },
   "brief": {
     "open": "Style brief",
@@ -671,7 +695,8 @@
       "vanilla": "vanilla",
       "pack": "pack"
     },
-    "unknown": "Operation {tool}"
+    "unknown": "Operation {tool}",
+    "setPackMeta": "Change the pack ({fields})"
   },
   "bulk": {
     "open": "Edit selection...",

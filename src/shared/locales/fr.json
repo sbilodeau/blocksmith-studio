@@ -145,7 +145,8 @@
       "replayFailed": "L'étape {step} ({tool}) n'a pas pu être appliquée.",
       "agentFailed": "L'agent IA s'est arrêté à cause d'une erreur inattendue.",
       "evalBusy": "Un test de modèle est déjà en cours.",
-      "emptySelection": "Aucune des textures sélectionnées n'a pu être lue. Sélectionnez des textures dans la grille et réessayez."
+      "emptySelection": "Aucune des textures sélectionnées n'a pu être lue. Sélectionnez des textures dans la grille et réessayez.",
+      "emptyPack": "Ce pack n'a pas encore de textures sur lesquelles travailler."
     },
     "bulk": {
       "aborted": "L'opération groupée a été arrêtée.",
@@ -273,7 +274,8 @@
       "read": "Lecture",
       "write": "Écriture",
       "collect": "Collecte des fichiers",
-      "compute": "Calcul"
+      "compute": "Calcul",
+      "step": "Application de l'étape"
     }
   },
   "category": {
@@ -389,7 +391,8 @@
       "save": "{name} enregistrée",
       "revert": "{name} remise à vanilla",
       "bulk": "Modification de {count} textures | Modification de 1 texture | Modification de {count} textures",
-      "aiBulk": "Plan IA sur {count} textures | Plan IA sur 1 texture | Plan IA sur {count} textures"
+      "aiBulk": "Plan IA sur {count} textures | Plan IA sur 1 texture | Plan IA sur {count} textures",
+      "aiPlanStep": "Plan IA, étape {step} sur {total} ({count} textures)"
     },
     "title": "Historique",
     "empty": "Rien d'enregistré pour le moment."
@@ -606,7 +609,28 @@
     "navigationPanel": "Assistant IA",
     "emptyNavigation": "Sélectionnez des textures dans la grille, puis demandez une modification, par exemple : « mets tout plus rouge » ou « ajoute un contour rouge foncé aux minerais ».",
     "navigationSelection": "Aucune texture sélectionnée | Travail sur 1 texture sélectionnée | Travail sur {count} textures sélectionnées",
-    "navigationNoSelection": "Sélectionnez des textures dans la grille pour travailler dessus."
+    "navigationNoSelection": "Sélectionnez des textures dans la grille pour travailler dessus.",
+    "creationPanel": "Demander à l'IA (tout le pack)",
+    "emptyCreation": "Décrivez le pack voulu (« fais un pack de feu », « fais briller tous les minerais en rouge »). L'IA propose un brief de style et des étapes catégorie par catégorie ; vous vérifiez chaque étape avant tout changement.",
+    "creationContext": "Tout le pack : {count} textures | Tout le pack : 1 texture | Tout le pack : {count} textures",
+    "plan": {
+      "title": "Plan : {count} étapes | Plan : 1 étape | Plan : {count} étapes",
+      "textures": "{count} textures | 1 texture | {count} textures",
+      "wholePack": "Tout le pack",
+      "pack": "Pack",
+      "metaName": "Nom : {name}",
+      "metaDescription": "Description : {description}",
+      "dependencyWarning": "Certaines étapes cochées ont été prévisualisées après une étape que vous avez décochée ; elles s'appliqueront aux textures actuelles.",
+      "checkpointHint": "Chaque étape est enregistrée comme une entrée d'historique distincte : vous pouvez annuler les dernières étapes sans perdre les autres.",
+      "apply": "Appliquer {steps} étapes (jusqu'à {textures} textures) | Appliquer 1 étape (jusqu'à {textures} textures) | Appliquer {steps} étapes (jusqu'à {textures} textures)",
+      "applyMemory": "Appliquer",
+      "stop": "Arrêter après cette étape",
+      "stopping": "Arrêt en cours...",
+      "appliedResult": "Plan appliqué : {count} textures écrites. | Plan appliqué : 1 texture écrite. | Plan appliqué : {count} textures écrites.",
+      "stoppedResult": "Plan arrêté : {count} textures écrites. | Plan arrêté : 1 texture écrite. | Plan arrêté : {count} textures écrites.",
+      "checkpoints": "({count} entrées d'historique) | (1 entrée d'historique) | ({count} entrées d'historique)",
+      "metaUpdated": "Nom / description du pack mis à jour."
+    }
   },
   "brief": {
     "open": "Brief de style",
@@ -671,7 +695,8 @@
       "vanilla": "vanilla",
       "pack": "du pack"
     },
-    "unknown": "Opération {tool}"
+    "unknown": "Opération {tool}",
+    "setPackMeta": "Modifier le pack ({fields})"
   },
   "bulk": {
     "open": "Modifier la sélection...",
