@@ -124,6 +124,13 @@ describe('VanillaStore', () => {
     expect(downloads).toEqual([])
   })
 
+  it('prefers a jar added by hand over the same version in a detected launcher', async () => {
+    await makeFixtureJar(join(officialRoot(), 'versions', '26.3', '26.3.jar'), '26.3')
+    const jar = await makeFixtureJar(join(home, 'elsewhere', 'client.jar'), '26.3')
+    manualPaths = [jar]
+    expect((await store().availability())[0]).toMatchObject({ state: 'local', jarPath: jar })
+  })
+
   it('refuses to download without consent', async () => {
     const err = await store()
       .prepare('26.3', { allowDownload: false })

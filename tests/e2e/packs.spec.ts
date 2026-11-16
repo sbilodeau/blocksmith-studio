@@ -136,8 +136,7 @@ test('imports a zip, marks modified textures and exports only changed files', as
     'pack.png'
   ])
   const mcmeta = JSON.parse(strFromU8(files['pack.mcmeta']))
-  expect(mcmeta.pack.min_format).toEqual([97, 1])
-  expect(mcmeta.pack.max_format).toBe(97)
+  expect(mcmeta.pack).toMatchObject({ pack_format: 97, min_format: [97, 0], max_format: [97, 1] })
   expect(mcmeta.pack.description).toBe('Red stone')
 
   // "Also accept newer versions" (snapshots) opens the range.
@@ -151,7 +150,7 @@ test('imports a zip, marks modified textures and exports only changed files', as
   const open = JSON.parse(
     strFromU8(unzipSync(new Uint8Array(await readFile(openPath)))['pack.mcmeta'])
   )
-  expect(open.pack).toMatchObject({ min_format: [97, 1], max_format: 999 })
+  expect(open.pack).toMatchObject({ pack_format: 97, min_format: [97, 0], max_format: 999 })
 
   // The newest snapshot is an export target with its own pack format.
   const snapPath = join(root, 'export-snapshot.zip')
@@ -166,7 +165,7 @@ test('imports a zip, marks modified textures and exports only changed files', as
   const snap = JSON.parse(
     strFromU8(unzipSync(new Uint8Array(await readFile(snapPath)))['pack.mcmeta'])
   )
-  expect(snap.pack).toMatchObject({ min_format: [103, 0], max_format: 103 })
+  expect(snap.pack).toMatchObject({ pack_format: 103, min_format: [103, 0], max_format: [103, 0] })
 })
 
 test('deleting a pack moves it out of the list', async () => {

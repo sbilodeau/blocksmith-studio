@@ -78,7 +78,7 @@ A snapshot entry has `"type": "snapshot"` (releases have no `type`). Snapshots a
 - `snapshotTargets(table)` returns the snapshots newer than the latest release; the export dialog lists them
   first, labelled "26.4-snapshot-8 (snapshot)".
 - `canExportTo(authoring, target)` allows the authoring version or a snapshot newer than it. The zip gets the
-  snapshot's pack format (`{ "min_format": [103, 0], "max_format": 103 }` for 26.4-snapshot-8), so it is meant for
+  snapshot's pack format (`"min_format": [103, 0], "max_format": [103, 0]` for 26.4-snapshot-8), so it is meant for
   that snapshot; tick "Also accept newer Minecraft versions" to keep the range open.
 - Snapshots are not extracted: files identical to the **authoring** version's vanilla are skipped.
 
@@ -120,14 +120,15 @@ Verified on 2026-11-15 against <https://minecraft.wiki/w/Pack.mcmeta> and
 `buildResourcePackMcmeta(description, target)` (`src/shared/versions/mcmeta.ts`) writes the minimal file the
 target accepts:
 
-| Target style  | Output                                                                          |
-| ------------- | ------------------------------------------------------------------------------- |
-| `pack_format` | `{ "pack": { "pack_format": 46, "description": "..." } }`                       |
-| `minmax`      | `{ "pack": { "min_format": [97, 1], "max_format": 97, "description": "..." } }` |
+| Target style  | Output                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------- |
+| `pack_format` | `{ "pack": { "pack_format": 46, "description": "..." } }`                                               |
+| `minmax`      | `{ "pack": { "pack_format": 97, "min_format": [97, 0], "max_format": [97, 1], "description": "..." } }` |
 
-`min_format` pins the exact format of the target (content may use features of that minor revision) and
-`max_format` accepts later minor revisions of the same major format. No legacy field is written because a single
-1.21.9+ target never includes a format below 65. Multi-version ranges (export to older versions) come in M7 and
+For a 1.21.9+ target the range is `[major, 0]` to the target's exact format, so 26.3 (97.1) gets
+`[97, 0]` - `[97, 1]`. `pack_format` is optional since 1.21.9 but allowed; it is written (inside the range)
+because tools and guides expect it. `supported_formats` is not written because a single 1.21.9+ target never
+includes a format below 65. Number arrays are written on one line (`toJsonBytes`). Multi-version ranges (export to older versions) come in M7 and
 must follow the compatibility rules above.
 
 ### Export option "Also accept newer Minecraft versions"
@@ -138,7 +139,7 @@ A pack whose `max_format` is below the game's format is listed as "made for an o
 
 | Target style  | Output with the option                                                                       |
 | ------------- | -------------------------------------------------------------------------------------------- |
-| `minmax`      | `{ "min_format": [97, 1], "max_format": 999 }`                                               |
+| `minmax`      | `{ "pack_format": 97, "min_format": [97, 0], "max_format": 999 }`                            |
 | `pack_format` | `{ "pack_format": 46, "supported_formats": [46, 999], "min_format": 46, "max_format": 999 }` |
 
 For a pre-1.21.9 target the open range spans format 65, so both declarations are written and agree: old games
@@ -170,6 +171,8 @@ Only release ids present in the version table are reported; snapshots and other 
   `version.json`.
 
 A manual path is saved only if it holds at least one supported release (else `minecraft.noVersionsFound`).
+When the same version is in several places, a folder or jar added by hand wins over an auto-detected launcher,
+then comes a jar downloaded from Mojang earlier.
 
 ## Vanilla cache
 

@@ -117,9 +117,16 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
     })
   }
 
-  /** A client jar for `id` on disk: launcher installs first, then a jar downloaded earlier. */
+  /**
+   * A client jar for `id` on disk: folders / jars added by hand first (the user chose them), then auto-detected
+   * launcher installs, then a jar downloaded earlier.
+   */
   async function localJar(id: string, installs: MinecraftInstall[]): Promise<string | undefined> {
-    for (const install of installs) {
+    const ordered = [
+      ...installs.filter((i) => i.launcher === 'custom'),
+      ...installs.filter((i) => i.launcher !== 'custom')
+    ]
+    for (const install of ordered) {
       const match = install.versions.find((v) => v.id === id)
       if (match) return match.jarPath
     }

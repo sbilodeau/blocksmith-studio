@@ -676,7 +676,7 @@ Values from current references (verified at implementation time against the jars
      `rename` (path changes), `remove` (texture doesn't exist in target -> skipped + warning), `split/merge` (rare, handled by a script hook).
   3. Generate `pack.mcmeta` for the target:
      - target < 1.21.9: `{ "pack": { "pack_format": N, "description": ... } }`
-     - target >= 1.21.9: `{ "pack": { "min_format": N, "max_format": N, "description": ... } }` (plus `pack_format` when a range spans the boundary, per the spec)
+     - target >= 1.21.9: `{ "pack": { "pack_format": N, "min_format": [N, 0], "max_format": [N, minor], "description": ... } }` (plus `supported_formats` when a range spans the boundary, per the spec)
   4. Validate (the "Pack Doctor" checks: PNG valid, dimensions power-of-two/animation strips consistent, JSON parses, mcmeta schema, path case, no non-ASCII paths).
   5. Write the zip with fflate (deterministic order, fixed timestamps for reproducible output), forward slashes, `pack.mcmeta` at root.
 - Report: files exported, skipped (with reason), warnings. Saved as an export profile for one-click re-export.

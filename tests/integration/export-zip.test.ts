@@ -76,6 +76,8 @@ describe('export .zip', () => {
     expect(mcmeta.pack.description).toBe('Hot stuff')
     expect(mcmeta.pack.pack_format).not.toBe(1)
     expect(mcmeta.language).toEqual({ xx_yy: { name: 'X', region: 'Y', bidirectional: false } })
+    // Same layout as hand-written files: number arrays on one line.
+    expect(strFromU8(zip['pack.mcmeta'])).toContain('"min_format": [97, 0],')
     expect(Object.keys(mcmeta)[0]).toBe('pack')
 
     expect(report).toMatchObject({
@@ -111,7 +113,7 @@ describe('export .zip', () => {
     expect(mcmeta.pack.max_format).toBe(999)
     // The pack folder's own pack.mcmeta is untouched.
     const own = JSON.parse(await readFile(join(pack.folder, 'pack.mcmeta'), 'utf8'))
-    expect(own.pack.max_format).toBe(97)
+    expect(own.pack.max_format).toEqual([97, 0])
   })
 
   it('exports to a newer snapshot with its pack format, skipping files identical to the authoring vanilla', async () => {
@@ -123,7 +125,12 @@ describe('export .zip', () => {
     const zip = unzipSync(new Uint8Array(await readFile(out)))
     expect(Object.keys(zip)).toEqual(['pack.mcmeta', 'pack.png', T('block/stone.png')])
     const mcmeta = JSON.parse(strFromU8(zip['pack.mcmeta']))
-    expect(mcmeta.pack).toEqual({ min_format: [103, 0], max_format: 103, description: 'Hot stuff' })
+    expect(mcmeta.pack).toEqual({
+      pack_format: 103,
+      min_format: [103, 0],
+      max_format: [103, 0],
+      description: 'Hot stuff'
+    })
     expect(report).toMatchObject({
       targetVersion: '26.4-snapshot-8',
       skipped: [{ path: T('block/dirt.png'), reason: 'identicalToVanilla' }],
