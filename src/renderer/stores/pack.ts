@@ -48,11 +48,6 @@ export function usePackStore(packId: string) {
     function setExportAcceptNewer(on: boolean): void {
       exportAcceptNewer.value = on
     }
-    /** Export pack type (kept while the tab is open). */
-    const exportPackType = ref<ExportPackType>('resource')
-    function setExportPackType(type: ExportPackType): void {
-      exportPackType.value = type
-    }
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
 
@@ -176,8 +171,6 @@ export function usePackStore(packId: string) {
       aiPanel,
       exportAcceptNewer,
       setExportAcceptNewer,
-      exportPackType,
-      setExportPackType,
       changedCount,
       visible,
       load,

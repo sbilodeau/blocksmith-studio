@@ -162,7 +162,9 @@ an unknown head, means every entry is applied.
 Targets: the pack's authoring version, or a snapshot newer than it (`export.targetNotSupported` otherwise;
 multi-version export with migrations is M7). See [versions.md](versions.md) for the snapshot rules.
 
-**Pack type** (`pack.export` `packType`, dialog radio buttons, remembered per tab):
+**Pack type** (`pack.export` `packType`). The dialog does not offer it yet: every export from the UI is a resource
+pack, and the data pack choice comes back with data pack editing (M10). The export pipeline, IPC and real-jar check
+already support both:
 
 | Pack type            | Contents                       | pack.mcmeta format         | File name                            | Installed from                                    |
 | -------------------- | ------------------------------ | -------------------------- | ------------------------------------ | ------------------------------------------------- |

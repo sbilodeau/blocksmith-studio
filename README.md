@@ -14,7 +14,7 @@ a live 3D preview and AI agents that propose changes you review before anything 
 - Pixel editor with undo/redo, compare with vanilla, and a live 3D preview for blocks, items and entities
 - Bulk edits of a selection (hue, brightness, palette, outline, flip...) reviewed texture by texture
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
-- Export to any Minecraft Java version released in the last two years, as a resource pack or a data pack
+- Export to any Minecraft Java version released in the last two years
 - English and French interface
 - Self-updating releases published on GitHub Releases (CalVer `yy.ww.fix`)
 

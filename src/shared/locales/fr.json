@@ -252,15 +252,11 @@
     "acceptNewer": "Accepter aussi les versions plus récentes de Minecraft (snapshots)",
     "acceptNewerHint": "Les versions plus récentes, comme les snapshots, afficheront le pack comme compatible au lieu de « conçu pour une version plus ancienne ». L'application ne peut pas vérifier que vos textures correspondent encore à ces versions.",
     "snapshotLabel": "{version} (snapshot)",
-    "packType": "Type de pack",
     "packTypes": {
       "resource": "Pack de ressources",
       "data": "Pack de données"
     },
-    "packTypeHint": {
-      "resource": "Textures et modèles. Installez-le depuis Options > Packs de ressources (ou le dossier resourcepacks).",
-      "data": "Pour l'écran Packs de données d'un monde (ou son dossier datapacks). Un pack de données ne peut pas contenir de textures : seuls les fichiers du dossier data/ du pack sont exportés."
-    }
+    "installHint": "Installez-le depuis Options > Packs de ressources (pas depuis l'écran Packs de données d'un monde)."
   },
   "import": {
     "title": "Importation terminée",
