@@ -116,7 +116,7 @@ describe('bundled migration table', () => {
     ],
     ['1.21.4', '26.3', 'block/chain', { path: T('block/iron_chain'), renamed: true }],
     ['26.3', '1.21.4', 'block/stone', { path: T('block/stone'), renamed: false }],
-    ['26.3', '1.21.4', 'entity/cow/temperate_cow', { missingIn: '1.21.4' }]
+    ['26.3', '1.21.4', 'entity/cow/cow_temperate', { missingIn: '1.21.4' }]
   ] as const)('%s -> %s: %s', (from, to, path, expected) => {
     expect(new PathMigrator(from, to).migrate(T(path))).toEqual(expected)
   })

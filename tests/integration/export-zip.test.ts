@@ -189,7 +189,7 @@ describe('export .zip', () => {
   it('exports to an older release: renamed textures, missing ones skipped, its pack format', async () => {
     await put(pack.folder, T('block/iron_chain.png'), makePng(16, 16, [255, 0, 0, 255]))
     await put(pack.folder, `${T('block/iron_chain.png')}.mcmeta`, json({ animation: {} }))
-    await put(pack.folder, T('entity/cow/temperate_cow.png'), makePng(64, 32, [255, 0, 0, 255]))
+    await put(pack.folder, T('entity/cow/cow_temperate.png'), makePng(64, 32, [255, 0, 0, 255]))
     await put(pack.folder, T('block/stone.png'), makePng(16, 16, [0, 255, 0, 255]))
     await put(
       pack.folder,
@@ -213,7 +213,7 @@ describe('export .zip', () => {
     })
     expect(report).toMatchObject({ targetVersion: '1.21.4', renamed: 2 })
     expect(report.skipped).toEqual([
-      { path: T('entity/cow/temperate_cow.png'), reason: 'notInTarget' }
+      { path: T('entity/cow/cow_temperate.png'), reason: 'notInTarget' }
     ])
     expect(report.warnings.map((w) => w.code)).toEqual(
       expect.arrayContaining(['export.vanillaNotReady', 'export.otherFilesAsIs'])

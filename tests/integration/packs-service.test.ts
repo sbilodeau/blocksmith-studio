@@ -165,7 +165,7 @@ describe('pack service: workspace and packs', () => {
     await put(T('block/stone'), makePng(32, 16, [255, 0, 0, 255])) // vanilla stone is 16x16
     await put(T('block/dirt'), makePng(32, 32, [255, 0, 0, 255])) // HD: same proportions, fine
     await put(T('block/iron_chain'), makePng(16, 16, [255, 0, 0, 255]))
-    await put(T('entity/cow/temperate_cow'), makePng(64, 32, [255, 0, 0, 255]))
+    await put(T('entity/cow/cow_temperate'), makePng(64, 32, [255, 0, 0, 255]))
     await put('assets/minecraft/models/block/broken.json', '{ nope')
     const report = await env.service.doctor(pack.id)
     expect(report.issues).toEqual(
@@ -176,7 +176,7 @@ describe('pack service: workspace and packs', () => {
     )
     expect(report.issues.some((i) => i.path === T('block/dirt'))).toBe(false)
     const old = report.targets.find((t) => t.version === '1.21.4')!
-    expect(old).toEqual({ version: '1.21.4', renamed: 1, missing: [T('entity/cow/temperate_cow')] })
+    expect(old).toEqual({ version: '1.21.4', renamed: 1, missing: [T('entity/cow/cow_temperate')] })
     expect(report.targets.map((t) => t.version)).not.toContain('26.3')
   })
 
