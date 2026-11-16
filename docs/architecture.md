@@ -71,6 +71,8 @@ context isolation enabled, unknown channels refused, CSP present, remote fetch b
 | Pack service   | `src/main/services/packs/`      | Workspace, packs, texture index, categories, zip import and export         |
 | Texture edit   | `src/main/services/packs/`      | Texture read / save / revert (`textures-edit.ts`), recorded in history     |
 | History        | `src/main/services/history/`    | Per-pack journal, content-addressed blobs, undo / redo with conflict check |
+| Bulk           | `src/main/services/bulk/`       | Bulk operations on many textures (worker thread), see [bulk.md](bulk.md)   |
+| AI agents      | `src/main/services/ai/agent/`   | Editor and navigation agents, proposals, conversations (ai-agents.md)      |
 | Asset protocol | `src/main/protocol.ts`          | Read-only `bs-asset://` URLs for thumbnails (pack file, else vanilla file) |
 | Job reporter   | `src/main/jobs.ts`              | Throttled `job.progress` events for long operations                        |
 
@@ -86,8 +88,8 @@ Details: [versions.md](versions.md) (version table, support window, pack.mcmeta 
 
 Each pack keeps a persisted undo / redo journal in `.blocksmith/history/` (`journal.jsonl`, `state.json` with the
 undo pointer, and content-addressed `blobs/<sha256>.bin`). The history service is the single entry point for
-recorded file changes: `apply` snapshots, writes and records in one step (editor saves and reverts today, AI
-proposals, imports and merges later). Undo and redo refuse to overwrite files edited outside the app
+recorded file changes: `apply` snapshots, writes and records in one step (editor saves and reverts, bulk edits
+and navigation-agent plans through `saveMany`; imports and merges later). Undo and redo refuse to overwrite files edited outside the app
 (`history.conflict`). Operations on one pack are serialized. Format and rules: [packs.md](packs.md#history).
 
 ### Data files

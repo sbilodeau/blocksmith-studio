@@ -31,9 +31,20 @@ which pixels are which body part or block face before drawing, and edit every fa
 For textures larger than 64 px, call get_pixels with a rect to read exact pixels before drawing details.
 When you are done, stop calling tools and reply with one or two short sentences.`
 
+export const NAVIGATION_INSTRUCTIONS = `Your scope is the user's current selection of {{count}} textures. They are listed by number with their path,
+size and main colors; vision models also get contact sheets where each tile shows a texture with its number.
+Every color and transform tool applies to EVERY selected texture at once, or only to the textures you name in
+"textures" (numbers from the list and/or a glob on "folder/name" such as "*_ore" or "block/*_planks").
+Prefer global color operations (hue_shift, apply_palette, replace_color, brightness, saturation, outline) over
+anything else; there is no per-pixel drawing in this scope. Use rotate, flip or shift only when the user asks for it.
+Call get_palette or get_pixels with a texture number only for textures you need to inspect closely.
+Each tool runs on a draft and tells you how many textures changed, so you can chain steps; later steps apply on top
+of earlier ones. Keep Minecraft's pixel-art look: limited colors, no smoothing, consistent light from the top-left.
+When you are done, stop calling tools and reply with one or two short sentences.`
+
 const SCOPE_INSTRUCTIONS: Record<AgentKind, string> = {
   editor: EDITOR_INSTRUCTIONS,
-  navigation: '',
+  navigation: NAVIGATION_INSTRUCTIONS,
   creation: ''
 }
 
@@ -59,6 +70,8 @@ export interface SystemPromptInput {
   language: Language
   brief: StyleBrief
   texture?: { width: number; height: number }
+  /** Navigation agent: number of selected textures. */
+  selection?: { count: number }
 }
 
 export function buildSystemPrompt(input: SystemPromptInput): string {
@@ -68,7 +81,8 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
   })
   const scope = fill(SCOPE_INSTRUCTIONS[input.agent], {
     width: input.texture?.width ?? '?',
-    height: input.texture?.height ?? '?'
+    height: input.texture?.height ?? '?',
+    count: input.selection?.count ?? '?'
   })
   return scope ? `${preamble}\n\n${scope}` : preamble
 }

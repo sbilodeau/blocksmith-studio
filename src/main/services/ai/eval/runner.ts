@@ -3,9 +3,16 @@ import type { AgentEvent, AgentSettings, EvalReport, ModelRef, ToolCall } from '
 import { encodePng } from '@shared/image'
 import { emptyBrief } from '@shared/model/brief'
 import type { ProviderRegistry } from '../../contracts'
-import { runEditorAgent } from '../agent'
+import { runEditorAgent, runNavigationAgent } from '../agent'
 import { EvalFileSchema, matchCalls, type EvalCase } from './match'
-import { evalFixture, summarize, toMarkdown, type EvalLanguage, type EvalResult } from './report'
+import {
+  evalFixture,
+  evalSelection,
+  summarize,
+  toMarkdown,
+  type EvalLanguage,
+  type EvalResult
+} from './report'
 import phrases from '../../../../../resources/data/ai-eval/phrases.json'
 
 /**
@@ -38,7 +45,7 @@ export function bundledEvalCases(): EvalCase[] {
   return EvalFileSchema.parse(phrases).cases
 }
 
-/** Quick test: one case per family (transform, drawing, color, memory, multi-step). 16 requests. */
+/** Quick test: one case per family (transform, drawing, color, memory, multi-step, selection). 18 requests. */
 export const QUICK_CASE_IDS = [
   'rotate-left-90',
   'flip-horizontal',
@@ -47,7 +54,8 @@ export const QUICK_CASE_IDS = [
   'make-redder',
   'darker',
   'remember-theme',
-  'rotate-and-flames'
+  'rotate-and-flames',
+  'nav-ores-darker'
 ]
 
 /** Runs the cases and builds the report the renderer shows. */
@@ -110,7 +118,6 @@ export async function runEvalCase(
   language: EvalLanguage,
   opts: Pick<EvalRunOptions, 'providers' | 'model' | 'maxIterations' | 'signal'>
 ): Promise<EvalResult> {
-  const base = evalFixture(c.fixture)
   const phrase = c[language]
   const settings: AgentSettings = {
     model: opts.model,
@@ -135,26 +142,48 @@ export async function runEvalCase(
   opts.signal?.addEventListener('abort', onAbort)
   const started = Date.now()
   try {
-    const result = await runEditorAgent(
-      {
-        runId: newId(),
-        request: {
-          packId: 'eval',
-          message: phrase,
-          model: opts.model,
-          texture: { path: EVAL_TEXTURE, png: encodePng(base) },
-          language
-        },
-        base,
-        settings,
-        brief: emptyBrief(),
-        vanilla: null,
-        history: []
-      },
-      { providers: opts.providers, newId, now: () => new Date() },
-      emit,
-      controller.signal
-    )
+    const deps = { providers: opts.providers, newId, now: () => new Date() }
+    const result =
+      c.context === 'navigation'
+        ? await runNavigationAgent(
+            {
+              runId: newId(),
+              request: {
+                packId: 'eval',
+                message: phrase,
+                model: opts.model,
+                paths: evalSelection(c.fixture).map((t) => t.path),
+                language
+              },
+              textures: evalSelection(c.fixture),
+              settings,
+              brief: emptyBrief(),
+              history: []
+            },
+            deps,
+            emit,
+            controller.signal
+          )
+        : await runEditorAgent(
+            {
+              runId: newId(),
+              request: {
+                packId: 'eval',
+                message: phrase,
+                model: opts.model,
+                texture: { path: EVAL_TEXTURE, png: encodePng(evalFixture(c.fixture)) },
+                language
+              },
+              base: evalFixture(c.fixture),
+              settings,
+              brief: emptyBrief(),
+              vanilla: null,
+              history: []
+            },
+            deps,
+            emit,
+            controller.signal
+          )
     const error = result.reason === 'error' ? (result.error?.code ?? 'ai.agentFailed') : undefined
     return {
       caseId: c.id,

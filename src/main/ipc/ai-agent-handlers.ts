@@ -6,7 +6,8 @@ import { createBriefService, type BriefService } from '../services/brief'
 import {
   createConversationStore,
   createEditorAgentService,
-  type EditorAgentService
+  type EditorAgentService,
+  type EditorAgentServiceDeps
 } from '../services/ai/agent'
 
 export interface AiAgentHandlerDeps {
@@ -18,6 +19,8 @@ export interface AiAgentHandlerDeps {
   readVanillaPng: (packId: string, path: string) => Promise<Uint8Array | null>
   /** 3D preview model of a texture, so the agent knows which pixels are which body part / block face. */
   previewModel?: (packId: string, path: string) => Promise<PreviewModel | null>
+  /** Navigation agent: pack textures, their current PNG and the bulk service (omitted in some tests). */
+  navigation?: EditorAgentServiceDeps['navigation']
   /** Main forwards these to the window as 'ai.event'. */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -40,6 +43,7 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
     conversations,
     readVanillaPng: deps.readVanillaPng,
     previewModel: deps.previewModel,
+    ...(deps.navigation ? { navigation: deps.navigation } : {}),
     emit: deps.emit,
     now: deps.now,
     newId: deps.newId
@@ -53,6 +57,10 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
     agent.applyProposal(proposalId, acceptedStepIds)
   )
   handle('ai.proposal.reject', ({ proposalId }) => agent.rejectProposal(proposalId))
+  handle('ai.navigation.send', (request) => agent.sendNavigation(request))
+  handle('ai.navigation.apply', ({ proposalId, acceptedStepIds, acceptedPaths }) =>
+    agent.applyNavigation(proposalId, acceptedStepIds, acceptedPaths)
+  )
   handle('brief.get', ({ packId }) => brief.get(packId))
   handle('brief.update', ({ packId, patch }) => brief.update(packId, patch, 'user'))
 

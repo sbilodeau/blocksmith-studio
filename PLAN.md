@@ -886,6 +886,16 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 ### M5 - Navigation agent and bulk operations
 - Selection-scoped agent; contact sheets and batching; `apply_to_all` in a worker with progress; bulk proposal review (grid of before/after with per-texture toggles).
 - Manual bulk actions in the grid without AI (hue shift, replace color, etc. on a selection).
+- As built: one agent loop shared by every agent (`loop.ts`); the navigation agent (`navigation.ts`) exposes the
+  registry's color and transform tools as selection-wide operations with an optional `textures` filter (numbers or
+  glob), which is the selection-limited `apply_to_all`; contact sheets of 6 x 6 numbered tiles, at most 3 per
+  request, plus a text list of every texture. Bulk work (manual previews and the replay of accepted agent steps)
+  runs in a worker thread (`services/bulk/`), frame by frame for animated textures, and is written through
+  `saveMany` as one history entry. The review grid (`BulkReview.vue`) serves both. A pack-level History drawer
+  makes these changes undoable from the grid. The FR/EN eval gained 6 navigation cases on a 4-texture selection.
+- **Acceptance**: select several block textures, ask "mets tout plus rouge" (or "darken only the ores"), untick
+  one texture in the review and apply: only the kept textures change, in one undoable entry; "Edit selection..."
+  does the same without AI.
 
 ### M6 - Creation agent
 - Pack-level agent: builds the style brief through a conversation, proposes category-by-category plans; plan executes in chunks with checkpoints.

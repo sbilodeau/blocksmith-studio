@@ -82,7 +82,7 @@ describe('editor agent service', () => {
     const { runId } = await agent.send(req)
     await agent.idle()
     const p = events.find((e) => e.type === 'proposal' && e.runId === runId)
-    return { runId, proposal: p?.type === 'proposal' ? p.proposal : undefined }
+    return { runId, proposal: p?.type === 'proposal' ? (p.proposal as Proposal) : undefined }
   }
 
   const PLAN: Script[] = [

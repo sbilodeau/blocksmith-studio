@@ -1,21 +1,25 @@
 # AI agents
 
-The editor agent (M3) turns a chat message about the open texture into a reviewable plan. The AI never touches
-files: tools run against an in-memory draft, the user reviews the resulting proposal, and only the renderer puts
-the accepted result into the editor as one undoable edit (saved like any other edit). PLAN.md section 6 is the
+The editor agent (M3) turns a chat message about the open texture into a reviewable plan; the navigation agent
+(M5) does the same for the textures selected in the grid. The AI never touches files: tools run against
+in-memory drafts and the user reviews the resulting proposal. The editor agent's accepted result goes into the
+editor as one undoable edit; the navigation agent's is written as one history entry. PLAN.md section 6 is the
 design; this page describes what the code does.
 
-| Part                  | Code                                                                                       |
-| --------------------- | ------------------------------------------------------------------------------------------ |
-| Tool registry         | `src/shared/ai/tools/` (`defineTool`, `getTool`, `toolSpecs`, grid encoding)               |
-| System prompts        | `src/main/services/ai/agent/prompts.ts`                                                    |
-| Context builder       | `src/main/services/ai/agent/context.ts`, upscaled image in `render.ts`                     |
-| Runtime loop          | `src/main/services/ai/agent/runtime.ts`                                                    |
-| Runs and proposals    | `src/main/services/ai/agent/service.ts`, `proposals.ts`                                    |
-| Conversation files    | `src/main/services/ai/agent/conversation.ts`                                               |
-| Style brief           | `src/main/services/brief.ts`                                                               |
-| IPC                   | `src/main/ipc/ai-agent-handlers.ts` (`ai.agent.*`, `ai.proposal.*`, `brief.*`, `ai.event`) |
-| Providers (consumed)  | `ProviderRegistry` in `src/main/services/contracts.ts`                                     |
+| Part                 | Code                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Tool registry        | `src/shared/ai/tools/` (`defineTool`, `getTool`, `toolSpecs`, grid encoding)                                  |
+| System prompts       | `src/main/services/ai/agent/prompts.ts`                                                                       |
+| Context builder      | `src/main/services/ai/agent/context.ts`, upscaled image in `render.ts`                                        |
+| Agent loop (shared)  | `src/main/services/ai/agent/loop.ts`                                                                          |
+| Editor agent         | `src/main/services/ai/agent/runtime.ts`                                                                       |
+| Navigation agent     | `src/main/services/ai/agent/navigation.ts`, contact sheets in `contact-sheet.ts`                              |
+| Runs and proposals   | `src/main/services/ai/agent/service.ts`, `proposals.ts`                                                       |
+| Conversation files   | `src/main/services/ai/agent/conversation.ts`                                                                  |
+| Style brief          | `src/main/services/brief.ts`                                                                                  |
+| IPC                  | `src/main/ipc/ai-agent-handlers.ts` (`ai.agent.*`, `ai.navigation.*`, `ai.proposal.*`, `brief.*`, `ai.event`) |
+| Chat UI              | `src/renderer/components/ai/AgentChat.vue` (shared), `EditorAgentPanel.vue`, `NavigationAgentPanel.vue`       |
+| Providers (consumed) | `ProviderRegistry` in `src/main/services/contracts.ts`                                                        |
 
 ## Tools
 
@@ -26,13 +30,13 @@ top-left pixel (x right, y down); out-of-range pixels are skipped and rects clam
 (`docs/image-core.md`). `execute(ctx, args)` receives `{ image, vanilla, brief }`, never mutates its inputs and
 returns `{ image?, result, summary }`. A `ToolError` becomes an error tool result for the model.
 
-| Group     | Tools                                                                                   | Kind   |
-| --------- | --------------------------------------------------------------------------------------- | ------ |
-| Transform | `rotate`, `flip`, `shift` (wrap defaults to true), `resize` (nearest-neighbor)          | mutate |
+| Group     | Tools                                                                                    | Kind   |
+| --------- | ---------------------------------------------------------------------------------------- | ------ |
+| Transform | `rotate`, `flip`, `shift` (wrap defaults to true), `resize` (nearest-neighbor)           | mutate |
 | Drawing   | `set_pixels` (max 4096 per call), `draw_line`, `draw_rect`, `fill_rect`, `fill`, `erase` | mutate |
-| Color     | `replace_color`, `apply_palette`, `hue_shift`, `saturation`, `brightness`, `outline`    | mutate |
-| Read      | `get_pixels` (max 128x128 per call), `get_palette`, `get_texture`, `read_style_brief`   | read   |
-| Memory    | `update_style_brief`                                                                    | memory |
+| Color     | `replace_color`, `apply_palette`, `hue_shift`, `saturation`, `brightness`, `outline`     | mutate |
+| Read      | `get_pixels` (max 128x128 per call), `get_palette`, `get_texture`, `read_style_brief`    | read   |
+| Memory    | `update_style_brief`                                                                     | memory |
 
 `get_texture({ source: 'vanilla' })` returns the vanilla version of the open texture as a grid, or an
 explanatory error when there is none (texture added by the pack, or a pack not based on vanilla).
@@ -44,38 +48,38 @@ params keep their raw value (`direction`: `clockwise` / `counterclockwise`, `axi
 `mode`: `inside` / `outside`) for the renderer to translate. Signed params (`degrees` of `hue_shift`, `percent`)
 are strings with an explicit sign (`"+20"`, `"-15"`, `"0"`). Colors are lowercase hex.
 
-| Key                        | Params                                    |
-| -------------------------- | ----------------------------------------- |
-| `ops.rotate`               | `degrees`, `direction`                    |
-| `ops.flip`                 | `axis`                                    |
-| `ops.shift`                | `dx`, `dy` (no wrap)                      |
-| `ops.shiftWrap`            | `dx`, `dy`                                |
-| `ops.resize`               | `width`, `height`                         |
-| `ops.setPixels`            | `count`                                   |
-| `ops.drawLine`             | `x1`, `y1`, `x2`, `y2`, `color`           |
-| `ops.drawRect`             | `x`, `y`, `width`, `height`, `color`      |
-| `ops.fillRect`             | `x`, `y`, `width`, `height`, `color`      |
-| `ops.fill`                 | `x`, `y`, `color`, `tolerance`            |
-| `ops.fillAll`              | `x`, `y`, `color`, `tolerance`            |
-| `ops.erasePixels`          | `count`                                   |
-| `ops.eraseRect`            | `x`, `y`, `width`, `height`               |
-| `ops.erasePixelsAndRect`   | `count`, `x`, `y`, `width`, `height`      |
-| `ops.replaceColor`         | `from`, `to`, `tolerance`                 |
-| `ops.applyPalette`         | `count`                                   |
-| `ops.applyPaletteRegion`   | `count`, `x`, `y`, `width`, `height`      |
-| `ops.hueShift`             | `degrees`                                 |
-| `ops.hueShiftRegion`       | `degrees`, `x`, `y`, `width`, `height`    |
-| `ops.saturation`           | `percent`                                 |
-| `ops.saturationRegion`     | `percent`, `x`, `y`, `width`, `height`    |
-| `ops.brightness`           | `percent`                                 |
-| `ops.brightnessRegion`     | `percent`, `x`, `y`, `width`, `height`    |
-| `ops.outline`              | `color`, `mode`                           |
-| `ops.getPixels`            | none                                      |
-| `ops.getPixelsRect`        | `x`, `y`, `width`, `height`               |
-| `ops.getPalette`           | none                                      |
-| `ops.getTexture`           | `source`                                  |
-| `ops.readStyleBrief`       | none                                      |
-| `ops.updateStyleBrief`     | `fields` (e.g. `"theme, rules"`)          |
+| Key                      | Params                                 |
+| ------------------------ | -------------------------------------- |
+| `ops.rotate`             | `degrees`, `direction`                 |
+| `ops.flip`               | `axis`                                 |
+| `ops.shift`              | `dx`, `dy` (no wrap)                   |
+| `ops.shiftWrap`          | `dx`, `dy`                             |
+| `ops.resize`             | `width`, `height`                      |
+| `ops.setPixels`          | `count`                                |
+| `ops.drawLine`           | `x1`, `y1`, `x2`, `y2`, `color`        |
+| `ops.drawRect`           | `x`, `y`, `width`, `height`, `color`   |
+| `ops.fillRect`           | `x`, `y`, `width`, `height`, `color`   |
+| `ops.fill`               | `x`, `y`, `color`, `tolerance`         |
+| `ops.fillAll`            | `x`, `y`, `color`, `tolerance`         |
+| `ops.erasePixels`        | `count`                                |
+| `ops.eraseRect`          | `x`, `y`, `width`, `height`            |
+| `ops.erasePixelsAndRect` | `count`, `x`, `y`, `width`, `height`   |
+| `ops.replaceColor`       | `from`, `to`, `tolerance`              |
+| `ops.applyPalette`       | `count`                                |
+| `ops.applyPaletteRegion` | `count`, `x`, `y`, `width`, `height`   |
+| `ops.hueShift`           | `degrees`                              |
+| `ops.hueShiftRegion`     | `degrees`, `x`, `y`, `width`, `height` |
+| `ops.saturation`         | `percent`                              |
+| `ops.saturationRegion`   | `percent`, `x`, `y`, `width`, `height` |
+| `ops.brightness`         | `percent`                              |
+| `ops.brightnessRegion`   | `percent`, `x`, `y`, `width`, `height` |
+| `ops.outline`            | `color`, `mode`                        |
+| `ops.getPixels`          | none                                   |
+| `ops.getPixelsRect`      | `x`, `y`, `width`, `height`            |
+| `ops.getPalette`         | none                                   |
+| `ops.getTexture`         | `source`                               |
+| `ops.readStyleBrief`     | none                                   |
+| `ops.updateStyleBrief`   | `fields` (e.g. `"theme, rules"`)       |
 
 ## Context sent to the model
 
@@ -110,14 +114,14 @@ the rectangles before drawing and to edit every face a change should appear on.
 
 ### Image and grid strategy
 
-| Model / setting                          | First message                         | After mutate tools                                    |
-| ---------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
-| No vision, or vision unknown             | grid                                  | grid in each tool result                              |
-| Vision, `vision+grid` (default)          | upscaled image + grid                 | grid in each result, fresh image every 3 mutate steps |
-| Vision, `grid`                           | grid                                  | grid                                                  |
-| Vision, `image`                          | upscaled image                        | fresh image after each iteration with changes         |
-| Vision, texture side above 64 px         | image + "use get_pixels(rect)" note   | fresh image after each iteration with changes         |
-| No vision, more than 128x128 pixels      | palette summary + get_pixels note     | same                                                  |
+| Model / setting                     | First message                       | After mutate tools                                    |
+| ----------------------------------- | ----------------------------------- | ----------------------------------------------------- |
+| No vision, or vision unknown        | grid                                | grid in each tool result                              |
+| Vision, `vision+grid` (default)     | upscaled image + grid               | grid in each result, fresh image every 3 mutate steps |
+| Vision, `grid`                      | grid                                | grid                                                  |
+| Vision, `image`                     | upscaled image                      | fresh image after each iteration with changes         |
+| Vision, texture side above 64 px    | image + "use get_pixels(rect)" note | fresh image after each iteration with changes         |
+| No vision, more than 128x128 pixels | palette summary + get_pixels note   | same                                                  |
 
 - **Grid**: `{ w, h, origin: 'top-left', palette: { '.': '#00000000', a: '#rrggbbaa', ... }, rows }`, one
   character per pixel (`a-z`, `A-Z`, `0-9` by decreasing use, ties by hex), `.` for alpha 0. Above 62 visible
@@ -131,7 +135,9 @@ the rectangles before drawing and to edit every face a change should appear on.
 
 ## Runtime loop
 
-`runEditorAgent` (one call per user message):
+`runAgentLoop` (`loop.ts`) is shared by both agents; an agent supplies its tools, its first messages, an
+`execute(call)` function and an optional message after each iteration (a fresh image). `runEditorAgent` (one call
+per user message):
 
 - One provider round trip per iteration. `thinking`, `text` and `usage` events are forwarded as `ai.event`.
 - Reasoning level: `request.thinking` (the AI tab's selector) or else the agent setting `thinking`
@@ -170,6 +176,34 @@ step, whatever the reason, so the work done before a stop or budget can still be
   rejected. Deciding twice fails with `ai.proposalNotPending`.
 - Each decision appends a note to the conversation ("The user applied 3 of 4 steps (...); not applied: ...").
 
+## Navigation agent
+
+Lives next to the grid (**AI assistant** in the pack header, or **Ask the AI** in the selection bar). One
+conversation per pack tab (`navigation.jsonl`); every request carries the current selection, in pack order.
+
+- **Tools**: the color and transform tools of the registry (`hue_shift`, `saturation`, `brightness`,
+  `replace_color`, `apply_palette`, `outline`, `rotate`, `flip`, `shift`) apply to EVERY selected texture. Each
+  takes an optional `textures` filter: `{ indices: [numbers from the list], match: "glob" }` (union; the glob is
+  matched on "folder/name", or on the name alone when it has no slash: `*_ore`, `block/*_planks`). `get_palette`
+  and `get_pixels` take an `index` to read one texture. `read_style_brief` and `update_style_brief` work as in the
+  editor. There are no drawing tools in this scope. These tools are the selection-limited `apply_to_all` of PLAN
+  6.3.
+- **Context**: the system prompt states the selection size and the scope rules. The user message lists the
+  selection as `#n folder/name WxH: main colors` (first 300 textures, then a count per folder). Vision models also
+  get up to 3 contact sheets (6 x 6 tiles of 64 px, each labelled with its number; animated textures show their
+  first frame).
+- **Execution**: drafts of every selected texture stay in memory. A bulk call runs on its targets (per frame for
+  animated textures) and becomes one step with `targets` (the resolved paths). The tool result says how many
+  textures changed, and lists their numbers. After an iteration with changes, vision models get a contact sheet
+  of the textures the last step changed.
+- **Proposal** (`kind: 'bulk'`): the steps, and the changed textures with their before PNG (as the agent saw
+  them) and after PNG (all steps). The review grid ([bulk.md](bulk.md)) lets the user untick steps and textures.
+- **Apply** (`ai.navigation.apply { proposalId, acceptedStepIds, acceptedPaths }`): the accepted steps are
+  replayed, in order, on the accepted textures, starting from the pixels the agent saw (in the bulk worker), then
+  written as one history entry (`source: 'ai'`, label "AI plan on N textures"). Accepted brief patches, the
+  request log line (`N selected textures: "<request>" -> tools (k of n steps)`) and the conversation note work as
+  for the editor.
+
 ## Conversation files
 
 `.blocksmith/conversations/<agent>.jsonl`, one `ConversationTurn` per line, append-only, writes serialized per
@@ -188,15 +222,16 @@ are atomic (temp file + rename) and serialized per pack. `updatedAt` is set on e
 
 ## Error codes
 
-| Code                     | When                                                                    |
-| ------------------------ | ----------------------------------------------------------------------- |
-| `ai.invalidTexture`      | `ai.agent.send` with a PNG that does not decode                         |
-| `ai.textureTooLarge`     | texture side above 1024 (`params.max`)                                  |
-| `ai.proposalNotFound`    | unknown or expired proposal id (`params.proposalId`)                    |
-| `ai.proposalNotPending`  | proposal already applied or rejected (`params.proposalId`, `status`)    |
-| `ai.replayFailed`        | a step could not be re-executed (`params.step`, `tool`)                 |
-| `ai.agentFailed`         | unexpected error without a code during a run (in `done.error`)          |
-| `packs.notFound`         | unknown pack id (`params.packId`)                                       |
+| Code                    | When                                                                 |
+| ----------------------- | -------------------------------------------------------------------- |
+| `ai.invalidTexture`     | `ai.agent.send` with a PNG that does not decode                      |
+| `ai.textureTooLarge`    | texture side above 1024 (`params.max`)                               |
+| `ai.proposalNotFound`   | unknown or expired proposal id (`params.proposalId`)                 |
+| `ai.proposalNotPending` | proposal already applied or rejected (`params.proposalId`, `status`) |
+| `ai.replayFailed`       | a step could not be re-executed (`params.step`, `tool`)              |
+| `ai.agentFailed`        | unexpected error without a code during a run (in `done.error`)       |
+| `ai.emptySelection`     | none of the selected textures could be read (navigation agent)       |
+| `packs.notFound`        | unknown pack id (`params.packId`)                                    |
 
 Errors thrown by the provider layer (`ai.providerNotFound`, `ai.noApiKey`, `ai.providerDisabled` and the
 adapters' `ai.*` codes) are passed through unchanged in `done.error`.

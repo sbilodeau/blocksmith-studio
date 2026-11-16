@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NEmpty,
@@ -12,6 +12,7 @@ import {
   NButton
 } from 'naive-ui'
 import TextureTile from './TextureTile.vue'
+import BulkDialog from '../bulk/BulkDialog.vue'
 import { usePackStore, type StatusFilter } from '../../stores/pack'
 
 const props = defineProps<{ packId: string }>()
@@ -20,6 +21,30 @@ const store = computed(() => usePackStore(props.packId))
 const { t } = useI18n()
 
 const filters: StatusFilter[] = ['all', 'changed', 'vanilla']
+const showBulk = ref(false)
+/** Selected textures in pack order (bulk actions and the navigation agent use this order). */
+const selectedPaths = computed(() =>
+  store.value.textures.filter((tex) => store.value.selection.has(tex.path)).map((tex) => tex.path)
+)
+
+// The editor replaces the grid: keep its scroll position, and on return show the last edited tile
+// (the editor's previous / next buttons may have moved to a texture further down).
+const scroller = ref<HTMLElement | null>(null)
+onMounted(async () => {
+  await nextTick()
+  const el = scroller.value
+  if (!el) return
+  el.scrollTop = store.value.gridScroll
+  const last = store.value.lastEdited
+  if (last) {
+    const tile = el.querySelector<HTMLElement>(`[data-path="${CSS.escape(last)}"]`)
+    tile?.scrollIntoView({ block: 'nearest' })
+    store.value.lastEdited = null
+  }
+})
+onBeforeUnmount(() => {
+  if (scroller.value) store.value.gridScroll = scroller.value.scrollTop
+})
 
 function onKeydown(e: KeyboardEvent): void {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
@@ -70,9 +95,22 @@ function onKeydown(e: KeyboardEvent): void {
       <n-button size="tiny" quaternary @click="store.clearSelection()">{{
         t('grid.clearSelection')
       }}</n-button>
+      <span class="spacer" />
+      <n-button size="tiny" data-testid="selection-bulk" @click="showBulk = true">{{
+        t('bulk.open')
+      }}</n-button>
+      <n-button
+        size="tiny"
+        :type="store.aiPanel ? 'primary' : 'default'"
+        data-testid="selection-ai"
+        @click="store.aiPanel = true"
+      >
+        {{ t('ai.askSelection') }}
+      </n-button>
     </div>
+    <bulk-dialog v-model:show="showBulk" :pack-id="packId" :paths="selectedPaths" />
 
-    <div class="scroll" tabindex="0" data-testid="texture-grid" @keydown="onKeydown">
+    <div ref="scroller" class="scroll" tabindex="0" data-testid="texture-grid" @keydown="onKeydown">
       <n-empty v-if="store.visible.length === 0" :description="t('grid.empty')" class="empty" />
       <div v-else class="tiles">
         <texture-tile
@@ -111,6 +149,9 @@ function onKeydown(e: KeyboardEvent): void {
   border-radius: 6px;
   background: rgba(24, 160, 88, 0.12);
   font-size: 13px;
+}
+.spacer {
+  flex: 1;
 }
 .scroll {
   flex: 1;

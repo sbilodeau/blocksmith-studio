@@ -1,5 +1,5 @@
 import { decode } from 'fast-png'
-import type { TextureData } from '@shared/model/history'
+import type { HistoryEntry, TextureData } from '@shared/model/history'
 import type { TextureEntry } from '@shared/model/pack'
 import type { VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
@@ -38,6 +38,15 @@ export interface TextureEditService {
   read(packId: string, path: string): Promise<TextureData>
   save(packId: string, path: string, png: Uint8Array): Promise<TextureEntry>
   revert(packId: string, path: string): Promise<TextureEntry>
+  /**
+   * Writes several textures as ONE history entry (bulk operations, AI proposals over a selection). Textures that
+   * end up identical to vanilla are removed from the pack instead. Returns the entry (null when `items` is empty).
+   */
+  saveMany(
+    packId: string,
+    items: ReadonlyArray<{ path: string; png: Uint8Array }>,
+    change: { source: HistoryEntry['source']; label: HistoryEntry['label'] }
+  ): Promise<HistoryEntry | null>
 }
 
 /** True when `png` has a valid signature and IHDR, sides in 1..MAX_TEXTURE_SIZE, and decodes. */
@@ -131,6 +140,24 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
         changes: [{ path, after }]
       })
       return freshEntry(location, path)
+    },
+
+    async saveMany(packId, items, change) {
+      if (items.length === 0) return null
+      const location = await requireLocation(packId)
+      const changes: Array<{ path: string; after: Uint8Array | null }> = []
+      for (const { path, png } of items) {
+        const abs = texturePath(location, path)
+        if (!isValidTexturePng(png)) throw new AppErrorException(TextureErrorCode.invalidPng)
+        await assertInsidePack(location.folder, abs, path)
+        const vanillaPng = await readOptional(vanillaFile(location, path))
+        changes.push({ path, after: vanillaPng && sameBytes(vanillaPng, png) ? null : png })
+      }
+      try {
+        return await deps.history.apply(packId, { ...change, changes })
+      } finally {
+        deps.notifyChanged(packId)
+      }
     },
 
     async revert(packId, path) {

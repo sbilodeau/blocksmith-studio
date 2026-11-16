@@ -53,7 +53,8 @@ const MatcherSchema: z.ZodType<Matcher> = z.lazy(() =>
 
 export const EvalCaseSchema = z.object({
   id: z.string(),
-  context: z.literal('editor'),
+  /** editor: one texture (fixture = image); navigation: a selection (fixture = selection name). */
+  context: z.enum(['editor', 'navigation']),
   fixture: z.string(),
   fr: z.string(),
   en: z.string(),
@@ -121,9 +122,11 @@ function asStrings(value: unknown): string[] {
     return value.map((v) =>
       typeof v === 'string'
         ? v.toLowerCase()
-        : typeof v === 'object' && v && 'hex' in v
-          ? String((v as { hex: unknown }).hex).toLowerCase()
-          : JSON.stringify(v).toLowerCase()
+        : typeof v === 'number'
+          ? String(v)
+          : typeof v === 'object' && v && 'hex' in v
+            ? String((v as { hex: unknown }).hex).toLowerCase()
+            : JSON.stringify(v).toLowerCase()
     )
   }
   return value === undefined ? [] : [JSON.stringify(value).toLowerCase()]

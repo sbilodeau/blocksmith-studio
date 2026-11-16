@@ -144,7 +144,13 @@
       "proposalNotPending": "This plan was already applied or refused.",
       "replayFailed": "Step {step} ({tool}) could not be applied.",
       "agentFailed": "The AI agent stopped because of an unexpected error.",
-      "evalBusy": "A model test is already running."
+      "evalBusy": "A model test is already running.",
+      "emptySelection": "None of the selected textures could be read. Select textures in the grid and try again."
+    },
+    "bulk": {
+      "aborted": "The bulk operation was stopped.",
+      "failed": "The bulk operation failed: {reason}",
+      "previewExpired": "This preview has expired. Preview the operations again."
     }
   },
   "common": {
@@ -258,7 +264,8 @@
       "index": "Indexing",
       "read": "Reading",
       "write": "Writing",
-      "collect": "Collecting files"
+      "collect": "Collecting files",
+      "compute": "Computing"
     }
   },
   "category": {
@@ -369,8 +376,12 @@
   "history": {
     "label": {
       "save": "Saved {name}",
-      "revert": "Reverted {name} to vanilla"
-    }
+      "revert": "Reverted {name} to vanilla",
+      "bulk": "Bulk edit of {count} textures | Bulk edit of 1 texture | Bulk edit of {count} textures",
+      "aiBulk": "AI plan on {count} textures | AI plan on 1 texture | AI plan on {count} textures"
+    },
+    "title": "History",
+    "empty": "Nothing saved yet."
   },
   "preview": {
     "toggle": "3D",
@@ -503,7 +514,7 @@
     "keyNotNeeded": "No key needed (local)",
     "eval": {
       "title": "Test models",
-      "hint": "Sends the French and English test phrases to each chosen model and checks that it picks the right tools. Choose several models to compare them side by side. Uses your provider tokens: 16 phrases per model for the quick test, 60 for the full test.",
+      "hint": "Sends the French and English test phrases to each chosen model and checks that it picks the right tools. Choose several models to compare them side by side. Uses your provider tokens: 18 phrases per model for the quick test, 72 for the full test.",
       "quick": "Quick test",
       "full": "Full test",
       "progress": "{done} of {total} requests",
@@ -579,7 +590,12 @@
       "in": "Input",
       "out": "Output",
       "reset": "Back to reported values"
-    }
+    },
+    "askSelection": "Ask the AI",
+    "navigationPanel": "AI assistant",
+    "emptyNavigation": "Select textures in the grid, then ask for a change, for example: \"make everything redder\" or \"give the ores a dark red outline\".",
+    "navigationSelection": "No texture selected | Working on 1 selected texture | Working on {count} selected textures",
+    "navigationNoSelection": "Select textures in the grid to work on them."
   },
   "brief": {
     "open": "Style brief",
@@ -643,6 +659,49 @@
       "outside": "outside",
       "vanilla": "vanilla",
       "pack": "pack"
-    }
+    },
+    "unknown": "Operation {tool}"
+  },
+  "bulk": {
+    "open": "Edit selection...",
+    "title": "Edit the selection | Edit 1 texture | Edit {count} textures",
+    "hint": "Choose one or more operations. They run in order on every selected texture; you then see each result and keep only the ones you want.",
+    "op": {
+      "hue_shift": "Shift hues",
+      "saturation": "Saturation",
+      "brightness": "Brightness",
+      "replace_color": "Replace a color",
+      "apply_palette": "Apply a palette",
+      "outline": "Outline",
+      "flip": "Flip",
+      "rotate": "Rotate"
+    },
+    "remove": "Remove",
+    "from": "From",
+    "to": "to",
+    "tolerance": "Tolerance",
+    "palettePlaceholder": "Colors, for example #3b2a1e #6b4a2e #a07040",
+    "fromBrief": "From the style brief",
+    "noBriefPalette": "The style brief has no palette yet.",
+    "degrees": "{n}°",
+    "addOperation": "Add an operation",
+    "transformNote": "Flips and rotations apply to each texture (each frame for animated textures). Most block and item textures are drawn in a fixed direction in game, so check the result.",
+    "preview": "Preview",
+    "nothingChanges": "These operations leave every selected texture unchanged.",
+    "back": "Back to the operations",
+    "applied": "No texture changed. | Applied to 1 texture. Undo it from History. | Applied to {count} textures. Undo it from History.",
+    "review": {
+      "title": "No texture changes | 1 texture changes | {count} textures change",
+      "targets": "no texture | 1 texture | {count} textures",
+      "previewAllSteps": "The previews show every step; unchecked steps will be left out when you apply.",
+      "none": "None",
+      "kept": "{kept} of {total} kept",
+      "more": "Show {count} more",
+      "unchanged": "No texture is unchanged. | 1 texture is unchanged. | {count} textures are unchanged.",
+      "failed": "Every texture was processed. | 1 texture could not be processed. | {count} textures could not be processed.",
+      "apply": "Apply | Apply to 1 texture | Apply to {count} textures",
+      "legend": "Before on the left, after on the right."
+    },
+    "degreeUnit": "°"
   }
 }

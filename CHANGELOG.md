@@ -5,6 +5,22 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M5 - Navigation agent and bulk operations
+
+- Navigation agent next to the grid: select textures, click **Ask the AI** and ask for a change in French or
+  English ("mets tout plus rouge", "darken only the ores"); color and transform operations apply to the whole
+  selection or to the textures the agent names. Vision models see the selection as numbered contact sheets
+- Plans over many textures are reviewed texture by texture: before and after for each changed texture, with a
+  checkbox per texture and per step; applying writes one change
+- **Edit selection...** in the grid applies the same operations without AI: hue, saturation, brightness, replace
+  a color, apply a palette (or the style brief palette), outline, flip and rotate, chained in order. Animated
+  textures are changed frame by frame. The work runs in a background thread with a progress bar
+- **History** button in the pack header: undo or redo any saved change (bulk edits and AI plans included) without
+  opening the editor
+- The FR/EN model test now covers the navigation agent too (72 phrases, 18 in the quick test)
+- The texture grid keeps its scroll position when you close the editor, and shows the texture you were editing
+- `AGENTS.md` explains the codebase conventions to AI coding agents
+
 ### M4 - OpenAI-compatible providers and AI settings
 
 - New providers: OpenAI, OpenRouter (many models with one key) and any OpenAI-compatible server (vLLM, LM Studio,

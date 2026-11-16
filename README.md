@@ -5,26 +5,32 @@
 Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs, with a pixel editor,
 a live 3D preview and AI agents that propose changes you review before anything is applied.
 
-> Status: early development (milestone M4 - OpenAI-compatible providers and AI settings). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M5 - navigation agent and bulk operations). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
 - Multiple packs open at once, one tab per pack, with merging between packs
 - Textures browsed by category (Blocks, Ores, Tools, Weapons, Armor, Food, Entities, GUI...)
 - Pixel editor with undo/redo, compare with vanilla, and a live 3D preview for blocks, items and entities
+- Bulk edits of a selection (hue, brightness, palette, outline, flip...) reviewed texture by texture
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
 - Export to any Minecraft Java version released in the last two years
 - English and French interface
 - Self-updating releases published on GitHub Releases (CalVer `yy.ww.fix`)
 
-## AI agent
+## AI agents
 
 The editor has an **AI** tab next to the drawing tools. Describe a change in French or English ("tourne de 90° à
 gauche et ajoute des flammes au bout"); the agent answers with a plan of steps, each with a before/after preview.
 Tick the steps you want and apply: the result lands in the editor as one undoable edit, and nothing is saved until
 you save.
 
-To use it, open Settings > AI, paste your [Ollama Cloud](https://ollama.com) API key and pick a model (models that
+In the texture grid, select textures and click **Ask the AI** (or **AI assistant** in the pack header): the
+navigation agent works on the whole selection ("mets tout plus rouge", "darken only the ores") and shows every
+changed texture before and after, each with its own checkbox. Without AI, **Edit selection...** applies the same
+color and transform operations by hand. Both write one change you can undo from **History**.
+
+To use the agents, open Settings > AI, paste your [Ollama Cloud](https://ollama.com) API key and pick a model (models that
 support tools are listed, with badges for vision and reasoning, and `$` / `$$` / `$$$` when the price is known).
 OpenAI, OpenRouter and any OpenAI-compatible server can be added from "Add a provider"; a self-hosted Ollama on
 `http://localhost:11434` works without a key. Keys are encrypted with the system keychain and never leave the main
@@ -87,7 +93,8 @@ Project documentation:
 - [docs/image-core.md](docs/image-core.md) - the shared image library (conventions, operations)
 - [docs/preview.md](docs/preview.md) - live 3D preview: model resolution and rendering
 - [docs/entity-models.md](docs/entity-models.md) - entity models read from your Minecraft jar, built-in geometry, how to add entities
-- [docs/ai-agents.md](docs/ai-agents.md) - editor agent: tools, context, runtime loop, proposals, style brief
+- [docs/ai-agents.md](docs/ai-agents.md) - editor and navigation agents: tools, context, loop, proposals, style brief
+- [docs/bulk.md](docs/bulk.md) - bulk operations on a selection: engine, worker thread, review, history
 - [docs/ai-providers.md](docs/ai-providers.md) - provider layer, Ollama and OpenAI-compatible APIs, prices, secrets
 - [docs/ai-evaluation.md](docs/ai-evaluation.md) - FR/EN evaluation: running it, thresholds, adding cases
 - [CONTRIBUTING.md](CONTRIBUTING.md) - conventions, tests, i18n rules, commits

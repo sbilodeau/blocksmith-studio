@@ -142,3 +142,27 @@ test('previous/next navigation asks before discarding unsaved edits', async () =
   await expect(page.getByTestId('editor-name')).not.toHaveText(first ?? '')
   await expect(page.getByTestId('editor-dirty')).toHaveCount(0)
 })
+
+test('closing the editor brings back the grid at the same scroll position', async () => {
+  const ctx = await setup()
+  launched = ctx.launched
+  const { page } = launched
+  await page.setViewportSize({ width: 900, height: 520 })
+
+  await page.getByTestId('cat-all').click()
+  const grid = page.getByTestId('texture-grid')
+  // A small window so the fixture textures overflow the grid.
+  await grid.evaluate((el) => (el.scrollTop = el.scrollHeight))
+  const scrolled = await grid.evaluate((el) => el.scrollTop)
+  expect(scrolled).toBeGreaterThan(0)
+
+  const tile = page.locator('[data-testid^="tile-"]').last()
+  await tile.dblclick()
+  await expect(page.getByTestId('editor-name')).toBeVisible()
+  await page.getByTestId('editor-back').click()
+  await expect(grid).toBeVisible()
+  // Not back at the top: the same place (the selection bar that appeared may shift it a little), with the edited
+  // texture's tile in view.
+  await expect.poll(() => grid.evaluate((el) => el.scrollTop)).toBeGreaterThanOrEqual(scrolled)
+  await expect(tile).toBeInViewport()
+})

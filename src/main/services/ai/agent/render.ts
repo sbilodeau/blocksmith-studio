@@ -153,3 +153,43 @@ export function renderUpscaled(src: RgbaImage, opts: UpscaleOptions = {}): Upsca
     labelStep
   }
 }
+
+/** Draws a decimal number with the 3x5 digit font (scale `f`) at (x, y), clipped to the image. */
+export function drawNumber(
+  img: RgbaImage,
+  text: string,
+  x0: number,
+  y0: number,
+  f = 1,
+  ink: readonly [number, number, number] = INK
+): void {
+  let x = x0
+  for (const ch of text) {
+    const glyph = DIGITS[ch.charCodeAt(0) - 48]
+    if (glyph) {
+      for (let gy = 0; gy < GLYPH_H; gy++) {
+        for (let gx = 0; gx < GLYPH_W; gx++) {
+          if (glyph[gy]![gx] !== '#') continue
+          for (let dy = 0; dy < f; dy++) {
+            for (let dx = 0; dx < f; dx++) {
+              const px = x + gx * f + dx
+              const py = y0 + gy * f + dy
+              if (px < 0 || py < 0 || px >= img.width || py >= img.height) continue
+              const oi = (py * img.width + px) * 4
+              img.data[oi] = ink[0]
+              img.data[oi + 1] = ink[1]
+              img.data[oi + 2] = ink[2]
+              img.data[oi + 3] = 255
+            }
+          }
+        }
+      }
+    }
+    x += (GLYPH_W + 1) * f
+  }
+}
+
+/** Width in px of a number drawn by drawNumber. */
+export function numberWidth(text: string, f = 1): number {
+  return textWidth(text, f)
+}

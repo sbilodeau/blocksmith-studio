@@ -4,6 +4,7 @@
  */
 import type { Language } from '../model/settings'
 import type { StyleBriefPatch } from '../model/brief'
+import type { BulkItem } from '../model/bulk'
 
 // ---------- providers and models ----------
 export type ProviderKind = 'ollama' | 'openai-compatible'
@@ -128,6 +129,17 @@ export interface EditorAgentRequest {
   thinking?: ReasoningLevel
 }
 
+/** A request to the navigation agent about the grid selection. */
+export interface NavigationAgentRequest {
+  packId: string
+  message: string
+  model: ModelRef
+  /** Pack paths of the selected textures. */
+  paths: string[]
+  language: Language
+  thinking?: ReasoningLevel
+}
+
 export type ToolKind = 'read' | 'mutate' | 'memory'
 
 /** One proposed change, computed on a draft (never applied to files until the user accepts). */
@@ -145,6 +157,8 @@ export interface ProposalStep {
   previewPng?: Uint8Array
   /** Memory steps (style brief updates): the proposed patch. */
   briefPatch?: StyleBriefPatch
+  /** Bulk steps (navigation agent): textures of the selection the step changed. */
+  targets?: string[]
 }
 
 export interface Proposal {
@@ -157,6 +171,34 @@ export interface Proposal {
   basePng: Uint8Array
   steps: ProposalStep[]
   status: 'pending' | 'applied' | 'partially-applied' | 'rejected'
+}
+
+/**
+ * A navigation-agent plan over a selection: its steps (bulk operations and style brief updates) and the
+ * textures they change, before / after all steps, for the review grid with per-texture toggles.
+ */
+export interface BulkProposal {
+  id: string
+  runId: string
+  agent: 'navigation'
+  kind: 'bulk'
+  packId: string
+  steps: ProposalStep[]
+  items: BulkItem[]
+  status: Proposal['status']
+}
+
+export type AnyProposal = Proposal | BulkProposal
+
+export function isBulkProposal(p: AnyProposal): p is BulkProposal {
+  return (p as BulkProposal).kind === 'bulk'
+}
+
+export interface BulkProposalApplyResult {
+  /** Textures written (one history entry). */
+  applied: number
+  appliedStepIds: string[]
+  briefUpdated: boolean
 }
 
 export interface ProposalApplyResult {
@@ -215,7 +257,7 @@ export type AgentEvent =
   | { runId: string; type: 'tool_call'; call: ToolCall; kind: ToolKind; iteration: number }
   | { runId: string; type: 'tool_result'; callId: string; ok: boolean; summary: string }
   | { runId: string; type: 'usage'; inputTokens?: number; outputTokens?: number; costUsd?: number }
-  | { runId: string; type: 'proposal'; proposal: Proposal }
+  | { runId: string; type: 'proposal'; proposal: AnyProposal }
   | {
       runId: string
       type: 'done'

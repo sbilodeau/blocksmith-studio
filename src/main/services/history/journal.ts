@@ -19,7 +19,7 @@ export const StoredEntrySchema = z.object({
   v: z.literal(1),
   id: z.string().min(1).max(64),
   at: z.string(),
-  source: z.enum(['editor', 'revert', 'ai', 'import', 'merge']),
+  source: z.enum(['editor', 'revert', 'ai', 'bulk', 'import', 'merge']),
   label: z.object({
     key: z.string().min(1).max(128),
     params: z.record(z.string(), z.union([z.string(), z.number()])).optional()

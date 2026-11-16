@@ -144,7 +144,13 @@
       "proposalNotPending": "Ce plan a déjà été appliqué ou refusé.",
       "replayFailed": "L'étape {step} ({tool}) n'a pas pu être appliquée.",
       "agentFailed": "L'agent IA s'est arrêté à cause d'une erreur inattendue.",
-      "evalBusy": "Un test de modèle est déjà en cours."
+      "evalBusy": "Un test de modèle est déjà en cours.",
+      "emptySelection": "Aucune des textures sélectionnées n'a pu être lue. Sélectionnez des textures dans la grille et réessayez."
+    },
+    "bulk": {
+      "aborted": "L'opération groupée a été arrêtée.",
+      "failed": "L'opération groupée a échoué : {reason}",
+      "previewExpired": "Cet aperçu a expiré. Relancez l'aperçu des opérations."
     }
   },
   "common": {
@@ -258,7 +264,8 @@
       "index": "Indexation",
       "read": "Lecture",
       "write": "Écriture",
-      "collect": "Collecte des fichiers"
+      "collect": "Collecte des fichiers",
+      "compute": "Calcul"
     }
   },
   "category": {
@@ -369,8 +376,12 @@
   "history": {
     "label": {
       "save": "{name} enregistrée",
-      "revert": "{name} remise à vanilla"
-    }
+      "revert": "{name} remise à vanilla",
+      "bulk": "Modification de {count} textures | Modification de 1 texture | Modification de {count} textures",
+      "aiBulk": "Plan IA sur {count} textures | Plan IA sur 1 texture | Plan IA sur {count} textures"
+    },
+    "title": "Historique",
+    "empty": "Rien d'enregistré pour le moment."
   },
   "preview": {
     "toggle": "3D",
@@ -503,7 +514,7 @@
     "keyNotNeeded": "Aucune clé requise (local)",
     "eval": {
       "title": "Tester des modèles",
-      "hint": "Envoie les phrases de test en français et en anglais à chaque modèle choisi et vérifie qu'il choisit les bons outils. Choisissez plusieurs modèles pour les comparer côte à côte. Utilise les jetons de vos fournisseurs : 16 phrases par modèle pour le test rapide, 60 pour le test complet.",
+      "hint": "Envoie les phrases de test en français et en anglais à chaque modèle choisi et vérifie qu'il choisit les bons outils. Choisissez plusieurs modèles pour les comparer côte à côte. Utilise les jetons de vos fournisseurs : 18 phrases par modèle pour le test rapide, 72 pour le test complet.",
       "quick": "Test rapide",
       "full": "Test complet",
       "progress": "{done} requêtes sur {total}",
@@ -579,7 +590,12 @@
       "in": "Entrée",
       "out": "Sortie",
       "reset": "Revenir aux valeurs indiquées"
-    }
+    },
+    "askSelection": "Demander à l'IA",
+    "navigationPanel": "Assistant IA",
+    "emptyNavigation": "Sélectionnez des textures dans la grille, puis demandez une modification, par exemple : « mets tout plus rouge » ou « ajoute un contour rouge foncé aux minerais ».",
+    "navigationSelection": "Aucune texture sélectionnée | Travail sur 1 texture sélectionnée | Travail sur {count} textures sélectionnées",
+    "navigationNoSelection": "Sélectionnez des textures dans la grille pour travailler dessus."
   },
   "brief": {
     "open": "Brief de style",
@@ -643,6 +659,49 @@
       "outside": "extérieur",
       "vanilla": "vanilla",
       "pack": "du pack"
-    }
+    },
+    "unknown": "Opération {tool}"
+  },
+  "bulk": {
+    "open": "Modifier la sélection...",
+    "title": "Modifier la sélection | Modifier 1 texture | Modifier {count} textures",
+    "hint": "Choisissez une ou plusieurs opérations. Elles s'appliquent dans l'ordre à chaque texture sélectionnée ; vous voyez ensuite chaque résultat et gardez seulement ceux que vous voulez.",
+    "op": {
+      "hue_shift": "Décaler les teintes",
+      "saturation": "Saturation",
+      "brightness": "Luminosité",
+      "replace_color": "Remplacer une couleur",
+      "apply_palette": "Appliquer une palette",
+      "outline": "Contour",
+      "flip": "Retourner",
+      "rotate": "Pivoter"
+    },
+    "remove": "Retirer",
+    "from": "De",
+    "to": "à",
+    "tolerance": "Tolérance",
+    "palettePlaceholder": "Couleurs, par exemple #3b2a1e #6b4a2e #a07040",
+    "fromBrief": "Depuis le brief de style",
+    "noBriefPalette": "Le brief de style n'a pas encore de palette.",
+    "degrees": "{n}°",
+    "addOperation": "Ajouter une opération",
+    "transformNote": "Les retournements et rotations s'appliquent à chaque texture (à chaque image pour les textures animées). La plupart des textures de blocs et d'objets ont un sens fixe en jeu : vérifiez le résultat.",
+    "preview": "Aperçu",
+    "nothingChanges": "Ces opérations ne changent aucune texture sélectionnée.",
+    "back": "Revenir aux opérations",
+    "applied": "Aucune texture modifiée. | Appliqué à 1 texture. Vous pouvez l'annuler depuis l'historique. | Appliqué à {count} textures. Vous pouvez l'annuler depuis l'historique.",
+    "review": {
+      "title": "Aucune texture ne change | 1 texture change | {count} textures changent",
+      "targets": "aucune texture | 1 texture | {count} textures",
+      "previewAllSteps": "Les aperçus montrent toutes les étapes ; les étapes décochées seront ignorées à l'application.",
+      "none": "Aucune",
+      "kept": "{kept} sur {total} gardées",
+      "more": "Afficher {count} de plus",
+      "unchanged": "Toutes les textures changent. | 1 texture n'a pas changé. | {count} textures n'ont pas changé.",
+      "failed": "Toutes les textures ont été traitées. | 1 texture n'a pas pu être traitée. | {count} textures n'ont pas pu être traitées.",
+      "apply": "Appliquer | Appliquer à 1 texture | Appliquer à {count} textures",
+      "legend": "Avant à gauche, après à droite."
+    },
+    "degreeUnit": "°"
   }
 }
