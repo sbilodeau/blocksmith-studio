@@ -37,6 +37,7 @@ export const INVOKE_CHANNELS = [
   'texture.read',
   'texture.save',
   'texture.revert',
+  'texture.importGif',
   'history.get',
   'history.undo',
   'history.redo',

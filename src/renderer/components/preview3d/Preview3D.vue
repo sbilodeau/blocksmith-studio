@@ -34,7 +34,7 @@ const FLAT: PreviewModel = { kind: 'flat' }
 /** The model to draw: an entity whose UV layout does not fit the texture's size is shown flat instead. */
 const model = computed<PreviewModel | null>(() => {
   const m = rawModel.value
-  const img = editor.value.image
+  const img = editor.value.strip
   if (m?.kind === 'entity' && img) {
     // Animated textures are strips: compare one frame.
     const frameHeight = parseAnimation(editor.value.mcmeta, img)?.frameHeight ?? img.height
@@ -149,7 +149,9 @@ function loop(): void {
     needsRender = true
   }
   if (animation && editedSlot) {
-    const frame = frameAt(animation, elapsed * 1000)
+    // In the editor the 3D view shows the frame being edited, and plays the animation when asked.
+    const editing = editor.value.frames && !editor.value.playing
+    const frame = editing ? editor.value.frameIndex : frameAt(animation, elapsed * 1000)
     setFrame(editedSlot.texture, frame, editedSlot.frameHeight, editedSlot.image.height)
     needsRender = true
   }
@@ -244,7 +246,7 @@ function rebuild(): void {
     root = null
   }
   rig = null
-  const img = editor.value.image
+  const img = editor.value.strip
   const m = model.value
   if (!img || !m) return
   editedSlot?.texture.dispose()
@@ -307,7 +309,7 @@ function view(name: 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'is
 
 // ---------- live updates and hover link ----------
 function applyEdits(): void {
-  const img = editor.value.image
+  const img = editor.value.strip
   if (!img || !editedSlot) return
   const hover = editor.value.linkedHover?.source === '2d' ? editor.value.linkedHover : undefined
   if (!updateDataTexture(editedSlot.texture, img, hover)) {
@@ -365,6 +367,14 @@ function setLinkedHover(p: { x: number; y: number } | null): void {
 
 watch(() => editor.value.path, loadModel)
 watch(() => editor.value.revision, applyEdits)
+// Timing edits (frametime, frame order) change the playback without changing the image size.
+watch(
+  () => editor.value.mcmeta,
+  () => {
+    const img = editor.value.strip
+    if (img && editedSlot) animation = parseAnimation(editor.value.mcmeta, img)
+  }
+)
 watch(
   () => editor.value.linkedHover,
   (h, old) => {

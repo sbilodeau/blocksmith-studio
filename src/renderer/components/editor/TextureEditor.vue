@@ -18,6 +18,7 @@ import PixelCanvas from './PixelCanvas.vue'
 import EditorToolbar from './EditorToolbar.vue'
 import ColorPanel from './ColorPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
+import AnimationPanel from './AnimationPanel.vue'
 import EditorIcon from './EditorIcon.vue'
 import Preview3d from '../preview3d/Preview3D.vue'
 import EditorAgentPanel from '../ai/EditorAgentPanel.vue'
@@ -191,6 +192,8 @@ function onKeydown(e: KeyboardEvent): void {
   else if (key === '0') canvasRef.value?.fit()
   else if (key === 'c' && ed.vanilla) ed.peekVanilla = true
   else if (key === '3') ed.show3d = !ed.show3d
+  else if (key === ',' && ed.frames) ed.selectFrame(ed.frameIndex - 1)
+  else if (key === '.' && ed.frames) ed.selectFrame(ed.frameIndex + 1)
   else if (key === 'pageup' || (e.altKey && key === 'arrowleft')) go('prev')
   else if (key === 'pagedown' || (e.altKey && key === 'arrowright')) go('next')
   else handled = false
@@ -278,6 +281,14 @@ const statusTag = computed(() => {
           </template>
           {{ t('editor.shortcut', { label: t('preview.toggleHint'), key: '3' }) }}
         </n-tooltip>
+        <n-tooltip v-if="editor.image && !editor.frames && !editor.animation">
+          <template #trigger>
+            <n-button size="small" data-testid="editor-animate" @click="editor.animate()">
+              {{ t('animation.animate') }}
+            </n-button>
+          </template>
+          {{ t('animation.animateHint') }}
+        </n-tooltip>
         <n-button
           v-if="editor.vanilla && editor.entry?.status === 'modified'"
           size="small"
@@ -326,13 +337,15 @@ const statusTag = computed(() => {
             </div>
           </template>
         </div>
+        <animation-panel v-if="editor.frames" :pack-id="packId" />
         <div class="status" data-testid="editor-status">
           <n-text v-if="editor.image" depth="3">
             {{ t('editor.size', { width: editor.image.width, height: editor.image.height }) }}
           </n-text>
-          <n-text v-if="editor.frameSize" depth="3">
-            {{ t('editor.frames', { count: (editor.image?.height ?? 0) / editor.frameSize }) }}
+          <n-text v-if="editor.frames" depth="3" data-testid="editor-frames">
+            {{ t('editor.frameOf', { n: editor.frameIndex + 1, count: editor.frameCount }) }}
           </n-text>
+          <n-text v-else-if="editor.animation" depth="3">{{ t('animation.unsupported') }}</n-text>
           <n-text depth="3" data-testid="editor-hover">
             <template v-if="hoverInfo">
               {{

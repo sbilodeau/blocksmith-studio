@@ -55,6 +55,16 @@ export interface AppError {
   params?: Record<string, string | number>
 }
 
+export interface GifImport {
+  /** File name without folders. */
+  name: string
+  png: Uint8Array
+  frames: number
+  delaysMs: number[]
+  /** Frames were dropped to stay within the largest texture size. */
+  truncated: boolean
+}
+
 export type Result<T> = { ok: true; value: T } | { ok: false; error: AppError }
 
 export interface AppInfo {
@@ -123,9 +133,21 @@ export const inputSchemas = {
   'pack.doctor': PackRef,
   'texture.read': TextureRef,
   'texture.save': TextureRef.extend({
-    png: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES)
+    png: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES),
+    /** .png.mcmeta text to write with the PNG (null removes the pack's copy; missing leaves it as is). */
+    mcmeta: z
+      .string()
+      .max(64 * 1024)
+      .nullable()
+      .optional()
   }).strict(),
   'texture.revert': TextureRef,
+  'texture.importGif': z
+    .object({
+      frameWidth: z.number().int().min(1).max(4096),
+      frameHeight: z.number().int().min(1).max(4096)
+    })
+    .strict(),
   'history.get': PackRef,
   'history.undo': PackRef,
   'history.redo': PackRef,
@@ -151,7 +173,14 @@ export const inputSchemas = {
           path: TexturePathSchema,
           png: z
             .instanceof(Uint8Array)
-            .refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES)
+            .refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES),
+          animation: z
+            .object({
+              frameHeight: z.number().int().min(1).max(4096),
+              frame: z.number().int().min(0).max(4095)
+            })
+            .strict()
+            .optional()
         })
         .strict(),
       language: LanguageSchema,
@@ -263,6 +292,11 @@ export interface InvokeOutputs {
   'texture.save': TextureEntry
   /** Deletes the pack's copy so the vanilla texture is used again (records a history entry). */
   'texture.revert': TextureEntry
+  /**
+   * Asks for a .gif and returns its frames fitted to the frame size, as one vertical strip PNG, with each frame's
+   * delay in ms. Null when the user cancels. Nothing is written (the editor applies it as an unsaved edit).
+   */
+  'texture.importGif': GifImport | null
   'history.get': HistoryState
   'history.undo': HistoryState
   'history.redo': HistoryState
