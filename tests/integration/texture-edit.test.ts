@@ -38,6 +38,7 @@ describe('texture editing and pack history', () => {
       () => true,
       () => false
     )
+  const readPackText = (path: string): Promise<string> => readFile(packFile(path), 'utf8')
   async function writePackFile(path: string, data: Uint8Array | string): Promise<void> {
     await mkdir(dirname(packFile(path)), { recursive: true })
     await writeFile(packFile(path), data)
@@ -111,7 +112,8 @@ describe('texture editing and pack history', () => {
         png: vanillaStone,
         origin: 'vanilla',
         vanillaPng: vanillaStone,
-        mcmeta: null
+        mcmeta: null,
+        mcmetaOrigin: 'none'
       })
       await writePackFile(STONE, RED)
       data = await textures.read(packId, STONE)
@@ -126,16 +128,23 @@ describe('texture editing and pack history', () => {
         png: null,
         origin: 'none',
         vanillaPng: null,
-        mcmeta: null
+        mcmeta: null,
+        mcmetaOrigin: 'none'
       })
     })
 
     it('reads the .mcmeta from the pack first, then vanilla', async () => {
       const vanillaMeta = new TextDecoder().decode(vanillaFiles()[`${WATER}.mcmeta`])
-      expect((await textures.read(packId, WATER)).mcmeta).toBe(vanillaMeta)
+      expect(await textures.read(packId, WATER)).toMatchObject({
+        mcmeta: vanillaMeta,
+        mcmetaOrigin: 'vanilla'
+      })
       const packMeta = JSON.stringify({ animation: { frametime: 5 } })
       await writePackFile(`${WATER}.mcmeta`, packMeta)
-      expect((await textures.read(packId, WATER)).mcmeta).toBe(packMeta)
+      expect(await textures.read(packId, WATER)).toMatchObject({
+        mcmeta: packMeta,
+        mcmetaOrigin: 'pack'
+      })
     })
 
     it('never uses vanilla files for an empty pack', async () => {
@@ -200,6 +209,32 @@ describe('texture editing and pack history', () => {
       const other = await textures.save(packId, STONE, variant)
       expect(other.url).not.toBe(red.url)
       expect((await entry(STONE)).url).toBe(other.url)
+    })
+
+    it('writes the .png.mcmeta with the PNG as one history entry, and removes it on null', async () => {
+      const strip = makePng(16, 32, [9, 9, 9, 255])
+      const meta = '{"animation": {"frametime": 3}}\n'
+      await textures.save(packId, STONE, strip, meta)
+      expect(await readPackText(`${STONE}.mcmeta`)).toBe(meta)
+      expect((await history.get(packId)).entries).toHaveLength(1)
+      // Unchanged .mcmeta: not rewritten.
+      await textures.save(packId, STONE, makePng(16, 32, [8, 8, 8, 255]), meta)
+      expect((await history.get(packId)).entries[0]!.paths).toEqual([STONE])
+      await textures.save(packId, STONE, RED, null)
+      expect(await exists(`${STONE}.mcmeta`)).toBe(false)
+      await history.undo(packId)
+      expect(await readPackText(`${STONE}.mcmeta`)).toBe(meta)
+    })
+
+    it("copies vanilla's .mcmeta into the pack with an edited PNG, drops it with a vanilla-identical one", async () => {
+      const vanillaMeta = new TextDecoder().decode(vanillaFiles()[`${WATER}.mcmeta`])
+      await textures.save(packId, WATER, makePng(16, 512, [1, 2, 3, 255]), vanillaMeta)
+      expect(await readPackText(`${WATER}.mcmeta`)).toBe(vanillaMeta)
+      // Same JSON as vanilla, other formatting, with the vanilla PNG: the pack keeps neither.
+      const reformatted = JSON.stringify(JSON.parse(vanillaMeta), null, 4)
+      await textures.save(packId, WATER, vanillaFiles()[WATER]!, reformatted)
+      expect(await exists(WATER)).toBe(false)
+      expect(await exists(`${WATER}.mcmeta`)).toBe(false)
     })
 
     it('removes the pack copy when the bytes equal vanilla, and still records history', async () => {
@@ -307,11 +342,14 @@ describe('texture editing and pack history', () => {
       })
     })
 
-    it('keeps a pack .png.mcmeta (M2 only reverts the image)', async () => {
+    it('also removes the pack .png.mcmeta, in the same history entry', async () => {
       await textures.save(packId, WATER, makePng(16, 512, [1, 2, 3, 255]))
       await writePackFile(`${WATER}.mcmeta`, json({ animation: { frametime: 9 } }))
       await textures.revert(packId, WATER)
+      expect(await exists(`${WATER}.mcmeta`)).toBe(false)
+      await history.undo(packId)
       expect(await exists(`${WATER}.mcmeta`)).toBe(true)
+      expect(await exists(WATER)).toBe(true)
     })
 
     it('refuses textures not in the pack or without a vanilla counterpart', async () => {

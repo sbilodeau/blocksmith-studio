@@ -1,4 +1,5 @@
 import { decode } from 'fast-png'
+import { isDeepStrictEqual } from 'node:util'
 import type { HistoryEntry, TextureData } from '@shared/model/history'
 import type { TextureEntry } from '@shared/model/pack'
 import type { VanillaStore } from '../contracts'
@@ -41,7 +42,11 @@ export interface TextureEditService {
    * for an empty pack (what Minecraft shows when the pack has no file). Null when neither exists.
    */
   readCatalog(packId: string, path: string): Promise<Uint8Array | null>
-  save(packId: string, path: string, png: Uint8Array): Promise<TextureEntry>
+  /**
+   * Writes the PNG and, when `mcmeta` is given, its .png.mcmeta (null removes the pack's copy), as one history
+   * entry. A texture identical to vanilla is removed from the pack, and so is a .mcmeta identical to vanilla's then.
+   */
+  save(packId: string, path: string, png: Uint8Array, mcmeta?: string | null): Promise<TextureEntry>
   revert(packId: string, path: string): Promise<TextureEntry>
   /**
    * Writes several textures as ONE history entry (bulk operations, AI proposals over a selection). Textures that
@@ -70,6 +75,16 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.byteLength !== b.byteLength) return false
   for (let i = 0; i < a.byteLength; i++) if (a[i] !== b[i]) return false
   return true
+}
+
+/** Same JSON value (formatting aside). */
+function sameJson(a: Uint8Array, b: Uint8Array): boolean {
+  try {
+    const decoder = new TextDecoder()
+    return isDeepStrictEqual(JSON.parse(decoder.decode(a)), JSON.parse(decoder.decode(b)))
+  } catch {
+    return false
+  }
 }
 
 /** "assets/minecraft/textures/block/stone.png" -> "stone" */
@@ -119,15 +134,15 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
       const packPng = await readOptional(abs)
       const vanillaPng = await readOptional(vanillaFile(location, path))
       const png = packPng ?? vanillaPng
-      const mcmeta =
-        (await readOptional(`${abs}.mcmeta`)) ??
-        (await readOptional(vanillaFile(location, `${path}.mcmeta`)))
+      const packMeta = await readOptional(`${abs}.mcmeta`)
+      const mcmeta = packMeta ?? (await readOptional(vanillaFile(location, `${path}.mcmeta`)))
       return {
         path,
         png,
         origin: packPng ? 'pack' : vanillaPng ? 'vanilla' : 'none',
         vanillaPng,
-        mcmeta: mcmeta ? new TextDecoder().decode(mcmeta) : null
+        mcmeta: mcmeta ? new TextDecoder().decode(mcmeta) : null,
+        mcmetaOrigin: packMeta ? 'pack' : mcmeta ? 'vanilla' : 'none'
       }
     },
 
@@ -139,7 +154,7 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
       return vanilla ? readOptional(vanilla) : null
     },
 
-    async save(packId, path, png) {
+    async save(packId, path, png, mcmeta) {
       const location = await requireLocation(packId)
       const abs = texturePath(location, path)
       if (!isValidTexturePng(png)) throw new AppErrorException(TextureErrorCode.invalidPng)
@@ -147,10 +162,22 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
       const vanillaPng = await readOptional(vanillaFile(location, path))
       // Identical to vanilla: the pack keeps only changed files, so the copy is removed instead.
       const after = vanillaPng && sameBytes(vanillaPng, png) ? null : png
+      const changes: Array<{ path: string; after: Uint8Array | null }> = [{ path, after }]
+      if (mcmeta !== undefined) {
+        const metaPath = `${path}.mcmeta`
+        let metaAfter = mcmeta === null ? null : new TextEncoder().encode(mcmeta)
+        if (metaAfter && after === null) {
+          const vanillaMeta = await readOptional(vanillaFile(location, metaPath))
+          if (vanillaMeta && sameJson(vanillaMeta, metaAfter)) metaAfter = null
+        }
+        const current = await readOptional(`${abs}.mcmeta`)
+        const unchanged = metaAfter ? !!current && sameBytes(current, metaAfter) : !current
+        if (!unchanged) changes.push({ path: metaPath, after: metaAfter })
+      }
       await deps.history.apply(packId, {
         source: 'editor',
         label: { key: 'save', params: { name: textureName(path) } },
-        changes: [{ path, after }]
+        changes
       })
       return freshEntry(location, path)
     },
@@ -182,10 +209,13 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
       if (!vanillaFile(location, path)) {
         throw new AppErrorException(TextureErrorCode.noVanilla, { path })
       }
+      // The pack's .png.mcmeta goes too: the vanilla texture comes with its own.
+      const changes: Array<{ path: string; after: Uint8Array | null }> = [{ path, after: null }]
+      if (await readOptional(`${abs}.mcmeta`)) changes.push({ path: `${path}.mcmeta`, after: null })
       await deps.history.apply(packId, {
         source: 'revert',
         label: { key: 'revert', params: { name: textureName(path) } },
-        changes: [{ path, after: null }]
+        changes
       })
       return freshEntry(location, path)
     }

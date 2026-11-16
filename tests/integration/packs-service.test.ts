@@ -167,10 +167,13 @@ describe('pack service: workspace and packs', () => {
     await put(T('block/iron_chain'), makePng(16, 16, [255, 0, 0, 255]))
     await put(T('entity/cow/cow_temperate'), makePng(64, 32, [255, 0, 0, 255]))
     await put('assets/minecraft/models/block/broken.json', '{ nope')
+    // Animated in vanilla, no .mcmeta in the pack: the animation would not play.
+    await put(T('block/water_still'), makePng(16, 512, [0, 0, 255, 255]))
     const report = await env.service.doctor(pack.id)
     expect(report.issues).toEqual(
       expect.arrayContaining([
         { code: 'doctor.proportions', path: T('block/stone') },
+        { code: 'doctor.missingAnimation', path: T('block/water_still') },
         { code: 'export.invalidJson', path: 'assets/minecraft/models/block/broken.json' }
       ])
     )

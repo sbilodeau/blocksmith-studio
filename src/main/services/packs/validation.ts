@@ -46,6 +46,26 @@ export function proportionWarnings(
   return out
 }
 
+/**
+ * Pack textures that are animated in vanilla but have no .png.mcmeta in the pack. Minecraft reads a texture's
+ * .mcmeta only from the pack providing the PNG (or a pack above it), so the vanilla animation does not apply and
+ * the whole strip is shown at once. Saving the texture in the editor copies the .mcmeta into the pack.
+ */
+export function missingAnimationWarnings(
+  files: readonly PackFile[],
+  vanillaAnimated: (path: string) => boolean | undefined
+): PackWarning[] {
+  const paths = new Set(files.map((f) => f.path))
+  const out: PackWarning[] = []
+  for (const { path } of files) {
+    if (!/^assets\/[^/]+\/textures\/.+\.png$/.test(path)) continue
+    if (vanillaAnimated(path) && !paths.has(`${path}.mcmeta`)) {
+      out.push({ code: 'doctor.missingAnimation', path })
+    }
+  }
+  return out
+}
+
 /** Atlas textures (mipmapped): non power-of-two sizes are worth a warning there, not for GUI or entities. */
 const ATLAS_TEXTURE = /^assets\/[^/]+\/textures\/(block|item)\//
 

@@ -24,7 +24,7 @@ import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
 import { FileInfoCache, mapLimit, writeFileAtomic } from './files'
-import { proportionWarnings, validatePackFiles } from './validation'
+import { missingAnimationWarnings, proportionWarnings, validatePackFiles } from './validation'
 import { importPackZip, type ImportLimits } from './importer'
 import { isRecord, mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
 import { comparePaths, createUniqueFolder, scanFiles, slugify } from './paths'
@@ -524,7 +524,8 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       const index = await deps.vanilla.getIndex(authoring)
       const issues = [
         ...validatePackFiles(files),
-        ...proportionWarnings(files, (path) => index?.entries[path])
+        ...proportionWarnings(files, (path) => index?.entries[path]),
+        ...missingAnimationWarnings(files, (path) => index?.entries[path]?.animated)
       ]
       const mcmeta = files.find((f) => f.path === 'pack.mcmeta')
       if (!mcmeta || !isRecord(parseJson(mcmeta.data)))
