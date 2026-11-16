@@ -919,6 +919,9 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 
 ### M8 - Merge and send-to-pack
 - Merge wizard, priority ordering, conflict review, JSON deep-merge, cross-tab "Send to pack", undo.
+- Built (see docs/packs.md "Merge and send to pack"): one dialog for both entry points (Packs screen, grid selection
+  bar); source paths migrated to the target version; the tab context menu entry was left out (the Packs screen
+  button covers it).
 
 ### M9 - Animated textures
 - Frame timeline, playback, onion skin, frametime/interpolate editing in `.png.mcmeta`, add/duplicate/reorder frames, GIF import; agent tools gain a `frame` parameter.

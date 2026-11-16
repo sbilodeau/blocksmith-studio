@@ -5,7 +5,7 @@
 Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs, with a pixel editor,
 a live 3D preview and AI agents that propose changes you review before anything is applied.
 
-> Status: early development (milestone M7 - multi-version export). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M8 - merge and send to pack). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 

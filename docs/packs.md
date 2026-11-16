@@ -225,6 +225,35 @@ version (keeping its other sections) and updates `authoringVersion`. Textures th
 
 The drawer groups issues by type; texture paths open in the editor.
 
+## Merge and send to pack
+
+Code: `src/main/services/merge/` (`combine.ts` pure, `service.ts`), IPC `merge.preview` / `merge.apply` /
+`merge.discard`, UI `src/renderer/components/merge/MergeDialog.vue`.
+
+- **Merge packs** (Packs screen, **Merge packs...**): sources in priority order, highest first (the first source
+  wins, like the top of Minecraft's pack list), into an existing pack or a new one.
+- **Send to pack** (grid selection bar, **Send to pack...**): the selected pack files (modified or added textures,
+  with their `.png.mcmeta`) of the current pack. Unchanged vanilla textures are not sent.
+
+`merge.preview` reads the sources and the target (never their `pack.mcmeta`; `pack.png` only for a new target, which
+takes the top source's icon). Source paths are migrated to the target's authoring version (a new target uses the
+newest version among the sources; see [versions.md](versions.md#texture-path-migrations)). Every path is then:
+
+| Class     | When                                                                                                                                            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| identical | the target already has the same content                                                                                                         |
+| added     | not in the target, and every source that has it has the same content                                                                            |
+| merged    | `lang/*.json` and `sounds.json` (key union, the top source wins per key), `atlases/*.json` (`sources` union), `font/*.json` (`providers` union) |
+| conflict  | different contents: candidates side by side (PNG thumbnails, text excerpts), default = top source                                               |
+| skipped   | the file does not exist in the target version (`notInVersion`)                                                                                  |
+
+`merge.apply { planId, choices }` creates the target when it is new (base of the top source), then writes added files,
+merged JSON and the chosen conflict versions (`target` keeps the target's) as ONE history entry in the target
+(`source: 'merge'`, label "Merged N files from M packs"), undoable from History. With **Also merge the style briefs**,
+the sources' palette colors and rules are appended to the target brief (theme kept) and a decision is recorded.
+Plans are single use and expire after 30 minutes (`merge.planExpired`); a target that is also a source is refused
+(`merge.targetIsSource`).
+
 ## Asset protocol
 
 `bs-asset://` serves read-only files to the renderer (format in `src/shared/assets.ts`):

@@ -5,6 +5,16 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M8 - Merge and send to pack
+
+- **Merge packs...** on the Packs screen: pick source packs in priority order (the first one wins, like the top of
+  Minecraft's pack list) and merge them into an existing pack or a new one
+- **Send to pack...** in the grid's selection bar: copy the selected changed textures to another pack or a new one
+- A review before anything is written: files added, already identical, combined automatically (language, sound,
+  atlas and font files), conflicts shown side by side to choose from, and files that do not exist in the target's
+  Minecraft version (sources made for another version are migrated first)
+- The merge is one entry in the target pack's History (undo), and the style briefs can be merged too
+
 ### M7 - Multi-version export
 
 - Export to any Minecraft version from 1.21.4 to 26.3 (and newer snapshots): textures renamed between versions are

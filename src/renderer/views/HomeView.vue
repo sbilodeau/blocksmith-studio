@@ -7,6 +7,7 @@ import LoadingOverlay from '../components/common/LoadingOverlay.vue'
 import type { PackSummary } from '@shared/model/pack'
 import PackCard from '../components/packs/PackCard.vue'
 import NewPackDialog from '../components/packs/NewPackDialog.vue'
+import MergeDialog from '../components/merge/MergeDialog.vue'
 import ReportDialog from '../components/common/ReportDialog.vue'
 import JobProgressBar from '../components/common/JobProgressBar.vue'
 import { usePacksStore } from '../stores/packs'
@@ -21,6 +22,7 @@ const dialog = useDialog()
 const { showError } = useErrorMessage()
 
 const showNew = ref(false)
+const showMerge = ref(false)
 const importing = ref(false)
 const filter = ref('')
 const report = ref<{
@@ -116,6 +118,13 @@ onMounted(() => {
       <n-h2 class="title">{{ t('home.title') }}</n-h2>
       <n-space align="center">
         <job-progress-bar v-if="importing" kind="packs.import" />
+        <n-button
+          :disabled="packs.packs.length < 2"
+          data-testid="merge-open"
+          @click="showMerge = true"
+        >
+          {{ t('merge.open') }}
+        </n-button>
         <n-button :loading="importing" data-testid="import-pack" @click="importZip">
           {{ t('home.importPack') }}
         </n-button>
@@ -167,6 +176,7 @@ onMounted(() => {
     </div>
 
     <new-pack-dialog v-model:show="showNew" @created="open" />
+    <merge-dialog v-model:show="showMerge" mode="merge" />
     <report-dialog
       v-if="report"
       v-model:show="showReport"

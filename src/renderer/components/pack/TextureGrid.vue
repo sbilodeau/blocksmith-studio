@@ -13,6 +13,7 @@ import {
 } from 'naive-ui'
 import TextureTile from './TextureTile.vue'
 import BulkDialog from '../bulk/BulkDialog.vue'
+import MergeDialog from '../merge/MergeDialog.vue'
 import { usePackStore, type StatusFilter } from '../../stores/pack'
 
 const props = defineProps<{ packId: string }>()
@@ -22,9 +23,16 @@ const { t } = useI18n()
 
 const filters: StatusFilter[] = ['all', 'changed', 'vanilla']
 const showBulk = ref(false)
+const showSend = ref(false)
 /** Selected textures in pack order (bulk actions and the navigation agent use this order). */
 const selectedPaths = computed(() =>
   store.value.textures.filter((tex) => store.value.selection.has(tex.path)).map((tex) => tex.path)
+)
+/** Send to pack: only the pack's own files (unchanged vanilla textures are not copied). */
+const sendPaths = computed(() =>
+  store.value.textures
+    .filter((tex) => store.value.selection.has(tex.path) && tex.status !== 'vanilla')
+    .map((tex) => tex.path)
 )
 
 // The editor replaces the grid: keep its scroll position, and on return show the last edited tile
@@ -101,6 +109,15 @@ function onKeydown(e: KeyboardEvent): void {
       }}</n-button>
       <n-button
         size="tiny"
+        :disabled="sendPaths.length === 0"
+        :title="sendPaths.length === 0 ? t('merge.sendNothing') : undefined"
+        data-testid="selection-send"
+        @click="showSend = true"
+      >
+        {{ t('merge.send') }}
+      </n-button>
+      <n-button
+        size="tiny"
         :type="store.aiPanel ? 'primary' : 'default'"
         data-testid="selection-ai"
         @click="store.aiPanel = true"
@@ -109,6 +126,7 @@ function onKeydown(e: KeyboardEvent): void {
       </n-button>
     </div>
     <bulk-dialog v-model:show="showBulk" :pack-id="packId" :paths="selectedPaths" />
+    <merge-dialog v-model:show="showSend" mode="send" :source-pack-id="packId" :paths="sendPaths" />
 
     <div ref="scroller" class="scroll" tabindex="0" data-testid="texture-grid" @keydown="onKeydown">
       <n-empty v-if="store.visible.length === 0" :description="t('grid.empty')" class="empty" />
