@@ -27,6 +27,7 @@ function onClick(e: MouseEvent): void {
     :title="texture.path"
     :style="{ width: `${size + 16}px` }"
     :data-testid="`tile-${texture.name}`"
+    :data-path="texture.path"
     :data-status="texture.status"
     @click="onClick"
     @dblclick="emit('open')"

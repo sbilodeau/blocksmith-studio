@@ -36,6 +36,10 @@ export function usePackStore(packId: string) {
     /** Texture open in the 1:1 editor (null = grid/overview). */
     const editing = ref<string | null>(null)
     const anchor = ref<string | null>(null)
+    /** Grid scroll position, kept while the editor replaces the grid (and across tab switches). */
+    const gridScroll = ref(0)
+    /** Last texture shown in the editor, so the grid can bring its tile into view on return. */
+    const lastEdited = ref<string | null>(null)
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
 
@@ -82,6 +86,7 @@ export function usePackStore(packId: string) {
 
     function openCategory(id: string | null): void {
       category.value = id
+      gridScroll.value = 0
       clearSelection()
     }
 
@@ -116,9 +121,11 @@ export function usePackStore(packId: string) {
 
     function openEditor(path: string): void {
       editing.value = path
+      lastEdited.value = path
     }
 
     function closeEditor(): void {
+      if (editing.value) lastEdited.value = editing.value
       editing.value = null
     }
 
@@ -143,6 +150,8 @@ export function usePackStore(packId: string) {
       zoom,
       selection,
       editing,
+      gridScroll,
+      lastEdited,
       changedCount,
       visible,
       load,
