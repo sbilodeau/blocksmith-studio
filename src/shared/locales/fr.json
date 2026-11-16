@@ -92,7 +92,8 @@
       "notFound": "Ce pack n'existe plus.",
       "unsupportedVersion": "Minecraft {version} n'est pas pris en charge.",
       "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes.",
-      "unsafePath": "Cette modification écrirait en dehors du dossier du pack ; elle a été refusée."
+      "unsafePath": "Cette modification écrirait en dehors du dossier du pack ; elle a été refusée.",
+      "upgradeNotSupported": "Ce pack ne peut pas passer de Minecraft {from} à {to}."
     },
     "workspace": {
       "invalidPath": "Ce dossier ne peut pas servir d'espace de travail."
@@ -245,7 +246,7 @@
     "open": "Exporter",
     "title": "Exporter le pack",
     "target": "Version de Minecraft",
-    "targetHint": "Seules les versions vers lesquelles le pack peut être exporté sont listées. Les snapshots reçoivent vos textures telles quelles, avec le format de pack du snapshot. Les autres versions seront disponibles quand la migration de versions sera ajoutée.",
+    "targetHint": "Choisissez une ou plusieurs versions (un .zip chacune). Pour les autres versions, les textures renommées sont déplacées et celles qui n'existent pas sont ignorées.",
     "changedOnly": "Seuls les fichiers modifiés et ajoutés sont exportés. Minecraft utilise ses propres textures pour tout le reste.",
     "run": "Exporter le .zip",
     "done": "Export terminé",
@@ -257,11 +258,15 @@
       "resource": "Pack de ressources",
       "data": "Pack de données"
     },
-    "installHint": "Installez-le depuis Options > Packs de ressources (pas depuis l'écran Packs de données d'un monde)."
+    "installHint": "Installez-le depuis Options > Packs de ressources (pas depuis l'écran Packs de données d'un monde).",
+    "packVersionLabel": "{version} (version du pack)",
+    "runMany": "Exporter {count} fichiers .zip",
+    "renamedNote": "{count} textures ont été renommées pour cette version. | 1 texture a été renommée pour cette version. | {count} textures ont été renommées pour cette version."
   },
   "import": {
     "title": "Importation terminée",
-    "summary": "« {name} » importé : {files} fichiers conservés, {identical} identiques à vanilla retirés."
+    "summary": "« {name} » importé : {files} fichiers conservés, {identical} identiques à vanilla retirés.",
+    "renamedNote": "{count} textures ont été renommées avec leur nom actuel. | 1 texture a été renommée avec son nom actuel. | {count} textures ont été renommées avec leur nom actuel."
   },
   "report": {
     "warnings": "Avertissements ({count})"
@@ -296,7 +301,9 @@
     "import": {
       "formatMismatch": "Le pack a été conçu pour une autre version de Minecraft ; certaines textures ont pu changer de place (la migration entre versions viendra plus tard).",
       "formatMissing": "pack.mcmeta n'indique pas de format de pack.",
-      "vanillaNotReady": "Les textures vanilla n'étaient pas prêtes, donc les fichiers identiques à vanilla ont été conservés."
+      "vanillaNotReady": "Les textures vanilla n'étaient pas prêtes, donc les fichiers identiques à vanilla ont été conservés.",
+      "migrated": "Ce pack a été fait pour une version plus ancienne de Minecraft : les textures renommées ont été déplacées vers leur nom actuel.",
+      "notInVersion": "Non importée : cette texture n'existe plus dans cette version de Minecraft"
     },
     "export": {
       "vanillaNotReady": "Les textures vanilla n'étaient pas prêtes, donc les fichiers inchangés n'ont pas pu être ignorés.",
@@ -309,9 +316,18 @@
       "animationMismatch": "La hauteur de la texture animée ne correspond pas à ses images",
       "dataLeftOut": "Les fichiers data/ du pack n'ont pas été inclus (exportez un pack de données pour eux).",
       "assetsLeftOut": "Les textures et autres fichiers assets/ n'ont pas été inclus : Minecraft ne les charge pas depuis un pack de données.",
-      "noDataFiles": "Ce pack n'a pas encore de fichiers data/ : le pack de données est vide."
+      "noDataFiles": "Ce pack n'a pas encore de fichiers data/ : le pack de données est vide.",
+      "otherFilesAsIs": "Les modèles, états de blocs et autres fichiers JSON sont exportés tels quels ; vérifiez-les dans cette version."
     },
-    "identicalToVanilla": "Ignoré : identique à vanilla"
+    "identicalToVanilla": "Ignoré : identique à vanilla",
+    "notInTarget": "Ignorée : cette texture n'existe pas dans cette version",
+    "upgrade": {
+      "obsolete": "N'est plus utilisée par cette version de Minecraft (gardée dans le pack)",
+      "conflict": "Non déplacée : une texture porte déjà son nouveau nom (les deux sont gardées)"
+    },
+    "doctor": {
+      "proportions": "Proportions différentes de la texture de Minecraft : les modèles l’afficheront étirée ou coupée"
+    }
   },
   "editor": {
     "back": "Retour aux textures",
@@ -741,5 +757,22 @@
       "legend": "Avant à gauche, après à droite."
     },
     "degreeUnit": "°"
+  },
+  "upgrade": {
+    "button": "Passer à {version}",
+    "confirm": "Passer ce pack à Minecraft {version} ? Les textures renommées prennent leur nouveau nom et pack.mcmeta reçoit le nouveau format. Les exports vers les anciennes versions restent possibles.",
+    "done": "Pack mis à jour",
+    "summary": "Passé de Minecraft {from} à {to} : {count} textures renommées ont été déplacées."
+  },
+  "doctor": {
+    "title": "Docteur du pack",
+    "checked": "{count} fichiers vérifiés. | 1 fichier vérifié. | {count} fichiers vérifiés.",
+    "problems": "Problèmes",
+    "none": "Aucun problème trouvé.",
+    "targets": "Autres versions de Minecraft",
+    "targetsHint": "Ce qu'un export vers chaque version change : les textures renommées pour cette version, et celles qui n'y existent pas (ignorées ; survolez le nombre pour les voir).",
+    "version": "Version",
+    "renamed": "Renommées",
+    "skipped": "Ignorées"
   }
 }

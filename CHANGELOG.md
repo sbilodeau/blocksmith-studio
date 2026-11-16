@@ -5,6 +5,19 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M7 - Multi-version export
+
+- Export to any Minecraft version from 1.21.4 to 26.3 (and newer snapshots): textures renamed between versions are
+  moved to the right name, textures that do not exist in that version are skipped and listed in the report
+- Choose several versions in the export dialog: one .zip per version in a folder; the dialog remembers your last
+  export settings for each pack
+- Importing a pack made for an older version moves its renamed textures to their current names
+- **Upgrade to 26.3** in the pack header moves a pack made for an older version to the latest one
+- **Pack Doctor**: every problem in the pack (broken PNG or JSON, wrong sizes, textures whose proportions differ
+  from Minecraft's) and, for each version, what an export would rename or skip
+- The texture rename tables come from the per-version file lists of misode/mcmeta, cross-checked against real
+  game jars; new real-jar tests check every exported path in the installed versions
+
 ### M6 - Creation agent
 
 - Creation agent for the whole pack: on the pack overview, **Ask the AI (whole pack)** and describe the pack you

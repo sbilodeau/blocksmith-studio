@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { homedir, tmpdir } from 'node:os'
+import { tmpdir } from 'node:os'
 import { delimiter, join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { PACK_TYPE_FILE_SUFFIX, type ExportPackType } from '@shared/model/pack'
@@ -16,6 +16,7 @@ import {
 import { OPEN_MAX_FORMAT } from '@shared/versions/mcmeta'
 import { exportPackZip } from '../../src/main/services/packs/exporter'
 import { makePng } from '../integration/packs-fixtures'
+import { minecraftDirs } from './minecraft'
 
 /**
  * Every export target the app offers, as a resource pack and as a data pack, exported with the real exporter and
@@ -32,15 +33,7 @@ import { makePng } from '../integration/packs-fixtures'
 
 const ROOT = join(__dirname, '../..')
 
-function defaultMinecraftDir(): string {
-  if (process.platform === 'darwin') return join(homedir(), 'Library/Application Support/minecraft')
-  if (process.platform === 'win32') return join(process.env['APPDATA'] ?? '', '.minecraft')
-  return join(homedir(), '.minecraft')
-}
-
-const dirs = (process.env['BLOCKSMITH_REAL_JAR_MINECRAFT_DIRS'] ?? defaultMinecraftDir())
-  .split(delimiter)
-  .filter((d) => d && existsSync(d))
+const dirs = minecraftDirs()
 
 /** Java homes with javac under <dir>/runtime (the launcher's runtimes), newest Java first. */
 function findJavaHome(): string | undefined {

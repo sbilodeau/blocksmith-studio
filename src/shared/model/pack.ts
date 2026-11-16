@@ -16,9 +16,17 @@ export const ProjectSchema = z.object({
   authoringVersion: z.string(),
   base: PackBaseSchema,
   createdAt: z.string(),
-  updatedAt: z.string()
+  updatedAt: z.string(),
+  /** Last export settings (export profile): the dialog preselects them for a one-click re-export. */
+  exportProfile: z
+    .object({
+      targets: z.array(z.string()).max(40),
+      acceptNewer: z.boolean().default(false)
+    })
+    .optional()
 })
 export type Project = z.infer<typeof ProjectSchema>
+export type ExportProfile = NonNullable<Project['exportProfile']>
 
 /** What the pack selector shows for each pack in the workspace. */
 export interface PackSummary {
@@ -34,6 +42,8 @@ export interface PackSummary {
   updatedAt: string
   /** bs-asset:// URL of pack.png, if any. */
   iconUrl?: string
+  /** Last export settings, if the pack was exported before. */
+  exportProfile?: ExportProfile
 }
 
 export type TextureStatus = 'vanilla' | 'modified' | 'added'
@@ -77,6 +87,29 @@ export const CreatePackInputSchema = z
   .strict()
 export type CreatePackInput = z.input<typeof CreatePackInputSchema>
 
+/** Pack Doctor (PLAN 8.5): problems in the pack, and what an export to each version would change. */
+export interface DoctorReport {
+  /** Same codes as export warnings (`warnings.<code>`), plus doctor.* codes. */
+  issues: Array<{ code: string; path?: string }>
+  /** Every export target: textures that would be renamed, and the ones it would skip. */
+  targets: Array<{ version: string; renamed: number; missing: string[] }>
+  /** Files checked. */
+  files: number
+}
+
+/** Result of moving a pack to a newer authoring version. */
+export interface UpgradeReport {
+  pack: PackSummary
+  from: string
+  to: string
+  /** Textures moved to their new name. */
+  renamed: number
+  /** Textures that no longer exist in the new version (left in the pack, unused by Minecraft). */
+  obsolete: string[]
+  /** Renames skipped because the new name already exists in the pack (both files kept). */
+  conflicts: string[]
+}
+
 export interface ImportReport {
   pack: PackSummary
   /** Pack format declared by the imported pack.mcmeta, and the version it maps to (if known). */
@@ -85,6 +118,8 @@ export interface ImportReport {
   filesImported: number
   /** Files dropped because they are identical to vanilla. */
   identicalToVanilla: number
+  /** Textures moved to the authoring version's path (older pack, see migrations.ts). */
+  renamed: number
   warnings: Array<{ code: string; path?: string }>
 }
 
@@ -102,6 +137,8 @@ export interface ExportReport {
   outputPath: string
   targetVersion: string
   packType: ExportPackType
+  /** Textures moved to the target version's path (the authoring version names them differently). */
+  renamed: number
   filesWritten: number
   sizeBytes: number
   skipped: Array<{ path: string; reason: string }>

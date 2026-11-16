@@ -9,6 +9,8 @@ import {
   type CategorySummary,
   type ExportReport,
   type ImportReport,
+  type UpgradeReport,
+  type DoctorReport,
   type PackSummary,
   type TextureEntry
 } from '../model/pack'
@@ -103,6 +105,16 @@ export const inputSchemas = {
     /** Resource pack (default) or data pack. */
     packType: ExportPackTypeSchema.optional()
   }).strict(),
+  'pack.exportMany': PackRef.extend({
+    /** One zip per version, in a folder the user picks. */
+    targetVersions: z.array(VersionId).min(1).max(40),
+    /** Also declare newer formats (snapshots, future releases) as supported in pack.mcmeta. */
+    acceptNewer: z.boolean().optional(),
+    /** Resource pack (default) or data pack. */
+    packType: ExportPackTypeSchema.optional()
+  }).strict(),
+  'pack.upgrade': PackRef.extend({ targetVersion: VersionId }).strict(),
+  'pack.doctor': PackRef,
   'texture.read': TextureRef,
   'texture.save': TextureRef.extend({
     png: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES)
@@ -231,6 +243,12 @@ export interface InvokeOutputs {
   'pack.categories': CategorySummary[]
   /** Opens a save dialog; null when cancelled. Emits job.progress. */
   'pack.export': ExportReport | null
+  /** Opens a folder picker; null when cancelled. Emits job.progress per target. */
+  'pack.exportMany': ExportReport[] | null
+  /** Moves the pack to a newer authoring version (renames along the migration chain). */
+  'pack.upgrade': UpgradeReport
+  /** Pack Doctor: problems in the pack and what each export target would change. */
+  'pack.doctor': DoctorReport
   'texture.read': TextureData
   /** Writes the PNG into the pack (records a history entry) and returns the updated texture entry. */
   'texture.save': TextureEntry

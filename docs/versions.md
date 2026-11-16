@@ -77,16 +77,58 @@ A snapshot entry has `"type": "snapshot"` (releases have no `type`). Snapshots a
 - `latest()`, `supportedVersions()` and `versionForPackFormat()` ignore them, so a snapshot is never the
   authoring version of a new pack, never in the support window and never used to map an imported pack.
 - `snapshotTargets(table)` returns the snapshots newer than the latest release.
-- `exportTargets(table, authoring)` is what the export dialog lists: the authoring version, then the newer
-  snapshots, labelled "26.4-snapshot-8 (snapshot)". Versions the exporter cannot produce yet (other releases, M7)
-  are not listed at all.
-- `canExportTo(authoring, target)` allows the authoring version or a snapshot newer than it. The zip gets the
+- `exportTargets(table, authoring, now)` is what the export dialog lists: the newer snapshots (labelled
+  "26.4-snapshot-8 (snapshot)"), then the releases of the support window (the pack's own marked "(pack version)").
+- `canExportTo(authoring, target)` allows the authoring version, a snapshot newer than it, or another release (main
+  also requires the migration chain and the support window). The zip gets the
   snapshot's pack format (`"min_format": [103, 0], "max_format": [103, 0]` for 26.4-snapshot-8), so it is meant for
   that snapshot; tick "Also accept newer Minecraft versions" to keep the range open.
 - Snapshots are not extracted: files identical to the **authoring** version's vanilla are skipped.
 
 Source for 26.4-snapshot-8: <https://minecraft.wiki/w/Java_Edition_26.4-snapshot-8> (resource pack 103.0, data
 pack 127.0); release time from the launcher's `versions/26.4-snapshot-8/26.4-snapshot-8.json`.
+
+## Texture path migrations
+
+`resources/data/migrations.json` lists, for each pair of consecutive versions from 1.21.4 to the newest table entry
+(snapshot included), the textures that were **renamed** (same content, new path), **added** (only in the newer
+version) and **removed** (only in the older one). `PathMigrator` (`src/shared/versions/migrations.ts`, main only)
+follows that chain in either direction:
+
+- **Export** to another version (down to 1.21.4, or up to a newer snapshot): renamed textures and their `.png.mcmeta`
+  take the target's name; textures that do not exist in the target are skipped (`notInTarget`); models, block
+  states and other JSON files are copied as they are (`export.otherFilesAsIs`).
+- **Import** of a pack whose format maps to an older version of the chain: renamed textures move to the authoring
+  version's names (`import.migrated`), removed ones are not imported (`import.notInVersion`).
+- **Upgrade** (`packs.upgrade`): a pack moves to a newer authoring version, files renamed in place.
+- **Pack Doctor**: counts, per export target, the textures an export would rename or skip.
+
+Regenerate with `node scripts/gen-migrations.mjs` (`--dry-run` prints a summary). The script reads the per-version
+asset trees of [misode/mcmeta](https://github.com/misode/mcmeta) (tags `<version>-assets`) through the GitHub API:
+paths and git blob hashes only, nothing downloaded or stored. When a version's jar is in the local launcher folder,
+the hash of `block/stone.png` is cross-checked against it (done for 1.21.4 and 26.3 when the table was generated).
+Set `GITHUB_TOKEN` to raise the API rate limit.
+
+Review (2026-11-16): renames are detected by identical content. Textures whose content changed along with their
+path are left as added / removed on purpose: they come with model or layout changes (cow and pig variants in 1.21.5,
+baby rabbits in 26.1, beds and signs in 26.2), so mapping them would put a texture with the wrong layout on a
+model. Hand-reviewed renames go in `manual` (kept across regenerations); there are none yet.
+
+| Transition              | Renamed | Added | Removed |
+| ----------------------- | ------- | ----- | ------- |
+| 1.21.4 -> 1.21.5        | 5       | 133   | 6       |
+| 1.21.5 -> 1.21.6        | 0       | 78    | 0       |
+| 1.21.6 -> 1.21.7        | 0       | 2     | 0       |
+| 1.21.7 -> 1.21.8        | 0       | 0     | 0       |
+| 1.21.8 -> 1.21.9        | 2       | 74    | 1       |
+| 1.21.9 -> 1.21.10       | 0       | 0     | 0       |
+| 1.21.10 -> 1.21.11      | 3       | 54    | 2       |
+| 1.21.11 -> 26.1         | 76      | 156   | 9       |
+| 26.1 -> 26.1.1          | 0       | 0     | 0       |
+| 26.1.1 -> 26.1.2        | 0       | 0     | 0       |
+| 26.1.2 -> 26.2          | 2       | 231   | 40      |
+| 26.2 -> 26.3            | 17      | 111   | 2       |
+| 26.3 -> 26.4-snapshot-8 | 2       | 50    | 6       |
 
 ## Support window
 
@@ -132,8 +174,8 @@ switched to `min_format` / `max_format` in the same release (1.21.9, data format
 For a 1.21.9+ target the range is `[major, 0]` to the target's exact format, so 26.3 (97.1) gets
 `[97, 0]` - `[97, 1]`. `pack_format` is optional since 1.21.9 but allowed; it is written (inside the range)
 because tools and guides expect it. `supported_formats` is not written because a single 1.21.9+ target never
-includes a format below 65. Number arrays are written on one line (`toJsonBytes`). Multi-version ranges (export to older versions) come in M7 and
-must follow the compatibility rules above.
+includes a format below 65. Number arrays are written on one line (`toJsonBytes`). Each export targets one
+version; a range over several versions (not offered) would have to follow the compatibility rules above.
 
 ### Export option "Also accept newer Minecraft versions"
 
@@ -152,6 +194,11 @@ two declarations disagree). The app cannot check that the textures still match v
 dialog says so. The option only changes the exported zip, never the pack folder's own `pack.mcmeta`.
 
 ### Checked in real game jars
+
+`tests/real-jar/migration-paths.test.ts` exports a 26.3 pack with textures renamed over the years to every
+version whose jar is installed (obfuscated 1.21.x jars too: only their file list is read) and requires every
+exported texture path to exist in that jar. Last run: 1.21.4 (6 renamed, 2 skipped), 26.3 and 26.4-snapshot-8, all
+paths found.
 
 `tests/real-jar/pack-compat.test.ts` exports every target the app offers (each supported release for itself,
 newer snapshots; as a resource pack and as a data pack; with and without "Also accept newer Minecraft versions")

@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs'
-import { isAbsolute, join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { packAssetUrl } from '@shared/assets'
 import { getDefaultCategoryEngine, type CategoryEngine } from '@shared/categories'
 import {
@@ -7,22 +7,28 @@ import {
   PACK_TYPE_FILE_SUFFIX,
   type CategorySummary,
   type CreatePackInput,
+  type DoctorReport,
   type ExportPackType,
+  type ExportProfile,
   type ExportReport,
   type ImportReport,
+  type UpgradeReport,
   type PackSummary,
   type Project,
   type TextureEntry
 } from '@shared/model/pack'
 import { buildResourcePackMcmeta } from '@shared/versions/mcmeta'
-import { canExportTo } from '@shared/versions/support'
+import { canExportTo, isSnapshot } from '@shared/versions/support'
+import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
-import { FileInfoCache, writeFileAtomic } from './files'
+import { FileInfoCache, mapLimit, writeFileAtomic } from './files'
+import { proportionWarnings, validatePackFiles } from './validation'
 import { importPackZip, type ImportLimits } from './importer'
-import { isRecord, parseJson, toJsonBytes } from './mcmeta'
-import { comparePaths, createUniqueFolder, slugify } from './paths'
+import { isRecord, mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
+import { comparePaths, createUniqueFolder, scanFiles, slugify } from './paths'
+import { resolvePackFile } from '../history/pack-files'
 import { createDefaultPackIcon } from './png'
 import { newPackId, readProject, writeProject, type PackLocation } from './project'
 import { TEXTURE_PNG, TextureIndexer, scanPackTextures, summarizeCategories } from './textures'
@@ -38,7 +44,9 @@ export const PackErrorCode = {
   unsupportedVersion: 'packs.unsupportedVersion',
   vanillaNotReady: 'packs.vanillaNotReady',
   invalidWorkspace: 'workspace.invalidPath',
-  exportTargetNotSupported: 'export.targetNotSupported'
+  exportTargetNotSupported: 'export.targetNotSupported',
+  /** packs.upgrade to a version that is not newer, not supported or outside the migration chain. */
+  upgradeNotSupported: 'packs.upgradeNotSupported'
 } as const
 
 export interface PackServiceDeps {
@@ -91,6 +99,29 @@ export interface PackService {
   updateMeta(packId: string, patch: { name?: string; description?: string }): Promise<PackSummary>
   categories(packId: string): Promise<CategorySummary[]>
   importZip(zipPath: string): Promise<ImportReport>
+  /**
+   * Exports to several versions, one zip per target in `folder` (default file names, existing files replaced).
+   * Stops at the first failure.
+   */
+  exportMany(
+    packId: string,
+    targetVersions: string[],
+    folder: string,
+    options?: { acceptNewer?: boolean; packType?: ExportPackType }
+  ): Promise<ExportReport[]>
+  /**
+   * Moves the pack to a newer authoring version of the support window: renamed textures (and their .mcmeta) move to
+   * their new names along the migration chain, pack.mcmeta gets the new format, project.json the new version.
+   * Textures that no longer exist are left in place and listed.
+   */
+  upgrade(packId: string, toVersion: string): Promise<UpgradeReport>
+  /**
+   * Pack Doctor: validates every pack file (the export checks plus texture proportions against vanilla) and, for each
+   * export target, counts the textures an export would rename or skip.
+   */
+  doctor(packId: string): Promise<DoctorReport>
+  /** Remembers the last export settings in project.json (the dialog preselects them). */
+  saveExportProfile(packId: string, profile: ExportProfile): Promise<void>
   /** Checks that `targetVersion` can be exported and returns the default file name "<slug>-<version>.zip". */
   exportFileName(packId: string, targetVersion: string, packType?: ExportPackType): Promise<string>
   exportPack(
@@ -194,7 +225,8 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       base: project.base,
       folder,
       changedCount: await changedCount(location),
-      updatedAt: project.updatedAt
+      updatedAt: project.updatedAt,
+      ...(project.exportProfile ? { exportProfile: project.exportProfile } : {})
     }
     try {
       const st = await fs.stat(join(folder, 'pack.png'))
@@ -389,12 +421,150 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         { vanilla: deps.vanilla, onProgress },
         options
       )
+    },
+
+    async exportMany(packId, targetVersions, folder, options = {}) {
+      const location = await requireLocation(packId)
+      const unique = [...new Set(targetVersions)]
+      // Validate every target before writing anything.
+      const targets = unique.map((v) => checkExportTarget(location, v))
+      const reports: ExportReport[] = []
+      for (const target of targets) {
+        const name = `${slugify(location.project.name)}-${target.id}-${PACK_TYPE_FILE_SUFFIX[options.packType ?? 'resource']}.zip`
+        const onProgress = deps.jobs.start('pack.export')
+        reports.push(
+          await exportPackZip(
+            location,
+            target,
+            join(folder, name),
+            { vanilla: deps.vanilla, onProgress },
+            options
+          )
+        )
+      }
+      return reports
+    },
+
+    async upgrade(packId, toVersion) {
+      const location = await requireLocation(packId)
+      const from = location.project.authoringVersion
+      const current = deps.vanilla.getVersion(from)
+      const target = deps.vanilla.getVersion(toVersion)
+      const ok =
+        current !== undefined &&
+        target !== undefined &&
+        !isSnapshot(target) &&
+        Date.parse(target.releaseTime) > Date.parse(current.releaseTime) &&
+        deps.vanilla.supportedVersions().some((v) => v.id === target.id) &&
+        canMigrate(from, target.id)
+      if (!ok || !target) {
+        throw new AppErrorException(PackErrorCode.upgradeNotSupported, { from, to: toVersion })
+      }
+      const migrator = new PathMigrator(from, target.id)
+      const files = await scanFiles(location.folder)
+      const existing = new Set(files.map((f) => f.path))
+      let renamed = 0
+      const obsolete: string[] = []
+      const conflicts: string[] = []
+      const touched: string[] = []
+      for (const file of files) {
+        const r = migrator.migrateFile(file.path)
+        if (!('path' in r)) {
+          if (file.path.endsWith('.png')) obsolete.push(file.path)
+          continue
+        }
+        if (!r.renamed) continue
+        if (existing.has(r.path)) {
+          conflicts.push(file.path)
+          continue
+        }
+        const dest = resolvePackFile(location.folder, r.path)
+        if (!dest) continue
+        await fs.mkdir(dirname(dest), { recursive: true })
+        await fs.rename(file.abs, dest)
+        existing.add(r.path)
+        touched.push(file.path, r.path)
+        if (r.path.endsWith('.png')) renamed++
+      }
+      const mcmetaFile = join(location.folder, 'pack.mcmeta')
+      const currentMcmeta = parseJson(await fs.readFile(mcmetaFile).catch(() => new Uint8Array()))
+      await writeFileAtomic(
+        mcmetaFile,
+        toJsonBytes(
+          mergeMcmeta(buildResourcePackMcmeta(location.project.description, target), currentMcmeta)
+        )
+      )
+      const project: Project = {
+        ...location.project,
+        authoringVersion: target.id,
+        updatedAt: now().toISOString()
+      }
+      await writeProject(location.folder, project)
+      for (const path of touched) fileInfo.delete(join(location.folder, ...path.split('/')))
+      indexer.forget(packId)
+      deps.notifyChanged(packId)
+      return {
+        pack: await summarize({ ...location, project }),
+        from,
+        to: target.id,
+        renamed,
+        obsolete,
+        conflicts
+      }
+    },
+
+    async doctor(packId) {
+      const location = await requireLocation(packId)
+      const authoring = location.project.authoringVersion
+      const scanned = await scanFiles(location.folder)
+      const files = await mapLimit(scanned, 32, async (f) => ({
+        path: f.path,
+        data: new Uint8Array(await fs.readFile(f.abs))
+      }))
+      const index = await deps.vanilla.getIndex(authoring)
+      const issues = [
+        ...validatePackFiles(files),
+        ...proportionWarnings(files, (path) => index?.entries[path])
+      ]
+      const mcmeta = files.find((f) => f.path === 'pack.mcmeta')
+      if (!mcmeta || !isRecord(parseJson(mcmeta.data)))
+        issues.push({ code: 'export.invalidMcmeta' })
+      if (!index) issues.push({ code: 'export.vanillaNotReady' })
+
+      const current = deps.vanilla.getVersion(authoring)
+      const textures = files.filter((f) => /^assets\/minecraft\/textures\/.+\.png$/.test(f.path))
+      const targets: DoctorReport['targets'] = []
+      if (current) {
+        const versions = deps.vanilla
+          .supportedVersions()
+          .filter((v) => v.id !== authoring && canExportTo(current, v))
+        for (const v of versions) {
+          if (!canMigrate(authoring, v.id)) continue
+          const migrator = new PathMigrator(authoring, v.id)
+          let renamed = 0
+          const missing: string[] = []
+          for (const t of textures) {
+            const r = migrator.migrate(t.path)
+            if (!('path' in r)) missing.push(t.path)
+            else if (r.renamed) renamed++
+          }
+          targets.push({ version: v.id, renamed, missing })
+        }
+      }
+      return { issues, targets, files: files.length }
+    },
+
+    async saveExportProfile(packId, profile) {
+      const location = await requireLocation(packId)
+      await writeProject(location.folder, { ...location.project, exportProfile: profile })
+      // The open tab reloads its summary, so the dialog preselects these settings next time.
+      deps.notifyChanged(packId)
     }
   }
 
   /**
-   * Only the authoring version, or a snapshot newer than it, can be exported (multi-version export comes with
-   * migrations in M7). See canExportTo.
+   * The authoring version, a snapshot newer than it, or a release of the support window reachable through the
+   * migration chain (see canExportTo and migrations.ts).
    */
   function checkExportTarget(
     location: PackLocation,
@@ -403,8 +573,14 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     const authoring = location.project.authoringVersion
     const authoringVersion = deps.vanilla.getVersion(authoring)
     const candidate = deps.vanilla.getVersion(targetVersion)
+    const otherRelease =
+      candidate !== undefined && candidate.id !== authoring && !isSnapshot(candidate)
+    const reachable =
+      !otherRelease ||
+      (canMigrate(authoring, candidate.id) &&
+        deps.vanilla.supportedVersions().some((v) => v.id === candidate.id))
     const target =
-      authoringVersion && candidate && canExportTo(authoringVersion, candidate)
+      authoringVersion && candidate && canExportTo(authoringVersion, candidate) && reachable
         ? candidate
         : undefined
     if (!target) {

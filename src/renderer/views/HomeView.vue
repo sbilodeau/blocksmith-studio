@@ -52,11 +52,15 @@ async function importZip(): Promise<void> {
     if (result) {
       report.value = {
         title: t('import.title'),
-        summary: t('import.summary', {
-          name: result.pack.name,
-          files: result.filesImported,
-          identical: result.identicalToVanilla
-        }),
+        summary:
+          t('import.summary', {
+            name: result.pack.name,
+            files: result.filesImported,
+            identical: result.identicalToVanilla
+          }) +
+          (result.renamed
+            ? ` ${t('import.renamedNote', { count: result.renamed }, result.renamed)}`
+            : ''),
         items: result.warnings
       }
     }

@@ -4,6 +4,7 @@ import type {
   CategorySummary,
   ExportPackType,
   ExportReport,
+  UpgradeReport,
   PackSummary,
   TextureEntry,
   TextureStatus
@@ -153,6 +154,27 @@ export function usePackStore(packId: string) {
       }
     }
 
+    /** Moves the pack to a newer Minecraft version (the tab reloads on 'packs.changed'). */
+    async function upgrade(targetVersion: string): Promise<UpgradeReport> {
+      return call('pack.upgrade', { packId, targetVersion })
+    }
+
+    /** One zip per version in a folder the user picks; null when cancelled. */
+    async function exportMany(
+      targetVersions: string[],
+      options: { acceptNewer?: boolean } = {}
+    ): Promise<ExportReport[] | null> {
+      try {
+        return await call('pack.exportMany', {
+          packId,
+          targetVersions: [...targetVersions],
+          ...(options.acceptNewer ? { acceptNewer: true } : {})
+        })
+      } finally {
+        useJobsStore().clear('pack.export')
+      }
+    }
+
     return {
       packId,
       summary,
@@ -180,7 +202,9 @@ export function usePackStore(packId: string) {
       clearSelection,
       openEditor,
       closeEditor,
-      exportPack
+      exportPack,
+      exportMany,
+      upgrade
     }
   })()
 }

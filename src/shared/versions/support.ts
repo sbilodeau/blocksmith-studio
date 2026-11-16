@@ -60,23 +60,29 @@ export function snapshotTargets(table: VersionTable): McVersion[] {
 }
 
 /**
- * Export targets offered for a pack authored against `authoring`: the authoring version, then the snapshots
- * newer than it (newest first). Only these are listed in the export dialog; they are the ones the exporter
- * supports and tests/real-jar/pack-compat.test.ts checks against real game jars.
+ * Export targets offered for a pack authored against `authoring` (newest first): snapshots newer than it, then every
+ * release of the support window (texture paths are migrated, see migrations.ts), plus the authoring version when it
+ * is older than the window. tests/real-jar/pack-compat.test.ts checks these exports in real game jars.
  */
-export function exportTargets(table: VersionTable, authoring: McVersion): McVersion[] {
+export function exportTargets(
+  table: VersionTable,
+  authoring: McVersion,
+  now: Date = new Date()
+): McVersion[] {
   const snapshots = snapshotTargets(table).filter((v) => canExportTo(authoring, v))
-  return [authoring, ...snapshots]
+  const releases = supportedVersions(table, now)
+  if (!releases.some((v) => v.id === authoring.id)) releases.push(authoring)
+  return [...snapshots, ...releases]
 }
 
 /**
- * Whether a pack authored against `authoring` can be exported to `target`: the authoring version itself, or a
- * snapshot newer than it (the textures are the authoring version's; Minecraft fills the rest from its own).
- * Other releases need the migration tables (M7).
+ * Whether a pack authored against `authoring` can be exported to `target`: the authoring version itself, a snapshot
+ * newer than it, or another release (main also requires a migration chain and the support window).
  */
 export function canExportTo(authoring: McVersion, target: McVersion): boolean {
   if (target.id === authoring.id) return true
-  return isSnapshot(target) && releaseMs(target) > releaseMs(authoring)
+  if (isSnapshot(target)) return releaseMs(target) > releaseMs(authoring)
+  return true
 }
 
 export function findVersion(table: VersionTable, versionId: string): McVersion | undefined {

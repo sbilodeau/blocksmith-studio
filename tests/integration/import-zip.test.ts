@@ -100,7 +100,9 @@ describe('import .zip', () => {
     const report = await env.service.importZip(zip)
     expect(report.declaredFormat).toEqual({ major: 46, minor: 0 })
     expect(report.mappedVersion).toBe('1.21.4')
-    expect(report.warnings).toEqual([{ code: 'import.formatMismatch' }])
+    // 1.21.4 is in the migration chain: paths are upgraded to 26.3 (stone kept its name).
+    expect(report.warnings).toEqual([{ code: 'import.migrated' }])
+    expect(report.renamed).toBe(0)
     expect(report.pack.authoringVersion).toBe('26.3')
     expect(report.pack.name).toBe('nested')
     expect(report.pack.description).toBe('Old one')
@@ -115,6 +117,28 @@ describe('import .zip', () => {
       await readFile(join(report.pack.folder, '.blocksmith/project.json'), 'utf8')
     )
     expect(project.evil).toBeUndefined()
+  })
+
+  it('upgrades an older pack: renamed textures move, removed ones are not imported', async () => {
+    const zip = await zipFile('old.zip', {
+      'pack.mcmeta': mcmeta({ pack_format: 46, description: 'From 1.21.4' }),
+      [T('block/chain.png')]: makePng(16, 16, [0, 0, 255, 255]),
+      [`${T('block/chain.png')}.mcmeta`]: json({ animation: {} }),
+      [T('entity/pig/pig.png')]: makePng(64, 32, [0, 0, 255, 255]),
+      [T('block/stone.png')]: makePng(16, 16, [0, 0, 255, 255])
+    })
+    const report = await env.service.importZip(zip)
+    expect(report).toMatchObject({ mappedVersion: '1.21.4', renamed: 2, filesImported: 3 })
+    expect(report.warnings).toEqual([
+      { code: 'import.migrated' },
+      { code: 'import.notInVersion', path: T('entity/pig/pig.png') }
+    ])
+    const files = await listPack(report.pack.folder)
+    expect(files).toEqual(
+      expect.arrayContaining([T('block/iron_chain.png'), `${T('block/iron_chain.png')}.mcmeta`])
+    )
+    expect(files).not.toContain(T('block/chain.png'))
+    expect(files).not.toContain(T('entity/pig/pig.png'))
   })
 
   it('warns when the format is unknown or missing', async () => {

@@ -41,13 +41,14 @@ describe('export .zip', () => {
     await expect(env.service.exportFileName(pack.id, '26.4-snapshot-8')).resolves.toBe(
       'fire-pack-26.4-snapshot-8-resource-pack.zip'
     )
-    await expect(env.service.exportFileName(pack.id, '1.21.4')).rejects.toMatchObject({
+    // Older releases of the support window are reachable through the migration chain.
+    await expect(env.service.exportFileName(pack.id, '1.21.4')).resolves.toBe(
+      'fire-pack-1.21.4-resource-pack.zip'
+    )
+    await expect(env.service.exportFileName(pack.id, '1.20.1')).rejects.toMatchObject({
       code: 'export.targetNotSupported',
-      params: { target: '1.21.4', authoring: '26.3' }
+      params: { target: '1.20.1', authoring: '26.3' }
     })
-    await expect(
-      env.service.exportPack(pack.id, '26.2', join(env.root, 'x.zip'))
-    ).rejects.toMatchObject({ code: 'export.targetNotSupported' })
   })
 
   it('writes only changed files plus a regenerated pack.mcmeta, skipping identical ones', async () => {
@@ -183,6 +184,68 @@ describe('export .zip', () => {
       'export.assetsLeftOut',
       'export.noDataFiles'
     ])
+  })
+
+  it('exports to an older release: renamed textures, missing ones skipped, its pack format', async () => {
+    await put(pack.folder, T('block/iron_chain.png'), makePng(16, 16, [255, 0, 0, 255]))
+    await put(pack.folder, `${T('block/iron_chain.png')}.mcmeta`, json({ animation: {} }))
+    await put(pack.folder, T('entity/cow/cow_temperate.png'), makePng(64, 32, [255, 0, 0, 255]))
+    await put(pack.folder, T('block/stone.png'), makePng(16, 16, [0, 255, 0, 255]))
+    await put(
+      pack.folder,
+      'assets/minecraft/models/block/stone.json',
+      json({ parent: 'block/cube_all' })
+    )
+    const out = join(env.root, 'old.zip')
+    const report = await env.service.exportPack(pack.id, '1.21.4', out)
+    const zip = unzipSync(new Uint8Array(await readFile(out)))
+    expect(Object.keys(zip).sort()).toEqual([
+      'assets/minecraft/models/block/stone.json',
+      T('block/chain.png'),
+      `${T('block/chain.png')}.mcmeta`,
+      T('block/stone.png'),
+      'pack.mcmeta',
+      'pack.png'
+    ])
+    expect(JSON.parse(strFromU8(zip['pack.mcmeta'])).pack).toEqual({
+      pack_format: 46,
+      description: 'Hot stuff'
+    })
+    expect(report).toMatchObject({ targetVersion: '1.21.4', renamed: 2 })
+    expect(report.skipped).toEqual([
+      { path: T('entity/cow/cow_temperate.png'), reason: 'notInTarget' }
+    ])
+    expect(report.warnings.map((w) => w.code)).toEqual(
+      expect.arrayContaining(['export.vanillaNotReady', 'export.otherFilesAsIs'])
+    )
+  })
+
+  it('exports one zip per target into a folder and remembers the export profile', async () => {
+    await put(pack.folder, T('block/stone.png'), makePng(16, 16, [255, 0, 0, 255]))
+    const folder = join(env.root, 'many')
+    await mkdir(folder, { recursive: true })
+    const reports = await env.service.exportMany(pack.id, ['26.3', '1.21.4', '26.3'], folder, {
+      acceptNewer: true
+    })
+    expect(reports.map((r) => r.outputPath.split(/[\\/]/).pop())).toEqual([
+      'fire-pack-26.3-resource-pack.zip',
+      'fire-pack-1.21.4-resource-pack.zip'
+    ])
+    const old = JSON.parse(
+      strFromU8(unzipSync(new Uint8Array(await readFile(reports[1]!.outputPath)))['pack.mcmeta'])
+    )
+    // pack_format target + "accept newer": both declarations, open range.
+    expect(old.pack).toMatchObject({ pack_format: 46, max_format: 999 })
+    await expect(env.service.exportMany(pack.id, ['26.3', '1.20.1'], folder)).rejects.toMatchObject(
+      { code: 'export.targetNotSupported' }
+    )
+
+    expect((await env.service.get(pack.id)).exportProfile).toBeUndefined()
+    await env.service.saveExportProfile(pack.id, { targets: ['26.3', '1.21.4'], acceptNewer: true })
+    expect((await env.service.get(pack.id)).exportProfile).toEqual({
+      targets: ['26.3', '1.21.4'],
+      acceptNewer: true
+    })
   })
 
   it('produces byte-identical zips for the same content', async () => {
