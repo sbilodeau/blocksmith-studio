@@ -7,6 +7,7 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { strFromU8, unzipSync, type Unzipped } from 'fflate'
 import type { VanillaIndex, VanillaIndexEntry } from '@shared/model/vanilla'
+import { VANILLA_DATA_RE } from '@shared/datapack/paths'
 import { VanillaError, VanillaErrorCode } from './errors'
 import { isSafeRelativePath, resolveInside } from './paths'
 import { readPngSize } from './png'
@@ -38,12 +39,53 @@ const SINGLE_FILES = new Set(['assets/minecraft/lang/en_us.json', 'pack.png', 'v
 
 /**
  * True for jar entries copied to the vanilla cache: assets/minecraft/{textures,models,blockstates,items,
- * atlases,font}/**, assets/minecraft/lang/en_us.json, pack.png and version.json. Unsafe names (zip slip) and
- * directory entries are rejected.
+ * atlases,font}/**, assets/minecraft/lang/en_us.json, pack.png, version.json and the vanilla data the data browser
+ * shows (data/minecraft/{recipe,loot_table,tags,advancement}/**.json). Unsafe names (zip slip) and directory
+ * entries are rejected.
  */
 export function isExtractedAsset(name: string): boolean {
   if (!isSafeRelativePath(name)) return false
-  return SINGLE_FILES.has(name) || ASSET_DIRS.test(name)
+  return SINGLE_FILES.has(name) || ASSET_DIRS.test(name) || VANILLA_DATA_RE.test(name)
+}
+
+/** Vanilla data entries of a client jar (versions extracted before data support get them later, see store.ts). */
+export function readJarData(bytes: Uint8Array): Unzipped {
+  try {
+    return unzipSync(bytes, {
+      filter: (file) =>
+        isSafeRelativePath(file.name) &&
+        VANILLA_DATA_RE.test(file.name) &&
+        file.originalSize <= MAX_ENTRY_BYTES
+    })
+  } catch (err) {
+    throw new VanillaError(VanillaErrorCode.invalidJar, {
+      reason: err instanceof Error ? err.message : String(err)
+    })
+  }
+}
+
+/** Writes jar entries under `outDir` (paths already validated), `limit` writes at a time. */
+export async function writeEntries(
+  outDir: string,
+  files: Unzipped,
+  paths: readonly string[],
+  onWritten?: (written: number) => void
+): Promise<void> {
+  const createdDirs = new Map<string, Promise<unknown>>()
+  let written = 0
+  await runLimited(paths, WRITE_CONCURRENCY, async (path) => {
+    const target = resolveInside(outDir, path)
+    if (!target) return // unreachable: names were filtered by isExtractedAsset / readJarData
+    const dir = dirname(target)
+    let created = createdDirs.get(dir)
+    if (!created) {
+      created = mkdir(dir, { recursive: true })
+      createdDirs.set(dir, created)
+    }
+    await created
+    await writeFile(target, files[path])
+    onWritten?.(++written)
+  })
 }
 
 function sha256(bytes: Uint8Array): string {
@@ -154,21 +196,8 @@ export async function extractVanillaJar(
   await mkdir(job.outDir, { recursive: true })
 
   // Phase 1: write the files.
-  const createdDirs = new Map<string, Promise<unknown>>()
-  let written = 0
   onProgress('extract', 0, total)
-  await runLimited(paths, WRITE_CONCURRENCY, async (path) => {
-    const target = resolveInside(job.outDir, path)
-    if (!target) return // unreachable: names were filtered by isExtractedAsset
-    const dir = dirname(target)
-    let created = createdDirs.get(dir)
-    if (!created) {
-      created = mkdir(dir, { recursive: true })
-      createdDirs.set(dir, created)
-    }
-    await created
-    await writeFile(target, files[path])
-    written++
+  await writeEntries(job.outDir, files, paths, (written) => {
     if (written % PROGRESS_STEP === 0 || written === total) onProgress('extract', written, total)
   })
 
@@ -200,6 +229,7 @@ export async function extractVanillaJar(
     resourcePack: info.resourcePack,
     dataPack: info.dataPack,
     createdAt: now().toISOString(),
+    data: true,
     entries
   }
   const indexPath = join(job.outDir, INDEX_FILE)

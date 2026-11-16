@@ -11,7 +11,8 @@
  *
  * Each jar holds tiny generated PNGs at real vanilla paths (one animated 16x512 strip with its .png.mcmeta),
  * a few models / blockstates / item definitions, lang/en_us.json, pack.png and a version.json in the shape the
- * real jar of that version uses. It also holds files the extractor must ignore (classes, data/, shaders, ...).
+ * real jar of that version uses. It also holds vanilla data files (recipes, a loot table,
+ * tags, an advancement) and files the extractor must ignore (classes, worldgen data, shaders, ...).
  * File contents are deterministic (generated pixels, fixed JSON), so extracted file hashes are stable across runs.
  */
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -137,6 +138,46 @@ export function fixtureJarFiles(versionId, options = {}) {
       sources: [{ type: 'directory', source: 'block', prefix: 'block/' }]
     }),
     'assets/minecraft/font/default.json': json({ providers: [] }),
+    // Vanilla data shown by the data browser (written for the fixture, valid in every supported version).
+    'data/minecraft/recipe/stone_slab.json': json({
+      type: 'minecraft:crafting_shaped',
+      category: 'building',
+      key: { '#': 'minecraft:stone' },
+      pattern: ['###'],
+      result: { count: 6, id: 'minecraft:stone_slab' }
+    }),
+    'data/minecraft/recipe/stone_from_smelting.json': json({
+      type: 'minecraft:smelting',
+      cookingtime: 200,
+      experience: 0.1,
+      ingredient: 'minecraft:cobblestone',
+      result: { id: 'minecraft:stone' }
+    }),
+    'data/minecraft/loot_table/blocks/stone.json': json({
+      type: 'minecraft:block',
+      pools: [{ entries: [{ type: 'minecraft:item', name: 'minecraft:cobblestone' }], rolls: 1 }],
+      random_sequence: 'minecraft:blocks/stone'
+    }),
+    'data/minecraft/tags/item/stone_tool_materials.json': json({
+      values: ['minecraft:cobblestone', 'minecraft:blackstone']
+    }),
+    'data/minecraft/tags/block/base_stone_overworld.json': json({
+      values: ['minecraft:stone', 'minecraft:granite']
+    }),
+    'data/minecraft/advancement/story/root.json': json({
+      criteria: {
+        crafting_table: {
+          conditions: { items: [{ items: 'minecraft:crafting_table' }] },
+          trigger: 'minecraft:inventory_changed'
+        }
+      },
+      display: {
+        description: { translate: 'advancements.story.root.description' },
+        icon: { id: 'minecraft:grass_block' },
+        title: { translate: 'advancements.story.root.title' }
+      },
+      requirements: [['crafting_table']]
+    }),
     'assets/minecraft/lang/en_us.json': json({
       'block.minecraft.stone': 'Stone',
       'item.minecraft.diamond_sword': 'Diamond Sword'
@@ -156,7 +197,9 @@ export function fixtureJarFiles(versionId, options = {}) {
     'META-INF/MANIFEST.MF': strToU8('Manifest-Version: 1.0\n'),
     'net/minecraft/Foo.class': new Uint8Array([0xca, 0xfe, 0xba, 0xbe]),
     'a.class': new Uint8Array([0xca, 0xfe, 0xba, 0xbe]),
-    'data/minecraft/recipe/stone_slab.json': json({ type: 'minecraft:crafting_shaped' }),
+    'data/minecraft/worldgen/biome/plains.json': json({ temperature: 0.8 }),
+    'data/minecraft/structure/igloo.nbt': new Uint8Array([10, 0, 0, 0]),
+    'data/minecraft/datapacks/bundle/pack.mcmeta': json({ pack: { pack_format: 1 } }),
     'assets/minecraft/shaders/core/position.vsh': strToU8('#version 150\n'),
     'assets/minecraft/lang/deprecated.json': json({ renamed: {} }),
     'assets/minecraft/sounds.json': json({}),
@@ -178,15 +221,18 @@ export function fixtureJarFiles(versionId, options = {}) {
 
 /**
  * Paths the vanilla extractor must produce for `versionId` (everything under assets/minecraft/{textures,
- * models,blockstates,items,atlases,font}, lang/en_us.json, pack.png and version.json).
+ * models,blockstates,items,atlases,font}, lang/en_us.json, pack.png, version.json and the JSON files under
+ * data/minecraft/{recipe,loot_table,tags,advancement}).
  * @param {keyof typeof FIXTURE_VERSIONS} versionId
  */
 export function expectedExtractedPaths(versionId) {
   const wanted = /^assets\/minecraft\/(textures|models|blockstates|items|atlases|font)\//
+  const data = /^data\/minecraft\/(recipe|loot_table|tags|advancement)\/.+\.json$/
   return Object.keys(fixtureJarFiles(versionId))
     .filter(
       (p) =>
         wanted.test(p) ||
+        data.test(p) ||
         p === 'assets/minecraft/lang/en_us.json' ||
         p === 'pack.png' ||
         p === 'version.json'

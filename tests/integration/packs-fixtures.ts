@@ -88,8 +88,13 @@ export class FakeVanillaStore implements VanillaStore {
   getVersion(versionId: string): McVersion | undefined {
     return [...VERSIONS, SNAPSHOT].find((v) => v.id === versionId)
   }
-  versionForPackFormat(format: PackFormat): McVersion | undefined {
-    return VERSIONS.find((v) => v.resourcePack.major === format.major)
+  versionForPackFormat(
+    format: PackFormat,
+    type: 'resource' | 'data' = 'resource'
+  ): McVersion | undefined {
+    return VERSIONS.find(
+      (v) => (type === 'data' ? v.dataPack : v.resourcePack).major === format.major
+    )
   }
   async detectInstalls(): Promise<never[]> {
     return []
@@ -105,6 +110,11 @@ export class FakeVanillaStore implements VanillaStore {
   async getIndex(versionId: string): Promise<VanillaIndex | null> {
     this.getIndexCalls++
     return this.indexes.get(versionId) ?? null
+  }
+  /** Versions whose data cannot be added (an old cache whose jar is gone). */
+  readonly noData = new Set<string>()
+  async prepareData(versionId: string): Promise<boolean> {
+    return this.indexes.has(versionId) && !this.noData.has(versionId)
   }
   /** Entity models read from a jar (tests set this map). */
   models = new Map<string, JarEntityModels>()

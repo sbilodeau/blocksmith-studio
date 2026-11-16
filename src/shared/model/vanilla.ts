@@ -43,5 +43,10 @@ export interface VanillaIndex {
   resourcePack: PackFormat
   dataPack: PackFormat
   createdAt: string
+  /**
+   * True when the vanilla data (recipes, loot tables, tags, advancements) is in the cache and in `entries`. Versions
+   * extracted before data support (M10) get it from their jar on first use (VanillaStore.prepareData).
+   */
+  data?: boolean
   entries: Record<string, VanillaIndexEntry>
 }

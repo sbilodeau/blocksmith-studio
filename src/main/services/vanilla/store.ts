@@ -24,7 +24,7 @@ import {
   type DetectFs
 } from './detect'
 import { VanillaError, VanillaErrorCode } from './errors'
-import { INDEX_FILE, type ExtractRunner } from './extract'
+import { INDEX_FILE, indexEntry, readJarData, writeEntries, type ExtractRunner } from './extract'
 import {
   ENTITY_MODELS_FILE,
   ENTITY_MODELS_SCHEMA_VERSION,
@@ -91,6 +91,7 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
   const jarsDir = join(deps.userDataDir, 'jars')
   const indexCache = new Map<string, VanillaIndex>()
   const modelsCache = new Map<string, Promise<JarEntityModels | null>>()
+  const dataInflight = new Map<string, Promise<boolean>>()
   const inflight = new Map<string, { promise: Promise<VanillaIndex>; listeners: Set<ProgressFn> }>()
 
   const versionDir = (id: string): string => join(vanillaRoot, id)
@@ -225,11 +226,39 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
     return out
   }
 
+  /**
+   * Adds the vanilla data of a version extracted before data support: reads data/minecraft/... from its jar, writes
+   * the files next to the assets and rewrites index.json with their entries and `data: true` (tmp + rename).
+   */
+  async function addData(versionId: string): Promise<boolean> {
+    const index = await getIndex(versionId)
+    if (!index) return false
+    if (index.data) return true
+    const jarPath = await localJar(versionId, await detect())
+    if (!jarPath) return false
+    try {
+      const files = readJarData(new Uint8Array(await readFile(jarPath)))
+      const paths = Object.keys(files).sort()
+      await writeEntries(versionDir(versionId), files, paths)
+      const entries = { ...index.entries }
+      for (const path of paths) entries[path] = indexEntry(path, files[path], files)
+      const updated: VanillaIndex = { ...index, data: true, entries }
+      const file = join(versionDir(versionId), INDEX_FILE)
+      await writeFile(`${file}.tmp`, JSON.stringify(updated))
+      await rename(`${file}.tmp`, file)
+      indexCache.set(versionId, updated)
+      return true
+    } catch (err) {
+      logger.warn(`[vanilla] ${versionId}: vanilla data not added: ${String(err)}`)
+      return false
+    }
+  }
+
   return {
     supportedVersions: () => supportedVersions(table, now()),
     latestVersion: () => latest(table),
     getVersion: (versionId) => findVersion(table, versionId),
-    versionForPackFormat: (format) => versionForPackFormat(table, format),
+    versionForPackFormat: (format, type) => versionForPackFormat(table, format, type),
 
     detectInstalls: detect,
 
@@ -281,6 +310,16 @@ export function createVanillaStore(deps: VanillaStoreDeps): VanillaStoreImpl {
     },
 
     getIndex,
+
+    prepareData(versionId) {
+      if (!knownVersion(versionId)) return Promise.resolve(false)
+      let p = dataInflight.get(versionId)
+      if (!p) {
+        p = addData(versionId).finally(() => dataInflight.delete(versionId))
+        dataInflight.set(versionId, p)
+      }
+      return p
+    },
 
     entityModels(versionId) {
       if (!knownVersion(versionId)) return Promise.resolve(null)

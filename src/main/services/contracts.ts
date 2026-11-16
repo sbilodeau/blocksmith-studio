@@ -22,7 +22,8 @@ export interface VanillaStore {
   latestVersion(): McVersion
   getVersion(versionId: string): McVersion | undefined
   /** Version whose resource pack format matches (exact major; nearest lower release if several). */
-  versionForPackFormat(format: PackFormat): McVersion | undefined
+  /** `type` 'data' matches the data pack format instead (data pack imports). */
+  versionForPackFormat(format: PackFormat, type?: 'resource' | 'data'): McVersion | undefined
 
   detectInstalls(): Promise<MinecraftInstall[]>
   availability(): Promise<VanillaAvailability[]>
@@ -38,6 +39,13 @@ export interface VanillaStore {
 
   /** Index of an already-extracted version, or null if not extracted yet. */
   getIndex(versionId: string): Promise<VanillaIndex | null>
+
+  /**
+   * Makes sure the extracted version also has its vanilla data (recipes, loot tables, tags, advancements; PLAN M10):
+   * versions extracted before data support get it from their jar. False when the version is not extracted or its
+   * jar is gone (only the pack's own data files can be listed then).
+   */
+  prepareData(versionId: string): Promise<boolean>
 
   /** Absolute path of an extracted vanilla file (validated to stay in the cache), or null if absent. */
   resolveFile(versionId: string, packPath: string): string | null

@@ -54,7 +54,9 @@ describe('extractVanillaJar (fixture jars)', () => {
         'net/minecraft/Foo.class',
         'a.class',
         'META-INF/MANIFEST.MF',
-        'data/minecraft/recipe/stone_slab.json',
+        'data/minecraft/worldgen/biome/plains.json',
+        'data/minecraft/structure/igloo.nbt',
+        'data/minecraft/datapacks/bundle/pack.mcmeta',
         'assets/minecraft/shaders/core/position.vsh',
         'assets/minecraft/lang/deprecated.json',
         'assets/minecraft/sounds.json'
@@ -62,6 +64,10 @@ describe('extractVanillaJar (fixture jars)', () => {
         expect(existsSync(join(outDir, ...skipped.split('/')))).toBe(false)
       }
 
+      // Vanilla data for the data browser (M10).
+      expect(index.data).toBe(true)
+      expect(existsSync(join(outDir, 'data/minecraft/recipe/stone_slab.json'))).toBe(true)
+      expect(index.entries['data/minecraft/tags/item/stone_tool_materials.json']).toBeDefined()
       expect(index.versionId).toBe(id)
       expect(index.resourcePack).toEqual(FIXTURE_VERSIONS[id].resourcePack)
       expect(index.dataPack).toEqual(FIXTURE_VERSIONS[id].dataPack)
