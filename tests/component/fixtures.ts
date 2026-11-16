@@ -8,6 +8,7 @@ export function pack(overrides: Partial<PackSummary> = {}): PackSummary {
     description: 'Everything burns',
     authoringVersion: '26.3',
     base: 'vanilla',
+    kind: 'resource',
     folder: '/ws/packs/fire-pack',
     changedCount: 3,
     updatedAt: '2026-11-15T12:00:00.000Z',

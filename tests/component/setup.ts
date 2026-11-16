@@ -5,6 +5,7 @@ import type { CategorySummary, PackSummary, TextureEntry } from '@shared/model/p
 import type { VanillaAvailability } from '@shared/model/vanilla'
 import type { EvalReport, ModelInfo, ModelRef, ProviderStatus } from '@shared/ai/types'
 import type { BulkPreview } from '@shared/model/bulk'
+import type { DataEntry, DataFileData, DataList } from '@shared/model/data'
 
 /**
  * In-memory fake of the preload bridge (`window.blocksmith`) for component tests.
@@ -23,11 +24,33 @@ export interface FakeBridge {
   evalReports: Record<string, EvalReport>
   /** Result of bulk.preview (manual bulk action). */
   bulkPreview: BulkPreview | null
+  /** Data browser (data.list) and file texts (data.read), by path. */
+  dataList: DataList
+  dataFiles: Record<string, DataFileData>
   calls: Array<{ channel: string; payload: unknown }>
   emit(channel: string, payload: unknown): void
 }
 
 const listeners = new Map<string, Set<(p: unknown) => void>>()
+
+/** Entry returned by data.create / data.save: the pack's own file. */
+function dataEntry({ path }: { path: string }): DataEntry {
+  const [, namespace = '', folder = ''] = path.split('/')
+  const existing = fakeBridge.dataList.entries.find((e) => e.path === path)
+  return {
+    path,
+    namespace,
+    kind: existing?.kind ?? (folder === 'function' ? 'function' : (folder as DataEntry['kind'])),
+    id:
+      existing?.id ??
+      `${namespace}:${path
+        .split('/')
+        .slice(3)
+        .join('/')
+        .replace(/\.\w+$/, '')}`,
+    status: existing && existing.status !== 'added' ? 'modified' : 'added'
+  }
+}
 
 export const fakeBridge: FakeBridge = {
   settings: defaultSettings(),
@@ -40,6 +63,8 @@ export const fakeBridge: FakeBridge = {
   models: [],
   evalReports: {},
   bulkPreview: null,
+  dataList: { entries: [], vanillaData: true, ids: { items: [], blocks: [], tags: {} } },
+  dataFiles: {},
   calls: [],
   emit(channel, payload) {
     listeners.get(channel)?.forEach((l) => l(payload))
@@ -68,6 +93,14 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
   'bulk.preview': () => fakeBridge.bulkPreview,
   'bulk.apply': (input) => ({ applied: (input as { paths: string[] }).paths.length }),
   'bulk.discard': () => undefined,
+  'data.list': () => fakeBridge.dataList,
+  'data.read': (input) => {
+    const { path } = input as { path: string }
+    return fakeBridge.dataFiles[path] ?? { path, text: null, origin: 'none', vanillaText: null }
+  },
+  'data.create': (input) => dataEntry(input as { path: string }),
+  'data.save': (input) => dataEntry(input as { path: string }),
+  'data.delete': () => undefined,
   'updater.getStatus': () => fakeBridge.updater,
   'updater.check': () => fakeBridge.updater,
   'workspace.get': () => ({ path: '/Users/test/Documents/Blocksmith Studio' }),
@@ -77,6 +110,7 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
       name: string
       description?: string
       base: 'vanilla' | 'empty'
+      kind?: PackSummary['kind']
       authoringVersion: string
     }
     const pack: PackSummary = {
@@ -85,6 +119,7 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
       description: i.description ?? '',
       authoringVersion: i.authoringVersion,
       base: i.base,
+      kind: i.kind ?? 'resource',
       folder: `/ws/packs/${i.name}`,
       changedCount: 0,
       updatedAt: '2026-11-15T12:00:00.000Z'

@@ -2,9 +2,20 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NH3, NPopconfirm, NSpace, NTag, NText } from 'naive-ui'
+import {
+  NAlert,
+  NButton,
+  NH3,
+  NPopconfirm,
+  NPopselect,
+  NRadioButton,
+  NRadioGroup,
+  NSpace,
+  NTag,
+  NText
+} from 'naive-ui'
 import LoadingOverlay from '../components/common/LoadingOverlay.vue'
-import type { ExportReport, UpgradeReport } from '@shared/model/pack'
+import type { ExportReport, PackKind, UpgradeReport } from '@shared/model/pack'
 import { findVersion, latest, versionTable } from '@shared/versions'
 import CategorySidebar from '../components/pack/CategorySidebar.vue'
 import CategoryOverview from '../components/pack/CategoryOverview.vue'
@@ -18,6 +29,10 @@ import CreationAgentPanel from '../components/ai/CreationAgentPanel.vue'
 import PackHistoryDrawer from '../components/pack/PackHistoryDrawer.vue'
 import PackDoctorDrawer from '../components/pack/PackDoctorDrawer.vue'
 import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
+import DataSidebar from '../components/data/DataSidebar.vue'
+import DataList from '../components/data/DataList.vue'
+import DataEditor from '../components/data/DataEditor.vue'
+import { useDataStore } from '../stores/data'
 import { IpcError } from '../services/ipc'
 import { useVanillaStore } from '../stores/vanilla'
 import { usePackStore } from '../stores/pack'
@@ -42,8 +57,49 @@ const router = useRouter()
  * The AI panel sits next to the overview (creation agent, whole pack) or the grid (navigation agent, selection),
  * not the editor (which has its own AI tab).
  */
-const showAiPanel = computed(() => store.value.aiPanel && !store.value.editing)
-const onOverview = computed(() => store.value.category === null)
+const kind = computed<PackKind>(() => store.value.summary?.kind ?? 'resource')
+/** What the tab shows: a data pack its data files, a resource pack its textures, a combined pack either. */
+const section = computed(() =>
+  kind.value === 'data' ? 'data' : kind.value === 'resource' ? 'textures' : store.value.section
+)
+const data = computed(() => useDataStore(props.packId))
+const dataEditor = ref<InstanceType<typeof DataEditor> | null>(null)
+const editingAny = computed(() =>
+  section.value === 'data' ? data.value.editing !== null : store.value.editing !== null
+)
+const showAiPanel = computed(() => store.value.aiPanel && !editingAny.value)
+/** The creation agent works on the whole pack (overview, or the data files); the navigation agent on the grid. */
+const onOverview = computed(() => section.value === 'data' || store.value.category === null)
+
+function switchSection(next: 'textures' | 'data'): void {
+  const go = (): void => {
+    store.value.section = next
+  }
+  if (dataEditor.value && section.value === 'data') dataEditor.value.guardUnsaved(go)
+  else go()
+}
+
+const kindOptions = computed(() =>
+  (['resource', 'data', 'combined'] as const).map((k) => ({ value: k, label: t(`packKind.${k}`) }))
+)
+async function changeKind(next: PackKind): Promise<void> {
+  if (next === kind.value) return
+  try {
+    await store.value.setKind(next)
+    if (next === 'combined') store.value.section = kind.value === 'data' ? 'data' : 'textures'
+  } catch (err) {
+    showError(err)
+  }
+}
+
+watch(
+  [section, () => props.packId],
+  () => {
+    const d = data.value
+    if (section.value === 'data' && !d.loaded && !d.loading) d.load().catch(showError)
+  },
+  { immediate: true }
+)
 /** Set when a vanilla-based pack's vanilla textures are missing on this computer. */
 const missingVanilla = ref<string | null>(null)
 const vanilla = useVanillaStore()
@@ -127,7 +183,9 @@ async function load(): Promise<void> {
 watch(() => props.packId, ensureLoaded, { immediate: true })
 
 const off = window.blocksmith.on('packs.changed', ({ packId }) => {
-  if (!packId || packId === props.packId) store.value.load().catch(showError)
+  if (packId && packId !== props.packId) return
+  store.value.load().catch(showError)
+  if (data.value.loaded) data.value.load().catch(showError)
 })
 onBeforeUnmount(off)
 
@@ -160,8 +218,30 @@ const exportItems = computed(() => {
   <div class="spin">
     <loading-overlay :show="store.loading && !store.loaded" />
     <div class="pack" data-testid="pack-view">
-      <aside v-if="!store.editing" class="side">
+      <aside v-if="!editingAny" class="side">
+        <n-radio-group
+          v-if="kind === 'combined'"
+          :value="section"
+          size="small"
+          class="sections"
+          @update:value="switchSection"
+        >
+          <n-radio-button value="textures" data-testid="pack-section-textures">
+            {{ t('pack.sectionTextures') }}
+          </n-radio-button>
+          <n-radio-button value="data" data-testid="pack-section-data">
+            {{ t('pack.sectionData') }}
+          </n-radio-button>
+        </n-radio-group>
+        <data-sidebar
+          v-if="section === 'data'"
+          :active="data.kind"
+          :counts="data.counts"
+          :changed="data.changedCount"
+          @select="data.setKind"
+        />
         <category-sidebar
+          v-else
           :categories="store.categories"
           :active="store.category"
           :total="store.textures.length"
@@ -177,6 +257,22 @@ const exportItems = computed(() => {
               <n-tag size="small" :bordered="false">
                 {{ t('packs.minecraft', { version: store.summary?.authoringVersion ?? '' }) }}
               </n-tag>
+              <n-popselect
+                :value="kind"
+                :options="kindOptions"
+                trigger="click"
+                @update:value="changeKind"
+              >
+                <n-tag
+                  size="small"
+                  :bordered="false"
+                  type="info"
+                  class="kind"
+                  data-testid="pack-kind"
+                >
+                  {{ t('packKind.change', { kind: t(`packKind.${kind}`) }) }}
+                </n-tag>
+              </n-popselect>
               <n-popconfirm v-if="upgradeTarget && !store.editing" @positive-click="upgrade">
                 <template #trigger>
                   <n-button
@@ -208,7 +304,7 @@ const exportItems = computed(() => {
               {{ t('doctor.title') }}
             </n-button>
             <n-button
-              v-if="!store.editing"
+              v-if="!editingAny"
               size="small"
               :type="store.aiPanel ? 'primary' : 'default'"
               :secondary="store.aiPanel"
@@ -234,6 +330,10 @@ const exportItems = computed(() => {
             </n-alert>
             <vanilla-prepare :version-id="missingVanilla" @ready="load" />
           </div>
+          <template v-else-if="section === 'data'">
+            <data-editor v-if="data.editing" ref="dataEditor" :pack-id="packId" />
+            <data-list v-else :pack-id="packId" :pack-name="store.summary?.name ?? ''" />
+          </template>
           <texture-editor v-else-if="store.editing" :pack-id="packId" />
           <category-overview
             v-else-if="store.category === null"
@@ -303,6 +403,22 @@ const exportItems = computed(() => {
   width: 240px;
   flex: none;
   border-right: 1px solid rgba(128, 128, 128, 0.2);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.side .sidebar {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.sections {
+  margin: 8px 8px 0;
+  display: flex;
+}
+.sections :deep(.n-radio-button) {
+  flex: 1;
+  text-align: center;
 }
 .main {
   flex: 1;
@@ -319,6 +435,9 @@ const exportItems = computed(() => {
 }
 .desc {
   font-size: 12px;
+}
+.kind {
+  cursor: pointer;
 }
 .missing {
   display: flex;

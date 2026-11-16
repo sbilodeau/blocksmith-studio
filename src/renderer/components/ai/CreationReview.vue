@@ -10,8 +10,8 @@ import { useOpLabel } from '../../composables/useOpLabel'
 /**
  * Review of a creation-agent plan (PLAN 6.3, M6): one checkbox per step. A texture step shows what it covers
  * (categories, folders, name pattern, number of textures) and a few representative textures before / after; brief
- * and pack name steps show their change. Applying writes one history entry per texture step, and can be stopped
- * between steps.
+ * and pack name steps show their change; data file steps (write_json, M10) show the proposed file. Applying writes the
+ * data files as one history entry, then one history entry per texture step, and can be stopped between steps.
  */
 const props = withDefaults(
   defineProps<{
@@ -39,7 +39,9 @@ watch(
 )
 
 const pending = computed(() => props.proposal.status === 'pending')
-const textureSteps = computed(() => props.proposal.steps.filter((s) => s.kind === 'mutate'))
+const textureSteps = computed(() =>
+  props.proposal.steps.filter((s) => s.kind === 'mutate' && !s.json)
+)
 const keptTextureSteps = computed(() => textureSteps.value.filter((s) => kept.value.has(s.id)))
 /** Texture writes if every kept step changes every texture it covers (upper bound shown on the button). */
 const keptTextures = computed(() =>
@@ -126,7 +128,24 @@ function apply(): void {
           <n-tag v-else-if="step.packMeta" size="tiny" :bordered="false" type="info">
             {{ t('ai.plan.pack') }}
           </n-tag>
+          <n-tag
+            v-else-if="step.json"
+            size="tiny"
+            :bordered="false"
+            :type="step.json.previous === null ? 'success' : 'warning'"
+          >
+            {{ step.json.previous === null ? t('ai.plan.newFile') : t('ai.plan.changedFile') }}
+          </n-tag>
         </div>
+        <details v-if="step.json" class="json" data-testid="plan-json">
+          <summary>
+            <n-text depth="2">{{ step.json.path }}</n-text>
+            <n-text v-if="step.json.warnings" type="warning" class="json-warn">
+              {{ t('ai.plan.jsonWarnings', { count: step.json.warnings }, step.json.warnings) }}
+            </n-text>
+          </summary>
+          <pre>{{ step.json.text }}</pre>
+        </details>
         <div v-if="step.scope" class="scope">
           <n-text depth="2">{{ scopeLabel(step.scope) }}</n-text>
           <n-text depth="3">{{
@@ -215,7 +234,26 @@ function apply(): void {
   font-size: 12px;
 }
 .step.off .samples,
-.step.off .scope {
+.step.off .json {
+  margin: 4px 0 0 26px;
+  font-size: 12px;
+}
+.json summary {
+  cursor: pointer;
+}
+.json-warn {
+  margin-left: 8px;
+}
+.json pre {
+  margin: 4px 0 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.1);
+  font-size: 11px;
+}
+.scope {
   opacity: 0.4;
 }
 .head {
