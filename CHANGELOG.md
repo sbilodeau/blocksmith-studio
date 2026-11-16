@@ -5,6 +5,24 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M10 - Data packs
+
+- Choose the pack type when creating a pack: resource pack, data pack, or both in one project; change it later from
+  the tag in the pack header. A combined pack has a **Textures / Data** switch in the sidebar
+- Data browser: recipes, loot tables, tags, advancements, functions and other data files, with Minecraft's own files
+  listed next to yours (editing one adds your version to the pack), search and a Changed / Vanilla filter
+- JSON editor with live checks against Minecraft's format (missing fields, wrong types, recipe patterns and keys,
+  loot entries, tag values, advancement requirements), warnings for items, blocks or tags the game does not have,
+  item id completion, **Format**, **Compare** with Minecraft's file, revert and Ctrl/Cmd+S
+- **New file** with templates (crafting, smelting, stonecutting, smithing, block / chest / mob loot, tag,
+  advancement, function), in the pack's own namespace or `minecraft` to replace a vanilla file
+- Export a data pack zip with the data pack format, or both zips for a combined pack; data packs can be imported
+- Pack Doctor checks data files; merging packs combines their tags like Minecraft does
+- The creation agent works on data packs: it reads Minecraft's files and proposes whole JSON files (`write_json`),
+  each checked before it reaches the plan; accepted files are one History entry
+- Vanilla data comes from your Minecraft installation like the textures (versions set up before this update get it
+  automatically from the game file); every vanilla data file of 1.21.4 and 26.3 passes the checks (real-jar test)
+
 ### M9 - Animated textures
 
 - Animated textures are edited one frame at a time, with a timeline under the canvas: frame thumbnails, play/pause

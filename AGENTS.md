@@ -39,6 +39,7 @@ when you touched the UI, IPC or main-process wiring.
 | `src/shared/`          | Pure TypeScript used everywhere: models, zod schemas, image core, tools   |
 | `src/shared/ipc/`      | `channels.ts` (whitelist) and `contract.ts` (input schemas, output types) |
 | `src/shared/ai/tools/` | AI tool registry: zod schema, description, `describe()`, `execute()`      |
+| `src/shared/datapack/` | Data pack paths, schemas and checks, templates (see docs/datapacks.md)    |
 | `src/shared/locales/`  | `en.json` and `fr.json` (same keys)                                       |
 | `resources/data/`      | Hand-maintained data: versions, categories, entity layers, prices, evals  |
 | `tests/`               | `unit/`, `integration/`, `component/`, `e2e/`, `ai-eval/`, `real-jar/`    |

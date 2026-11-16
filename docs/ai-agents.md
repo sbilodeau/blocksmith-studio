@@ -255,6 +255,32 @@ transformed textures to the pack (starting from vanilla keeps entity UV layouts 
   `ai.creation.stopApply { proposalId }` stops after the current step; the result says `stopped`. The request log
   line is `whole pack (N texture writes): "<request>" -> tools (k of n steps)`.
 
+### Data pack tools
+
+On data packs and combined packs (M10, see [datapacks.md](datapacks.md)) the creation agent also works on data
+files (`creation-data.ts`). The tools depend on the pack kind: a resource pack keeps the texture tools only, a data
+pack gets only the data tools (no `apply_to_all` / `list_textures`, no textures loaded, no contact sheet), a combined
+pack gets both. Each set comes with its own system prompt text (`CREATION_DATA_INSTRUCTIONS`, or
+`COMBINED_DATA_ADDENDUM` added to the texture instructions).
+
+- `list_data { kind?, match?, namespace?, changedOnly?, limit }`: files of the pack and vanilla's (`path (status)`;
+  `planned` for files this plan writes). `match` is a glob on the name, or on the id path when it has a `/`.
+- `read_json { path }`: the current text (the file this plan writes, else the pack's, else vanilla's), cut at
+  12,000 characters (`truncated`).
+- `write_json { path, json }`: the WHOLE file as a JSON object. The path must be a data JSON file
+  (`parseDataPath`); the content goes through the same checks as the editor (`validateData` with the game's ids).
+  Errors refuse the file and return the reasons to the model (`required {"key":"result"} at result; ...`) so it can
+  fix it; warnings (unknown items...) are returned with the step. A step stores `json: { path, text, previous,
+  warnings }` (`previous` null for a new file); writing the same path again replaces the step. At most 24 files per
+  plan. The tool description gives the 1.21.4+ formats and FR/EN examples (a new recipe, a changed vanilla loot table,
+  a tag addition).
+
+The user message of a data pack lists the data files per kind (total, changed or added) and the pack's own files.
+In the plan review a data step shows its path, **New file** / **Changed file**, the warning count and the file text
+(collapsed). On apply, all accepted data files are written first as ONE history entry ("AI plan: N data files",
+`DataService.saveMany`), then the texture steps as before; the result has `filesWritten`. The FR/EN evaluation has 3
+data cases on the `sample_datapack` fixture (a recipe, a loot table change, a tag addition).
+
 ## Conversation files
 
 `.blocksmith/conversations/<agent>.jsonl`, one `ConversationTurn` per line, append-only, writes serialized per

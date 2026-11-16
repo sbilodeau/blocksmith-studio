@@ -2,10 +2,11 @@
 
 # Blocksmith Studio
 
-Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs, with a pixel editor,
-a live 3D preview and AI agents that propose changes you review before anything is applied.
+Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs and data packs, with a
+pixel editor, a live 3D preview, a checked JSON editor and AI agents that propose changes you review before
+anything is applied.
 
-> Status: early development (milestone M9 - animated textures). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M10 - data packs). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
@@ -13,6 +14,8 @@ a live 3D preview and AI agents that propose changes you review before anything 
 - Textures browsed by category (Blocks, Ores, Tools, Weapons, Armor, Food, Entities, GUI...)
 - Pixel editor with undo/redo, compare with vanilla, and a live 3D preview for blocks, items and entities
 - Animated textures edited frame by frame: timeline, playback, onion skin, frame timing, GIF import
+- Data packs (or resource + data packs): recipes, loot tables, tags, advancements and functions, edited with live
+  checks against Minecraft's format, item id completion and new-file templates
 - Bulk edits of a selection (hue, brightness, palette, outline, flip...) reviewed texture by texture
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
 - Export to any Minecraft Java version released in the last two years
@@ -36,7 +39,8 @@ pack de feu", "make every ore glow red"). It proposes a style brief and category
 sample textures before and after. Tick the steps you want and apply: each step is written as its own entry in
 **History** (you can stop between steps, and undo the last steps without losing the others). It also works on an
 empty pack: "un squelette en glace" starts from Minecraft's skeleton textures and adds the icy versions to your
-pack.
+pack. On a data pack it writes the files instead ("le minerai de diamant donne deux diamants", "a recipe for
+saddles"): each proposed file is checked and shown before you apply it.
 
 To use the agents, open Settings > AI, paste your [Ollama Cloud](https://ollama.com) API key and pick a model (models that
 support tools are listed, with badges for vision and reasoning, and `$` / `$$` / `$$$` when the price is known).
