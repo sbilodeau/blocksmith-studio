@@ -26,6 +26,7 @@ import {
 } from './paths'
 import { createDefaultPackIcon } from './png'
 import { writeProject, type PackLocation } from './project'
+import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 
 export interface ImportLimits {
   maxEntries: number
@@ -50,6 +51,10 @@ export const ImportErrorCode = {
 /** Warning codes in ImportReport.warnings. */
 export const ImportWarningCode = {
   formatMismatch: 'import.formatMismatch',
+  /** Older pack: texture paths were upgraded to the authoring version (renamed textures moved). */
+  migrated: 'import.migrated',
+  /** Older pack: this texture no longer exists in the authoring version (not imported). */
+  notInVersion: 'import.notInVersion',
   formatMissing: 'import.formatMissing',
   vanillaNotReady: 'import.vanillaNotReady'
 } as const
@@ -168,7 +173,13 @@ export async function importPackZip(zipPath: string, deps: ImportDeps): Promise<
   const declaredFormat = readDeclaredFormat(mcmeta)
   const mapped = declaredFormat ? vanilla.versionForPackFormat(declaredFormat) : undefined
   const authoring = vanilla.latestVersion()
+  // An older pack inside the migration chain: texture paths are upgraded to the authoring version.
+  const migrator =
+    mapped && mapped.id !== authoring.id && canMigrate(mapped.id, authoring.id)
+      ? new PathMigrator(mapped.id, authoring.id)
+      : null
   if (!declaredFormat) warnings.push({ code: ImportWarningCode.formatMissing })
+  else if (migrator) warnings.push({ code: ImportWarningCode.migrated })
   else if (mapped?.id !== authoring.id) warnings.push({ code: ImportWarningCode.formatMismatch })
 
   const index = await vanilla.getIndex(authoring.id)
@@ -177,10 +188,22 @@ export async function importPackZip(zipPath: string, deps: ImportDeps): Promise<
   // Select the files to keep.
   const kept: Array<{ path: string; data: Uint8Array }> = []
   let identicalToVanilla = 0
+  let renamed = 0
   for (const name of names) {
     if (!name.startsWith(prefix)) continue
-    const path = name.slice(prefix.length)
+    let path = name.slice(prefix.length)
     if (path === '' || path === 'pack.mcmeta' || isHiddenPath(path)) continue
+    if (migrator) {
+      const r = migrator.migrateFile(path)
+      if (!('path' in r)) {
+        warnings.push({ code: ImportWarningCode.notInVersion, path })
+        continue
+      }
+      if (r.renamed) {
+        renamed++
+        path = r.path
+      }
+    }
     const data = entries[name]
     const vanillaEntry = path === 'pack.png' ? undefined : index?.entries[path]
     if (vanillaEntry && vanillaEntry.sha256 === sha256(data)) {
@@ -233,6 +256,7 @@ export async function importPackZip(zipPath: string, deps: ImportDeps): Promise<
       mappedVersion: mapped?.id,
       filesImported: kept.length,
       identicalToVanilla,
+      renamed,
       warnings
     }
   }

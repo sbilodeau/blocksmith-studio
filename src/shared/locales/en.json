@@ -264,7 +264,8 @@
   },
   "import": {
     "title": "Import complete",
-    "summary": "\"{name}\" imported: {files} files kept, {identical} identical to vanilla dropped."
+    "summary": "\"{name}\" imported: {files} files kept, {identical} identical to vanilla dropped.",
+    "renamedNote": "{count} textures were renamed to their current names. | 1 texture was renamed to its current name. | {count} textures were renamed to their current names."
   },
   "report": {
     "warnings": "Warnings ({count})"
@@ -299,7 +300,9 @@
     "import": {
       "formatMismatch": "The pack was made for another Minecraft version; some textures may have moved (version migration comes later).",
       "formatMissing": "pack.mcmeta has no pack format.",
-      "vanillaNotReady": "Vanilla textures were not set up, so files identical to vanilla were kept."
+      "vanillaNotReady": "Vanilla textures were not set up, so files identical to vanilla were kept.",
+      "migrated": "This pack was made for an older Minecraft version: renamed textures were moved to their current names.",
+      "notInVersion": "Not imported: this texture no longer exists in this Minecraft version"
     },
     "export": {
       "vanillaNotReady": "Vanilla textures were not set up, so unchanged files could not be skipped.",

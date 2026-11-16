@@ -95,6 +95,8 @@ export interface ImportReport {
   filesImported: number
   /** Files dropped because they are identical to vanilla. */
   identicalToVanilla: number
+  /** Textures moved to the authoring version's path (older pack, see migrations.ts). */
+  renamed: number
   warnings: Array<{ code: string; path?: string }>
 }
 
