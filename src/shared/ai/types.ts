@@ -184,6 +184,8 @@ export interface ProposalStep {
   samples?: BulkItem[]
   /** Creation agent set_pack_meta: the proposed name and/or description. */
   packMeta?: PackMetaPatch
+  /** Creation agent write_json: the proposed data file. */
+  json?: JsonFileChange
   /** Animated texture: the frame the step changes (0-based), or 'all' for every frame. */
   frame?: number | 'all'
 }
@@ -196,6 +198,17 @@ export interface PlanScope {
   /** Matched textures in total and per category id. */
   count: number
   byCategory: Record<string, number>
+}
+
+/** A data file proposed by write_json (applied with the plan's other files as one history entry). */
+export interface JsonFileChange {
+  path: string
+  /** Whole new file text (pretty JSON). */
+  text: string
+  /** Text before the plan (the pack's or vanilla's file); null for a new file. */
+  previous: string | null
+  /** "Unknown item" style warnings the check found (errors refuse the file). */
+  warnings: number
 }
 
 export interface PackMetaPatch {
@@ -267,6 +280,8 @@ export interface CreationApplyResult {
   stopped: boolean
   briefUpdated: boolean
   metaUpdated: boolean
+  /** Data files written by write_json steps (one history entry for all of them). */
+  filesWritten: number
 }
 
 export interface BulkProposalApplyResult {

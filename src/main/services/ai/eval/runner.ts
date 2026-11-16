@@ -152,7 +152,8 @@ export async function runEvalCase(
             request: { packId: 'eval', message: phrase, model: opts.model, language },
             textures: pack.textures,
             samples: pack.samples,
-            pack: { name: 'Eval pack', description: '' },
+            pack: { name: 'Eval pack', description: '', ...(pack.kind ? { kind: pack.kind } : {}) },
+            ...(pack.data ? { data: pack.data } : {}),
             settings,
             brief: emptyBrief(),
             history: []

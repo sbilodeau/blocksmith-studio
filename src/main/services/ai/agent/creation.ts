@@ -18,7 +18,7 @@ import type {
 } from '@shared/ai/types'
 import type { BulkItem } from '@shared/model/bulk'
 import type { StyleBrief, StyleBriefPatch } from '@shared/model/brief'
-import type { TextureEntry } from '@shared/model/pack'
+import type { PackKind, TextureEntry } from '@shared/model/pack'
 import { applyBriefPatch } from '../../brief'
 import { buildSystemPrompt } from './prompts'
 import { historyMessages, planImages } from './context'
@@ -34,6 +34,19 @@ import {
   type RunReason
 } from './loop'
 import { shortTexturePath } from './proposals'
+import {
+  DataDraft,
+  LIST_DATA_DESCRIPTION,
+  ListDataSchema,
+  MAX_JSON_STEPS,
+  READ_JSON_DESCRIPTION,
+  ReadJsonSchema,
+  WRITE_JSON_DESCRIPTION,
+  WriteJsonSchema,
+  dataToolsFor,
+  issuesForModel,
+  type CreationData
+} from './creation-data'
 
 /**
  * The creation agent (PLAN 6.3, M6): works on the whole pack. It builds the style brief with the user, then proposes
@@ -67,7 +80,9 @@ export interface CreationRunInput {
   textures: TextureEntry[]
   /** Representative textures, decoded (contact sheet and previews). */
   samples: CreationSample[]
-  pack: { name: string; description: string; base?: 'vanilla' | 'empty' }
+  pack: { name: string; description: string; base?: 'vanilla' | 'empty'; kind?: PackKind }
+  /** Data packs and combined packs: the data files the agent can read and change (write_json). */
+  data?: CreationData
   settings: AgentSettings
   brief: StyleBrief
   history: ConversationTurn[]
@@ -158,8 +173,21 @@ function spec(name: string, description: string, schema: z.ZodType): ToolSpec {
   }
 }
 
-/** The creation scope's tools: apply_to_all, list_textures, set_pack_meta and update_style_brief. */
-export function creationTools(): CreationTool[] {
+/**
+ * The creation scope's tools for a pack kind: apply_to_all and list_textures (packs with textures), list_data, read_json
+ * and write_json (packs with data), set_pack_meta and update_style_brief (all).
+ */
+export function creationTools(kind: PackKind = 'resource'): CreationTool[] {
+  const textures = kind !== 'data'
+  const data = dataToolsFor(kind)
+  return allCreationTools().filter((t) => {
+    if (t.name === 'apply_to_all' || t.name === 'list_textures') return textures
+    if (t.name === 'list_data' || t.name === 'read_json' || t.name === 'write_json') return data
+    return true
+  })
+}
+
+function allCreationTools(): CreationTool[] {
   return [
     {
       name: 'apply_to_all',
@@ -191,6 +219,24 @@ Examples:
 before using it in apply_to_all. Example: {"filter":{"match":"*_ore"},"limit":50}`,
         ListTexturesSchema
       )
+    },
+    {
+      name: 'list_data',
+      kind: 'read',
+      schema: ListDataSchema,
+      spec: spec('list_data', LIST_DATA_DESCRIPTION, ListDataSchema)
+    },
+    {
+      name: 'read_json',
+      kind: 'read',
+      schema: ReadJsonSchema,
+      spec: spec('read_json', READ_JSON_DESCRIPTION, ReadJsonSchema)
+    },
+    {
+      name: 'write_json',
+      kind: 'mutate',
+      schema: WriteJsonSchema,
+      spec: spec('write_json', WRITE_JSON_DESCRIPTION, WriteJsonSchema)
     },
     {
       name: 'set_pack_meta',
@@ -292,11 +338,14 @@ function sheetTexture(index: number, s: CreationSample, image = s.image): SheetT
 
 /** The user message of a creation run: pack, categories, samples (+ contact sheet for vision), then the request. */
 export function buildCreationMessage(
-  input: Pick<CreationRunInput, 'textures' | 'samples' | 'pack'>,
+  input: Pick<CreationRunInput, 'textures' | 'samples' | 'pack' | 'data'>,
   message: string,
   withImage: boolean
 ): ChatMessage {
-  const { textures, samples, pack } = input
+  const { samples, pack } = input
+  const kind = pack.kind ?? 'resource'
+  // A data pack has no textures: only its data files are described.
+  const textures = kind === 'data' ? [] : input.textures
   const counts = countByCategory(textures)
   const changed = countByCategory(textures.filter((t) => t.status !== 'vanilla'))
   const folders = new Map<string, number>()
@@ -304,8 +353,23 @@ export function buildCreationMessage(
     const top = t.folder.split('/')[0] || '(root)'
     folders.set(top, (folders.get(top) ?? 0) + 1)
   }
+  const header = `[Pack: "${pack.name}"${pack.description ? ` - ${pack.description}` : ''}]`
+  if (kind === 'data') {
+    const parts = [
+      header,
+      'This is a DATA PACK (no textures).',
+      ...dataSummary(input.data),
+      '',
+      'User request:',
+      message
+    ]
+    return { role: 'user', text: parts.join('\n') }
+  }
   const parts = [
-    `[Pack: "${pack.name}"${pack.description ? ` - ${pack.description}` : ''}]`,
+    header,
+    ...(kind === 'combined'
+      ? ['This pack holds textures AND data files.', ...dataSummary(input.data)]
+      : []),
     ...(pack.base === 'empty'
       ? [
           "This pack started EMPTY: the textures below are Minecraft's vanilla textures, most not in the pack yet. Create the elements the user asks for by transforming their vanilla textures with apply_to_all; accepted steps add the results to the pack."
@@ -335,6 +399,34 @@ export function buildCreationMessage(
   return { role: 'user', text: parts.join('\n'), ...(images?.length ? { images } : {}) }
 }
 
+/** Data files per kind and the pack's own files (data packs and combined packs). */
+function dataSummary(data: CreationData | undefined): string[] {
+  if (!data) return []
+  const counts = new Map<string, { all: number; own: number }>()
+  const own: string[] = []
+  for (const e of data.entries) {
+    const c = counts.get(e.kind) ?? { all: 0, own: 0 }
+    c.all++
+    if (e.status !== 'vanilla') {
+      c.own++
+      own.push(`${e.path} (${e.status})`)
+    }
+    counts.set(e.kind, c)
+  }
+  return [
+    `Data files (kind: total, changed or added by the pack): ${
+      [...counts].map(([k, c]) => `${k}: ${c.all}, ${c.own}`).join('; ') || 'none'
+    }`,
+    ...(own.length
+      ? [
+          'Files of the pack:',
+          ...own.slice(0, 40),
+          ...(own.length > 40 ? [`... and ${own.length - 40} more`] : [])
+        ]
+      : ['The pack has no data file of its own yet.'])
+  ]
+}
+
 export async function runCreationAgent(
   input: CreationRunInput,
   deps: LoopDeps,
@@ -354,7 +446,11 @@ export async function runCreationAgent(
     .then(() => deps.providers.getModel(request.model))
     .catch(() => undefined)
   const plan = planImages(model, settings.imageMode)
-  const tools = creationTools()
+  const kind = input.pack.kind ?? 'resource'
+  const tools = creationTools(kind).filter(
+    (t) => input.data || !['list_data', 'read_json', 'write_json'].includes(t.name)
+  )
+  const dataDraft = input.data ? new DataDraft(input.data) : null
   const byName = new Map(tools.map((t) => [t.name, t]))
   const specs = tools.map((t) => t.spec)
 
@@ -365,7 +461,7 @@ export async function runCreationAgent(
         agent: 'creation',
         language: request.language,
         brief,
-        pack: { count: textures.length }
+        pack: { count: textures.length, kind }
       })
     },
     ...historyMessages(input.history),
@@ -446,7 +542,7 @@ export async function runCreationAgent(
       args: op.args,
       kind: 'mutate',
       description: tool.describe(op.args),
-      dependsOn: steps.filter((s) => s.kind === 'mutate').map((s) => s.id),
+      dependsOn: steps.filter((s) => s.kind === 'mutate' && !s.json).map((s) => s.id),
       targets: matched.map((t) => t.path),
       scope,
       samples: items
@@ -461,7 +557,52 @@ export async function runCreationAgent(
     )
   }
 
-  function execute(call: ToolCall): CallOutcome {
+  async function writeJson(
+    call: ToolCall,
+    data: z.output<typeof WriteJsonSchema>
+  ): Promise<CallOutcome> {
+    if (!dataDraft) return fail('mutate', 'This pack has no data files.')
+    const jsonSteps = steps.filter((s) => s.json)
+    if (jsonSteps.length >= MAX_JSON_STEPS && !jsonSteps.some((s) => s.json!.path === data.path)) {
+      return fail(
+        'mutate',
+        `The plan already has ${MAX_JSON_STEPS} files; stop and let the user review it.`
+      )
+    }
+    const r = await dataDraft.write(data.path, data.json)
+    if (r.error) return fail('mutate', r.error)
+    if (!r.write) {
+      return fail(
+        'mutate',
+        `Invalid ${data.path}, nothing was planned. Fix: ${issuesForModel(r.issues)}`
+      )
+    }
+    // A second write to the same file replaces the first step.
+    const index = steps.findIndex((s) => s.json?.path === data.path)
+    const step: ProposalStep = {
+      id: deps.newId(),
+      callId: call.id,
+      tool: 'write_json',
+      args: { path: data.path },
+      kind: 'mutate',
+      description: {
+        key: r.write.previous === null ? 'ops.writeJsonNew' : 'ops.writeJson',
+        params: { path: data.path }
+      },
+      dependsOn: [],
+      json: r.write
+    }
+    if (index >= 0) steps.splice(index, 1, step)
+    else steps.push(step)
+    const warnings = r.issues.length ? { warnings: issuesForModel(r.issues) } : {}
+    return ok('mutate', `Proposed ${data.path}${r.write.previous === null ? ' (new file)' : ''}`, {
+      proposed: true,
+      ...warnings,
+      note: 'The user will review this file.'
+    })
+  }
+
+  async function execute(call: ToolCall): Promise<CallOutcome> {
     const tool = byName.get(call.name)
     if (!tool) return unknownTool(call, specs)
     const parsed = tool.schema.safeParse(argsOf(call))
@@ -469,6 +610,18 @@ export async function runCreationAgent(
       return fail(tool.kind, `Invalid arguments for ${tool.name}: ${issues(parsed.error)}`)
     }
     switch (tool.name) {
+      case 'list_data': {
+        const listed = dataDraft!.list(parsed.data as z.output<typeof ListDataSchema>)
+        return ok('read', `${listed.count} data file(s) match`, listed)
+      }
+      case 'read_json': {
+        const { path } = parsed.data as z.output<typeof ReadJsonSchema>
+        const file = await dataDraft!.read(path)
+        if (!file) return fail('read', `No data file at ${path} (use list_data to find it).`)
+        return ok('read', `Read ${path}`, file)
+      }
+      case 'write_json':
+        return writeJson(call, parsed.data as z.output<typeof WriteJsonSchema>)
       case 'apply_to_all':
         return applyToAll(call, parsed.data as z.output<typeof ApplyToAllSchema>)
       case 'list_textures': {

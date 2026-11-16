@@ -44,7 +44,7 @@ export interface AgentScope {
   tools: ToolSpec[]
   /** System prompt, history and the user message. */
   messages: ChatMessage[]
-  execute(call: ToolCall): CallOutcome
+  execute(call: ToolCall): CallOutcome | Promise<CallOutcome>
   /** Kind of a tool by name (for tool_call events). */
   kindOf(name: string): ToolKind
   /** After the tool calls of an iteration: an extra message (a fresh image, for example). */
@@ -234,7 +234,7 @@ export async function runAgentLoop(
           kind: scope.kindOf(call.name),
           iteration: iterations
         })
-        const outcome = scope.execute(call)
+        const outcome = await scope.execute(call)
         if (outcome.mutated) mutated = true
         messages.push({
           role: 'tool',

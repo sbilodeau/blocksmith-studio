@@ -25,6 +25,8 @@ import { frameHeightOf } from '@shared/bulk/operations'
 import { encodePng } from '@shared/image'
 import type { BulkItem } from '@shared/model/bulk'
 import type { TextureEntry } from '@shared/model/pack'
+import type { DataList } from '@shared/model/data'
+import type { HistoryEntry } from '@shared/model/history'
 import type { BulkOperation } from '@shared/bulk/operations'
 import type { JobReporter, ProviderRegistry } from '../../contracts'
 import { AppErrorException } from '../../../ipc/registry'
@@ -64,8 +66,23 @@ export interface EditorAgentServiceDeps {
     catalog(packId: string): Promise<TextureEntry[]>
     /** PNG of a catalog texture: the pack's file, else vanilla. */
     readPng(packId: string, path: string): Promise<Uint8Array | null>
-    meta(packId: string): Promise<{ name: string; description: string; base: 'vanilla' | 'empty' }>
+    meta(packId: string): Promise<{
+      name: string
+      description: string
+      base: 'vanilla' | 'empty'
+      kind?: 'resource' | 'data' | 'combined'
+    }>
     setMeta(packId: string, patch: PackMetaPatch): Promise<void>
+    /** Data packs and combined packs (M10): the data files the agent reads, and the writer of accepted files. */
+    data?: {
+      list(packId: string): Promise<DataList>
+      read(packId: string, path: string): Promise<string | null>
+      saveMany(
+        packId: string,
+        files: ReadonlyArray<{ path: string; text: string }>,
+        change: { source: HistoryEntry['source']; label: HistoryEntry['label'] }
+      ): Promise<unknown>
+    }
     jobs?: JobReporter
   }
   /** Default sink for background runs (main forwards it as 'ai.event'). */
@@ -318,14 +335,26 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     try {
       proposals.expireFor(packId, 'creation')
       const creation = creationDeps()
-      const textures = await creation.catalog(packId)
-      if (textures.length === 0) throw new AppErrorException('ai.emptyPack')
-      const [samples, brief, history, pack] = await Promise.all([
+      const pack = await creation.meta(packId)
+      const kind = pack.kind ?? 'resource'
+      // A data pack has no textures to work on (and may not have vanilla textures extracted at all).
+      const textures = kind === 'data' ? [] : await creation.catalog(packId)
+      if (textures.length === 0 && kind !== 'data') throw new AppErrorException('ai.emptyPack')
+      const dataDeps = kind !== 'resource' ? creation.data : undefined
+      const [samples, brief, history, dataList] = await Promise.all([
         loadSamples(packId, textures),
         deps.brief.get(packId),
         deps.conversations.read(packId, 'creation'),
-        creation.meta(packId)
+        dataDeps ? dataDeps.list(packId) : Promise.resolve(undefined)
       ])
+      const data =
+        dataDeps && dataList
+          ? {
+              entries: dataList.entries,
+              ids: dataList.ids,
+              read: (path: string) => dataDeps.read(packId, path)
+            }
+          : undefined
       await deps.conversations.append(packId, 'creation', [
         {
           id: newId(),
@@ -342,6 +371,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
           textures,
           samples,
           pack,
+          ...(data ? { data } : {}),
           settings: deps.getAgentSettings('creation'),
           brief,
           history
@@ -398,15 +428,28 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       const ids = new Set(acceptedStepIds)
       const accepted = proposal.steps.filter((s) => ids.has(s.id))
       const memory = accepted.filter((s) => s.kind === 'memory')
-      const textureSteps = accepted.filter((s) => s.kind === 'mutate')
+      const jsonSteps = accepted.filter((s) => s.json)
+      const textureSteps = accepted.filter((s) => s.kind === 'mutate' && !s.json)
       const patches = memory.flatMap((s) => (s.briefPatch ? [s.briefPatch] : []))
       const meta: PackMetaPatch = Object.assign({}, ...memory.map((s) => s.packMeta ?? {}))
       if (meta.name !== undefined || meta.description !== undefined) {
         await creation.setMeta(proposal.packId, meta)
       }
 
+      // Data files: all accepted ones in one history entry, before the (long) texture steps.
+      let filesWritten = 0
+      if (jsonSteps.length > 0) {
+        if (!creation.data) throw new AppErrorException('ai.agentFailed')
+        await creation.data.saveMany(
+          proposal.packId,
+          jsonSteps.map((s) => ({ path: s.json!.path, text: s.json!.text })),
+          { source: 'ai', label: { key: 'aiDataFiles', params: { count: jsonSteps.length } } }
+        )
+        filesWritten = jsonSteps.length
+      }
+
       const progress = creation.jobs?.start('ai.plan.apply')
-      const applied: ProposalStep[] = [...memory]
+      const applied: ProposalStep[] = [...memory, ...jsonSteps]
       let written = 0
       let checkpoints = 0
       let stopped = false
@@ -445,7 +488,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         }
         applied.push(step)
       }
-      progress?.('step', applied.length - memory.length, textureSteps.length)
+      progress?.('step', applied.length - memory.length - jsonSteps.length, textureSteps.length)
 
       if (applied.length > 0) {
         const decided = patches.some((p) => p.addDecision?.trim())
@@ -480,7 +523,8 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         checkpoints,
         stopped,
         briefUpdated: patches.length > 0,
-        metaUpdated: meta.name !== undefined || meta.description !== undefined
+        metaUpdated: meta.name !== undefined || meta.description !== undefined,
+        filesWritten
       }
     } finally {
       applying.delete(proposalId)

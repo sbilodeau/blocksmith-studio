@@ -1,3 +1,6 @@
+import { formatJson, parseDataPath } from '@shared/datapack'
+import type { DataEntry } from '@shared/model/data'
+import type { CreationData } from '../agent/creation-data'
 import type { ToolCall } from '@shared/ai/types'
 import type { TextureEntry } from '@shared/model/pack'
 import { createImage, drawLine, fillRect, parseHex, type RgbaImage } from '@shared/image'
@@ -198,7 +201,10 @@ export function evalSelection(name: string): EvalSelectionTexture[] {
 export function evalPack(name: string): {
   textures: TextureEntry[]
   samples: EvalSelectionTexture[]
+  kind?: 'data'
+  data?: CreationData
 } {
+  if (name === 'sample_datapack') return evalDataPack()
   if (name !== 'sample_pack') throw new Error(`unknown eval pack ${name}`)
   const item = (n: string, color: string): EvalSelectionTexture => {
     const img = createImage(16, 16, [0, 0, 0, 0])
@@ -243,4 +249,73 @@ export function evalFixture(name: string): RgbaImage {
   drawLine(img, { x: 2, y: 13 }, { x: 13, y: 2 }, parseHex('#3a3a3a'))
   fillRect(img, { x: 12, y: 12, width: 2, height: 2 }, parseHex('#5c4a2e'))
   return img
+}
+
+/** Vanilla-like data files of the "sample_datapack" eval pack (written for the eval, not copied from Minecraft). */
+const EVAL_DATA: Record<string, unknown> = {
+  'data/minecraft/recipe/oak_planks.json': {
+    type: 'minecraft:crafting_shapeless',
+    category: 'building',
+    group: 'planks',
+    ingredients: ['#minecraft:oak_logs'],
+    result: { count: 4, id: 'minecraft:oak_planks' }
+  },
+  'data/minecraft/loot_table/blocks/diamond_ore.json': {
+    type: 'minecraft:block',
+    pools: [{ rolls: 1, entries: [{ type: 'minecraft:item', name: 'minecraft:diamond' }] }]
+  },
+  'data/minecraft/tags/block/base_stone_overworld.json': {
+    values: ['minecraft:stone', 'minecraft:granite', 'minecraft:diorite', 'minecraft:andesite']
+  }
+}
+
+const EVAL_ITEMS = [
+  'oak_planks',
+  'oak_log',
+  'diamond',
+  'diamond_ore',
+  'stone',
+  'saddle',
+  'leather',
+  'basalt',
+  'stick'
+]
+
+/** A data pack (no textures) with a few vanilla data files, for creation cases that use write_json. */
+function evalDataPack(): {
+  textures: TextureEntry[]
+  samples: EvalSelectionTexture[]
+  kind: 'data'
+  data: CreationData
+} {
+  const entries: DataEntry[] = Object.keys(EVAL_DATA).map((path) => {
+    const info = parseDataPath(path)!
+    return {
+      path,
+      namespace: info.namespace,
+      kind: info.kind,
+      id: info.id,
+      ...(info.registry ? { registry: info.registry } : {}),
+      status: 'vanilla'
+    }
+  })
+  return {
+    textures: [],
+    samples: [],
+    kind: 'data',
+    data: {
+      entries,
+      ids: {
+        items: EVAL_ITEMS.map((i) => `minecraft:${i}`),
+        blocks: ['stone', 'granite', 'diorite', 'andesite', 'basalt', 'diamond_ore', 'oak_log'].map(
+          (b) => `minecraft:${b}`
+        ),
+        tags: {
+          item: ['minecraft:oak_logs', 'minecraft:planks'],
+          block: ['minecraft:base_stone_overworld']
+        }
+      },
+      read: async (path) => (path in EVAL_DATA ? formatJson(EVAL_DATA[path]) : null)
+    }
+  }
 }
