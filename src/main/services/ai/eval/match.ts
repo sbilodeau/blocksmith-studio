@@ -53,8 +53,11 @@ const MatcherSchema: z.ZodType<Matcher> = z.lazy(() =>
 
 export const EvalCaseSchema = z.object({
   id: z.string(),
-  /** editor: one texture (fixture = image); navigation: a selection (fixture = selection name). */
-  context: z.enum(['editor', 'navigation']),
+  /**
+   * editor: one texture (fixture = image); navigation: a selection (fixture = selection name); creation: a whole
+   * pack (fixture = pack name).
+   */
+  context: z.enum(['editor', 'navigation', 'creation']),
   fixture: z.string(),
   fr: z.string(),
   en: z.string(),

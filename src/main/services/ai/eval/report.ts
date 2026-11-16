@@ -1,4 +1,5 @@
 import type { ToolCall } from '@shared/ai/types'
+import type { TextureEntry } from '@shared/model/pack'
 import { createImage, drawLine, fillRect, parseHex, type RgbaImage } from '@shared/image'
 
 /**
@@ -188,6 +189,51 @@ export function evalSelection(name: string): EvalSelectionTexture[] {
     { path: block('gold_ore'), image: ore('#fcee4b') },
     { path: block('oak_planks'), image: planks }
   ]
+}
+
+/**
+ * Pack fixtures of creation cases. `sample_pack`: the sample_selection blocks (stone, iron_ore and gold_ore in
+ * "blocks" and "ores", oak_planks), plus an iron pickaxe ("tools") and a diamond sword ("weapons"), all 16x16.
+ */
+export function evalPack(name: string): {
+  textures: TextureEntry[]
+  samples: EvalSelectionTexture[]
+} {
+  if (name !== 'sample_pack') throw new Error(`unknown eval pack ${name}`)
+  const item = (n: string, color: string): EvalSelectionTexture => {
+    const img = createImage(16, 16, [0, 0, 0, 0])
+    drawLine(img, { x: 3, y: 12 }, { x: 12, y: 3 }, parseHex(color))
+    return { path: `assets/minecraft/textures/item/${n}.png`, image: img }
+  }
+  const samples = [
+    ...evalSelection('sample_selection'),
+    item('iron_pickaxe', '#d8d8d8'),
+    item('diamond_sword', '#4aedd9')
+  ]
+  const categories: Record<string, string[]> = {
+    stone: ['blocks'],
+    iron_ore: ['blocks', 'ores'],
+    gold_ore: ['blocks', 'ores'],
+    oak_planks: ['blocks'],
+    iron_pickaxe: ['tools'],
+    diamond_sword: ['weapons']
+  }
+  const textures = samples.map((s): TextureEntry => {
+    const m = /textures\/(.+)\/([^/]+)\.png$/.exec(s.path)!
+    return {
+      path: s.path,
+      namespace: 'minecraft',
+      folder: m[1]!,
+      name: m[2]!,
+      width: 16,
+      height: 16,
+      animated: false,
+      status: 'vanilla',
+      categories: categories[m[2]!] ?? [],
+      url: ''
+    }
+  })
+  return { textures, samples }
 }
 
 export function evalFixture(name: string): RgbaImage {

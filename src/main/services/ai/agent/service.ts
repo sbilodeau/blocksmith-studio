@@ -4,12 +4,18 @@ import type { PreviewModel } from '@shared/model/preview'
 import { describeModelLayout } from '@shared/preview/layout'
 import {
   isBulkProposal,
+  isCreationProposal,
   type AgentEvent,
   type AgentKind,
   type AgentSettings,
   type BulkProposal,
   type BulkProposalApplyResult,
   type ConversationTurn,
+  type CreationAgentRequest,
+  type CreationApplyResult,
+  type CreationProposal,
+  type PackMetaPatch,
+  type ProposalStep,
   type EditorAgentRequest,
   type NavigationAgentRequest,
   type Proposal,
@@ -19,7 +25,8 @@ import { frameHeightOf } from '@shared/bulk/operations'
 import { encodePng } from '@shared/image'
 import type { BulkItem } from '@shared/model/bulk'
 import type { TextureEntry } from '@shared/model/pack'
-import type { ProviderRegistry } from '../../contracts'
+import type { BulkOperation } from '@shared/bulk/operations'
+import type { JobReporter, ProviderRegistry } from '../../contracts'
 import { AppErrorException } from '../../../ipc/registry'
 import type { BriefService } from '../../brief'
 import type { ConversationStore } from './conversation'
@@ -27,6 +34,7 @@ import { ProposalStore, decisionNote, replayProposal, requestSummary } from './p
 import { errorOf, runEditorAgent } from './runtime'
 import { replayTargets, runNavigationAgent, type NavigationTexture } from './navigation'
 import type { BulkService } from '../../bulk'
+import { pickSamples, runCreationAgent, type CreationSample } from './creation'
 
 /** Largest selection the navigation agent works on. */
 export const MAX_NAVIGATION_TEXTURES = 2000
@@ -49,6 +57,16 @@ export interface EditorAgentServiceDeps {
     textures(packId: string): Promise<TextureEntry[]>
     readPng(packId: string, path: string): Promise<Uint8Array | null>
     bulk: Pick<BulkService, 'compute' | 'write'>
+  }
+  /** Creation agent (uses `navigation` for textures and writes): pack name / description, plan progress. */
+  creation?: {
+    /** Textures the agent can change: the pack's plus vanilla, whatever the base (see PackService.catalog). */
+    catalog(packId: string): Promise<TextureEntry[]>
+    /** PNG of a catalog texture: the pack's file, else vanilla. */
+    readPng(packId: string, path: string): Promise<Uint8Array | null>
+    meta(packId: string): Promise<{ name: string; description: string; base: 'vanilla' | 'empty' }>
+    setMeta(packId: string, patch: PackMetaPatch): Promise<void>
+    jobs?: JobReporter
   }
   /** Default sink for background runs (main forwards it as 'ai.event'). */
   emit: (event: AgentEvent) => void
@@ -86,6 +104,22 @@ export interface EditorAgentService {
     acceptedStepIds: string[],
     acceptedPaths: string[]
   ): Promise<BulkProposalApplyResult>
+  /** Starts a creation-agent run on the whole pack (stopping the pack's previous creation run). */
+  sendCreation(request: CreationAgentRequest): Promise<{ runId: string }>
+  runCreation(
+    request: CreationAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId?: string
+  ): Promise<void>
+  /**
+   * Applies the accepted steps of a creation plan: brief and pack meta changes first, then each texture step on every
+   * matched texture (current pixels), one history entry per step ('ai.plan.apply' progress). Stops between steps
+   * after stopCreationApply.
+   */
+  applyCreation(proposalId: string, acceptedStepIds: string[]): Promise<CreationApplyResult>
+  /** Asks a running applyCreation to stop after the current step. */
+  stopCreationApply(proposalId: string): void
   rejectProposal(proposalId: string): Promise<void>
   /** Resolves when no background run is active (tests, shutdown). */
   idle(): Promise<void>
@@ -242,6 +276,214 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     return { runId }
   }
 
+  /** Creation plans being applied, with their stop flag. */
+  const applying = new Map<string, { stop: boolean }>()
+
+  function creationDeps(): NonNullable<EditorAgentServiceDeps['creation']> {
+    if (!deps.creation || !deps.navigation) throw new AppErrorException('ai.agentFailed')
+    return deps.creation
+  }
+
+  /** Representative textures of the pack, decoded (unreadable ones are skipped). */
+  async function loadSamples(packId: string, entries: TextureEntry[]): Promise<CreationSample[]> {
+    const creation = creationDeps()
+    const samples: CreationSample[] = []
+    for (const entry of pickSamples(entries)) {
+      const png = await creation.readPng(packId, entry.path)
+      if (!png) continue
+      try {
+        const image = decodePng(png)
+        const frameHeight = frameHeightOf(entry)
+        samples.push({ path: entry.path, image, ...(frameHeight ? { frameHeight } : {}) })
+      } catch {
+        // skipped
+      }
+    }
+    return samples
+  }
+
+  async function runCreation(
+    request: CreationAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId = newId()
+  ): Promise<void> {
+    const { packId } = request
+    emit({ runId, type: 'started', agent: 'creation', model: request.model })
+    let result: Awaited<ReturnType<typeof runCreationAgent>>
+    let proposal: CreationProposal | undefined
+    try {
+      proposals.expireFor(packId, 'creation')
+      const creation = creationDeps()
+      const textures = await creation.catalog(packId)
+      if (textures.length === 0) throw new AppErrorException('ai.emptyPack')
+      const [samples, brief, history, pack] = await Promise.all([
+        loadSamples(packId, textures),
+        deps.brief.get(packId),
+        deps.conversations.read(packId, 'creation'),
+        creation.meta(packId)
+      ])
+      await deps.conversations.append(packId, 'creation', [
+        {
+          id: newId(),
+          at: now().toISOString(),
+          role: 'user',
+          text: request.message,
+          model: request.model
+        }
+      ])
+      result = await runCreationAgent(
+        {
+          runId,
+          request,
+          textures,
+          samples,
+          pack,
+          settings: deps.getAgentSettings('creation'),
+          brief,
+          history
+        },
+        { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
+        emit,
+        signal
+      )
+      if (result.steps.length > 0) {
+        proposal = {
+          id: newId(),
+          runId,
+          agent: 'creation',
+          kind: 'plan',
+          packId,
+          steps: result.steps,
+          status: 'pending'
+        }
+        proposals.add(proposal, request.message)
+        const last = [...result.turns].reverse().find((t) => t.role === 'assistant')
+        if (last) last.proposalId = proposal.id
+      }
+      await deps.conversations.append(packId, 'creation', result.turns).catch(() => undefined)
+    } catch (err) {
+      emit({ runId, type: 'done', reason: 'error', error: errorOf(err) })
+      return
+    }
+    if (proposal) emit({ runId, type: 'proposal', proposal })
+    emit({
+      runId,
+      type: 'done',
+      reason: result.reason,
+      ...(result.error ? { error: result.error } : {})
+    })
+  }
+
+  async function applyCreation(
+    proposalId: string,
+    acceptedStepIds: string[]
+  ): Promise<CreationApplyResult> {
+    const item = proposals.getPending(proposalId)
+    const { proposal } = item
+    if (!isCreationProposal(proposal)) {
+      throw new AppErrorException('ai.proposalNotPending', { proposalId, status: 'wrong-kind' })
+    }
+    if (applying.has(proposalId)) {
+      throw new AppErrorException('ai.proposalNotPending', { proposalId, status: 'applying' })
+    }
+    const nav = navigationDeps()
+    const creation = creationDeps()
+    const flag = { stop: false }
+    applying.set(proposalId, flag)
+    try {
+      const ids = new Set(acceptedStepIds)
+      const accepted = proposal.steps.filter((s) => ids.has(s.id))
+      const memory = accepted.filter((s) => s.kind === 'memory')
+      const textureSteps = accepted.filter((s) => s.kind === 'mutate')
+      const patches = memory.flatMap((s) => (s.briefPatch ? [s.briefPatch] : []))
+      const meta: PackMetaPatch = Object.assign({}, ...memory.map((s) => s.packMeta ?? {}))
+      if (meta.name !== undefined || meta.description !== undefined) {
+        await creation.setMeta(proposal.packId, meta)
+      }
+
+      const progress = creation.jobs?.start('ai.plan.apply')
+      const applied: ProposalStep[] = [...memory]
+      let written = 0
+      let checkpoints = 0
+      let stopped = false
+      const catalog = textureSteps.length ? await creation.catalog(proposal.packId) : []
+      for (const [i, step] of textureSteps.entries()) {
+        if (flag.stop) {
+          stopped = true
+          break
+        }
+        progress?.('step', i, textureSteps.length)
+        const op = { tool: step.tool, args: step.args } as BulkOperation
+        // Current pixels: the pack's file, or vanilla for textures the pack does not have yet (empty pack).
+        const before = new Map<string, Uint8Array>()
+        for (const path of step.targets ?? []) {
+          const png = await creation.readPng(proposal.packId, path)
+          if (png) before.set(path, png)
+        }
+        const computed = await nav.bulk.compute(
+          proposal.packId,
+          (step.targets ?? []).map((path) => ({ path, ops: [op] })),
+          { kind: 'bulk.apply', before, entries: catalog }
+        )
+        if (computed.items.length > 0) {
+          written += await nav.bulk.write(
+            proposal.packId,
+            computed.items.map((x) => ({ path: x.path, png: x.afterPng })),
+            {
+              source: 'ai',
+              label: {
+                key: 'aiPlanStep',
+                params: { step: i + 1, total: textureSteps.length, count: computed.items.length }
+              }
+            }
+          )
+          checkpoints++
+        }
+        applied.push(step)
+      }
+      progress?.('step', applied.length - memory.length, textureSteps.length)
+
+      if (applied.length > 0) {
+        const decided = patches.some((p) => p.addDecision?.trim())
+        const fields = [...new Set(patches.flatMap((p) => Object.keys(p)))].join(', ')
+        await deps.brief.change(proposal.packId, {
+          patches,
+          by: 'creation',
+          ...(patches.length && !decided
+            ? { decision: `Style brief change accepted by the user (${fields})` }
+            : {}),
+          requestLog: { agent: 'creation', summary: requestSummary(item, applied, written) }
+        })
+      }
+      proposal.status =
+        applied.length === 0
+          ? 'rejected'
+          : applied.length === proposal.steps.length
+            ? 'applied'
+            : 'partially-applied'
+      const note =
+        decisionNote(proposal, applied, written) +
+        (stopped ? ' The user stopped the plan before the remaining steps.' : '')
+      await deps.conversations
+        .append(proposal.packId, 'creation', [
+          { id: newId(), at: now().toISOString(), role: 'tool', text: note, proposalId }
+        ])
+        .catch(() => undefined)
+      return {
+        // In plan order (brief and meta steps were applied first).
+        appliedStepIds: proposal.steps.filter((s) => applied.includes(s)).map((s) => s.id),
+        texturesWritten: written,
+        checkpoints,
+        stopped,
+        briefUpdated: patches.length > 0,
+        metaUpdated: meta.name !== undefined || meta.description !== undefined
+      }
+    } finally {
+      applying.delete(proposalId)
+    }
+  }
+
   function navigationDeps(): NonNullable<EditorAgentServiceDeps['navigation']> {
     if (!deps.navigation) throw new AppErrorException('ai.agentFailed')
     return deps.navigation
@@ -374,6 +616,24 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
 
     runNavigation,
 
+    async sendCreation(request) {
+      creationDeps()
+      if (!(await deps.packs.locate(request.packId))) {
+        throw new AppErrorException('packs.notFound', { packId: request.packId })
+      }
+      return start(`${request.packId}:creation`, (runId, signal) =>
+        runCreation(request, deps.emit, signal, runId)
+      )
+    },
+
+    runCreation,
+    applyCreation,
+
+    stopCreationApply(proposalId) {
+      const flag = applying.get(proposalId)
+      if (flag) flag.stop = true
+    },
+
     async applyNavigation(proposalId, acceptedStepIds, acceptedPaths) {
       const item = proposals.getPending(proposalId)
       const { proposal } = item
@@ -452,7 +712,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     async applyProposal(proposalId, acceptedStepIds) {
       const item = proposals.getPending(proposalId)
       const { proposal } = item
-      if (isBulkProposal(proposal)) {
+      if (isBulkProposal(proposal) || isCreationProposal(proposal)) {
         throw new AppErrorException('ai.proposalNotPending', { proposalId, status: 'wrong-kind' })
       }
       const brief = await deps.brief.get(proposal.packId)

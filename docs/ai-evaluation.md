@@ -5,15 +5,19 @@ of phrases to a real model and checks that it calls the right tools with the rig
 
 ## What is tested
 
-- `resources/data/ai-eval/phrases.json`: 36 concepts, each with a French and an English phrase, so 72 requests.
-  30 are editor cases (one texture) and 6 are navigation cases (a selection of 4 textures: stone, iron ore,
+- `resources/data/ai-eval/phrases.json`: 42 concepts, each with a French and an English phrase, so 84 requests.
+  30 are editor cases (one texture), 6 are navigation cases (a selection of 4 textures: stone, iron ore,
   gold ore, oak planks), such as "assombris seulement les minerais" / "darken only the ores", which must call
-  `brightness` with a negative delta and a `textures` filter that picks the ores (`*ore*` glob or numbers 2 and 3).
+  `brightness` with a negative delta and a `textures` filter that picks the ores (`*ore*` glob or numbers 2 and 3),
+  and 6 are creation cases (the `sample_pack`: those 4 blocks plus an iron pickaxe and a diamond sword, in the
+  categories blocks, ores, tools and weapons), such as "rends tous les minerais du pack plus rouges", which must call
+  `apply_to_all` with a hue or color operation and a filter on the ores category (or an `ore` glob).
   Examples: "tourne de 90 à gauche" / "rotate it 90 degrees to the left" must call
   `rotate {degrees: 90, direction: "counterclockwise"}`.
 - Every request runs through the same runtime as the agent of its context: `runEditorAgent` with the image and
   grid of a 16x16 test texture (`sample16`), or `runNavigationAgent` with the selection list and contact sheet of
-  `sample_selection`; system prompt and tool list as in the app, up to 3 round trips. There is no conversation
+  `sample_selection`, or `runCreationAgent` with the categories and samples of `sample_pack`; system prompt and tool
+  list as in the app, up to 3 round trips. There is no conversation
   history, the style brief is empty, and nothing is written to disk.
 - A case passes when the tool calls the model made satisfy every matcher in `expect`. Read tools the model calls on
   the way are ignored.

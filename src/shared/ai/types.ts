@@ -129,6 +129,15 @@ export interface EditorAgentRequest {
   thinking?: ReasoningLevel
 }
 
+/** A request to the creation agent about the whole pack (PLAN 6.3, M6). */
+export interface CreationAgentRequest {
+  packId: string
+  message: string
+  model: ModelRef
+  language: Language
+  thinking?: ReasoningLevel
+}
+
 /** A request to the navigation agent about the grid selection. */
 export interface NavigationAgentRequest {
   packId: string
@@ -159,6 +168,27 @@ export interface ProposalStep {
   briefPatch?: StyleBriefPatch
   /** Bulk steps (navigation agent): textures of the selection the step changed. */
   targets?: string[]
+  /** Creation agent apply_to_all: which textures of the pack the step covers (shown in the plan). */
+  scope?: PlanScope
+  /** Creation agent apply_to_all: a few representative textures before / after this step. */
+  samples?: BulkItem[]
+  /** Creation agent set_pack_meta: the proposed name and/or description. */
+  packMeta?: PackMetaPatch
+}
+
+/** Filter of a creation-agent step (categories AND folders AND name glob) and how many textures it matched. */
+export interface PlanScope {
+  categories?: string[]
+  folders?: string[]
+  match?: string
+  /** Matched textures in total and per category id. */
+  count: number
+  byCategory: Record<string, number>
+}
+
+export interface PackMetaPatch {
+  name?: string
+  description?: string
 }
 
 export interface Proposal {
@@ -188,10 +218,41 @@ export interface BulkProposal {
   status: Proposal['status']
 }
 
-export type AnyProposal = Proposal | BulkProposal
+/**
+ * A creation-agent plan over the whole pack: category-by-category operations (applied in chunks, one history entry
+ * per step), style brief updates and pack name / description changes. Reviewed step by step (with samples), not
+ * texture by texture.
+ */
+export interface CreationProposal {
+  id: string
+  runId: string
+  agent: 'creation'
+  kind: 'plan'
+  packId: string
+  steps: ProposalStep[]
+  status: Proposal['status']
+}
+
+export type AnyProposal = Proposal | BulkProposal | CreationProposal
 
 export function isBulkProposal(p: AnyProposal): p is BulkProposal {
   return (p as BulkProposal).kind === 'bulk'
+}
+
+export function isCreationProposal(p: AnyProposal): p is CreationProposal {
+  return (p as CreationProposal).kind === 'plan'
+}
+
+export interface CreationApplyResult {
+  appliedStepIds: string[]
+  /** Texture writes over all steps (a texture changed by two steps counts twice). */
+  texturesWritten: number
+  /** History entries written (one per texture step that changed something). */
+  checkpoints: number
+  /** The user pressed Stop: the remaining texture steps were not applied. */
+  stopped: boolean
+  briefUpdated: boolean
+  metaUpdated: boolean
 }
 
 export interface BulkProposalApplyResult {

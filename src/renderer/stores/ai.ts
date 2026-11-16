@@ -5,6 +5,7 @@ import type {
   AgentKind,
   AnyProposal,
   BulkProposalApplyResult,
+  CreationApplyResult,
   ConversationTurn,
   ModelInfo,
   ModelRef,
@@ -200,6 +201,45 @@ export const useAiStore = defineStore('ai', () => {
     )
   }
 
+  /** Creation agent on the whole pack (PLAN M6). */
+  async function sendCreation(args: {
+    packId: string
+    message: string
+    model: ModelRef
+    language: Language
+    thinking?: ReasoningLevel
+  }): Promise<void> {
+    await startRun(session(args.packId, 'creation'), args.message, () =>
+      call('ai.creation.send', { ...args })
+    )
+  }
+
+  /** Applies the ticked steps of a creation plan (resolves when written, or after Stop). */
+  async function applyCreation(
+    packId: string,
+    proposalId: string,
+    acceptedStepIds: string[]
+  ): Promise<CreationApplyResult> {
+    const result = await call('ai.creation.apply', {
+      proposalId,
+      acceptedStepIds: [...acceptedStepIds]
+    })
+    const p = session(packId, 'creation').proposals[proposalId]
+    if (p) {
+      p.status =
+        result.appliedStepIds.length === 0
+          ? 'rejected'
+          : result.appliedStepIds.length === p.steps.length
+            ? 'applied'
+            : 'partially-applied'
+    }
+    return result
+  }
+
+  async function stopCreationApply(proposalId: string): Promise<void> {
+    await call('ai.creation.stopApply', { proposalId })
+  }
+
   /** Shows the user message and a "working" bubble, starts the run, then routes its events to the session. */
   async function startRun(
     s: AgentSession,
@@ -381,6 +421,9 @@ export const useAiStore = defineStore('ai', () => {
     sendEditor,
     sendNavigation,
     applyNavigation,
+    sendCreation,
+    applyCreation,
+    stopCreationApply,
     stop,
     applyProposal,
     rejectProposal,

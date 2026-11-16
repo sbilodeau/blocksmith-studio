@@ -21,6 +21,8 @@ export interface AiAgentHandlerDeps {
   previewModel?: (packId: string, path: string) => Promise<PreviewModel | null>
   /** Navigation agent: pack textures, their current PNG and the bulk service (omitted in some tests). */
   navigation?: EditorAgentServiceDeps['navigation']
+  /** Creation agent: pack name / description and plan progress (needs `navigation`). */
+  creation?: EditorAgentServiceDeps['creation']
   /** Main forwards these to the window as 'ai.event'. */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -44,6 +46,7 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
     readVanillaPng: deps.readVanillaPng,
     previewModel: deps.previewModel,
     ...(deps.navigation ? { navigation: deps.navigation } : {}),
+    ...(deps.creation ? { creation: deps.creation } : {}),
     emit: deps.emit,
     now: deps.now,
     newId: deps.newId
@@ -61,6 +64,11 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
   handle('ai.navigation.apply', ({ proposalId, acceptedStepIds, acceptedPaths }) =>
     agent.applyNavigation(proposalId, acceptedStepIds, acceptedPaths)
   )
+  handle('ai.creation.send', (request) => agent.sendCreation(request))
+  handle('ai.creation.apply', ({ proposalId, acceptedStepIds }) =>
+    agent.applyCreation(proposalId, acceptedStepIds)
+  )
+  handle('ai.creation.stopApply', ({ proposalId }) => agent.stopCreationApply(proposalId))
   handle('brief.get', ({ packId }) => brief.get(packId))
   handle('brief.update', ({ packId, patch }) => brief.update(packId, patch, 'user'))
 
