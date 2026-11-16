@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { delimiter, join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { PACK_TYPE_FILE_SUFFIX, type ExportPackType } from '@shared/model/pack'
 import type { McVersion } from '@shared/model/versions'
 import {
   isSnapshot,
@@ -17,8 +18,9 @@ import { exportPackZip } from '../../src/main/services/packs/exporter'
 import { makePng } from '../integration/packs-fixtures'
 
 /**
- * Every export target the app offers, exported with the real exporter and loaded by the game's own pack code from
- * real client jars (tests/real-jar/CheckPacks.java). Runs with `npm test` / `npm run test:real-jar` when a
+ * Every export target the app offers, as a resource pack and as a data pack, exported with the real exporter and
+ * loaded by the game's own pack code from real client jars (tests/real-jar/CheckPacks.java): resource packs with
+ * the resource pack loader, data packs with the data pack loader. Runs with `npm test` / `npm run test:real-jar` when a
  * Minecraft install is found; skipped otherwise (CI). No Mojang file is copied into the repo.
  *
  * Found automatically:
@@ -102,31 +104,41 @@ function findGames(): Game[] {
 const javaHome = dirs.length > 0 ? findJavaHome() : undefined
 const games = javaHome ? findGames() : []
 
-/** Every export the app can produce: each supported release for itself, newer snapshots, with/without the option. */
+/**
+ * Every export the app can produce: each supported release for itself and newer snapshots, as a resource pack and
+ * as a data pack, with and without "accept newer versions".
+ */
 interface ExportCase {
   file: string
   target: McVersion
   authoring: string
   acceptNewer: boolean
+  packType: ExportPackType
 }
 
 const targets = [...snapshotTargets(versionTable), ...supportedVersions(versionTable, new Date())]
 const cases: ExportCase[] = targets.flatMap((target) =>
-  [false, true].map((acceptNewer) => ({
-    file: `${target.id}${acceptNewer ? '-newer' : ''}.zip`,
-    target,
-    authoring: isSnapshot(target) ? latest(versionTable).id : target.id,
-    acceptNewer
-  }))
+  (['resource', 'data'] as const).flatMap((packType) =>
+    [false, true].map((acceptNewer) => ({
+      file: `${target.id}-${PACK_TYPE_FILE_SUFFIX[packType]}${acceptNewer ? '-newer' : ''}.zip`,
+      target,
+      authoring: isSnapshot(target) ? latest(versionTable).id : target.id,
+      acceptNewer,
+      packType
+    }))
+  )
 )
+const formatOf = (v: McVersion, t: ExportPackType): McVersion['resourcePack'] =>
+  t === 'data' ? v.dataPack : v.resourcePack
 
 type Format = [number, number]
 const cmp = (a: Format, b: Format): number => (a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1])
 
 /** What the game should say, from the range the exporter declares (see src/shared/versions/mcmeta.ts). */
 function expectedVerdict(game: McVersion, c: ExportCase): string {
-  const g: Format = [game.resourcePack.major, game.resourcePack.minor]
-  const { major, minor } = c.target.resourcePack
+  const gameFormat = formatOf(game, c.packType)
+  const g: Format = [gameFormat.major, gameFormat.minor]
+  const { major, minor } = formatOf(c.target, c.packType)
   const min: Format = [major, 0]
   const max: Format = c.acceptNewer
     ? [OPEN_MAX_FORMAT, Number.MAX_SAFE_INTEGER]
@@ -149,6 +161,11 @@ describe.skipIf(games.length === 0)('exported packs in real Minecraft jars', () 
       makePng(16, 16, [255, 0, 0, 255])
     )
     await writeFile(join(folder, 'pack.png'), makePng(16, 16, [0, 0, 255, 255]))
+    await mkdir(join(folder, 'data/blocksmith/tags/item'), { recursive: true })
+    await writeFile(
+      join(folder, 'data/blocksmith/tags/item/check.json'),
+      JSON.stringify({ values: ['minecraft:stone'] })
+    )
     for (const c of cases) {
       const project = {
         schemaVersion: 1,
@@ -166,9 +183,9 @@ describe.skipIf(games.length === 0)('exported packs in real Minecraft jars', () 
         c.target,
         out,
         { vanilla: { getIndex: async () => null } as never, onProgress: () => {} },
-        { acceptNewer: c.acceptNewer }
+        { acceptNewer: c.acceptNewer, packType: c.packType }
       )
-      zips.push(out)
+      zips.push(`${c.packType}:${out}`)
     }
   })
 
@@ -198,21 +215,23 @@ describe.skipIf(games.length === 0)('exported packs in real Minecraft jars', () 
       const lines = output.split(/\r?\n/).map((l) => l.split('\t'))
       const gameLine = lines.find((l) => l[0] === 'GAME')
       expect(gameLine?.[1]).toBe(game.version.id)
-      const { major, minor } = game.version.resourcePack
-      expect(gameLine?.[2]).toBe(`${major}.${minor}`)
+      const { resourcePack: r, dataPack: d } = game.version
+      expect(gameLine?.[2]).toBe(`${r.major}.${r.minor}`)
+      expect(gameLine?.[3]).toBe(`${d.major}.${d.minor}`)
 
       const verdicts = Object.fromEntries(
         lines.filter((l) => l[0] === 'PACK').map((l) => [l[1], `${l[2]} ${l[3]}`])
       )
       console.log(
         `Minecraft ${game.version.id}:\n` +
-          cases.map((c) => `  ${c.file.padEnd(30)} ${verdicts[c.file]}`).join('\n')
+          cases.map((c) => `  ${c.file.padEnd(46)} ${verdicts[c.file]}`).join('\n')
       )
       for (const c of cases) {
         expect(verdicts[c.file]?.split(' ')[0], c.file).toBe(expectedVerdict(game.version, c))
       }
-      // The export for the game's own version always loads.
-      expect(verdicts[`${game.version.id}.zip`]).toMatch(/^COMPATIBLE /)
+      // The exports for the game's own version always load.
+      expect(verdicts[`${game.version.id}-resource-pack.zip`]).toMatch(/^COMPATIBLE /)
+      expect(verdicts[`${game.version.id}-data-pack.zip`]).toMatch(/^COMPATIBLE /)
     }
   )
 })

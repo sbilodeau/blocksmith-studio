@@ -85,6 +85,7 @@ onBeforeUnmount(off)
 const exportSummary = computed(() =>
   exportReport.value
     ? t('export.summary', {
+        type: t(`export.packTypes.${exportReport.value.packType}`),
         files: exportReport.value.filesWritten,
         version: exportReport.value.targetVersion,
         path: exportReport.value.outputPath

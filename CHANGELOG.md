@@ -7,6 +7,10 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ### Export
 
+- New **Pack type** choice in the export dialog: **Resource pack** (textures, for Options > Resource Packs) or
+  **Data pack** (for a world's Data Packs screen; only the pack's `data/` files, since Minecraft never loads
+  textures from a data pack). The file name says which: `<name>-<version>-resource-pack.zip` or `-data-pack.zip`.
+  Both are checked in the real 26.3 and 26.4-snapshot-8 games
 - New export option **Also accept newer Minecraft versions (snapshots)**: the exported pack is listed as
   compatible by newer versions such as 26.4 snapshots (format 103) instead of "made for an older version". Pack
   formats were re-checked against the 26.3 jar, the Minecraft Wiki and the game code: 26.3 is format 97.1 and the

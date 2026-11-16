@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs'
-import type { ExportReport } from '@shared/model/pack'
+import type { ExportPackType, ExportReport } from '@shared/model/pack'
 import type { McVersion } from '@shared/model/versions'
 import { buildResourcePackMcmeta, type McmetaOptions } from '@shared/versions/mcmeta'
 import { isSnapshot } from '@shared/versions/support'
@@ -14,8 +14,24 @@ import { buildDeterministicZip } from './zip'
 /** Warning codes added by the exporter itself (validation codes live in validation.ts). */
 export const ExportWarningCode = {
   vanillaNotReady: 'export.vanillaNotReady',
-  invalidMcmeta: 'export.invalidMcmeta'
+  invalidMcmeta: 'export.invalidMcmeta',
+  /** Resource pack export: the pack's data/ files were left out (they belong in a data pack). */
+  dataLeftOut: 'export.dataLeftOut',
+  /** Data pack export: textures and other assets/ files were left out (data packs cannot contain them). */
+  assetsLeftOut: 'export.assetsLeftOut',
+  /** Data pack export: the pack has no data/ file, so the data pack is empty. */
+  noDataFiles: 'export.noDataFiles'
 } as const
+
+export interface ExportOptions extends McmetaOptions {
+  packType?: ExportPackType
+}
+
+/** Top-level folders kept per pack type (pack.mcmeta and pack.png are always written). */
+function belongsTo(packType: ExportPackType, path: string): boolean {
+  if (path === 'pack.png') return true
+  return packType === 'data' ? path.startsWith('data/') : !path.startsWith('data/')
+}
 
 /** ExportReport.skipped reasons. */
 export const ExportSkipReason = {
@@ -28,7 +44,9 @@ export interface ExportDeps {
 }
 
 /**
- * Exports a pack folder as a resource pack zip for `target` (the authoring version, or a newer snapshot).
+ * Exports a pack folder as a resource pack zip (default) or a data pack zip for `target` (the authoring version, or a
+ * newer snapshot). A resource pack gets everything but data/; a data pack gets only data/ (Minecraft never loads
+ * textures from a data pack) and the target's data pack format.
  * - collects the pack files, excluding hidden entries (.blocksmith/, .git...), OS junk and files byte-identical to
  *   the target's vanilla (Minecraft falls back to vanilla for those). For a snapshot target the authoring
  *   version's vanilla is used: snapshots are not extracted.
@@ -40,8 +58,9 @@ export async function exportPackZip(
   target: McVersion,
   outputPath: string,
   deps: ExportDeps,
-  options: McmetaOptions = {}
+  options: ExportOptions = {}
 ): Promise<ExportReport> {
+  const packType = options.packType ?? 'resource'
   const { vanilla, onProgress } = deps
   const warnings: ExportReport['warnings'] = []
   const skipped: ExportReport['skipped'] = []
@@ -63,12 +82,17 @@ export async function exportPackZip(
   })
 
   const files: PackFile[] = []
+  let leftOut = 0
   for (const file of loaded) {
     if (file.path === 'pack.mcmeta') {
       existingMcmeta = parseJson(file.data)
       if (existingMcmeta === undefined) {
         warnings.push({ code: ExportWarningCode.invalidMcmeta, path: 'pack.mcmeta' })
       }
+      continue
+    }
+    if (!belongsTo(packType, file.path)) {
+      leftOut++
       continue
     }
     const vanillaEntry = file.path === 'pack.png' ? undefined : index?.entries[file.path]
@@ -79,8 +103,17 @@ export async function exportPackZip(
     files.push(file)
   }
 
+  if (leftOut > 0) {
+    warnings.push({
+      code: packType === 'data' ? ExportWarningCode.assetsLeftOut : ExportWarningCode.dataLeftOut
+    })
+  }
+  if (packType === 'data' && !files.some((f) => f.path.startsWith('data/'))) {
+    warnings.push({ code: ExportWarningCode.noDataFiles })
+  }
+
   const mcmeta = mergeMcmeta(
-    buildResourcePackMcmeta(location.project.description, target, options),
+    buildResourcePackMcmeta(location.project.description, target, { ...options, packType }),
     existingMcmeta
   )
   files.push({ path: 'pack.mcmeta', data: toJsonBytes(mcmeta) })
@@ -95,6 +128,7 @@ export async function exportPackZip(
   return {
     outputPath,
     targetVersion: target.id,
+    packType,
     filesWritten: files.length,
     sizeBytes: zip.byteLength,
     skipped,

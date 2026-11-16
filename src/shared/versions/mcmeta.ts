@@ -32,6 +32,12 @@ export const OPEN_MAX_FORMAT = 999
 export interface McmetaOptions {
   /** Also declare every newer format as supported (snapshots, future releases). */
   acceptNewer?: boolean
+  /**
+   * 'data' writes the target's data pack format instead of its resource pack format. The same rules apply: data
+   * packs switched to min_format / max_format in the same release (1.21.9, data format 82+), so the target's
+   * mcmetaStyle is valid for both.
+   */
+  packType?: 'resource' | 'data'
 }
 
 export function buildResourcePackMcmeta(
@@ -39,7 +45,7 @@ export function buildResourcePackMcmeta(
   target: McVersion,
   options: McmetaOptions = {}
 ): Record<string, unknown> {
-  const { major, minor } = target.resourcePack
+  const { major, minor } = options.packType === 'data' ? target.dataPack : target.resourcePack
   if (target.mcmetaStyle === 'pack_format') {
     return options.acceptNewer
       ? {

@@ -60,6 +60,33 @@ describe('buildResourcePackMcmeta', () => {
     }
   })
 
+  describe('packType data (data pack export)', () => {
+    it('writes the data pack format: 26.3 is 121.0', () => {
+      expect(buildResourcePackMcmeta('x', version('26.3'), { packType: 'data' })).toEqual({
+        pack: { pack_format: 121, min_format: [121, 0], max_format: [121, 0], description: 'x' }
+      })
+    })
+
+    it('uses pack_format alone for pre-1.21.9 targets (1.21.4 data is 61)', () => {
+      expect(buildResourcePackMcmeta('x', version('1.21.4'), { packType: 'data' })).toEqual({
+        pack: { pack_format: 61, description: 'x' }
+      })
+    })
+
+    it('combines with acceptNewer', () => {
+      expect(
+        buildResourcePackMcmeta('x', version('26.3'), { packType: 'data', acceptNewer: true })
+      ).toEqual({
+        pack: {
+          pack_format: 121,
+          min_format: [121, 0],
+          max_format: OPEN_MAX_FORMAT,
+          description: 'x'
+        }
+      })
+    })
+  })
+
   describe('acceptNewer (export option for snapshots and future versions)', () => {
     it('opens max_format for 1.21.9+ targets, keeping pack_format and min_format', () => {
       expect(buildResourcePackMcmeta('x', version('26.3'), { acceptNewer: true })).toEqual({

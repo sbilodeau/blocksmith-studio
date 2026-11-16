@@ -120,8 +120,9 @@ Verified on 2026-11-15 against <https://minecraft.wiki/w/Pack.mcmeta> and
     pack, and `supported_formats` **must be absent** otherwise.
   - Overlay entries follow the same rules (`min_format` / `max_format`, legacy `formats` only for old ranges).
 
-`buildResourcePackMcmeta(description, target)` (`src/shared/versions/mcmeta.ts`) writes the minimal file the
-target accepts:
+`buildResourcePackMcmeta(description, target, options)` (`src/shared/versions/mcmeta.ts`) writes the file the
+target accepts. With `packType: 'data'` it uses the target's data pack format instead (26.3: 121.0); data packs
+switched to `min_format` / `max_format` in the same release (1.21.9, data format 82+), so the same styles apply:
 
 | Target style  | Output                                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------------------------- |
@@ -153,8 +154,9 @@ dialog says so. The option only changes the exported zip, never the pack folder'
 ### Checked in real game jars
 
 `tests/real-jar/pack-compat.test.ts` exports every target the app offers (each supported release for itself,
-newer snapshots, with and without "Also accept newer Minecraft versions") with the real exporter, then loads the
-zips with the game's own pack code from real client jars (`tests/real-jar/CheckPacks.java`, which calls
+newer snapshots; as a resource pack and as a data pack; with and without "Also accept newer Minecraft versions")
+with the real exporter, then loads the zips with the game's own pack code from real client jars (resource packs
+with the resource pack loader, data packs with the data pack loader) (`tests/real-jar/CheckPacks.java`, which calls
 `Pack.readMetaAndCreate` and prints `COMPATIBLE`, `TOO_OLD` or `TOO_NEW`, as the resource pack screen shows it).
 Each verdict must match the range the exporter declares, and the export for the game's own version must be
 compatible.
@@ -168,7 +170,8 @@ compatible.
 - Only 26.1+ jars can run the check (older jars are obfuscated); zips for older targets are still loaded by the
   26.x games.
 
-Last run (2026-11-16): 26.3 and 26.4-snapshot-8 jars, 28 exports each, all as expected. A 26.3 export is
+Last run (2026-11-16): 26.3 and 26.4-snapshot-8 jars, 56 exports each (28 resource packs, 28 data packs), all as
+expected. A 26.3 export is
 compatible in 26.3 and "made for an older version" in the snapshot unless the option is ticked; a snapshot export
 is "made for a newer version" in 26.3.
 

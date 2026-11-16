@@ -8,11 +8,13 @@ import {
   NForm,
   NFormItem,
   NModal,
+  NRadio,
+  NRadioGroup,
   NSelect,
   NSpace,
   type SelectOption
 } from 'naive-ui'
-import type { ExportReport } from '@shared/model/pack'
+import type { ExportPackType, ExportReport } from '@shared/model/pack'
 import { exportTargets, findVersion, isSnapshot, versionTable } from '@shared/versions'
 import JobProgressBar from '../common/JobProgressBar.vue'
 import type { PackStore } from '../../stores/pack'
@@ -30,6 +32,12 @@ const exporting = ref(false)
 const acceptNewer = computed({
   get: () => props.store.exportAcceptNewer,
   set: (v: boolean) => props.store.setExportAcceptNewer(v)
+})
+
+/** Resource pack (Options > Resource Packs) or data pack (a world's Data Packs). Remembered per pack tab. */
+const packType = computed({
+  get: () => props.store.exportPackType,
+  set: (v: ExportPackType) => props.store.setExportPackType(v)
 })
 
 const authoring = computed(() => props.store.summary?.authoringVersion ?? null)
@@ -53,7 +61,10 @@ async function run(): Promise<void> {
   if (!target.value) return
   exporting.value = true
   try {
-    const report = await props.store.exportPack(target.value, { acceptNewer: acceptNewer.value })
+    const report = await props.store.exportPack(target.value, {
+      acceptNewer: acceptNewer.value,
+      packType: packType.value
+    })
     if (report) {
       show.value = false
       emit('exported', report)
@@ -76,6 +87,16 @@ async function run(): Promise<void> {
     data-testid="export-dialog"
   >
     <n-form label-placement="top">
+      <n-form-item :label="t('export.packType')" :feedback="t(`export.packTypeHint.${packType}`)">
+        <n-radio-group v-model:value="packType" data-testid="export-pack-type">
+          <n-radio value="resource" data-testid="export-pack-type-resource">
+            {{ t('export.packTypes.resource') }}
+          </n-radio>
+          <n-radio value="data" data-testid="export-pack-type-data">
+            {{ t('export.packTypes.data') }}
+          </n-radio>
+        </n-radio-group>
+      </n-form-item>
       <n-form-item :label="t('export.target')" :feedback="t('export.targetHint')">
         <n-select v-model:value="target" :options="options" data-testid="export-target" />
       </n-form-item>

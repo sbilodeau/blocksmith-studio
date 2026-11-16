@@ -88,9 +88,20 @@ export interface ImportReport {
   warnings: Array<{ code: string; path?: string }>
 }
 
+/** What an export produces: a resource pack (assets/) or a data pack (data/). */
+export const ExportPackTypeSchema = z.enum(['resource', 'data'])
+export type ExportPackType = z.infer<typeof ExportPackTypeSchema>
+
+/** File name suffix per pack type: "<name>-<version>-resource-pack.zip" / "-data-pack.zip". */
+export const PACK_TYPE_FILE_SUFFIX: Record<ExportPackType, string> = {
+  resource: 'resource-pack',
+  data: 'data-pack'
+}
+
 export interface ExportReport {
   outputPath: string
   targetVersion: string
+  packType: ExportPackType
   filesWritten: number
   sizeBytes: number
   skipped: Array<{ path: string; reason: string }>

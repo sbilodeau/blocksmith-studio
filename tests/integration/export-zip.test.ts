@@ -31,10 +31,15 @@ describe('export .zip', () => {
     await env.cleanup()
   })
 
-  it('suggests "<slug>-<version>.zip" and only allows the authoring version or a newer snapshot', async () => {
-    await expect(env.service.exportFileName(pack.id, '26.3')).resolves.toBe('fire-pack-26.3.zip')
+  it('suggests "<slug>-<version>-<type>-pack.zip" and only allows the authoring version or a newer snapshot', async () => {
+    await expect(env.service.exportFileName(pack.id, '26.3')).resolves.toBe(
+      'fire-pack-26.3-resource-pack.zip'
+    )
+    await expect(env.service.exportFileName(pack.id, '26.3', 'data')).resolves.toBe(
+      'fire-pack-26.3-data-pack.zip'
+    )
     await expect(env.service.exportFileName(pack.id, '26.4-snapshot-8')).resolves.toBe(
-      'fire-pack-26.4-snapshot-8.zip'
+      'fire-pack-26.4-snapshot-8-resource-pack.zip'
     )
     await expect(env.service.exportFileName(pack.id, '1.21.4')).rejects.toMatchObject({
       code: 'export.targetNotSupported',
@@ -136,6 +141,48 @@ describe('export .zip', () => {
       skipped: [{ path: T('block/dirt.png'), reason: 'identicalToVanilla' }],
       warnings: []
     })
+  })
+
+  it('keeps data/ files out of a resource pack and puts only them in a data pack, with its format', async () => {
+    await put(pack.folder, T('block/stone.png'), makePng(16, 16, [255, 0, 0, 255]))
+    await put(
+      pack.folder,
+      'data/fire/recipe/torch.json',
+      json({ type: 'minecraft:crafting_shaped' })
+    )
+
+    const resourceOut = join(env.root, 'r.zip')
+    const resource = await env.service.exportPack(pack.id, '26.3', resourceOut)
+    const rzip = unzipSync(new Uint8Array(await readFile(resourceOut)))
+    expect(Object.keys(rzip)).toEqual(['pack.mcmeta', 'pack.png', T('block/stone.png')])
+    expect(resource).toMatchObject({
+      packType: 'resource',
+      warnings: [{ code: 'export.dataLeftOut' }]
+    })
+
+    const dataOut = join(env.root, 'd.zip')
+    const data = await env.service.exportPack(pack.id, '26.3', dataOut, { packType: 'data' })
+    const dzip = unzipSync(new Uint8Array(await readFile(dataOut)))
+    expect(Object.keys(dzip)).toEqual(['pack.mcmeta', 'pack.png', 'data/fire/recipe/torch.json'])
+    // The fixture's 26.3 data pack format is 120.0.
+    expect(JSON.parse(strFromU8(dzip['pack.mcmeta'])).pack).toEqual({
+      pack_format: 120,
+      min_format: [120, 0],
+      max_format: [120, 0],
+      description: 'Hot stuff'
+    })
+    expect(data).toMatchObject({ packType: 'data', warnings: [{ code: 'export.assetsLeftOut' }] })
+  })
+
+  it('warns that a data pack is empty when the pack has no data/ files', async () => {
+    await put(pack.folder, T('block/stone.png'), makePng(16, 16, [255, 0, 0, 255]))
+    const report = await env.service.exportPack(pack.id, '26.3', join(env.root, 'e.zip'), {
+      packType: 'data'
+    })
+    expect(report.warnings.map((w) => w.code)).toEqual([
+      'export.assetsLeftOut',
+      'export.noDataFiles'
+    ])
   })
 
   it('produces byte-identical zips for the same content', async () => {

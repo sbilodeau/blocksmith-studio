@@ -248,10 +248,19 @@
     "changedOnly": "Only changed and added files are exported. Minecraft uses its own textures for everything else.",
     "run": "Export .zip",
     "done": "Export complete",
-    "summary": "{files} files exported for Minecraft {version} to {path}",
+    "summary": "{type}: {files} files exported for Minecraft {version} to {path}",
     "acceptNewer": "Also accept newer Minecraft versions (snapshots)",
     "acceptNewerHint": "Newer versions, such as snapshots, will list the pack as compatible instead of \"made for an older version\". The app cannot check that your textures still match those versions.",
-    "snapshotLabel": "{version} (snapshot)"
+    "snapshotLabel": "{version} (snapshot)",
+    "packType": "Pack type",
+    "packTypes": {
+      "resource": "Resource pack",
+      "data": "Data pack"
+    },
+    "packTypeHint": {
+      "resource": "Textures and models. Install it from Options > Resource Packs (or the resourcepacks folder).",
+      "data": "For a world's Data Packs screen (or its datapacks folder). Data packs cannot contain textures: only the files in the pack's data/ folder are exported."
+    }
   },
   "import": {
     "title": "Import complete",
@@ -299,7 +308,10 @@
       "invalidJson": "Invalid JSON file",
       "invalidPath": "Path not allowed by Minecraft (use lowercase letters, digits, _ - . /)",
       "nonPowerOfTwo": "Texture size is not a power of two",
-      "animationMismatch": "Animated texture height does not match its frames"
+      "animationMismatch": "Animated texture height does not match its frames",
+      "dataLeftOut": "The pack's data/ files were left out (export a data pack for them).",
+      "assetsLeftOut": "Textures and other assets/ files were left out: Minecraft does not load them from a data pack.",
+      "noDataFiles": "This pack has no data/ files yet, so the data pack is empty."
     },
     "identicalToVanilla": "Skipped: identical to vanilla"
   },

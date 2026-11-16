@@ -2,6 +2,7 @@ import { defineStore, getActivePinia } from 'pinia'
 import { computed, ref } from 'vue'
 import type {
   CategorySummary,
+  ExportPackType,
   ExportReport,
   PackSummary,
   TextureEntry,
@@ -46,6 +47,11 @@ export function usePackStore(packId: string) {
     const exportAcceptNewer = ref(false)
     function setExportAcceptNewer(on: boolean): void {
       exportAcceptNewer.value = on
+    }
+    /** Export pack type (kept while the tab is open). */
+    const exportPackType = ref<ExportPackType>('resource')
+    function setExportPackType(type: ExportPackType): void {
+      exportPackType.value = type
     }
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
@@ -138,13 +144,14 @@ export function usePackStore(packId: string) {
 
     async function exportPack(
       targetVersion: string,
-      options: { acceptNewer?: boolean } = {}
+      options: { acceptNewer?: boolean; packType?: ExportPackType } = {}
     ): Promise<ExportReport | null> {
       try {
         return await call('pack.export', {
           packId,
           targetVersion,
-          ...(options.acceptNewer ? { acceptNewer: true } : {})
+          ...(options.acceptNewer ? { acceptNewer: true } : {}),
+          ...(options.packType ? { packType: options.packType } : {})
         })
       } finally {
         useJobsStore().clear('pack.export')
@@ -169,6 +176,8 @@ export function usePackStore(packId: string) {
       aiPanel,
       exportAcceptNewer,
       setExportAcceptNewer,
+      exportPackType,
+      setExportPackType,
       changedCount,
       visible,
       load,

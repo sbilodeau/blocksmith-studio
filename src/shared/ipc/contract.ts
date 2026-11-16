@@ -5,6 +5,7 @@ import type { UpdaterStatus } from '../model/updater'
 import type { MinecraftInstall, VanillaAvailability } from '../model/vanilla'
 import {
   CreatePackInputSchema,
+  ExportPackTypeSchema,
   type CategorySummary,
   type ExportReport,
   type ImportReport,
@@ -97,7 +98,9 @@ export const inputSchemas = {
   'pack.export': PackRef.extend({
     targetVersion: VersionId,
     /** Also declare newer formats (snapshots, future releases) as supported in pack.mcmeta. */
-    acceptNewer: z.boolean().optional()
+    acceptNewer: z.boolean().optional(),
+    /** Resource pack (default) or data pack. */
+    packType: ExportPackTypeSchema.optional()
   }).strict(),
   'texture.read': TextureRef,
   'texture.save': TextureRef.extend({

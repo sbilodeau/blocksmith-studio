@@ -3,7 +3,14 @@ import { mkdir, readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { strFromU8, unzipSync, zipSync } from 'fflate'
 import { encode } from 'fast-png'
-import { cleanup, launchApp, stubOpenDialog, stubSaveDialog, type LaunchedApp } from './app'
+import {
+  cleanup,
+  lastSaveDefaultName,
+  launchApp,
+  stubOpenDialog,
+  stubSaveDialog,
+  type LaunchedApp
+} from './app'
 
 type MakeFixtureJar = (outPath: string, versionId: string) => Promise<void>
 
@@ -171,6 +178,25 @@ test('imports a zip, marks modified textures and exports only changed files', as
     strFromU8(unzipSync(new Uint8Array(await readFile(snapPath)))['pack.mcmeta'])
   )
   expect(snap.pack).toMatchObject({ pack_format: 103, min_format: [103, 0], max_format: [103, 0] })
+  expect(await lastSaveDefaultName(app)).toBe('my-pack-26.4-snapshot-8-resource-pack.zip')
+
+  // Data pack: data pack format, no textures, "data-pack" in the file name.
+  const dataPath = join(root, 'export-data.zip')
+  await stubSaveDialog(app, dataPath)
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await page.getByTestId('export-open').click()
+  await page.getByTestId('export-pack-type-data').click()
+  await page.getByTestId('export-run').click()
+  await expect(page.getByTestId('report-dialog')).toContainText('Data pack')
+  await expect(page.getByTestId('report-dialog')).toContainText('Textures and other assets/')
+  expect(await lastSaveDefaultName(app)).toBe('my-pack-26.3-data-pack.zip')
+  const dataZip = unzipSync(new Uint8Array(await readFile(dataPath)))
+  expect(Object.keys(dataZip).sort()).toEqual(['pack.mcmeta', 'pack.png'])
+  expect(JSON.parse(strFromU8(dataZip['pack.mcmeta'])).pack).toMatchObject({
+    pack_format: 121,
+    min_format: [121, 0],
+    max_format: [121, 0]
+  })
 })
 
 test('deleting a pack moves it out of the list', async () => {

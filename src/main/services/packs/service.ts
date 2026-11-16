@@ -4,8 +4,10 @@ import { packAssetUrl } from '@shared/assets'
 import { getDefaultCategoryEngine, type CategoryEngine } from '@shared/categories'
 import {
   CreatePackInputSchema,
+  PACK_TYPE_FILE_SUFFIX,
   type CategorySummary,
   type CreatePackInput,
+  type ExportPackType,
   type ExportReport,
   type ImportReport,
   type PackSummary,
@@ -79,12 +81,12 @@ export interface PackService {
   categories(packId: string): Promise<CategorySummary[]>
   importZip(zipPath: string): Promise<ImportReport>
   /** Checks that `targetVersion` can be exported and returns the default file name "<slug>-<version>.zip". */
-  exportFileName(packId: string, targetVersion: string): Promise<string>
+  exportFileName(packId: string, targetVersion: string, packType?: ExportPackType): Promise<string>
   exportPack(
     packId: string,
     targetVersion: string,
     outputPath: string,
-    options?: { acceptNewer?: boolean }
+    options?: { acceptNewer?: boolean; packType?: ExportPackType }
   ): Promise<ExportReport>
 }
 
@@ -332,10 +334,10 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       return { ...report, pack: await summarize(location) }
     },
 
-    async exportFileName(packId, targetVersion) {
+    async exportFileName(packId, targetVersion, packType = 'resource') {
       const location = await requireLocation(packId)
       checkExportTarget(location, targetVersion)
-      return `${slugify(location.project.name)}-${targetVersion}.zip`
+      return `${slugify(location.project.name)}-${targetVersion}-${PACK_TYPE_FILE_SUFFIX[packType]}.zip`
     },
 
     async exportPack(packId, targetVersion, outputPath, options = {}) {

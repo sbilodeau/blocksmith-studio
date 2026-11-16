@@ -77,9 +77,19 @@ export async function stubOpenDialog(app: ElectronApplication, path: string): Pr
 
 export async function stubSaveDialog(app: ElectronApplication, path: string): Promise<void> {
   await app.evaluate(({ dialog }, p) => {
-    dialog.showSaveDialog = (async () => ({
-      canceled: false,
-      filePath: p
-    })) as typeof dialog.showSaveDialog
+    dialog.showSaveDialog = (async (...args: unknown[]) => {
+      const options = args.find((a) => a && typeof a === 'object' && 'defaultPath' in a) as
+        { defaultPath?: string } | undefined
+      ;(globalThis as Record<string, unknown>)['__lastSaveDefaultPath'] = options?.defaultPath
+      return { canceled: false, filePath: p }
+    }) as typeof dialog.showSaveDialog
   }, path)
+}
+
+/** File name the app suggested in the last (stubbed) save dialog. */
+export async function lastSaveDefaultName(app: ElectronApplication): Promise<string> {
+  const full = await app.evaluate(
+    () => (globalThis as Record<string, unknown>)['__lastSaveDefaultPath'] as string | undefined
+  )
+  return (full ?? '').split(/[\\/]/).pop() ?? ''
 }

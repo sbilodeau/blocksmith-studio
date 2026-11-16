@@ -248,10 +248,19 @@
     "changedOnly": "Seuls les fichiers modifiés et ajoutés sont exportés. Minecraft utilise ses propres textures pour tout le reste.",
     "run": "Exporter le .zip",
     "done": "Export terminé",
-    "summary": "{files} fichiers exportés pour Minecraft {version} vers {path}",
+    "summary": "{type} : {files} fichiers exportés pour Minecraft {version} dans {path}",
     "acceptNewer": "Accepter aussi les versions plus récentes de Minecraft (snapshots)",
     "acceptNewerHint": "Les versions plus récentes, comme les snapshots, afficheront le pack comme compatible au lieu de « conçu pour une version plus ancienne ». L'application ne peut pas vérifier que vos textures correspondent encore à ces versions.",
-    "snapshotLabel": "{version} (snapshot)"
+    "snapshotLabel": "{version} (snapshot)",
+    "packType": "Type de pack",
+    "packTypes": {
+      "resource": "Pack de ressources",
+      "data": "Pack de données"
+    },
+    "packTypeHint": {
+      "resource": "Textures et modèles. Installez-le depuis Options > Packs de ressources (ou le dossier resourcepacks).",
+      "data": "Pour l'écran Packs de données d'un monde (ou son dossier datapacks). Un pack de données ne peut pas contenir de textures : seuls les fichiers du dossier data/ du pack sont exportés."
+    }
   },
   "import": {
     "title": "Importation terminée",
@@ -299,7 +308,10 @@
       "invalidJson": "Fichier JSON invalide",
       "invalidPath": "Chemin refusé par Minecraft (utilisez des minuscules, chiffres, _ - . /)",
       "nonPowerOfTwo": "La taille de la texture n'est pas une puissance de deux",
-      "animationMismatch": "La hauteur de la texture animée ne correspond pas à ses images"
+      "animationMismatch": "La hauteur de la texture animée ne correspond pas à ses images",
+      "dataLeftOut": "Les fichiers data/ du pack n'ont pas été inclus (exportez un pack de données pour eux).",
+      "assetsLeftOut": "Les textures et autres fichiers assets/ n'ont pas été inclus : Minecraft ne les charge pas depuis un pack de données.",
+      "noDataFiles": "Ce pack n'a pas encore de fichiers data/ : le pack de données est vide."
     },
     "identicalToVanilla": "Ignoré : identique à vanilla"
   },
