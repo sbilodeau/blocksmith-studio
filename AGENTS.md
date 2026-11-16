@@ -15,34 +15,34 @@ pixel editor, a live 3D preview and AI agents that only propose changes the user
 
 ## Commands
 
-| Command                    | What it does                                                          |
-| -------------------------- | --------------------------------------------------------------------- |
-| `npm run dev`              | Runs the app with hot reload                                          |
-| `npm run lint`             | ESLint, including the no-raw-text i18n rule                           |
-| `npm run typecheck`        | `tsc` for main, preload and shared; `vue-tsc` for the renderer        |
-| `npm test`                 | Vitest: unit, integration and component tests                         |
-| `npm run test:e2e`         | Builds, then runs Playwright against the real Electron app            |
-| `npm run format`           | Prettier (single quotes, no semicolons, 100 columns)                  |
-| `npm run test:ai`          | Live FR/EN model evaluation; skipped without a provider key           |
-| `npm run test:real-jar`    | Checks against a local Minecraft jar; skipped without one             |
+| Command                 | What it does                                                   |
+| ----------------------- | -------------------------------------------------------------- |
+| `npm run dev`           | Runs the app with hot reload                                   |
+| `npm run lint`          | ESLint, including the no-raw-text i18n rule                    |
+| `npm run typecheck`     | `tsc` for main, preload and shared; `vue-tsc` for the renderer |
+| `npm test`              | Vitest: unit, integration and component tests                  |
+| `npm run test:e2e`      | Builds, then runs Playwright against the real Electron app     |
+| `npm run format`        | Prettier (single quotes, no semicolons, 100 columns)           |
+| `npm run test:ai`       | Live FR/EN model evaluation; skipped without a provider key    |
+| `npm run test:real-jar` | Checks against a local Minecraft jar; skipped without one      |
 
 Before you call a change done, run `npm run lint && npm run typecheck && npm test`. Also run `npm run test:e2e`
 when you touched the UI, IPC or main-process wiring.
 
 ## Layout
 
-| Path                           | Contents                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| `src/main/`                    | Main process: services (packs, vanilla, history, AI, bulk), IPC handlers  |
-| `src/preload/`                 | `window.blocksmith` bridge: `invoke` and `on`, whitelisted channels only  |
-| `src/renderer/`                | Vue app: views, components, Pinia stores (one pack store per tab)         |
-| `src/shared/`                  | Pure TypeScript used everywhere: models, zod schemas, image core, tools   |
-| `src/shared/ipc/`              | `channels.ts` (whitelist) and `contract.ts` (input schemas, output types) |
-| `src/shared/ai/tools/`         | AI tool registry: zod schema, description, `describe()`, `execute()`      |
-| `src/shared/locales/`          | `en.json` and `fr.json` (same keys)                                       |
-| `resources/data/`              | Hand-maintained data: versions, categories, entity layers, prices, evals  |
-| `tests/`                       | `unit/`, `integration/`, `component/`, `e2e/`, `ai-eval/`, `real-jar/`    |
-| `tests/fixtures/`              | Synthetic jar builder, recorded provider streams, fake HTTP server        |
+| Path                   | Contents                                                                  |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `src/main/`            | Main process: services (packs, vanilla, history, AI, bulk), IPC handlers  |
+| `src/preload/`         | `window.blocksmith` bridge: `invoke` and `on`, whitelisted channels only  |
+| `src/renderer/`        | Vue app: views, components, Pinia stores (one pack store per tab)         |
+| `src/shared/`          | Pure TypeScript used everywhere: models, zod schemas, image core, tools   |
+| `src/shared/ipc/`      | `channels.ts` (whitelist) and `contract.ts` (input schemas, output types) |
+| `src/shared/ai/tools/` | AI tool registry: zod schema, description, `describe()`, `execute()`      |
+| `src/shared/locales/`  | `en.json` and `fr.json` (same keys)                                       |
+| `resources/data/`      | Hand-maintained data: versions, categories, entity layers, prices, evals  |
+| `tests/`               | `unit/`, `integration/`, `component/`, `e2e/`, `ai-eval/`, `real-jar/`    |
+| `tests/fixtures/`      | Synthetic jar builder, recorded provider streams, fake HTTP server        |
 
 ## Rules that must not be broken
 

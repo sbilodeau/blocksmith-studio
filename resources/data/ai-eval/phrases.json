@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "FR/EN phrase -> expected tool calls for the editor agent (PLAN 6.8). Fixture: a 16x16 texture.",
+  "description": "FR/EN phrase -> expected tool calls (PLAN 6.8). Editor cases run on one 16x16 texture (fixture = image name); navigation cases run on a selection of textures (fixture = selection name, see evalSelection in src/main/services/ai/eval/report.ts).",
   "cases": [
     {
       "id": "rotate-left-90",
@@ -556,6 +556,149 @@
             "delta": {
               "lt": 0
             }
+          }
+        }
+      ]
+    },
+    {
+      "id": "nav-redder",
+      "context": "navigation",
+      "fixture": "sample_selection",
+      "fr": "mets toutes ces textures plus rouges",
+      "en": "make all these textures redder",
+      "expect": [
+        {
+          "anyTool": ["hue_shift", "apply_palette", "replace_color"]
+        }
+      ]
+    },
+    {
+      "id": "nav-ores-darker",
+      "context": "navigation",
+      "fixture": "sample_selection",
+      "fr": "assombris seulement les minerais",
+      "en": "darken only the ores",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "brightness",
+              "args": {
+                "delta": {
+                  "lt": 0
+                },
+                "textures.match": {
+                  "containsAny": ["ore"]
+                }
+              }
+            },
+            {
+              "tool": "brightness",
+              "args": {
+                "delta": {
+                  "lt": 0
+                },
+                "textures.indices": {
+                  "containsAll": ["2", "3"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nav-brighter-all",
+      "context": "navigation",
+      "fixture": "sample_selection",
+      "fr": "éclaircis toute la sélection",
+      "en": "brighten the whole selection",
+      "expect": [
+        {
+          "tool": "brightness",
+          "args": {
+            "delta": {
+              "gt": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "nav-outline-planks",
+      "context": "navigation",
+      "fixture": "sample_selection",
+      "fr": "ajoute un contour noir aux planches",
+      "en": "add a black outline to the planks",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "outline",
+              "args": {
+                "color": {
+                  "color": "black"
+                },
+                "textures.match": {
+                  "containsAny": ["plank"]
+                }
+              }
+            },
+            {
+              "tool": "outline",
+              "args": {
+                "color": {
+                  "color": "black"
+                },
+                "textures.indices": {
+                  "containsAll": ["4"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nav-duller",
+      "context": "navigation",
+      "fixture": "sample_selection",
+      "fr": "rends tout plus terne",
+      "en": "make everything duller",
+      "expect": [
+        {
+          "anyOf": [
+            {
+              "tool": "saturation",
+              "args": {
+                "delta": {
+                  "lt": 0
+                }
+              }
+            },
+            {
+              "tool": "brightness",
+              "args": {
+                "delta": {
+                  "lt": 0
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nav-flip-all",
+      "context": "navigation",
+      "fixture": "sample_selection",
+      "fr": "retourne toutes les textures horizontalement",
+      "en": "flip every texture horizontally",
+      "expect": [
+        {
+          "tool": "flip",
+          "args": {
+            "axis": "horizontal"
           }
         }
       ]

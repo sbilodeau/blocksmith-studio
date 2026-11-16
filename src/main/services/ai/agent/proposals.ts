@@ -1,6 +1,12 @@
 import { decodePng, encodePng, type RgbaImage } from '@shared/image'
 import { getTool } from '@shared/ai/tools'
-import { isBulkProposal, type AgentKind, type AnyProposal, type Proposal, type ProposalStep } from '@shared/ai/types'
+import {
+  isBulkProposal,
+  type AgentKind,
+  type AnyProposal,
+  type Proposal,
+  type ProposalStep
+} from '@shared/ai/types'
 import type { StyleBrief, StyleBriefPatch } from '@shared/model/brief'
 import { AppErrorException } from '../../../ipc/registry'
 

@@ -4,6 +4,7 @@ import type { UpdaterStatus } from '@shared/model/updater'
 import type { CategorySummary, PackSummary, TextureEntry } from '@shared/model/pack'
 import type { VanillaAvailability } from '@shared/model/vanilla'
 import type { EvalReport, ModelInfo, ModelRef, ProviderStatus } from '@shared/ai/types'
+import type { BulkPreview } from '@shared/model/bulk'
 
 /**
  * In-memory fake of the preload bridge (`window.blocksmith`) for component tests.
@@ -20,6 +21,8 @@ export interface FakeBridge {
   models: ModelInfo[]
   /** Settings > "Test models" results, by model id. */
   evalReports: Record<string, EvalReport>
+  /** Result of bulk.preview (manual bulk action). */
+  bulkPreview: BulkPreview | null
   calls: Array<{ channel: string; payload: unknown }>
   emit(channel: string, payload: unknown): void
 }
@@ -36,6 +39,7 @@ export const fakeBridge: FakeBridge = {
   providers: [],
   models: [],
   evalReports: {},
+  bulkPreview: null,
   calls: [],
   emit(channel, payload) {
     listeners.get(channel)?.forEach((l) => l(payload))
@@ -61,6 +65,9 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
     return fakeBridge.evalReports[model.modelId]
   },
   'ai.eval.stop': () => undefined,
+  'bulk.preview': () => fakeBridge.bulkPreview,
+  'bulk.apply': (input) => ({ applied: (input as { paths: string[] }).paths.length }),
+  'bulk.discard': () => undefined,
   'updater.getStatus': () => fakeBridge.updater,
   'updater.check': () => fakeBridge.updater,
   'workspace.get': () => ({ path: '/Users/test/Documents/Blocksmith Studio' }),

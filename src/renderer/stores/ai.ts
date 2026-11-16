@@ -3,10 +3,11 @@ import { computed, ref } from 'vue'
 import type {
   AgentEvent,
   AgentKind,
+  AnyProposal,
+  BulkProposalApplyResult,
   ConversationTurn,
   ModelInfo,
   ModelRef,
-  Proposal,
   ProposalApplyResult,
   ProviderConfig,
   ProviderStatus,
@@ -35,7 +36,7 @@ export interface AgentSession {
   key: string
   items: ChatItem[]
   runId: string | null
-  proposals: Record<string, Proposal>
+  proposals: Record<string, AnyProposal>
   loaded: boolean
 }
 
@@ -177,8 +178,35 @@ export const useAiStore = defineStore('ai', () => {
     language: Language
     thinking?: ReasoningLevel
   }): Promise<void> {
-    const s = session(args.packId, 'editor')
-    s.items.push({ id: nextId(), role: 'user', text: args.message, thinking: '', toolCalls: [] })
+    await startRun(session(args.packId, 'editor'), args.message, () =>
+      call('ai.agent.send', {
+        ...args,
+        texture: { path: args.texture.path, png: new Uint8Array(args.texture.png) }
+      })
+    )
+  }
+
+  /** Navigation agent on the grid selection (PLAN M5). */
+  async function sendNavigation(args: {
+    packId: string
+    message: string
+    model: ModelRef
+    paths: string[]
+    language: Language
+    thinking?: ReasoningLevel
+  }): Promise<void> {
+    await startRun(session(args.packId, 'navigation'), args.message, () =>
+      call('ai.navigation.send', { ...args, paths: [...args.paths] })
+    )
+  }
+
+  /** Shows the user message and a "working" bubble, starts the run, then routes its events to the session. */
+  async function startRun(
+    s: AgentSession,
+    message: string,
+    begin: () => Promise<{ runId: string }>
+  ): Promise<void> {
+    s.items.push({ id: nextId(), role: 'user', text: message, thinking: '', toolCalls: [] })
     s.items.push({
       id: nextId(),
       role: 'assistant',
@@ -189,10 +217,7 @@ export const useAiStore = defineStore('ai', () => {
     })
     let runId: string
     try {
-      ;({ runId } = await call('ai.agent.send', {
-        ...args,
-        texture: { path: args.texture.path, png: new Uint8Array(args.texture.png) }
-      }))
+      ;({ runId } = await begin())
     } catch (err) {
       // The run never started: close the pending bubble with the error instead of "working" forever.
       const item = s.items[s.items.length - 1]
@@ -299,9 +324,37 @@ export const useAiStore = defineStore('ai', () => {
     return result
   }
 
-  async function rejectProposal(packId: string, proposalId: string): Promise<void> {
+  async function applyNavigation(
+    packId: string,
+    proposalId: string,
+    acceptedStepIds: string[],
+    acceptedPaths: string[]
+  ): Promise<BulkProposalApplyResult> {
+    const result = await call('ai.navigation.apply', {
+      proposalId,
+      acceptedStepIds: [...acceptedStepIds],
+      acceptedPaths: [...acceptedPaths]
+    })
+    const p = session(packId, 'navigation').proposals[proposalId]
+    if (p) {
+      const allTextures = 'items' in p ? acceptedPaths.length >= p.items.length : true
+      p.status =
+        result.appliedStepIds.length === p.steps.length && allTextures
+          ? 'applied'
+          : result.appliedStepIds.length === 0
+            ? 'rejected'
+            : 'partially-applied'
+    }
+    return result
+  }
+
+  async function rejectProposal(
+    packId: string,
+    proposalId: string,
+    agent: AgentKind = 'editor'
+  ): Promise<void> {
     await call('ai.proposal.reject', { proposalId })
-    const p = session(packId, 'editor').proposals[proposalId]
+    const p = session(packId, agent).proposals[proposalId]
     if (p) p.status = 'rejected'
   }
 
@@ -326,6 +379,8 @@ export const useAiStore = defineStore('ai', () => {
     loadConversation,
     clearConversation,
     sendEditor,
+    sendNavigation,
+    applyNavigation,
     stop,
     applyProposal,
     rejectProposal,

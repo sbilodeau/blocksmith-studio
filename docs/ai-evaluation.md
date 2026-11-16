@@ -5,12 +5,16 @@ of phrases to a real model and checks that it calls the right tools with the rig
 
 ## What is tested
 
-- `resources/data/ai-eval/phrases.json`: 30 concepts, each with a French and an English phrase, so 60 requests.
+- `resources/data/ai-eval/phrases.json`: 36 concepts, each with a French and an English phrase, so 72 requests.
+  30 are editor cases (one texture) and 6 are navigation cases (a selection of 4 textures: stone, iron ore,
+  gold ore, oak planks), such as "assombris seulement les minerais" / "darken only the ores", which must call
+  `brightness` with a negative delta and a `textures` filter that picks the ores (`*ore*` glob or numbers 2 and 3).
   Examples: "tourne de 90 à gauche" / "rotate it 90 degrees to the left" must call
   `rotate {degrees: 90, direction: "counterclockwise"}`.
-- Every request runs through the same runtime as the editor agent (`runEditorAgent`): system prompt, tool list,
-  image and grid of a 16x16 test texture (`sample16`), up to 3 round trips. There is no conversation history, the
-  style brief is empty, and nothing is written to disk.
+- Every request runs through the same runtime as the agent of its context: `runEditorAgent` with the image and
+  grid of a 16x16 test texture (`sample16`), or `runNavigationAgent` with the selection list and contact sheet of
+  `sample_selection`; system prompt and tool list as in the app, up to 3 round trips. There is no conversation
+  history, the style brief is empty, and nothing is written to disk.
 - A case passes when the tool calls the model made satisfy every matcher in `expect`. Read tools the model calls on
   the way are ignored.
 
@@ -27,8 +31,8 @@ Defaults live in `DEFAULT_THRESHOLDS` (`src/main/services/ai/eval/report.ts`).
 
 ### From the app
 
-Settings > AI > **Test models**: pick one or more models, then **Quick test** (8 cases, 16 phrases per model) or
-**Full test** (60 phrases per model). Models run one after the other; progress is shown live and **Stop** cancels.
+Settings > AI > **Test models**: pick one or more models, then **Quick test** (9 cases, 18 phrases per model) or
+**Full test** (72 phrases per model). Models run one after the other; progress is shown live and **Stop** cancels.
 
 - One model: the scores per language, the missed phrases with the calls the model made, tokens, latency and cost
   (when the price is known).
@@ -50,14 +54,14 @@ BLOCKSMITH_EVAL_MODEL="gpt-oss:120b,openrouter/qwen/qwen3-32b,openai/gpt-4o-mini
 BLOCKSMITH_EVAL_CASES=rotate-left-90,flip-horizontal npm run test:ai
 ```
 
-| Variable                      | Meaning                                                                  |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `OLLAMA_API_KEY`              | Ollama Cloud key (provider `ollama-cloud`, the default)                  |
-| `OPENAI_API_KEY`              | OpenAI key (provider `openai`)                                           |
-| `OPENROUTER_API_KEY`          | OpenRouter key (provider `openrouter`)                                   |
-| `BLOCKSMITH_EVAL_MODEL`       | `model` (Ollama Cloud) or `provider/model`; comma-separated to compare   |
-| `BLOCKSMITH_EVAL_CASES`       | Comma-separated case ids to run (default: all)                           |
-| `BLOCKSMITH_EVAL_CONCURRENCY` | Parallel requests (default 3; lower it if you get rate limits)           |
+| Variable                      | Meaning                                                                |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `OLLAMA_API_KEY`              | Ollama Cloud key (provider `ollama-cloud`, the default)                |
+| `OPENAI_API_KEY`              | OpenAI key (provider `openai`)                                         |
+| `OPENROUTER_API_KEY`          | OpenRouter key (provider `openrouter`)                                 |
+| `BLOCKSMITH_EVAL_MODEL`       | `model` (Ollama Cloud) or `provider/model`; comma-separated to compare |
+| `BLOCKSMITH_EVAL_CASES`       | Comma-separated case ids to run (default: all)                         |
+| `BLOCKSMITH_EVAL_CONCURRENCY` | Parallel requests (default 3; lower it if you get rate limits)         |
 
 Without any key the suite is skipped. The report is printed and written to `ai-eval-report.md` (with the
 side-by-side table first when several models ran); each model must meet the pass criteria. `npm test` also runs

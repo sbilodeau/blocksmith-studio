@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { NAlert, NButton, NCheckbox, NSpace, NTag, NText } from 'naive-ui'
 import type { Proposal, ProposalStep } from '@shared/ai/types'
 import PngThumb from './PngThumb.vue'
+import { useOpLabel } from '../../composables/useOpLabel'
 
 /**
  * The AI's plan, shown before anything changes. Every step is described in the UI language; the user keeps or
@@ -11,7 +12,8 @@ import PngThumb from './PngThumb.vue'
  */
 const props = defineProps<{ proposal: Proposal; busy?: boolean }>()
 const emit = defineEmits<{ apply: [stepIds: string[]]; reject: [] }>()
-const { t, te } = useI18n()
+const { t } = useI18n()
+const opLabel = useOpLabel()
 
 const accepted = ref<Set<string>>(new Set())
 watch(
@@ -23,14 +25,7 @@ watch(
 const pending = computed(() => props.proposal.status === 'pending')
 
 function label(step: ProposalStep): string {
-  const key = step.description.key
-  if (!te(key)) return `${step.tool}(${JSON.stringify(step.args)})`
-  // Enum values (clockwise, horizontal, inside...) are translated through ops.value.*.
-  const params: Record<string, string | number> = {}
-  for (const [k, v] of Object.entries(step.description.params)) {
-    params[k] = typeof v === 'string' && te(`ops.value.${v}`) ? t(`ops.value.${v}`) : v
-  }
-  return t(key, params)
+  return opLabel(step.description, `${step.tool}(${JSON.stringify(step.args)})`)
 }
 
 function toggle(id: string, on: boolean): void {

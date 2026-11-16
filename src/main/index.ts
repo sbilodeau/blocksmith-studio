@@ -8,6 +8,8 @@ import { registerTextureHandlers } from './ipc/texture-handlers'
 import { registerPreviewHandlers } from './ipc/preview-handlers'
 import { registerAiProviderHandlers } from './ipc/ai-provider-handlers'
 import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
+import { registerBulkHandlers } from './ipc/bulk-handlers'
+import { createBulkService, createDefaultBulkRunner } from './services/bulk'
 import { registerAiEvalHandlers } from './ipc/ai-eval-handlers'
 import { send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
@@ -153,7 +155,21 @@ if (!app.requestSingleInstanceLock()) {
     registerTextureHandlers({ textures, history })
     registerPreviewHandlers({ preview })
     registerAiProviderHandlers({ settings, secrets, registry: aiProviders })
-    registerAiAgentHandlers({
+    const bulk = createBulkService({
+      packs,
+      textures,
+      // The brief service is created with the agent handlers below (read at call time).
+      brief: { get: (packId) => agentServices.brief.get(packId) },
+      run: createDefaultBulkRunner(),
+      jobs
+    })
+    registerBulkHandlers({ bulk })
+    const agentServices = registerAiAgentHandlers({
+      navigation: {
+        textures: (packId) => packs.textures(packId),
+        readPng: async (packId, path) => (await textures.read(packId, path)).png,
+        bulk
+      },
       providers: aiProviders,
       getAgentSettings: (agent) => settings.get().ai.agents[agent],
       packs,

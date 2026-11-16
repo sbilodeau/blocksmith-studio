@@ -81,6 +81,31 @@ describe('eval runner', () => {
     expect(results.every((r) => !r.pass && r.error)).toBe(true)
   })
 
+  it('runs navigation cases on the selection fixture, matching "textures" subsets', async () => {
+    const cases = loadEvalCases(PHRASES).filter((c) =>
+      ['nav-ores-darker', 'nav-outline-planks'].includes(c.id)
+    )
+    expect(cases.map((c) => c.context)).toEqual(['navigation', 'navigation'])
+    /** Darkens the ores by glob, outlines the planks by number. */
+    const navModel = (req: ChatRequest): ReturnType<typeof text>[] => {
+      const last = req.messages[req.messages.length - 1]
+      if (last?.role === 'tool') return [text('ok'), DONE_END]
+      const user = req.messages.filter((m) => m.role === 'user').pop()?.text ?? ''
+      expect(user).toContain('[Selection: 4 textures]')
+      return /minerais|ores/i.test(user)
+        ? [toolCall('brightness', { delta: -0.3, textures: { match: '*_ore' } }), DONE_TOOLS]
+        : [toolCall('outline', { color: '#000000', textures: { indices: [4] } }), DONE_TOOLS]
+    }
+    const { providers } = fakeProvider(Array.from({ length: 10 }, () => navModel))
+    const results = await runEval({ providers, model, cases, concurrency: 1 })
+    expect(results.map((r) => [r.caseId, r.language, r.pass])).toEqual([
+      ['nav-ores-darker', 'fr', true],
+      ['nav-ores-darker', 'en', true],
+      ['nav-outline-planks', 'fr', true],
+      ['nav-outline-planks', 'en', true]
+    ])
+  })
+
   it('quick test ids exist in the bundled cases', () => {
     const ids = bundledEvalCases().map((c) => c.id)
     for (const id of QUICK_CASE_IDS) expect(ids).toContain(id)

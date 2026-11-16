@@ -223,6 +223,45 @@ describe('texture editing and pack history', () => {
     })
   })
 
+  describe('saveMany (bulk changes)', () => {
+    it('writes several textures as ONE history entry; vanilla-identical bytes remove the copy', async () => {
+      await textures.save(packId, WATER, RED)
+      const entryOut = await textures.saveMany(
+        packId,
+        [
+          { path: STONE, png: BLUE },
+          { path: WATER, png: vanillaFiles()[WATER] }
+        ],
+        { source: 'bulk', label: { key: 'bulk', params: { count: 2 } } }
+      )
+      expect(entryOut).toMatchObject({ source: 'bulk', paths: [STONE, WATER] })
+      expect(new Uint8Array(await readFile(packFile(STONE)))).toEqual(BLUE)
+      expect(await exists(WATER)).toBe(false)
+      expect(notifyChanged).toHaveBeenCalledWith(packId)
+      // One undo restores both files.
+      await history.undo(packId)
+      expect(await exists(STONE)).toBe(false)
+      expect(new Uint8Array(await readFile(packFile(WATER)))).toEqual(RED)
+    })
+
+    it('validates every texture before writing any', async () => {
+      await expect(
+        textures.saveMany(
+          packId,
+          [
+            { path: STONE, png: BLUE },
+            { path: WATER, png: new Uint8Array([1, 2, 3]) }
+          ],
+          { source: 'bulk', label: { key: 'bulk' } }
+        )
+      ).rejects.toMatchObject({ code: 'texture.invalidPng' })
+      expect(await exists(STONE)).toBe(false)
+      expect(await textures.saveMany(packId, [], { source: 'bulk', label: { key: 'bulk' } })).toBe(
+        null
+      )
+    })
+  })
+
   describe('texture.revert', () => {
     it('deletes the pack copy and records a revert entry', async () => {
       await textures.save(packId, STONE, RED)

@@ -245,9 +245,9 @@ test('Settings can test a model with the FR/EN phrases', async () => {
   await box.getByTestId('model-test-quick').click()
   const report = box.getByTestId('model-test-report')
   await expect(report).toBeVisible({ timeout: 30_000 })
-  // The fake model always rotates left then paints: the rotation and rotate-and-flames cases pass.
-  await expect(box.getByTestId('model-test-rate')).toHaveText('25 %')
-  await expect(report).toContainText('Requêtes ratées (12)')
+  // The fake model always rotates left then paints: the rotation and rotate-and-flames cases pass (4 of 18).
+  await expect(box.getByTestId('model-test-rate')).toHaveText('22.2 %')
+  await expect(report).toContainText('Requêtes ratées (14)')
 })
 
 test('a long conversation stays inside the window; Up/Down recall earlier messages', async () => {

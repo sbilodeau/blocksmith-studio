@@ -6,32 +6,32 @@ the renderer has no network access (CSP `connect-src 'self'`) and never sees an 
 
 ## Pieces
 
-| File                          | Role                                                                         |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| `services/secrets.ts`         | Encrypted API key store (`safeStorage`), one key per provider id             |
-| `providers/http.ts`           | Shared HTTP client: URL checks, Bearer auth, retries, error mapping, NDJSON  |
-| `providers/ollama.ts`         | Ollama native adapter (Ollama Cloud and self-hosted)                         |
-| `providers/openai.ts`         | OpenAI-compatible adapter (OpenAI, OpenRouter, vLLM, LM Studio, Groq...)     |
-| `providers/sse.ts`            | Server-Sent Events reader for OpenAI-compatible streams                      |
-| `providers/capabilities.ts`   | Capability hint table by model-name pattern                                  |
-| `providers/pricing.ts`        | Price hints (`resources/data/model-prices.json`) and request cost            |
-| `providers/cost.ts`           | `costTierFor(pricing)` (`$` / `$$` / `$$$`, PLAN 7.4)                        |
-| `providers/registry.ts`       | `ProviderRegistry`: adapter factory by kind, model cache, user overrides     |
-| `ipc/ai-provider-handlers.ts` | `ai.providers.*` and `ai.models.list` channels                               |
-| `shared/ai/presets.ts`        | Provider presets offered by Settings > AI > "Add a provider"                 |
+| File                          | Role                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `services/secrets.ts`         | Encrypted API key store (`safeStorage`), one key per provider id            |
+| `providers/http.ts`           | Shared HTTP client: URL checks, Bearer auth, retries, error mapping, NDJSON |
+| `providers/ollama.ts`         | Ollama native adapter (Ollama Cloud and self-hosted)                        |
+| `providers/openai.ts`         | OpenAI-compatible adapter (OpenAI, OpenRouter, vLLM, LM Studio, Groq...)    |
+| `providers/sse.ts`            | Server-Sent Events reader for OpenAI-compatible streams                     |
+| `providers/capabilities.ts`   | Capability hint table by model-name pattern                                 |
+| `providers/pricing.ts`        | Price hints (`resources/data/model-prices.json`) and request cost           |
+| `providers/cost.ts`           | `costTierFor(pricing)` (`$` / `$$` / `$$$`, PLAN 7.4)                       |
+| `providers/registry.ts`       | `ProviderRegistry`: adapter factory by kind, model cache, user overrides    |
+| `ipc/ai-provider-handlers.ts` | `ai.providers.*` and `ai.models.list` channels                              |
+| `shared/ai/presets.ts`        | Provider presets offered by Settings > AI > "Add a provider"                |
 
 Provider configs (`{ id, kind, label, baseUrl, enabled, extraHeaders? }`) live in `settings.ai.providers`
 (default: Ollama Cloud, `https://ollama.com`). Keys live in `userData/secrets.bin`, never in `settings.json`.
 
 Presets in Settings > AI > "Add a provider":
 
-| Preset                  | Kind                | Base URL                       | Notes                                      |
-| ----------------------- | ------------------- | ------------------------------ | ------------------------------------------ |
-| Ollama Cloud            | `ollama`            | `https://ollama.com`           | The default provider                       |
-| OpenAI                  | `openai-compatible` | `https://api.openai.com/v1`    | Prices from the hint table                 |
-| OpenRouter              | `openai-compatible` | `https://openrouter.ai/api/v1` | Prices, capabilities and cost per request  |
-| Ollama on this computer | `ollama`            | `http://localhost:11434`       | No key needed                              |
-| Other                   | either              | typed by the user              | Any OpenAI-compatible server, or Ollama    |
+| Preset                  | Kind                | Base URL                       | Notes                                     |
+| ----------------------- | ------------------- | ------------------------------ | ----------------------------------------- |
+| Ollama Cloud            | `ollama`            | `https://ollama.com`           | The default provider                      |
+| OpenAI                  | `openai-compatible` | `https://api.openai.com/v1`    | Prices from the hint table                |
+| OpenRouter              | `openai-compatible` | `https://openrouter.ai/api/v1` | Prices, capabilities and cost per request |
+| Ollama on this computer | `ollama`            | `http://localhost:11434`       | No key needed                             |
+| Other                   | either              | typed by the user              | Any OpenAI-compatible server, or Ollama   |
 
 The OpenRouter preset adds the optional attribution headers `HTTP-Referer` (the project's GitHub page) and
 `X-Title: Blocksmith Studio`; no user data is sent in them. Every provider can be edited (name, URL, extra
@@ -105,11 +105,11 @@ accounting). The base URL includes the version prefix (`https://api.openai.com/v
   ends with no finished choice, no tool call and no usage is `ai.invalidResponse`.
 - Server flavors (`flavorOf`), because api.openai.com answers 400 to fields it does not know:
 
-| Flavor       | Host                 | Reasoning request (level != off)                       | Cost                   |
-| ------------ | -------------------- | ------------------------------------------------------ | ---------------------- |
-| `openai`     | `api.openai.com`     | `reasoning_effort`, for `o1`/`o3`/`o4`/`gpt-5` models   | price table            |
-| `openrouter` | `openrouter.ai`      | `reasoning: { effort }` when `/models` lists reasoning | `usage.cost` (credits) |
-| `generic`    | anything else        | `reasoning_effort` when the model can think            | price table            |
+| Flavor       | Host             | Reasoning request (level != off)                       | Cost                   |
+| ------------ | ---------------- | ------------------------------------------------------ | ---------------------- |
+| `openai`     | `api.openai.com` | `reasoning_effort`, for `o1`/`o3`/`o4`/`gpt-5` models  | price table            |
+| `openrouter` | `openrouter.ai`  | `reasoning: { effort }` when `/models` lists reasoning | `usage.cost` (credits) |
+| `generic`    | anything else    | `reasoning_effort` when the model can think            | price table            |
 
   The reasoning level "off" sends nothing (the model's default), since some models cannot turn reasoning off.
   OpenRouter credits are US dollars.

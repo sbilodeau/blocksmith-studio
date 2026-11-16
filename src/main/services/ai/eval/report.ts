@@ -154,6 +154,42 @@ export function toMarkdown(model: string, results: EvalResult[], summary: EvalSu
  * Deterministic fixtures referenced by phrases.json. `sample16`: a 16x16 grey stone-like tile with a dark diagonal
  * stripe and a light top-left corner, so rotations and flips are visible and the palette has a few colors.
  */
+export interface EvalSelectionTexture {
+  path: string
+  image: RgbaImage
+}
+
+/**
+ * Selection fixtures of navigation cases. `sample_selection`: #1 stone (gray), #2 iron_ore and #3 gold_ore (gray
+ * with tan / yellow spots), #4 oak_planks (brown with dark grain lines).
+ */
+export function evalSelection(name: string): EvalSelectionTexture[] {
+  if (name !== 'sample_selection') throw new Error(`unknown eval selection ${name}`)
+  const block = (n: string): string => `assets/minecraft/textures/block/${n}.png`
+  const stone = createImage(16, 16, parseHex('#7f7f7f'))
+  drawLine(stone, { x: 1, y: 12 }, { x: 12, y: 1 }, parseHex('#6b6b6b'))
+  const ore = (spot: string): RgbaImage => {
+    const img = createImage(16, 16, parseHex('#7f7f7f'))
+    for (const [x, y] of [
+      [3, 3],
+      [10, 5],
+      [6, 11],
+      [12, 12]
+    ] as const) {
+      fillRect(img, { x, y, width: 2, height: 2 }, parseHex(spot))
+    }
+    return img
+  }
+  const planks = createImage(16, 16, parseHex('#a0784a'))
+  for (const y of [3, 7, 11, 15]) drawLine(planks, { x: 0, y }, { x: 15, y }, parseHex('#6b4e2e'))
+  return [
+    { path: block('stone'), image: stone },
+    { path: block('iron_ore'), image: ore('#d8af93') },
+    { path: block('gold_ore'), image: ore('#fcee4b') },
+    { path: block('oak_planks'), image: planks }
+  ]
+}
+
 export function evalFixture(name: string): RgbaImage {
   if (name !== 'sample16') throw new Error(`unknown eval fixture ${name}`)
   const img = createImage(16, 16, parseHex('#7f7f7f'))

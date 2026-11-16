@@ -40,6 +40,8 @@ export function usePackStore(packId: string) {
     const gridScroll = ref(0)
     /** Last texture shown in the editor, so the grid can bring its tile into view on return. */
     const lastEdited = ref<string | null>(null)
+    /** Navigation agent panel next to the grid. */
+    const aiPanel = ref(false)
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
 
@@ -152,6 +154,7 @@ export function usePackStore(packId: string) {
       editing,
       gridScroll,
       lastEdited,
+      aiPanel,
       changedCount,
       visible,
       load,

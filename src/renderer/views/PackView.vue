@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NButton, NH3, NSpace, NTag, NText } from 'naive-ui'
 import LoadingOverlay from '../components/common/LoadingOverlay.vue'
@@ -11,6 +12,8 @@ import TextureEditor from '../components/editor/TextureEditor.vue'
 import ExportDialog from '../components/pack/ExportDialog.vue'
 import ReportDialog from '../components/common/ReportDialog.vue'
 import StyleBriefDrawer from '../components/ai/StyleBriefDrawer.vue'
+import NavigationAgentPanel from '../components/ai/NavigationAgentPanel.vue'
+import PackHistoryDrawer from '../components/pack/PackHistoryDrawer.vue'
 import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
 import { IpcError } from '../services/ipc'
 import { useVanillaStore } from '../stores/vanilla'
@@ -29,6 +32,12 @@ const { showError } = useErrorMessage()
 const store = computed(() => usePackStore(props.packId))
 const showExport = ref(false)
 const showBrief = ref(false)
+const showHistory = ref(false)
+const router = useRouter()
+/** The navigation agent panel sits next to the grid (not the overview or the editor). */
+const showAiPanel = computed(
+  () => store.value.aiPanel && !store.value.editing && store.value.category !== null
+)
 /** Set when a vanilla-based pack's vanilla textures are missing on this computer. */
 const missingVanilla = ref<string | null>(null)
 const vanilla = useVanillaStore()
@@ -119,6 +128,19 @@ const exportItems = computed(() => [
             <n-button size="small" data-testid="brief-open" @click="showBrief = true">
               {{ t('brief.open') }}
             </n-button>
+            <n-button size="small" data-testid="pack-history-open" @click="showHistory = true">
+              {{ t('history.title') }}
+            </n-button>
+            <n-button
+              v-if="!store.editing && store.category !== null"
+              size="small"
+              :type="store.aiPanel ? 'primary' : 'default'"
+              :secondary="store.aiPanel"
+              data-testid="navigation-toggle"
+              @click="store.aiPanel = !store.aiPanel"
+            >
+              {{ t('ai.navigationPanel') }}
+            </n-button>
             <n-button
               size="small"
               type="primary"
@@ -145,8 +167,15 @@ const exportItems = computed(() => [
           <texture-grid v-else :pack-id="packId" />
         </div>
       </section>
+      <aside v-if="showAiPanel" class="ai-side">
+        <navigation-agent-panel
+          :pack-id="packId"
+          @open-settings="router.push({ name: 'settings' })"
+        />
+      </aside>
     </div>
     <style-brief-drawer v-model:show="showBrief" :pack-id="packId" />
+    <pack-history-drawer v-model:show="showHistory" :pack-id="packId" />
     <export-dialog v-model:show="showExport" :store="store" @exported="(r) => (exportReport = r)" />
     <report-dialog
       v-if="exportReport"
@@ -168,6 +197,13 @@ const exportItems = computed(() => [
   height: 100%;
   min-height: 0;
   gap: 16px;
+}
+.ai-side {
+  width: 340px;
+  flex: none;
+  border-left: 1px solid rgba(128, 128, 128, 0.2);
+  padding-left: 12px;
+  min-height: 0;
 }
 .side {
   width: 240px;
