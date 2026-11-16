@@ -63,7 +63,7 @@ export function ndjson(text: string): RouteHandler {
 export function sse(text: string): RouteHandler {
   return async (_req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/event-stream' })
-    for (const event of text.split(/\n\n/)) {
+    for (const event of text.split(/\r?\n\r?\n/)) {
       if (!event.trim()) continue
       res.write(event + '\n\n')
       await new Promise((r) => setImmediate(r))

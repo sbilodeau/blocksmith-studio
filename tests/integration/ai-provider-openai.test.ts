@@ -258,7 +258,13 @@ describe('OpenAI-compatible adapter (local fake server)', () => {
       server.on(
         'POST',
         '/v1/chat/completions',
-        sse(fixture('openai/chat-text.sse').split('\n\n').slice(0, 2).join('\n\n')),
+        sse(
+          fixture('openai/chat-text.sse')
+            .replace(/\r\n/g, '\n')
+            .split('\n\n')
+            .slice(0, 2)
+            .join('\n\n')
+        ),
         sse('data: {not json\n\n')
       )
       const first = await collectUntilError(adapter().chat(REQUEST, new AbortController().signal))
