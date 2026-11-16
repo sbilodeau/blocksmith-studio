@@ -912,6 +912,10 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 - Migration tables for the 1.21.4 -> 26.3 window (generated + reviewed), export-down with warnings, multi-target export, export profiles.
 - Import with upgrade migration; authoring version upgrade when a new Minecraft version ships.
 - Full Pack Doctor validation panel.
+- Built (see docs/versions.md "Texture path migrations"): migrations.json generated from the misode/mcmeta asset
+  trees (renames by content hash, content-changed paths left as added/removed after review), export down and up
+  with skips and warnings, multi-target export to a folder, export profile in project.json, import and authoring
+  upgrade along the chain, Pack Doctor drawer, real-jar path checks.
 
 ### M8 - Merge and send-to-pack
 - Merge wizard, priority ordering, conflict review, JSON deep-merge, cross-tab "Send to pack", undo.

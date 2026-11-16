@@ -137,8 +137,10 @@ an unknown head, means every entry is applied.
 2. OS junk is skipped (`__MACOSX/`, `.DS_Store`, `._*`, `Thumbs.db`, `desktop.ini`), and so are hidden entries.
 3. The pack root is where `pack.mcmeta` is: at the root, or inside exactly one top-level folder.
 4. The declared format (`pack.pack_format`, else `pack.min_format`; an integer or `[major, minor]`) is mapped to a
-   Minecraft version. M1 always uses the latest supported version as the authoring version and warns
-   `import.formatMismatch` when the pack was made for another one (upgrade migrations come in M7).
+   Minecraft version. The latest supported version is the authoring version. A pack made for an older version of
+   the migration chain (1.21.4+) gets its texture paths upgraded: renamed textures move to their current names
+   (`import.migrated`, `renamed` in the report), removed ones are not imported (`import.notInVersion`). Older
+   formats outside the chain only warn `import.formatMismatch`. See [versions.md](versions.md#texture-path-migrations).
 5. Files byte-identical to that version's vanilla files are dropped. When vanilla is not extracted, everything is
    kept and the report warns `import.vanillaNotReady`.
 6. The pack name is the zip file name; the description is the `pack.mcmeta` description flattened to plain text.
@@ -159,8 +161,11 @@ an unknown head, means every entry is applied.
 
 ## Export (.zip)
 
-Targets: the pack's authoring version, or a snapshot newer than it (`export.targetNotSupported` otherwise;
-multi-version export with migrations is M7). See [versions.md](versions.md) for the snapshot rules.
+Targets: newer snapshots, the authoring version and every other release of the support window
+(`export.targetNotSupported` otherwise). Exports to another version migrate texture paths (renamed, `notInTarget`
+skips, `export.otherFilesAsIs`), compare against that version's vanilla, and report `renamed`. The dialog takes
+several versions (`pack.exportMany`: one zip per version in a chosen folder) and preselects the last export settings,
+saved as `exportProfile` in project.json. See [versions.md](versions.md#texture-path-migrations).
 
 **Pack type** (`pack.export` `packType`). The dialog does not offer it yet: every export from the UI is a resource
 pack, and the data pack choice comes back with data pack editing (M10). The export pipeline, IPC and real-jar check
@@ -199,6 +204,26 @@ Packs screen is checked against the data pack format and shows "Made for an olde
 | `export.invalidPath`       | A path under `assets/` uses characters outside `[a-z0-9_.-/]`       |
 | `export.nonPowerOfTwo`     | A `block/` or `item/` texture (or its frames) is not a power of two |
 | `export.animationMismatch` | An animated texture is not a whole number of frames                 |
+
+## Upgrade to a newer Minecraft version
+
+`packs.upgrade { packId, targetVersion }` (pack header: **Upgrade to <latest>** when the pack's version is older)
+moves renamed textures and their `.png.mcmeta` along the migration chain, regenerates `pack.mcmeta` for the new
+version (keeping its other sections) and updates `authoringVersion`. Textures that no longer exist are left in place
+(`obsolete`), and a rename whose new name already exists is skipped (`conflicts`, both files kept). Errors:
+`packs.upgradeNotSupported` (not newer, not supported or outside the chain).
+
+## Pack Doctor
+
+`pack.doctor { packId }` (**Pack Doctor** in the pack header) reads every pack file and returns:
+
+- `issues`: the export checks (`export.invalidPng`, `invalidJson`, `invalidPath`, `nonPowerOfTwo`,
+  `animationMismatch`, `missingPackPng`, `invalidMcmeta`, `vanillaNotReady`) plus `doctor.proportions`: a texture
+  whose proportions differ from the vanilla texture of the same path (a 32x16 stone; 32x32 is fine), which models
+  show stretched or cut. Animated vanilla strips are compared by width.
+- `targets`: for every other export target, how many textures an export would rename and which ones it would skip.
+
+The drawer groups issues by type; texture paths open in the editor.
 
 ## Asset protocol
 
