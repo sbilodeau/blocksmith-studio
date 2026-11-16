@@ -9,6 +9,7 @@ import {
   type CategorySummary,
   type ExportReport,
   type ImportReport,
+  type UpgradeReport,
   type PackSummary,
   type TextureEntry
 } from '../model/pack'
@@ -111,6 +112,7 @@ export const inputSchemas = {
     /** Resource pack (default) or data pack. */
     packType: ExportPackTypeSchema.optional()
   }).strict(),
+  'pack.upgrade': PackRef.extend({ targetVersion: VersionId }).strict(),
   'texture.read': TextureRef,
   'texture.save': TextureRef.extend({
     png: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES)
@@ -241,6 +243,8 @@ export interface InvokeOutputs {
   'pack.export': ExportReport | null
   /** Opens a folder picker; null when cancelled. Emits job.progress per target. */
   'pack.exportMany': ExportReport[] | null
+  /** Moves the pack to a newer authoring version (renames along the migration chain). */
+  'pack.upgrade': UpgradeReport
   'texture.read': TextureData
   /** Writes the PNG into the pack (records a history entry) and returns the updated texture entry. */
   'texture.save': TextureEntry

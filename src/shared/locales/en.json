@@ -92,7 +92,8 @@
       "notFound": "This pack no longer exists.",
       "unsupportedVersion": "Minecraft {version} is not supported.",
       "vanillaNotReady": "The Minecraft {version} textures are not set up yet.",
-      "unsafePath": "This change would write outside the pack folder and was refused."
+      "unsafePath": "This change would write outside the pack folder and was refused.",
+      "upgradeNotSupported": "This pack cannot be moved from Minecraft {from} to {to}."
     },
     "workspace": {
       "invalidPath": "This folder cannot be used as a workspace."
@@ -319,7 +320,11 @@
       "otherFilesAsIs": "Models, block states and other JSON files are exported as they are; check them in this version."
     },
     "identicalToVanilla": "Skipped: identical to vanilla",
-    "notInTarget": "Skipped: this texture does not exist in this version"
+    "notInTarget": "Skipped: this texture does not exist in this version",
+    "upgrade": {
+      "obsolete": "No longer used by this Minecraft version (kept in the pack)",
+      "conflict": "Not moved: a texture with its new name already exists (both kept)"
+    }
   },
   "editor": {
     "back": "Back to textures",
@@ -749,5 +754,11 @@
       "legend": "Before on the left, after on the right."
     },
     "degreeUnit": "°"
+  },
+  "upgrade": {
+    "button": "Upgrade to {version}",
+    "confirm": "Move this pack to Minecraft {version}? Renamed textures move to their new names and pack.mcmeta gets the new format. Exports to older versions stay available.",
+    "done": "Pack upgraded",
+    "summary": "Moved from Minecraft {from} to {to}: {count} renamed textures were moved."
   }
 }

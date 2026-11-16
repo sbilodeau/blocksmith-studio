@@ -56,6 +56,8 @@ export function registerPackHandlers({ packs, dialogs }: PackHandlerDeps): void 
     return report
   })
 
+  handle('pack.upgrade', ({ packId, targetVersion }) => packs.upgrade(packId, targetVersion))
+
   handle('pack.exportMany', async ({ packId, targetVersions, acceptNewer, packType }) => {
     // Validates the targets (and the pack) before showing the dialog.
     for (const v of targetVersions) await packs.exportFileName(packId, v, packType)

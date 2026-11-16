@@ -87,6 +87,19 @@ export const CreatePackInputSchema = z
   .strict()
 export type CreatePackInput = z.input<typeof CreatePackInputSchema>
 
+/** Result of moving a pack to a newer authoring version. */
+export interface UpgradeReport {
+  pack: PackSummary
+  from: string
+  to: string
+  /** Textures moved to their new name. */
+  renamed: number
+  /** Textures that no longer exist in the new version (left in the pack, unused by Minecraft). */
+  obsolete: string[]
+  /** Renames skipped because the new name already exists in the pack (both files kept). */
+  conflicts: string[]
+}
+
 export interface ImportReport {
   pack: PackSummary
   /** Pack format declared by the imported pack.mcmeta, and the version it maps to (if known). */

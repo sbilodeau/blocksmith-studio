@@ -92,7 +92,8 @@
       "notFound": "Ce pack n'existe plus.",
       "unsupportedVersion": "Minecraft {version} n'est pas pris en charge.",
       "vanillaNotReady": "Les textures de Minecraft {version} ne sont pas encore prêtes.",
-      "unsafePath": "Cette modification écrirait en dehors du dossier du pack ; elle a été refusée."
+      "unsafePath": "Cette modification écrirait en dehors du dossier du pack ; elle a été refusée.",
+      "upgradeNotSupported": "Ce pack ne peut pas passer de Minecraft {from} à {to}."
     },
     "workspace": {
       "invalidPath": "Ce dossier ne peut pas servir d'espace de travail."
@@ -319,7 +320,11 @@
       "otherFilesAsIs": "Les modèles, états de blocs et autres fichiers JSON sont exportés tels quels ; vérifiez-les dans cette version."
     },
     "identicalToVanilla": "Ignoré : identique à vanilla",
-    "notInTarget": "Ignorée : cette texture n'existe pas dans cette version"
+    "notInTarget": "Ignorée : cette texture n'existe pas dans cette version",
+    "upgrade": {
+      "obsolete": "N'est plus utilisée par cette version de Minecraft (gardée dans le pack)",
+      "conflict": "Non déplacée : une texture porte déjà son nouveau nom (les deux sont gardées)"
+    }
   },
   "editor": {
     "back": "Retour aux textures",
@@ -749,5 +754,11 @@
       "legend": "Avant à gauche, après à droite."
     },
     "degreeUnit": "°"
+  },
+  "upgrade": {
+    "button": "Passer à {version}",
+    "confirm": "Passer ce pack à Minecraft {version} ? Les textures renommées prennent leur nouveau nom et pack.mcmeta reçoit le nouveau format. Les exports vers les anciennes versions restent possibles.",
+    "done": "Pack mis à jour",
+    "summary": "Passé de Minecraft {from} à {to} : {count} textures renommées ont été déplacées."
   }
 }

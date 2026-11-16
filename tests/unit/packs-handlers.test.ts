@@ -28,7 +28,8 @@ function fakeService(): PackService {
     updateMeta: vi.fn(async () => ({}) as never),
     catalog: vi.fn(async () => []),
     exportMany: vi.fn(async () => []),
-    saveExportProfile: vi.fn(async () => undefined)
+    saveExportProfile: vi.fn(async () => undefined),
+    upgrade: vi.fn(async () => ({}) as never)
   }
 }
 
@@ -60,7 +61,8 @@ describe('registerPackHandlers', () => {
         'pack.textures',
         'pack.categories',
         'pack.export',
-        'pack.exportMany'
+        'pack.exportMany',
+        'pack.upgrade'
       ].sort()
     )
   })

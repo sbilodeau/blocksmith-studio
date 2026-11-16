@@ -2,9 +2,10 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NH3, NSpace, NTag, NText } from 'naive-ui'
+import { NAlert, NButton, NH3, NPopconfirm, NSpace, NTag, NText } from 'naive-ui'
 import LoadingOverlay from '../components/common/LoadingOverlay.vue'
-import type { ExportReport } from '@shared/model/pack'
+import type { ExportReport, UpgradeReport } from '@shared/model/pack'
+import { findVersion, latest, versionTable } from '@shared/versions'
 import CategorySidebar from '../components/pack/CategorySidebar.vue'
 import CategoryOverview from '../components/pack/CategoryOverview.vue'
 import TextureGrid from '../components/pack/TextureGrid.vue'
@@ -45,6 +46,49 @@ const onOverview = computed(() => store.value.category === null)
 const missingVanilla = ref<string | null>(null)
 const vanilla = useVanillaStore()
 const exportReports = ref<ExportReport[] | null>(null)
+
+/** A newer Minecraft release than the pack's version: offered as an upgrade. */
+const upgradeTarget = computed(() => {
+  const current = store.value.summary
+    ? findVersion(versionTable, store.value.summary.authoringVersion)
+    : undefined
+  const newest = latest(versionTable)
+  return current && Date.parse(newest.releaseTime) > Date.parse(current.releaseTime)
+    ? newest.id
+    : null
+})
+const upgrading = ref(false)
+const upgradeReport = ref<UpgradeReport | null>(null)
+const showUpgradeReport = computed({
+  get: () => upgradeReport.value !== null,
+  set: (v: boolean) => {
+    if (!v) upgradeReport.value = null
+  }
+})
+const upgradeSummary = computed(() =>
+  upgradeReport.value
+    ? t('upgrade.summary', {
+        from: upgradeReport.value.from,
+        to: upgradeReport.value.to,
+        count: upgradeReport.value.renamed
+      })
+    : ''
+)
+const upgradeItems = computed(() => [
+  ...(upgradeReport.value?.obsolete ?? []).map((path) => ({ code: 'upgrade.obsolete', path })),
+  ...(upgradeReport.value?.conflicts ?? []).map((path) => ({ code: 'upgrade.conflict', path }))
+])
+async function upgrade(): Promise<void> {
+  if (!upgradeTarget.value) return
+  upgrading.value = true
+  try {
+    upgradeReport.value = await store.value.upgrade(upgradeTarget.value)
+  } catch (err) {
+    showError(err)
+  } finally {
+    upgrading.value = false
+  }
+}
 const showReport = computed({
   get: () => exportReports.value !== null,
   set: (v: boolean) => {
@@ -131,6 +175,20 @@ const exportItems = computed(() => {
               <n-tag size="small" :bordered="false">
                 {{ t('packs.minecraft', { version: store.summary?.authoringVersion ?? '' }) }}
               </n-tag>
+              <n-popconfirm v-if="upgradeTarget && !store.editing" @positive-click="upgrade">
+                <template #trigger>
+                  <n-button
+                    size="tiny"
+                    secondary
+                    type="info"
+                    :loading="upgrading"
+                    data-testid="pack-upgrade"
+                  >
+                    {{ t('upgrade.button', { version: upgradeTarget }) }}
+                  </n-button>
+                </template>
+                {{ t('upgrade.confirm', { version: upgradeTarget }) }}
+              </n-popconfirm>
               <n-text depth="3" class="desc">{{ store.summary?.description }}</n-text>
             </n-space>
           </div>
@@ -199,6 +257,13 @@ const exportItems = computed(() => {
       v-model:show="showExport"
       :store="store"
       @exported="(r) => (exportReports = r)"
+    />
+    <report-dialog
+      v-if="upgradeReport"
+      v-model:show="showUpgradeReport"
+      :title="t('upgrade.done')"
+      :summary="upgradeSummary"
+      :items="upgradeItems"
     />
     <report-dialog
       v-if="exportReports"

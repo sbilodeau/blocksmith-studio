@@ -227,3 +227,27 @@ test('deleting a pack moves it out of the list', async () => {
   await expect(page.getByTestId('home-empty')).toBeVisible()
   await expect(page.locator('[data-testid^="tab-"]')).toHaveCount(1)
 })
+
+test('a pack made for an older version is upgraded to the latest one', async () => {
+  launched = await launchWithFixture()
+  const { page } = launched
+  await prepareVanilla(launched)
+  await page.getByTestId('new-pack').click()
+  await page.getByTestId('new-pack-name').locator('input').fill('Older pack')
+  await page.getByTestId('new-pack-base-empty').click()
+  await page.getByTestId('new-pack-version').locator('input').fill('26.2')
+  await page
+    .locator('.n-base-select-option', { hasText: /^26\.2/ })
+    .first()
+    .click()
+  await page.getByTestId('new-pack-create').click()
+  await expect(page.getByTestId('pack-name')).toHaveText('Older pack')
+  await expect(page.getByTestId('pack-view')).toContainText('Minecraft 26.2')
+
+  await page.getByTestId('pack-upgrade').click()
+  await page.locator('.n-popconfirm').getByRole('button').last().click()
+  await expect(page.getByTestId('report-dialog')).toContainText('Moved from Minecraft 26.2 to 26.3')
+  await page.getByTestId('report-dialog').getByRole('button').last().click()
+  await expect(page.getByTestId('pack-view')).toContainText('Minecraft 26.3')
+  await expect(page.getByTestId('pack-upgrade')).toHaveCount(0)
+})

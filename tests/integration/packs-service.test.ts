@@ -112,6 +112,45 @@ describe('pack service: workspace and packs', () => {
     expect((await env.service.get(pack.id)).name).toBe('Fire Pack')
   })
 
+  it('upgrade moves renamed textures to the new version, updates pack.mcmeta and project.json', async () => {
+    const pack = await env.service.create({ name: 'Old', base: 'empty', authoringVersion: '26.2' })
+    const T = (p: string): string => `assets/minecraft/textures/${p}.png`
+    const put = async (path: string): Promise<void> => {
+      await mkdir(join(pack.folder, ...path.split('/').slice(0, -1)), { recursive: true })
+      await writeFile(join(pack.folder, ...path.split('/')), path)
+    }
+    await put(T('trims/color_palettes/amethyst'))
+    await put(`${T('trims/color_palettes/amethyst')}.mcmeta`)
+    await put(T('item/light'))
+    await put(T('block/stone'))
+    await put(T('trims/color_palettes/copper'))
+    await put(T('palettes/trim/copper'))
+
+    const report = await env.service.upgrade(pack.id, '26.3')
+    expect(report).toMatchObject({
+      from: '26.2',
+      to: '26.3',
+      renamed: 1,
+      obsolete: [T('item/light')],
+      conflicts: [T('trims/color_palettes/copper')]
+    })
+    expect(report.pack.authoringVersion).toBe('26.3')
+    expect(
+      await readFile(join(pack.folder, ...T('palettes/trim/amethyst').split('/')), 'utf8')
+    ).toBe(T('trims/color_palettes/amethyst'))
+    await expect(
+      stat(join(pack.folder, `${T('palettes/trim/amethyst')}.mcmeta`))
+    ).resolves.toBeTruthy()
+    const mcmeta = JSON.parse(await readFile(join(pack.folder, 'pack.mcmeta'), 'utf8'))
+    expect(mcmeta.pack.pack_format).toBe(97)
+    await expect(env.service.upgrade(pack.id, '26.2')).rejects.toMatchObject({
+      code: 'packs.upgradeNotSupported'
+    })
+    await expect(env.service.upgrade(pack.id, '9.9')).rejects.toMatchObject({
+      code: 'packs.upgradeNotSupported'
+    })
+  })
+
   it('rejects unsupported versions and a vanilla base whose vanilla is not extracted', async () => {
     await expect(
       env.service.create({ name: 'X', base: 'empty', authoringVersion: '1.20.1' })
