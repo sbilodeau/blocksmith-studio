@@ -65,7 +65,7 @@ export interface MergePlan {
   added: string[]
   /** Files already identical in the target (nothing to do). */
   identical: number
-  /** JSON files combined automatically (lang, sounds, atlases, fonts). */
+  /** JSON files combined automatically (lang, sounds, atlases, fonts, data pack tags). */
   merged: string[]
   conflicts: MergeConflict[]
   /** Files that do not exist in the target's Minecraft version (after path migration). */

@@ -64,7 +64,8 @@ describe('registerPackHandlers', () => {
         'pack.export',
         'pack.exportMany',
         'pack.upgrade',
-        'pack.doctor'
+        'pack.doctor',
+        'pack.setKind'
       ].sort()
     )
   })

@@ -7,6 +7,23 @@ export type PackPath = string
 export const PackBaseSchema = z.enum(['vanilla', 'empty'])
 export type PackBase = z.infer<typeof PackBaseSchema>
 
+/**
+ * What the pack holds (PLAN M10): textures and other assets (resource pack), data files (data pack), or both
+ * (combined: one folder, exported as a resource pack zip and a data pack zip). Older projects are resource packs.
+ */
+export const PackKindSchema = z.enum(['resource', 'data', 'combined'])
+export type PackKind = z.infer<typeof PackKindSchema>
+
+/** True when the pack kind includes textures (resource or combined). */
+export function hasResources(kind: PackKind): boolean {
+  return kind !== 'data'
+}
+
+/** True when the pack kind includes data files (data or combined). */
+export function hasData(kind: PackKind): boolean {
+  return kind !== 'resource'
+}
+
 /** .blocksmith/project.json */
 export const ProjectSchema = z.object({
   schemaVersion: z.literal(1),
@@ -15,13 +32,20 @@ export const ProjectSchema = z.object({
   description: z.string().max(512),
   authoringVersion: z.string(),
   base: PackBaseSchema,
+  kind: PackKindSchema.default('resource'),
   createdAt: z.string(),
   updatedAt: z.string(),
   /** Last export settings (export profile): the dialog preselects them for a one-click re-export. */
   exportProfile: z
     .object({
       targets: z.array(z.string()).max(40),
-      acceptNewer: z.boolean().default(false)
+      acceptNewer: z.boolean().default(false),
+      /** Combined packs: which zips to write (default: both). */
+      packTypes: z
+        .array(z.enum(['resource', 'data']))
+        .min(1)
+        .max(2)
+        .optional()
     })
     .optional()
 })
@@ -35,9 +59,10 @@ export interface PackSummary {
   description: string
   authoringVersion: string
   base: PackBase
+  kind: PackKind
   /** Absolute folder path (shown in the UI, never trusted back from the renderer). */
   folder: string
-  /** Number of texture files that differ from vanilla or are new. */
+  /** Number of texture and data files that differ from vanilla or are new. */
   changedCount: number
   updatedAt: string
   /** bs-asset:// URL of pack.png, if any. */
@@ -82,6 +107,7 @@ export const CreatePackInputSchema = z
     name: z.string().trim().min(1).max(64),
     description: z.string().max(512).default(''),
     base: PackBaseSchema,
+    kind: PackKindSchema.default('resource'),
     authoringVersion: z.string().min(1)
   })
   .strict()

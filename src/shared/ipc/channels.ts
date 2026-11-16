@@ -33,6 +33,13 @@ export const INVOKE_CHANNELS = [
   'pack.exportMany',
   'pack.upgrade',
   'pack.doctor',
+  'pack.setKind',
+  // Data pack files (M10)
+  'data.list',
+  'data.read',
+  'data.save',
+  'data.create',
+  'data.delete',
   // Texture editing and pack history
   'texture.read',
   'texture.save',

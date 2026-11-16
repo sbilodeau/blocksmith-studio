@@ -13,10 +13,12 @@ import {
   type ExportReport,
   type ImportReport,
   type UpgradeReport,
+  type PackKind,
   type PackSummary,
   type Project,
   type TextureEntry
 } from '@shared/model/pack'
+import { VANILLA_DATA_RE, parseDataPath } from '@shared/datapack'
 import { buildResourcePackMcmeta } from '@shared/versions/mcmeta'
 import { canExportTo, isSnapshot } from '@shared/versions/support'
 import { PathMigrator, canMigrate } from '@shared/versions/migrations'
@@ -24,7 +26,12 @@ import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
 import { FileInfoCache, mapLimit, writeFileAtomic } from './files'
-import { missingAnimationWarnings, proportionWarnings, validatePackFiles } from './validation'
+import {
+  dataSchemaWarnings,
+  missingAnimationWarnings,
+  proportionWarnings,
+  validatePackFiles
+} from './validation'
 import { importPackZip, type ImportLimits } from './importer'
 import { isRecord, mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
 import { comparePaths, createUniqueFolder, scanFiles, slugify } from './paths'
@@ -96,18 +103,21 @@ export interface PackService {
    * Renames the pack and/or changes its description (project.json and the pack folder's pack.mcmeta description;
    * exports regenerate pack.mcmeta from the project anyway). The folder name does not change.
    */
-  updateMeta(packId: string, patch: { name?: string; description?: string }): Promise<PackSummary>
+  updateMeta(
+    packId: string,
+    patch: { name?: string; description?: string; kind?: PackKind }
+  ): Promise<PackSummary>
   categories(packId: string): Promise<CategorySummary[]>
   importZip(zipPath: string): Promise<ImportReport>
   /**
-   * Exports to several versions, one zip per target in `folder` (default file names, existing files replaced).
-   * Stops at the first failure.
+   * Exports to several versions, one zip per target and pack type in `folder` (default file names, existing files
+   * replaced). `packTypes` (combined packs: both) wins over `packType`. Stops at the first failure.
    */
   exportMany(
     packId: string,
     targetVersions: string[],
     folder: string,
-    options?: { acceptNewer?: boolean; packType?: ExportPackType }
+    options?: { acceptNewer?: boolean; packType?: ExportPackType; packTypes?: ExportPackType[] }
   ): Promise<ExportReport[]>
   /**
    * Moves the pack to a newer authoring version of the support window: renamed textures (and their .mcmeta) move to
@@ -204,6 +214,10 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
   }
 
   async function changedCount(location: PackLocation): Promise<number> {
+    return (await changedTextures(location)) + (await changedData(location))
+  }
+
+  async function changedTextures(location: PackLocation): Promise<number> {
     try {
       const entries = await indexer.textures(location)
       return entries.filter((e) => e.status !== 'vanilla').length
@@ -215,6 +229,34 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     }
   }
 
+  /** Data files of the pack that are not byte-identical to vanilla's. */
+  async function changedData(location: PackLocation): Promise<number> {
+    const files = (await scanFiles(join(location.folder, 'data'), 'data/')).filter(
+      (f) => parseDataPath(f.path) !== null
+    )
+    if (files.length === 0) return 0
+    const index =
+      location.project.base === 'vanilla'
+        ? await deps.vanilla.getIndex(location.project.authoringVersion)
+        : null
+    let count = 0
+    for (const file of files) {
+      const vanilla = VANILLA_DATA_RE.test(file.path) ? index?.entries[file.path] : undefined
+      if (!vanilla || vanilla.sha256 !== (await fileInfo.get(file)).sha256) count++
+    }
+    return count
+  }
+
+  /** pack.mcmeta for the pack folder: a data pack declares the data pack format, other kinds the resource one. */
+  function folderMcmeta(
+    project: Project,
+    version: NonNullable<ReturnType<VanillaStore['getVersion']>>
+  ): Record<string, unknown> {
+    return buildResourcePackMcmeta(project.description, version, {
+      packType: project.kind === 'data' ? 'data' : 'resource'
+    })
+  }
+
   async function summarize(location: PackLocation): Promise<PackSummary> {
     const { project, folder } = location
     const summary: PackSummary = {
@@ -223,6 +265,7 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       description: project.description,
       authoringVersion: project.authoringVersion,
       base: project.base,
+      kind: project.kind,
       folder,
       changedCount: await changedCount(location),
       updatedAt: project.updatedAt,
@@ -305,6 +348,7 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         description: input.description,
         authoringVersion: version.id,
         base: input.base,
+        kind: input.kind,
         createdAt: timestamp,
         updatedAt: timestamp
       }
@@ -313,7 +357,7 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       try {
         await writeFileAtomic(
           join(folder, 'pack.mcmeta'),
-          toJsonBytes(buildResourcePackMcmeta(project.description, version))
+          toJsonBytes(folderMcmeta(project, version))
         )
         await writeFileAtomic(join(folder, 'pack.png'), await defaultIcon(project))
         await writeProject(folder, project)
@@ -340,10 +384,20 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         ...location.project,
         ...(patch.name !== undefined ? { name: patch.name } : {}),
         ...(patch.description !== undefined ? { description: patch.description } : {}),
+        ...(patch.kind !== undefined ? { kind: patch.kind } : {}),
         updatedAt: now().toISOString()
       }
       await writeProject(location.folder, project)
-      if (patch.description !== undefined) {
+      const version = deps.vanilla.getVersion(project.authoringVersion)
+      if (patch.kind !== undefined && patch.kind !== location.project.kind && version) {
+        // The folder's pack.mcmeta follows the kind (extra sections kept); files of the other kind stay in place.
+        const file = join(location.folder, 'pack.mcmeta')
+        const current = parseJson(await fs.readFile(file).catch(() => new Uint8Array()))
+        await writeFileAtomic(
+          file,
+          toJsonBytes(mergeMcmeta(folderMcmeta(project, version), current))
+        )
+      } else if (patch.description !== undefined) {
         const file = join(location.folder, 'pack.mcmeta')
         const current = parseJson(await fs.readFile(file).catch(() => new Uint8Array()))
         const mcmeta = isRecord(current) ? current : {}
@@ -429,18 +483,21 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       // Validate every target before writing anything.
       const targets = unique.map((v) => checkExportTarget(location, v))
       const reports: ExportReport[] = []
+      const types = [...new Set(options.packTypes ?? [options.packType ?? 'resource'])]
       for (const target of targets) {
-        const name = `${slugify(location.project.name)}-${target.id}-${PACK_TYPE_FILE_SUFFIX[options.packType ?? 'resource']}.zip`
-        const onProgress = deps.jobs.start('pack.export')
-        reports.push(
-          await exportPackZip(
-            location,
-            target,
-            join(folder, name),
-            { vanilla: deps.vanilla, onProgress },
-            options
+        for (const packType of types) {
+          const name = `${slugify(location.project.name)}-${target.id}-${PACK_TYPE_FILE_SUFFIX[packType]}.zip`
+          const onProgress = deps.jobs.start('pack.export')
+          reports.push(
+            await exportPackZip(
+              location,
+              target,
+              join(folder, name),
+              { vanilla: deps.vanilla, onProgress },
+              { acceptNewer: options.acceptNewer, packType }
+            )
           )
-        )
+        }
       }
       return reports
     },
@@ -490,9 +547,7 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       const currentMcmeta = parseJson(await fs.readFile(mcmetaFile).catch(() => new Uint8Array()))
       await writeFileAtomic(
         mcmetaFile,
-        toJsonBytes(
-          mergeMcmeta(buildResourcePackMcmeta(location.project.description, target), currentMcmeta)
-        )
+        toJsonBytes(mergeMcmeta(folderMcmeta(location.project, target), currentMcmeta))
       )
       const project: Project = {
         ...location.project,
@@ -521,9 +576,11 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         path: f.path,
         data: new Uint8Array(await fs.readFile(f.abs))
       }))
+      await deps.vanilla.prepareData(authoring)
       const index = await deps.vanilla.getIndex(authoring)
       const issues = [
         ...validatePackFiles(files),
+        ...dataSchemaWarnings(files, index ? Object.keys(index.entries) : []),
         ...proportionWarnings(files, (path) => index?.entries[path]),
         ...missingAnimationWarnings(files, (path) => index?.entries[path]?.animated)
       ]
