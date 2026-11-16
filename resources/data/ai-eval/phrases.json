@@ -348,11 +348,7 @@
       "en": "make everything redder",
       "expect": [
         {
-          "anyTool": [
-            "hue_shift",
-            "replace_color",
-            "apply_palette"
-          ]
+          "anyTool": ["hue_shift", "replace_color", "apply_palette"]
         }
       ]
     },
@@ -487,11 +483,7 @@
           "tool": "apply_palette",
           "args": {
             "palette": {
-              "containsAll": [
-                "#000000",
-                "#ffffff",
-                "#ff0000"
-              ]
+              "containsAll": ["#000000", "#ffffff", "#ff0000"]
             }
           }
         }
@@ -508,10 +500,7 @@
           "tool": "update_style_brief",
           "args": {
             "patch.theme": {
-              "containsAny": [
-                "feu",
-                "fire"
-              ]
+              "containsAny": ["feu", "fire"]
             }
           }
         }
@@ -544,13 +533,7 @@
           }
         },
         {
-          "anyTool": [
-            "set_pixels",
-            "draw_line",
-            "fill_rect",
-            "fill",
-            "draw_rect"
-          ]
+          "anyTool": ["set_pixels", "draw_line", "fill_rect", "fill", "draw_rect"]
         }
       ]
     },
@@ -585,11 +568,7 @@
       "en": "make all these textures redder",
       "expect": [
         {
-          "anyTool": [
-            "hue_shift",
-            "apply_palette",
-            "replace_color"
-          ]
+          "anyTool": ["hue_shift", "apply_palette", "replace_color"]
         }
       ]
     },
@@ -609,9 +588,7 @@
                   "lt": 0
                 },
                 "textures.match": {
-                  "containsAny": [
-                    "ore"
-                  ]
+                  "containsAny": ["ore"]
                 }
               }
             },
@@ -622,10 +599,7 @@
                   "lt": 0
                 },
                 "textures.indices": {
-                  "containsAll": [
-                    "2",
-                    "3"
-                  ]
+                  "containsAll": ["2", "3"]
                 }
               }
             }
@@ -666,9 +640,7 @@
                   "color": "black"
                 },
                 "textures.match": {
-                  "containsAny": [
-                    "plank"
-                  ]
+                  "containsAny": ["plank"]
                 }
               }
             },
@@ -679,9 +651,7 @@
                   "color": "black"
                 },
                 "textures.indices": {
-                  "containsAll": [
-                    "4"
-                  ]
+                  "containsAll": ["4"]
                 }
               }
             }
@@ -746,16 +716,10 @@
               "tool": "apply_to_all",
               "args": {
                 "operation.tool": {
-                  "containsAny": [
-                    "hue_shift",
-                    "replace_color",
-                    "apply_palette"
-                  ]
+                  "containsAny": ["hue_shift", "replace_color", "apply_palette"]
                 },
                 "filter.categories": {
-                  "containsAny": [
-                    "ores"
-                  ]
+                  "containsAny": ["ores"]
                 }
               }
             },
@@ -763,16 +727,10 @@
               "tool": "apply_to_all",
               "args": {
                 "operation.tool": {
-                  "containsAny": [
-                    "hue_shift",
-                    "replace_color",
-                    "apply_palette"
-                  ]
+                  "containsAny": ["hue_shift", "replace_color", "apply_palette"]
                 },
                 "filter.match": {
-                  "containsAny": [
-                    "ore"
-                  ]
+                  "containsAny": ["ore"]
                 }
               }
             }
@@ -797,9 +755,7 @@
                   "lt": 0
                 },
                 "filter.categories": {
-                  "containsAny": [
-                    "blocks"
-                  ]
+                  "containsAny": ["blocks"]
                 }
               }
             },
@@ -811,9 +767,7 @@
                   "lt": 0
                 },
                 "filter.folders": {
-                  "containsAny": [
-                    "block"
-                  ]
+                  "containsAny": ["block"]
                 }
               }
             }
@@ -836,9 +790,7 @@
               "color": "black"
             },
             "filter.categories": {
-              "containsAny": [
-                "tools"
-              ]
+              "containsAny": ["tools"]
             }
           }
         }
@@ -873,10 +825,7 @@
           "tool": "update_style_brief",
           "args": {
             "patch.theme": {
-              "containsAny": [
-                "fire",
-                "feu"
-              ]
+              "containsAny": ["fire", "feu"]
             }
           }
         }
@@ -893,10 +842,7 @@
           "tool": "set_pack_meta",
           "args": {
             "name": {
-              "containsAny": [
-                "feu",
-                "fire"
-              ]
+              "containsAny": ["feu", "fire"]
             }
           }
         }
