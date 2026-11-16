@@ -149,7 +149,8 @@
   },
   "common": {
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "save": "Save"
   },
   "packs": {
     "noDescription": "No description",
@@ -454,7 +455,9 @@
       "tools": "Can call tools",
       "toolsShort": "tools",
       "thinking": "Can show its reasoning",
-      "thinkingShort": "thinking"
+      "thinkingShort": "thinking",
+      "noTools": "Cannot call tools, so it cannot make changes for the agents",
+      "noToolsShort": "no tools"
     },
     "cost": {
       "tooltip": "${input} / ${output} per million tokens (in / out), {source}",
@@ -499,8 +502,8 @@
     },
     "keyNotNeeded": "No key needed (local)",
     "eval": {
-      "title": "Test a model",
-      "hint": "Sends the French and English test phrases to the model and checks that it picks the right tools. Uses your provider tokens: 16 phrases for the quick test, 60 for the full test.",
+      "title": "Test models",
+      "hint": "Sends the French and English test phrases to each chosen model and checks that it picks the right tools. Choose several models to compare them side by side. Uses your provider tokens: 16 phrases per model for the quick test, 60 for the full test.",
       "quick": "Quick test",
       "full": "Full test",
       "progress": "{done} of {total} requests",
@@ -515,7 +518,20 @@
       "noCall": "(no tool call)",
       "copy": "Copy the report (Markdown)",
       "copied": "Report copied.",
-      "weakGap": "Uneven fit: {gap} points between French and English. The agent may misread requests in one of the languages."
+      "weakGap": "Uneven fit: {gap} points between French and English. The agent may misread requests in one of the languages.",
+      "pickModels": "Choose one or more models",
+      "progressModel": "Model {index} of {count} ({model}): {done} of {total} requests",
+      "cost": " Cost: {cost}.",
+      "frShort": "FR",
+      "enShort": "EN",
+      "gap": "Gap",
+      "latency": "Latency",
+      "costHeader": "Cost",
+      "verdictStopped": "stopped",
+      "verdictPass": "good fit",
+      "verdictWeak": "weak",
+      "compareHint": "Best first: highest overall score, then the smallest French/English gap, then the lowest cost.",
+      "ms": "{ms} ms"
     },
     "reasoning": {
       "off": "Off",
@@ -523,6 +539,46 @@
       "medium": "Medium",
       "high": "High",
       "tooltip": "Reasoning level for this tab (the default is in Settings)"
+    },
+    "preset": "Provider",
+    "presets": {
+      "ollama-cloud": "Ollama Cloud",
+      "openai": "OpenAI",
+      "openrouter": "OpenRouter (many models, one key)",
+      "ollama-local": "Ollama on this computer",
+      "custom": "Other (OpenAI-compatible or Ollama)"
+    },
+    "baseUrlHint": "For OpenAI-compatible servers, include the version, for example https://api.example.com/v1.",
+    "extraHeaders": "Extra headers",
+    "extraHeadersHint": "Optional, one per line as Name: value. Never put your API key here.",
+    "invalidHeaders": "Each line must look like Name: value.",
+    "editProvider": "Edit",
+    "agentDefaults": "Agent defaults",
+    "agentLater": "This agent arrives in a later version; the defaults you choose here will be used then.",
+    "models": {
+      "title": "Models",
+      "hint": "Every model your providers offer, with what it can do and its price. Adjust a model when its provider gets it wrong or gives no price.",
+      "allProviders": "All providers",
+      "model": "Model",
+      "provider": "Provider",
+      "pricePerM": "Price per million tokens",
+      "price": "${input} in / ${output} out",
+      "noPrice": "Unknown",
+      "adjust": "Adjust",
+      "adjustTitle": "Adjust {model}",
+      "tiers": "Cost tiers ($ per 1M tokens: $ below, $$$ above)",
+      "tiersHint": "Blended price per million tokens (one part input, three parts output): $ under ${low}, $$ up to ${high}, $$$ above. Models without a known price show no tier.",
+      "showAll": "Also offer models that cannot call tools",
+      "search": "Search models",
+      "auto": "As reported",
+      "yes": "Yes",
+      "no": "No",
+      "yourPrice": "Your price ($ per 1M)",
+      "yourPriceHint": "Input and output prices; leave empty to use the provider price or the estimate.",
+      "priceBoth": "Enter both prices, or neither.",
+      "in": "Input",
+      "out": "Output",
+      "reset": "Back to reported values"
     }
   },
   "brief": {

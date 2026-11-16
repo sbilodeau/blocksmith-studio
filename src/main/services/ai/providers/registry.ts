@@ -1,10 +1,13 @@
 import type { ModelInfo, ModelRef, ProviderConfig } from '@shared/ai/types'
+import type { ModelOverride } from '@shared/model/settings'
+import { costTierFor, DEFAULT_COST_TIER_THRESHOLDS, type CostTierThresholds } from './cost'
 import type { ProviderRegistry } from '../../contracts'
 import type { SecretsStore } from '../../secrets'
 import { AppErrorException, toAppError } from '../../../ipc/registry'
 import { assertSafeBaseUrl, isLoopbackUrl, type FetchLike, type ProviderLogger } from './http'
 import type { SleepFn } from './http'
 import { createOllamaAdapter } from './ollama'
+import { createOpenAiAdapter } from './openai'
 import type { AdapterFactories, ProviderAdapterImpl } from './types'
 
 /** Model lists are cached per provider for 10 minutes (`refresh: true` bypasses the cache). */
@@ -13,8 +16,29 @@ export const MODEL_CACHE_TTL_MS = 10 * 60 * 1000
 export const TEST_TIMEOUT_MS = 15_000
 
 export const DEFAULT_ADAPTER_FACTORIES: AdapterFactories = {
-  ollama: createOllamaAdapter
-  // 'openai-compatible': M4
+  ollama: createOllamaAdapter,
+  'openai-compatible': createOpenAiAdapter
+}
+
+/** Applies the user's overrides (capabilities, price) and the cost tier to a provider's model list. */
+export function decorateModels(
+  list: readonly ModelInfo[],
+  overrides: readonly ModelOverride[],
+  thresholds: CostTierThresholds = DEFAULT_COST_TIER_THRESHOLDS
+): ModelInfo[] {
+  return list.map((m) => {
+    const o = overrides.find((x) => x.providerId === m.providerId && x.modelId === m.id)
+    const out: ModelInfo = { ...m, capabilities: { ...m.capabilities } }
+    if (o?.capabilities && Object.keys(o.capabilities).length > 0) {
+      Object.assign(out.capabilities, o.capabilities)
+      out.capabilitySource = 'user'
+    }
+    if (o?.pricing) out.pricing = { ...o.pricing, source: 'user' }
+    const tier = costTierFor(out.pricing, thresholds)
+    if (tier) out.costTier = tier
+    else delete out.costTier
+    return out
+  })
 }
 
 export interface ProviderTestResult {
@@ -39,6 +63,8 @@ export interface ProviderRegistryService extends ProviderRegistry {
 
 export interface ProviderRegistryDeps {
   getProviders(): readonly ProviderConfig[]
+  /** User model overrides and cost tier limits (settings.ai); none when omitted. */
+  getModelSettings?(): { overrides: readonly ModelOverride[]; costTiers?: CostTierThresholds }
   secrets: Pick<SecretsStore, 'get' | 'has'>
   /** Electron `net.fetch` in the app. */
   fetch: FetchLike
@@ -101,7 +127,19 @@ export function createProviderRegistry(deps: ProviderRegistryDeps): ProviderRegi
     return adapter
   }
 
+  function decorate(list: readonly ModelInfo[]): ModelInfo[] {
+    const extra = deps.getModelSettings?.()
+    return decorateModels(list, extra?.overrides ?? [], extra?.costTiers)
+  }
+
   async function listModels(
+    providerId: string,
+    options: { refresh?: boolean } = {}
+  ): Promise<ModelInfo[]> {
+    return decorate(await listRaw(providerId, options))
+  }
+
+  async function listRaw(
     providerId: string,
     options: { refresh?: boolean } = {}
   ): Promise<ModelInfo[]> {

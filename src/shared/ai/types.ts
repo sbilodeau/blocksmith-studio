@@ -186,6 +186,8 @@ export interface EvalReport {
   avgLatencyMs: number
   inputTokens: number
   outputTokens: number
+  /** Total cost in USD when known (provider cost or the model's price). */
+  costUsd?: number
   /** Stopped before every request ran. */
   stopped: boolean
   failures: Array<{

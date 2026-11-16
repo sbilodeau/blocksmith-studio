@@ -1,0 +1,14 @@
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-1","provider":"DeepInfra","model":"qwen/qwen3-32b","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant","content":"","reasoning":"The user wants","reasoning_details":[{"type":"reasoning.text","text":"The user wants"}]},"finish_reason":null}]}
+
+data: {"id":"gen-1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"","reasoning":" a flip.","reasoning_details":[{"type":"reasoning.text","text":" a flip."}]},"finish_reason":null}]}
+
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"Done."},"finish_reason":"stop","native_finish_reason":"stop"}]}
+
+data: {"id":"gen-1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":""},"finish_reason":null}],"usage":{"prompt_tokens":300,"completion_tokens":25,"total_tokens":325,"cost":0.00012,"is_byok":false}}
+
+data: [DONE]
+

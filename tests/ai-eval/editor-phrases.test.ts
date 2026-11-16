@@ -1,54 +1,101 @@
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_PROVIDERS } from '@shared/model/settings'
+import type { EvalReport, ProviderConfig } from '@shared/ai/types'
+import { PROVIDER_PRESETS } from '@shared/ai/presets'
+import { comparisonMarkdown } from '@shared/ai/eval-compare'
 import { createProviderRegistry } from '../../src/main/services/ai/providers'
-import { loadEvalCases, parseModelRef, runEval } from '../../src/main/services/ai/eval/runner'
-import { summarize, toMarkdown } from '../../src/main/services/ai/eval/report'
+import {
+  buildEvalReport,
+  loadEvalCases,
+  parseModelRef,
+  runEval
+} from '../../src/main/services/ai/eval/runner'
+import { DEFAULT_THRESHOLDS } from '../../src/main/services/ai/eval/report'
 
 /**
- * Live FR/EN evaluation (PLAN 9.4). Runs only when OLLAMA_API_KEY is set (environment or .env.local):
- *   npm run test:ai                                   default model
+ * Live FR/EN evaluation (PLAN 9.4). Runs when at least one provider key is set (environment or .env.local):
+ *   OLLAMA_API_KEY      -> Ollama Cloud models ("gpt-oss:120b" or "ollama-cloud/gpt-oss:120b")
+ *   OPENAI_API_KEY      -> "openai/gpt-4o-mini"
+ *   OPENROUTER_API_KEY  -> "openrouter/qwen/qwen3-32b"
+ *
+ *   npm run test:ai                                                     default model
  *   BLOCKSMITH_EVAL_MODEL=qwen3-coder:480b npm run test:ai
+ *   BLOCKSMITH_EVAL_MODEL="gpt-oss:120b,openrouter/qwen/qwen3-32b" npm run test:ai   side by side
  *   BLOCKSMITH_EVAL_CASES=rotate-left-90,flip-horizontal npm run test:ai
- * Writes ai-eval-report.md at the repo root and fails below 90% overall or above a 10-point FR-EN gap.
+ * Writes ai-eval-report.md at the repo root (with a comparison table for several models) and fails when a model
+ * scores below 90% overall or shows more than a 10-point FR-EN gap.
  */
 
-const key = process.env['OLLAMA_API_KEY']
+const KEYS: Record<string, string | undefined> = {
+  'ollama-cloud': process.env['OLLAMA_API_KEY'],
+  openai: process.env['OPENAI_API_KEY'],
+  openrouter: process.env['OPENROUTER_API_KEY']
+}
 export const DEFAULT_EVAL_MODEL = 'gpt-oss:120b'
 const ROOT = join(__dirname, '../..')
 
-describe.skipIf(!key)('AI FR/EN evaluation (live)', () => {
+const PROVIDERS: ProviderConfig[] = PROVIDER_PRESETS.filter((p) => KEYS[p.id]).map((p) => ({
+  id: p.id,
+  kind: p.kind,
+  label: p.label,
+  baseUrl: p.baseUrl,
+  enabled: true,
+  ...(p.extraHeaders ? { extraHeaders: p.extraHeaders } : {})
+}))
+
+describe.skipIf(PROVIDERS.length === 0)('AI FR/EN evaluation (live)', () => {
   it(
     'maps French and English requests to the expected tool calls',
-    { timeout: 30 * 60_000 },
+    { timeout: 60 * 60_000 },
     async () => {
-      const model = parseModelRef(process.env['BLOCKSMITH_EVAL_MODEL'] || DEFAULT_EVAL_MODEL)
+      const models = (process.env['BLOCKSMITH_EVAL_MODEL'] || DEFAULT_EVAL_MODEL)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => parseModelRef(s))
       const only = process.env['BLOCKSMITH_EVAL_CASES']?.split(',').map((s) => s.trim())
       const cases = loadEvalCases(join(ROOT, 'resources/data/ai-eval/phrases.json')).filter(
         (c) => !only?.length || only.includes(c.id)
       )
       const providers = createProviderRegistry({
-        getProviders: () => DEFAULT_PROVIDERS,
-        secrets: { get: async () => key, has: async () => true },
+        getProviders: () => PROVIDERS,
+        secrets: {
+          get: async (id) => KEYS[id],
+          has: async (id) => KEYS[id] !== undefined
+        },
         fetch: (url, init) => fetch(url, init)
       })
-      const results = await runEval({
-        providers,
-        model,
-        cases,
-        concurrency: Number(process.env['BLOCKSMITH_EVAL_CONCURRENCY'] ?? 3),
-        onResult: (r, done, total) =>
-          console.log(`[${done}/${total}] ${r.pass ? 'ok  ' : 'FAIL'} ${r.language} ${r.caseId}`)
-      })
-      const summary = summarize(results)
-      const report = toMarkdown(`${model.providerId}/${model.modelId}`, results, summary)
-      writeFileSync(join(ROOT, 'ai-eval-report.md'), report)
-      console.log(report)
-      expect(summary.overall.rate, 'overall pass rate').toBeGreaterThanOrEqual(
-        summary.thresholds.minRate
-      )
-      expect(summary.gap, 'FR-EN gap').toBeLessThanOrEqual(summary.thresholds.maxGap)
+
+      const reports: EvalReport[] = []
+      for (const model of models) {
+        const label = `${model.providerId}/${model.modelId}`
+        const results = await runEval({
+          providers,
+          model,
+          cases,
+          concurrency: Number(process.env['BLOCKSMITH_EVAL_CONCURRENCY'] ?? 3),
+          onResult: (r, done, total) =>
+            console.log(
+              `[${label} ${done}/${total}] ${r.pass ? 'ok  ' : 'FAIL'} ${r.language} ${r.caseId}`
+            )
+        })
+        reports.push(buildEvalReport(model, results, cases.length * 2))
+      }
+
+      const markdown = [
+        ...(reports.length > 1 ? [comparisonMarkdown(reports)] : []),
+        ...reports.map((r) => r.markdown)
+      ].join('\n')
+      writeFileSync(join(ROOT, 'ai-eval-report.md'), markdown)
+      console.log(markdown)
+      for (const r of reports) {
+        const label = `${r.model.providerId}/${r.model.modelId}`
+        expect(r.overall.rate, `${label}: overall pass rate`).toBeGreaterThanOrEqual(
+          DEFAULT_THRESHOLDS.minRate
+        )
+        expect(r.gap, `${label}: FR-EN gap`).toBeLessThanOrEqual(DEFAULT_THRESHOLDS.maxGap)
+      }
     }
   )
 })

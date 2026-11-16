@@ -1,0 +1,4 @@
+data: {"choices":[{"index":0,"delta":{"content":"Hel"},"finish_reason":null}]}
+
+data: {"error":{"message":"Provider returned error","code":502}}
+

@@ -52,16 +52,24 @@ export const QUICK_CASE_IDS = [
 
 /** Runs the cases and builds the report the renderer shows. */
 export async function runEvalReport(
-  opts: Omit<EvalRunOptions, 'cases'> & { quick: boolean }
+  opts: Omit<EvalRunOptions, 'cases'> & { quick: boolean; cases?: EvalCase[] }
 ): Promise<EvalReport> {
-  const all = bundledEvalCases()
+  const all = opts.cases ?? bundledEvalCases()
   const cases = opts.quick ? all.filter((c) => QUICK_CASE_IDS.includes(c.id)) : all
   const results = await runEval({ ...opts, cases })
+  return buildEvalReport(opts.model, results, cases.length * (opts.languages?.length ?? 2))
+}
+
+/** The renderer / CLI report of one model from its results (`expected`: requests planned). */
+export function buildEvalReport(
+  model: ModelRef,
+  results: EvalResult[],
+  expected: number
+): EvalReport {
   const summary = summarize(results)
-  const label = `${opts.model.providerId}/${opts.model.modelId}`
-  const stopped = results.length < cases.length * (opts.languages?.length ?? 2)
+  const stopped = results.length < expected
   return {
-    model: opts.model,
+    model,
     overall: summary.overall,
     fr: summary.fr,
     en: summary.en,
@@ -70,6 +78,7 @@ export async function runEvalReport(
     avgLatencyMs: summary.avgLatencyMs,
     inputTokens: summary.inputTokens,
     outputTokens: summary.outputTokens,
+    ...(summary.costUsd !== undefined ? { costUsd: summary.costUsd } : {}),
     stopped,
     failures: results
       .filter((r) => !r.pass)
@@ -80,7 +89,7 @@ export async function runEvalReport(
         calls: r.calls.map((c) => `${c.name}(${JSON.stringify(c.args)})`).join(', '),
         ...(r.error ? { error: r.error } : {})
       })),
-    markdown: toMarkdown(label, results, summary)
+    markdown: toMarkdown(`${model.providerId}/${model.modelId}`, results, summary)
   }
 }
 
@@ -112,11 +121,13 @@ export async function runEvalCase(
   const calls: ToolCall[] = []
   let inputTokens = 0
   let outputTokens = 0
+  let costUsd: number | undefined
   const emit = (e: AgentEvent): void => {
     if (e.type === 'tool_call') calls.push(e.call)
     if (e.type === 'usage') {
       inputTokens += e.inputTokens ?? 0
       outputTokens += e.outputTokens ?? 0
+      if (e.costUsd !== undefined) costUsd = (costUsd ?? 0) + e.costUsd
     }
   }
   const controller = new AbortController()
@@ -154,6 +165,7 @@ export async function runEvalCase(
       latencyMs: Date.now() - started,
       inputTokens,
       outputTokens,
+      ...(costUsd !== undefined ? { costUsd } : {}),
       ...(error ? { error } : {})
     }
   } finally {

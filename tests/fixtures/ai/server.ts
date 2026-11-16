@@ -59,6 +59,23 @@ export function ndjson(text: string): RouteHandler {
   }
 }
 
+/** Streams a Server-Sent Events text, one event per write (split on blank lines, like a real server). */
+export function sse(text: string): RouteHandler {
+  return async (_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+    for (const event of text.split(/\r?\n\r?\n/)) {
+      if (!event.trim()) continue
+      res.write(event + '\n\n')
+      await new Promise((r) => setImmediate(r))
+    }
+    res.end()
+  }
+}
+
+export function sseFixture(name: string): RouteHandler {
+  return sse(fixture(name))
+}
+
 export async function startFakeProviderServer(): Promise<FakeProviderServer> {
   const routes = new Map<string, RouteHandler[]>()
   const counters = new Map<string, number>()

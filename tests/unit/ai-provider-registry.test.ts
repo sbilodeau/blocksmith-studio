@@ -169,7 +169,7 @@ describe('ProviderRegistry', () => {
 
     it('shares one in-flight request', async () => {
       const [a, b] = await Promise.all([registry.listModels('cloud'), registry.listModels('cloud')])
-      expect(a).toBe(b)
+      expect(a).toEqual(b)
       expect(listModels).toHaveBeenCalledTimes(1)
     })
 

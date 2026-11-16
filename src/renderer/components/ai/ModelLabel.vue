@@ -34,6 +34,12 @@ const costTooltip = computed(() => {
       </template>
       {{ t('ai.cap.tools') }}
     </n-tooltip>
+    <n-tooltip v-if="model.capabilities.tools === false">
+      <template #trigger>
+        <n-tag size="tiny" :bordered="false" type="error">{{ t('ai.cap.noToolsShort') }}</n-tag>
+      </template>
+      {{ t('ai.cap.noTools') }}
+    </n-tooltip>
     <n-tooltip v-if="model.capabilities.thinking">
       <template #trigger>
         <n-tag size="tiny" :bordered="false" type="warning">{{ t('ai.cap.thinkingShort') }}</n-tag>
@@ -55,6 +61,10 @@ const costTooltip = computed(() => {
   align-items: center;
   gap: 4px;
   min-width: 0;
+  max-width: 100%;
+}
+.model > :not(.name) {
+  flex-shrink: 0;
 }
 .name {
   overflow: hidden;

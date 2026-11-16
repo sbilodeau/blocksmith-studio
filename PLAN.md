@@ -874,6 +874,14 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 ### M4 - OpenAI-compatible providers and AI settings
 - OpenAI-compatible adapter (OpenAI, OpenRouter, custom); capability hints and overrides; per-agent default models; cost estimates (price table, OpenRouter cost); `$`/`$$`/`$$$` cost tier in the model picker (7.4).
 - Eval report comparing several models side by side.
+- As built: `providers/openai.ts` (SSE stream, tool call fragments, `reasoning_content` / `reasoning` /
+  `reasoning_details`, server flavors so api.openai.com never receives unknown fields), presets in
+  `src/shared/ai/presets.ts`, price hints in `resources/data/model-prices.json`, user overrides and tier limits in
+  `settings.ai`, request cost computed from the price when the provider gives none, Settings > AI > Models, and
+  "Test models" with a shared comparison builder (`src/shared/ai/eval-compare.ts`) used by the app and the CLI.
+- **Acceptance**: add OpenRouter (or OpenAI) with a key, pick one of its models for the editor agent, get a plan
+  for a French request; the model picker shows the cost tier and the answer shows its cost; comparing two models
+  in "Test models" gives a ranked table.
 
 ### M5 - Navigation agent and bulk operations
 - Selection-scoped agent; contact sheets and batching; `apply_to_all` in a worker with progress; bulk proposal review (grid of before/after with per-texture toggles).

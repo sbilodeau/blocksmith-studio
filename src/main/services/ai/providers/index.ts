@@ -5,8 +5,12 @@ export {
   TEST_TIMEOUT_MS,
   type ProviderRegistryDeps,
   type ProviderRegistryService,
-  type ProviderTestResult
+  type ProviderTestResult,
+  decorateModels
 } from './registry'
+export { createOpenAiAdapter, toOpenAiMessages, flavorOf, reasoningParams } from './openai'
+export { priceFromHints, costFromUsage } from './pricing'
+export { readSse } from './sse'
 export { createOllamaAdapter, toOllamaMessages, fromOllamaToolCall } from './ollama'
 export { CAPABILITY_HINTS, capabilitiesFromHints, capabilitiesFromOllama } from './capabilities'
 export {

@@ -17,6 +17,8 @@ export interface EvalResult {
   latencyMs: number
   inputTokens?: number
   outputTokens?: number
+  /** Cost of the request in USD, when the provider or the model price tells it. */
+  costUsd?: number
   /** Provider or runtime error code when the run failed (counts as a failure). */
   error?: string
 }
@@ -48,6 +50,8 @@ export interface EvalSummary {
   avgLatencyMs: number
   inputTokens: number
   outputTokens: number
+  /** Sum of the known request costs (USD); undefined when no request had a cost. */
+  costUsd?: number
 }
 
 function score(results: EvalResult[]): LanguageScore {
@@ -74,7 +78,10 @@ export function summarize(
     thresholds,
     avgLatencyMs: results.length ? Math.round(latency / results.length) : 0,
     inputTokens: results.reduce((s, r) => s + (r.inputTokens ?? 0), 0),
-    outputTokens: results.reduce((s, r) => s + (r.outputTokens ?? 0), 0)
+    outputTokens: results.reduce((s, r) => s + (r.outputTokens ?? 0), 0),
+    ...(results.some((r) => r.costUsd !== undefined)
+      ? { costUsd: results.reduce((s, r) => s + (r.costUsd ?? 0), 0) }
+      : {})
   }
 }
 
@@ -121,7 +128,9 @@ export function toMarkdown(model: string, results: EvalResult[], summary: EvalSu
     ),
     '',
     `FR-EN gap: ${summary.gap} points (max ${t.maxGap}). Minimum overall rate: ${t.minRate}%.`,
-    `Average latency: ${summary.avgLatencyMs} ms. Tokens: ${summary.inputTokens} in, ${summary.outputTokens} out.`,
+    `Average latency: ${summary.avgLatencyMs} ms. Tokens: ${summary.inputTokens} in, ${summary.outputTokens} out.${
+      summary.costUsd !== undefined ? ` Cost: $${summary.costUsd.toFixed(4)}.` : ''
+    }`,
     ''
   ]
   const ids = [...new Set(results.map((r) => r.caseId))]

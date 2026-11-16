@@ -6,7 +6,7 @@ import type { ModelInfo, ModelRef } from '@shared/ai/types'
 import ModelLabel from './ModelLabel.vue'
 import { useAiStore } from '../../stores/ai'
 
-/** Model selector with capability badges; only tool-capable models are offered to agents. */
+/** Model selector with capability badges; tool-capable models only, unless Settings shows all of them. */
 const model = defineModel<ModelRef | undefined>({ required: true })
 defineProps<{ size?: 'tiny' | 'small' | 'medium' }>()
 const { t } = useI18n()
@@ -15,7 +15,7 @@ const ai = useAiStore()
 const key = (r: ModelRef): string => `${r.providerId}::${r.modelId}`
 
 const options = computed<SelectOption[]>(() =>
-  ai.toolModels.map((m) => ({
+  ai.pickerModels.map((m) => ({
     value: key({ providerId: m.providerId, modelId: m.id }),
     label: m.label,
     model: m

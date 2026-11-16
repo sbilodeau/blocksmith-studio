@@ -3,6 +3,7 @@ import { defaultSettings, applySettingsPatch, type Settings } from '@shared/mode
 import type { UpdaterStatus } from '@shared/model/updater'
 import type { CategorySummary, PackSummary, TextureEntry } from '@shared/model/pack'
 import type { VanillaAvailability } from '@shared/model/vanilla'
+import type { EvalReport, ModelInfo, ModelRef, ProviderStatus } from '@shared/ai/types'
 
 /**
  * In-memory fake of the preload bridge (`window.blocksmith`) for component tests.
@@ -15,6 +16,10 @@ export interface FakeBridge {
   textures: TextureEntry[]
   categories: CategorySummary[]
   versions: VanillaAvailability[]
+  providers: ProviderStatus[]
+  models: ModelInfo[]
+  /** Settings > "Test models" results, by model id. */
+  evalReports: Record<string, EvalReport>
   calls: Array<{ channel: string; payload: unknown }>
   emit(channel: string, payload: unknown): void
 }
@@ -28,6 +33,9 @@ export const fakeBridge: FakeBridge = {
   textures: [],
   categories: [],
   versions: [],
+  providers: [],
+  models: [],
+  evalReports: {},
   calls: [],
   emit(channel, payload) {
     listeners.get(channel)?.forEach((l) => l(payload))
@@ -40,6 +48,19 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
     fakeBridge.settings = applySettingsPatch(fakeBridge.settings, patch as never)
     return fakeBridge.settings
   },
+  'ai.providers.list': () => fakeBridge.providers,
+  'ai.providers.save': (config) => {
+    const c = config as Omit<ProviderStatus, 'hasKey' | 'keyRequired'>
+    const status = { hasKey: false, keyRequired: true, ...c }
+    fakeBridge.providers = [...fakeBridge.providers.filter((p) => p.id !== c.id), status]
+    return fakeBridge.providers
+  },
+  'ai.models.list': () => fakeBridge.models,
+  'ai.eval.run': (input) => {
+    const { model } = input as { model: ModelRef }
+    return fakeBridge.evalReports[model.modelId]
+  },
+  'ai.eval.stop': () => undefined,
   'updater.getStatus': () => fakeBridge.updater,
   'updater.check': () => fakeBridge.updater,
   'workspace.get': () => ({ path: '/Users/test/Documents/Blocksmith Studio' }),

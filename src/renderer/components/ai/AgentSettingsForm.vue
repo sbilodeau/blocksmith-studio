@@ -9,7 +9,7 @@ import { useSettingsStore } from '../../stores/settings'
 import { useErrorMessage } from '../../composables/useErrorMessage'
 
 /** Defaults for one agent: model, thinking, round-trip budget and image mode (PLAN 7.3). */
-const props = defineProps<{ agent: AgentKind }>()
+const props = defineProps<{ agent: AgentKind; hideTitle?: boolean }>()
 const { t } = useI18n()
 const aiStore = useAiStore()
 const settingsStore = useSettingsStore()
@@ -62,7 +62,8 @@ function refresh(): void {
 <template>
   <div :data-testid="`agent-settings-${agent}`">
     <n-space justify="space-between" align="center">
-      <n-text strong>{{ t(`ai.agents.${agent}`) }}</n-text>
+      <n-text v-if="!hideTitle" strong>{{ t(`ai.agents.${agent}`) }}</n-text>
+      <span v-else />
       <n-button
         size="tiny"
         quaternary

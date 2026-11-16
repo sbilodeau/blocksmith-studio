@@ -1,0 +1,56 @@
+{
+  "data": [
+    {
+      "id": "qwen/qwen3-32b",
+      "canonical_slug": "qwen/qwen3-32b-04-28",
+      "name": "Qwen: Qwen3 32B",
+      "context_length": 40960,
+      "architecture": {
+        "modality": "text->text",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      "pricing": {
+        "prompt": "0.00000008",
+        "completion": "0.00000024",
+        "request": "0",
+        "image": "0"
+      },
+      "supported_parameters": [
+        "max_tokens",
+        "temperature",
+        "tools",
+        "tool_choice",
+        "reasoning",
+        "include_reasoning"
+      ]
+    },
+    {
+      "id": "openai/gpt-4o",
+      "name": "OpenAI: GPT-4o",
+      "context_length": 128000,
+      "architecture": {
+        "input_modalities": ["text", "image", "file"],
+        "output_modalities": ["text"]
+      },
+      "pricing": { "prompt": "0.0000025", "completion": "0.00001" },
+      "supported_parameters": ["tools", "tool_choice", "temperature"]
+    },
+    {
+      "id": "openrouter/auto",
+      "name": "Auto Router",
+      "context_length": 2000000,
+      "architecture": { "input_modalities": ["text", "image"], "output_modalities": ["text"] },
+      "pricing": { "prompt": "-1", "completion": "-1" },
+      "supported_parameters": ["tools", "reasoning"]
+    },
+    {
+      "id": "meta-llama/llama-3.3-8b-instruct:free",
+      "name": "Meta: Llama 3.3 8B Instruct (free)",
+      "context_length": 128000,
+      "architecture": { "input_modalities": ["text"], "output_modalities": ["text"] },
+      "pricing": { "prompt": "0", "completion": "0" },
+      "supported_parameters": ["max_tokens", "temperature"]
+    }
+  ]
+}

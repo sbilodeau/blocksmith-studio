@@ -1,0 +1,8 @@
+data: {"choices":[{"index":0,"delta":{"role":"assistant","content":null,"reasoning_content":"Think"},"finish_reason":null}]}
+
+data: {"choices":[{"index":0,"delta":{"content":null,"reasoning_content":"ing..."},"finish_reason":null}]}
+
+data: {"choices":[{"index":0,"delta":{"content":"OK"},"finish_reason":"length"}]}
+
+data: [DONE]
+

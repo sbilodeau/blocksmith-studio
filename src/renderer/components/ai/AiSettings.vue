@@ -4,20 +4,20 @@ import { useI18n } from 'vue-i18n'
 import {
   NButton,
   NCard,
-  NForm,
-  NFormItem,
   NInput,
-  NRadioButton,
-  NRadioGroup,
   NSpace,
   NSwitch,
+  NTabPane,
+  NTabs,
   NTag,
   NText,
   useMessage
 } from 'naive-ui'
-import type { ProviderKind } from '@shared/ai/types'
+import type { AgentKind } from '@shared/ai/types'
 import AgentSettingsForm from './AgentSettingsForm.vue'
+import ModelSettings from './ModelSettings.vue'
 import ModelTest from './ModelTest.vue'
+import ProviderForm from './ProviderForm.vue'
 import { useAiStore } from '../../stores/ai'
 import { useErrorMessage } from '../../composables/useErrorMessage'
 
@@ -28,16 +28,12 @@ const { showError, errorText } = useErrorMessage()
 
 const keyInputs = ref<Record<string, string>>({})
 const testing = ref<string | null>(null)
-/** Form for adding a provider (shown while `adding`). */
-const adding = ref(false)
-function setAdding(on: boolean): void {
-  adding.value = on
+/** Provider form: 'new', a provider id being edited, or closed. */
+const form = ref<string | null>(null)
+function openForm(target: string | null): void {
+  form.value = target
 }
-const draft = ref<{ label: string; baseUrl: string; kind: ProviderKind }>({
-  label: '',
-  baseUrl: '',
-  kind: 'openai-compatible'
-})
+const AGENTS: AgentKind[] = ['editor', 'navigation', 'creation']
 
 async function saveKey(providerId: string): Promise<void> {
   try {
@@ -71,28 +67,6 @@ async function test(providerId: string): Promise<void> {
     message.error(errorText(err))
   } finally {
     testing.value = null
-  }
-}
-
-async function addProvider(): Promise<void> {
-  const p = draft.value
-  const id = p.label
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
-  try {
-    await ai.saveProvider({
-      id: id || `provider-${Date.now()}`,
-      kind: p.kind,
-      label: p.label,
-      baseUrl: p.baseUrl,
-      enabled: true
-    })
-    adding.value = false
-    draft.value = { label: '', baseUrl: '', kind: 'openai-compatible' }
-  } catch (err) {
-    showError(err)
   }
 }
 
@@ -177,6 +151,14 @@ onMounted(async () => {
             {{ t('ai.test') }}
           </n-button>
           <n-button
+            size="small"
+            quaternary
+            :data-testid="`provider-edit-${p.id}`"
+            @click="openForm(p.id)"
+          >
+            {{ t('ai.editProvider') }}
+          </n-button>
+          <n-button
             v-if="ai.providers.length > 1"
             size="small"
             quaternary
@@ -186,43 +168,30 @@ onMounted(async () => {
             {{ t('ai.deleteProvider') }}
           </n-button>
         </n-space>
+        <provider-form
+          v-if="form === p.id"
+          :key="`edit-${p.id}`"
+          :provider="p"
+          @done="openForm(null)"
+        />
       </div>
       <n-text depth="3" class="hint">{{ t('ai.keyHint') }}</n-text>
 
-      <div v-if="adding" class="provider">
-        <n-form label-placement="left" label-width="110" size="small">
-          <n-form-item :label="t('ai.providerName')">
-            <n-input v-model:value="draft.label" placeholder="OpenRouter" />
-          </n-form-item>
-          <n-form-item :label="t('ai.providerType')">
-            <n-radio-group v-model:value="draft.kind">
-              <n-radio-button value="openai-compatible">{{
-                t('ai.kind.openai-compatible')
-              }}</n-radio-button>
-              <n-radio-button value="ollama">{{ t('ai.kind.ollama') }}</n-radio-button>
-            </n-radio-group>
-          </n-form-item>
-          <n-form-item :label="t('ai.baseUrl')">
-            <n-input v-model:value="draft.baseUrl" placeholder="https://openrouter.ai/api/v1" />
-          </n-form-item>
-          <n-space>
-            <n-button
-              size="small"
-              type="primary"
-              :disabled="!draft.label || !draft.baseUrl"
-              @click="addProvider"
-            >
-              {{ t('ai.addProvider') }}
-            </n-button>
-            <n-button size="small" @click="setAdding(false)">{{ t('common.cancel') }}</n-button>
-          </n-space>
-        </n-form>
-      </div>
-      <n-button v-else size="small" dashed @click="setAdding(true)">
+      <provider-form v-if="form === 'new'" key="new" @done="openForm(null)" />
+      <n-button v-else size="small" dashed data-testid="provider-new" @click="openForm('new')">
         {{ t('ai.newProvider') }}
       </n-button>
 
-      <agent-settings-form agent="editor" />
+      <div class="agents">
+        <n-text strong>{{ t('ai.agentDefaults') }}</n-text>
+        <n-tabs type="line" size="small" animated>
+          <n-tab-pane v-for="a in AGENTS" :key="a" :name="a" :tab="t(`ai.agents.${a}`)">
+            <n-text v-if="a !== 'editor'" depth="3" class="hint">{{ t('ai.agentLater') }}</n-text>
+            <agent-settings-form :agent="a" hide-title />
+          </n-tab-pane>
+        </n-tabs>
+      </div>
+      <model-settings />
       <model-test />
     </n-space>
   </n-card>
