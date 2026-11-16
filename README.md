@@ -5,7 +5,7 @@
 Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resource packs, with a pixel editor,
 a live 3D preview and AI agents that propose changes you review before anything is applied.
 
-> Status: early development (milestone M5 - navigation agent and bulk operations). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M6 - creation agent). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
@@ -29,6 +29,11 @@ In the texture grid, select textures and click **Ask the AI** (or **AI assistant
 navigation agent works on the whole selection ("mets tout plus rouge", "darken only the ores") and shows every
 changed texture before and after, each with its own checkbox. Without AI, **Edit selection...** applies the same
 color and transform operations by hand. Both write one change you can undo from **History**.
+
+On the pack overview, **Ask the AI (whole pack)** opens the creation agent: describe the pack you want ("fais un
+pack de feu", "make every ore glow red"). It proposes a style brief and category-by-category steps, each with a few
+sample textures before and after. Tick the steps you want and apply: each step is written as its own entry in
+**History** (you can stop between steps, and undo the last steps without losing the others).
 
 To use the agents, open Settings > AI, paste your [Ollama Cloud](https://ollama.com) API key and pick a model (models that
 support tools are listed, with badges for vision and reasoning, and `$` / `$$` / `$$$` when the price is known).
@@ -93,7 +98,7 @@ Project documentation:
 - [docs/image-core.md](docs/image-core.md) - the shared image library (conventions, operations)
 - [docs/preview.md](docs/preview.md) - live 3D preview: model resolution and rendering
 - [docs/entity-models.md](docs/entity-models.md) - entity models read from your Minecraft jar, built-in geometry, how to add entities
-- [docs/ai-agents.md](docs/ai-agents.md) - editor and navigation agents: tools, context, loop, proposals, style brief
+- [docs/ai-agents.md](docs/ai-agents.md) - editor, navigation and creation agents: tools, context, loop, proposals, style brief
 - [docs/bulk.md](docs/bulk.md) - bulk operations on a selection: engine, worker thread, review, history
 - [docs/ai-providers.md](docs/ai-providers.md) - provider layer, Ollama and OpenAI-compatible APIs, prices, secrets
 - [docs/ai-evaluation.md](docs/ai-evaluation.md) - FR/EN evaluation: running it, thresholds, adding cases

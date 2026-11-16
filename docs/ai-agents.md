@@ -1,25 +1,27 @@
 # AI agents
 
 The editor agent (M3) turns a chat message about the open texture into a reviewable plan; the navigation agent
-(M5) does the same for the textures selected in the grid. The AI never touches files: tools run against
-in-memory drafts and the user reviews the resulting proposal. The editor agent's accepted result goes into the
-editor as one undoable edit; the navigation agent's is written as one history entry. PLAN.md section 6 is the
+(M5) does the same for the textures selected in the grid, and the creation agent (M6) for the whole pack. The AI
+never touches files: tools run against in-memory drafts and the user reviews the resulting proposal. The editor
+agent's accepted result goes into the editor as one undoable edit; the navigation agent's is written as one history
+entry; the creation agent's as one history entry per step. PLAN.md section 6 is the
 design; this page describes what the code does.
 
-| Part                 | Code                                                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Tool registry        | `src/shared/ai/tools/` (`defineTool`, `getTool`, `toolSpecs`, grid encoding)                                  |
-| System prompts       | `src/main/services/ai/agent/prompts.ts`                                                                       |
-| Context builder      | `src/main/services/ai/agent/context.ts`, upscaled image in `render.ts`                                        |
-| Agent loop (shared)  | `src/main/services/ai/agent/loop.ts`                                                                          |
-| Editor agent         | `src/main/services/ai/agent/runtime.ts`                                                                       |
-| Navigation agent     | `src/main/services/ai/agent/navigation.ts`, contact sheets in `contact-sheet.ts`                              |
-| Runs and proposals   | `src/main/services/ai/agent/service.ts`, `proposals.ts`                                                       |
-| Conversation files   | `src/main/services/ai/agent/conversation.ts`                                                                  |
-| Style brief          | `src/main/services/brief.ts`                                                                                  |
-| IPC                  | `src/main/ipc/ai-agent-handlers.ts` (`ai.agent.*`, `ai.navigation.*`, `ai.proposal.*`, `brief.*`, `ai.event`) |
-| Chat UI              | `src/renderer/components/ai/AgentChat.vue` (shared), `EditorAgentPanel.vue`, `NavigationAgentPanel.vue`       |
-| Providers (consumed) | `ProviderRegistry` in `src/main/services/contracts.ts`                                                        |
+| Part                 | Code                                                                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tool registry        | `src/shared/ai/tools/` (`defineTool`, `getTool`, `toolSpecs`, grid encoding)                                                                             |
+| System prompts       | `src/main/services/ai/agent/prompts.ts`                                                                                                                  |
+| Context builder      | `src/main/services/ai/agent/context.ts`, upscaled image in `render.ts`                                                                                   |
+| Agent loop (shared)  | `src/main/services/ai/agent/loop.ts`                                                                                                                     |
+| Editor agent         | `src/main/services/ai/agent/runtime.ts`                                                                                                                  |
+| Navigation agent     | `src/main/services/ai/agent/navigation.ts`, contact sheets in `contact-sheet.ts`                                                                         |
+| Creation agent       | `src/main/services/ai/agent/creation.ts`                                                                                                                 |
+| Runs and proposals   | `src/main/services/ai/agent/service.ts`, `proposals.ts`                                                                                                  |
+| Conversation files   | `src/main/services/ai/agent/conversation.ts`                                                                                                             |
+| Style brief          | `src/main/services/brief.ts`                                                                                                                             |
+| IPC                  | `src/main/ipc/ai-agent-handlers.ts` (`ai.agent.*`, `ai.navigation.*`, `ai.creation.*`, `ai.proposal.*`, `brief.*`, `ai.event`)                           |
+| Chat UI              | `src/renderer/components/ai/AgentChat.vue` (shared), `EditorAgentPanel.vue`, `NavigationAgentPanel.vue`, `CreationAgentPanel.vue` + `CreationReview.vue` |
+| Providers (consumed) | `ProviderRegistry` in `src/main/services/contracts.ts`                                                                                                   |
 
 ## Tools
 
@@ -203,6 +205,42 @@ conversation per pack tab (`navigation.jsonl`); every request carries the curren
   written as one history entry (`source: 'ai'`, label "AI plan on N textures"). Accepted brief patches, the
   request log line (`N selected textures: "<request>" -> tools (k of n steps)`) and the conversation note work as
   for the editor.
+
+## Creation agent
+
+Lives next to the pack overview (**Ask the AI (whole pack)** in the pack header when no category is open). One
+conversation per pack tab (`creation.jsonl`); it works on the whole pack, which can hold thousands of textures, so a
+run never decodes them all.
+
+- **Tools** (scope-specific, in `creation.ts`):
+  - `apply_to_all { operation: { tool, args }, filter: { categories?, folders?, match? } }`: one color or transform
+    operation (the bulk tools: `hue_shift`, `saturation`, `brightness`, `replace_color`, `apply_palette`,
+    `outline`, `rotate`, `flip`, `shift`) on every texture matching the filter. A texture matches when it is in ANY
+    of the categories, in one of the folders (subfolders included) and matches the glob (same glob rules as the
+    navigation agent); an empty filter is the whole pack. `args` are validated against that tool's schema.
+  - `list_textures { filter, limit }`: the matching textures (`folder/name WxH (status)`), to check a filter.
+  - `set_pack_meta { name?, description? }`: a new pack name and/or description, as a plan step.
+  - `update_style_brief`: as in the other agents. The prompt asks for a brief (theme, 4-12 color palette with roles,
+    rules) first, then a few category steps.
+- **Context**: the system prompt states the pack size. The user message gives the pack name and description, the
+  categories with texture and modified counts, the top folders, and up to 36 representative textures
+  (`pickSamples`: 3 per category, modified first, at most 64 px) as `#n folder/name WxH: main colors`. Vision models
+  also get one contact sheet of them.
+- **Execution**: an `apply_to_all` call resolves its filter over the texture index (no decoding), runs the operation
+  on the drafts of the matched samples only, and becomes one step with `targets` (every matched path), `scope`
+  (filter, count, count per category) and `samples` (up to 6 before / after pairs, after this step on top of the
+  earlier ones). At most 24 steps per plan. After an iteration with changes, vision models see the samples the last
+  step changed.
+- **Proposal** (`kind: 'plan'`): reviewed step by step (`CreationReview.vue`): what each step covers, its samples,
+  brief and pack name changes. There is no per-texture checkbox. Unticking a step that later ones were previewed on
+  shows a warning.
+- **Apply** (`ai.creation.apply { proposalId, acceptedStepIds }`): brief patches and pack meta (`packs.updateMeta`:
+  project.json and the pack folder's pack.mcmeta description) first, then each accepted texture step in order on
+  the CURRENT pixels of its targets (bulk worker), written as its own history entry ("AI plan, step k of n (N
+  textures)"): these are the checkpoints, so the last steps can be undone without losing the first ones.
+  Progress: `job.progress` `ai.plan.apply` (one tick per step) and `bulk.apply` (textures of the current step).
+  `ai.creation.stopApply { proposalId }` stops after the current step; the result says `stopped`. The request log
+  line is `whole pack (N texture writes): "<request>" -> tools (k of n steps)`.
 
 ## Conversation files
 

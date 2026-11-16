@@ -904,6 +904,9 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 ### M6 - Creation agent
 - Pack-level agent: builds the style brief through a conversation, proposes category-by-category plans; plan executes in chunks with checkpoints.
 - Request log and decisions shared with the other agents.
+- Built (see docs/ai-agents.md): scope tools `apply_to_all` (filter: categories AND folders AND name glob),
+  `list_textures`, `set_pack_meta`, `update_style_brief`; steps previewed on up to 36 representative textures; each
+  applied texture step is its own history entry (checkpoint), with Stop between steps.
 
 ### M7 - Multi-version export
 - Migration tables for the 1.21.4 -> 26.3 window (generated + reviewed), export-down with warnings, multi-target export, export profiles.
