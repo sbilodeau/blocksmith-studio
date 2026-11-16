@@ -153,6 +153,10 @@
       "aborted": "The bulk operation was stopped.",
       "failed": "The bulk operation failed: {reason}",
       "previewExpired": "This preview has expired. Preview the operations again."
+    },
+    "merge": {
+      "planExpired": "This merge preview has expired. Preview the merge again.",
+      "targetIsSource": "The target pack cannot also be a source."
     }
   },
   "common": {
@@ -408,7 +412,8 @@
       "revert": "Reverted {name} to vanilla",
       "bulk": "Bulk edit of {count} textures | Bulk edit of 1 texture | Bulk edit of {count} textures",
       "aiBulk": "AI plan on {count} textures | AI plan on 1 texture | AI plan on {count} textures",
-      "aiPlanStep": "AI plan, step {step} of {total} ({count} textures)"
+      "aiPlanStep": "AI plan, step {step} of {total} ({count} textures)",
+      "merge": "Merged {count} files from {packs} packs | Merged 1 file from {packs} packs | Merged {count} files from {packs} packs"
     },
     "title": "History",
     "empty": "Nothing saved yet."

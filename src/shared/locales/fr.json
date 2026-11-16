@@ -153,6 +153,10 @@
       "aborted": "L'opération groupée a été arrêtée.",
       "failed": "L'opération groupée a échoué : {reason}",
       "previewExpired": "Cet aperçu a expiré. Relancez l'aperçu des opérations."
+    },
+    "merge": {
+      "planExpired": "Cet aperçu de fusion a expiré. Relancez l'aperçu.",
+      "targetIsSource": "Le pack cible ne peut pas être aussi une source."
     }
   },
   "common": {
@@ -408,7 +412,8 @@
       "revert": "{name} remise à vanilla",
       "bulk": "Modification de {count} textures | Modification de 1 texture | Modification de {count} textures",
       "aiBulk": "Plan IA sur {count} textures | Plan IA sur 1 texture | Plan IA sur {count} textures",
-      "aiPlanStep": "Plan IA, étape {step} sur {total} ({count} textures)"
+      "aiPlanStep": "Plan IA, étape {step} sur {total} ({count} textures)",
+      "merge": "Fusion de {count} fichiers depuis {packs} packs | Fusion de 1 fichier depuis {packs} packs | Fusion de {count} fichiers depuis {packs} packs"
     },
     "title": "Historique",
     "empty": "Rien d'enregistré pour le moment."
