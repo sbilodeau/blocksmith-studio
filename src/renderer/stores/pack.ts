@@ -44,6 +44,9 @@ export function usePackStore(packId: string) {
     const aiPanel = ref(false)
     /** Export option "also accept newer versions" (kept while the tab is open). */
     const exportAcceptNewer = ref(false)
+    function setExportAcceptNewer(on: boolean): void {
+      exportAcceptNewer.value = on
+    }
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
 
@@ -165,6 +168,7 @@ export function usePackStore(packId: string) {
       lastEdited,
       aiPanel,
       exportAcceptNewer,
+      setExportAcceptNewer,
       changedCount,
       visible,
       load,

@@ -30,7 +30,7 @@ const exporting = ref(false)
 /** Export option: also mark the pack compatible with newer versions (snapshots). Remembered per pack tab. */
 const acceptNewer = computed({
   get: () => props.store.exportAcceptNewer,
-  set: (v: boolean) => (props.store.exportAcceptNewer = v)
+  set: (v: boolean) => props.store.setExportAcceptNewer(v)
 })
 
 const authoring = computed(() => props.store.summary?.authoringVersion ?? null)
