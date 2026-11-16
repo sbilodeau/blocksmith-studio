@@ -26,7 +26,9 @@ function fakeService(): PackService {
     exportFileName: vi.fn(async () => 'p-26.3.zip'),
     exportPack: vi.fn(async () => ({ filesWritten: 2 }) as never),
     updateMeta: vi.fn(async () => ({}) as never),
-    catalog: vi.fn(async () => [])
+    catalog: vi.fn(async () => []),
+    exportMany: vi.fn(async () => []),
+    saveExportProfile: vi.fn(async () => undefined)
   }
 }
 
@@ -57,7 +59,8 @@ describe('registerPackHandlers', () => {
         'pack.get',
         'pack.textures',
         'pack.categories',
-        'pack.export'
+        'pack.export',
+        'pack.exportMany'
       ].sort()
     )
   })
@@ -100,6 +103,23 @@ describe('registerPackHandlers', () => {
     dialogs.saveZip.mockClear()
     await expect(handlers.get('pack.export')!(input)).rejects.toThrow()
     expect(dialogs.saveZip).not.toHaveBeenCalled()
+  })
+
+  it('pack.exportMany validates, asks for a folder, exports and remembers the profile', async () => {
+    const input = { packId: 'p', targetVersions: ['26.3', '1.21.4'], acceptNewer: true }
+    dialogs.chooseFolder.mockResolvedValueOnce('/out')
+    await handlers.get('pack.exportMany')!(input)
+    expect(packs.exportFileName).toHaveBeenCalledWith('p', '1.21.4', undefined)
+    expect(packs.exportMany).toHaveBeenCalledWith('p', ['26.3', '1.21.4'], '/out', {
+      acceptNewer: true,
+      packType: undefined
+    })
+    expect(packs.saveExportProfile).toHaveBeenCalledWith('p', {
+      targets: ['26.3', '1.21.4'],
+      acceptNewer: true
+    })
+    dialogs.chooseFolder.mockResolvedValueOnce(null)
+    expect(await handlers.get('pack.exportMany')!(input)).toBeNull()
   })
 
   it('forwards the simple pack channels', async () => {

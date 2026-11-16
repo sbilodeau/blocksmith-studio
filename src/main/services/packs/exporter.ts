@@ -3,6 +3,7 @@ import type { ExportPackType, ExportReport } from '@shared/model/pack'
 import type { McVersion } from '@shared/model/versions'
 import { buildResourcePackMcmeta, type McmetaOptions } from '@shared/versions/mcmeta'
 import { isSnapshot } from '@shared/versions/support'
+import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 import type { ProgressFn, VanillaStore } from '../contracts'
 import { mapLimit, writeFileAtomic } from './files'
 import { mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
@@ -17,6 +18,8 @@ export const ExportWarningCode = {
   invalidMcmeta: 'export.invalidMcmeta',
   /** Resource pack export: the pack's data/ files were left out (they belong in a data pack). */
   dataLeftOut: 'export.dataLeftOut',
+  /** Export to another version: models, blockstates and other JSON files are copied as they are. */
+  otherFilesAsIs: 'export.otherFilesAsIs',
   /** Data pack export: textures and other assets/ files were left out (data packs cannot contain them). */
   assetsLeftOut: 'export.assetsLeftOut',
   /** Data pack export: the pack has no data/ file, so the data pack is empty. */
@@ -35,7 +38,9 @@ function belongsTo(packType: ExportPackType, path: string): boolean {
 
 /** ExportReport.skipped reasons. */
 export const ExportSkipReason = {
-  identicalToVanilla: 'identicalToVanilla'
+  identicalToVanilla: 'identicalToVanilla',
+  /** The texture does not exist in the target version (added after it, or removed before it). */
+  notInTarget: 'notInTarget'
 } as const
 
 export interface ExportDeps {
@@ -68,9 +73,15 @@ export async function exportPackZip(
   const scanned = await scanFiles(location.folder)
   onProgress('collect', 0, scanned.length)
 
-  const index = await vanilla.getIndex(
-    isSnapshot(target) ? location.project.authoringVersion : target.id
-  )
+  const authoring = location.project.authoringVersion
+  // Another version: texture paths are migrated along the chain (renames, textures missing in the target).
+  const migrator =
+    target.id !== authoring && canMigrate(authoring, target.id)
+      ? new PathMigrator(authoring, target.id)
+      : null
+  // Snapshots are not extracted: compare with the authoring version's vanilla (paths before migration).
+  const snapshotTarget = isSnapshot(target)
+  const index = await vanilla.getIndex(snapshotTarget ? authoring : target.id)
   if (!index) warnings.push({ code: ExportWarningCode.vanillaNotReady })
 
   let existingMcmeta: unknown
@@ -83,7 +94,10 @@ export async function exportPackZip(
 
   const files: PackFile[] = []
   let leftOut = 0
-  for (const file of loaded) {
+  let renamed = 0
+  let otherAssets = false
+  for (const loadedFile of loaded) {
+    let file = loadedFile
     if (file.path === 'pack.mcmeta') {
       existingMcmeta = parseJson(file.data)
       if (existingMcmeta === undefined) {
@@ -95,7 +109,28 @@ export async function exportPackZip(
       leftOut++
       continue
     }
-    const vanillaEntry = file.path === 'pack.png' ? undefined : index?.entries[file.path]
+    const vanillaPath = file.path
+    if (migrator) {
+      const r = migrator.migrateFile(file.path)
+      if (!('path' in r)) {
+        skipped.push({ path: file.path, reason: ExportSkipReason.notInTarget })
+        continue
+      }
+      if (r.renamed) {
+        renamed++
+        file = { ...file, path: r.path }
+      } else if (
+        file.path.startsWith('assets/') &&
+        !file.path.startsWith('assets/minecraft/textures/') &&
+        !/\/lang\/[^/]+\.json$/.test(file.path)
+      ) {
+        otherAssets = true
+      }
+    }
+    const vanillaEntry =
+      file.path === 'pack.png'
+        ? undefined
+        : index?.entries[snapshotTarget ? vanillaPath : file.path]
     if (vanillaEntry && vanillaEntry.sha256 === sha256(file.data)) {
       skipped.push({ path: file.path, reason: ExportSkipReason.identicalToVanilla })
       continue
@@ -108,6 +143,7 @@ export async function exportPackZip(
       code: packType === 'data' ? ExportWarningCode.assetsLeftOut : ExportWarningCode.dataLeftOut
     })
   }
+  if (otherAssets) warnings.push({ code: ExportWarningCode.otherFilesAsIs })
   if (packType === 'data' && !files.some((f) => f.path.startsWith('data/'))) {
     warnings.push({ code: ExportWarningCode.noDataFiles })
   }
@@ -129,6 +165,7 @@ export async function exportPackZip(
     outputPath,
     targetVersion: target.id,
     packType,
+    renamed,
     filesWritten: files.length,
     sizeBytes: zip.byteLength,
     skipped,

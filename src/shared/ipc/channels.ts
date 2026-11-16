@@ -30,6 +30,7 @@ export const INVOKE_CHANNELS = [
   'pack.textures',
   'pack.categories',
   'pack.export',
+  'pack.exportMany',
   // Texture editing and pack history
   'texture.read',
   'texture.save',

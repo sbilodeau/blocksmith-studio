@@ -8,6 +8,7 @@ import {
   type CategorySummary,
   type CreatePackInput,
   type ExportPackType,
+  type ExportProfile,
   type ExportReport,
   type ImportReport,
   type PackSummary,
@@ -15,7 +16,8 @@ import {
   type TextureEntry
 } from '@shared/model/pack'
 import { buildResourcePackMcmeta } from '@shared/versions/mcmeta'
-import { canExportTo } from '@shared/versions/support'
+import { canExportTo, isSnapshot } from '@shared/versions/support'
+import { canMigrate } from '@shared/versions/migrations'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
@@ -91,6 +93,18 @@ export interface PackService {
   updateMeta(packId: string, patch: { name?: string; description?: string }): Promise<PackSummary>
   categories(packId: string): Promise<CategorySummary[]>
   importZip(zipPath: string): Promise<ImportReport>
+  /**
+   * Exports to several versions, one zip per target in `folder` (default file names, existing files replaced).
+   * Stops at the first failure.
+   */
+  exportMany(
+    packId: string,
+    targetVersions: string[],
+    folder: string,
+    options?: { acceptNewer?: boolean; packType?: ExportPackType }
+  ): Promise<ExportReport[]>
+  /** Remembers the last export settings in project.json (the dialog preselects them). */
+  saveExportProfile(packId: string, profile: ExportProfile): Promise<void>
   /** Checks that `targetVersion` can be exported and returns the default file name "<slug>-<version>.zip". */
   exportFileName(packId: string, targetVersion: string, packType?: ExportPackType): Promise<string>
   exportPack(
@@ -194,7 +208,8 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       base: project.base,
       folder,
       changedCount: await changedCount(location),
-      updatedAt: project.updatedAt
+      updatedAt: project.updatedAt,
+      ...(project.exportProfile ? { exportProfile: project.exportProfile } : {})
     }
     try {
       const st = await fs.stat(join(folder, 'pack.png'))
@@ -389,12 +404,39 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         { vanilla: deps.vanilla, onProgress },
         options
       )
+    },
+
+    async exportMany(packId, targetVersions, folder, options = {}) {
+      const location = await requireLocation(packId)
+      const unique = [...new Set(targetVersions)]
+      // Validate every target before writing anything.
+      const targets = unique.map((v) => checkExportTarget(location, v))
+      const reports: ExportReport[] = []
+      for (const target of targets) {
+        const name = `${slugify(location.project.name)}-${target.id}-${PACK_TYPE_FILE_SUFFIX[options.packType ?? 'resource']}.zip`
+        const onProgress = deps.jobs.start('pack.export')
+        reports.push(
+          await exportPackZip(
+            location,
+            target,
+            join(folder, name),
+            { vanilla: deps.vanilla, onProgress },
+            options
+          )
+        )
+      }
+      return reports
+    },
+
+    async saveExportProfile(packId, profile) {
+      const location = await requireLocation(packId)
+      await writeProject(location.folder, { ...location.project, exportProfile: profile })
     }
   }
 
   /**
-   * Only the authoring version, or a snapshot newer than it, can be exported (multi-version export comes with
-   * migrations in M7). See canExportTo.
+   * The authoring version, a snapshot newer than it, or a release of the support window reachable through the
+   * migration chain (see canExportTo and migrations.ts).
    */
   function checkExportTarget(
     location: PackLocation,
@@ -403,8 +445,14 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     const authoring = location.project.authoringVersion
     const authoringVersion = deps.vanilla.getVersion(authoring)
     const candidate = deps.vanilla.getVersion(targetVersion)
+    const otherRelease =
+      candidate !== undefined && candidate.id !== authoring && !isSnapshot(candidate)
+    const reachable =
+      !otherRelease ||
+      (canMigrate(authoring, candidate.id) &&
+        deps.vanilla.supportedVersions().some((v) => v.id === candidate.id))
     const target =
-      authoringVersion && candidate && canExportTo(authoringVersion, candidate)
+      authoringVersion && candidate && canExportTo(authoringVersion, candidate) && reachable
         ? candidate
         : undefined
     if (!target) {

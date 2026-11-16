@@ -134,16 +134,25 @@ describe('snapshots', () => {
     expect(snapshotTargets(table)).toEqual([])
   })
 
-  it('exportTargets lists the authoring version, then newer snapshots', () => {
-    expect(ids(exportTargets(withSnaps, at('26.3')))).toEqual(['26.3', '26.4-snapshot-8'])
-    expect(ids(exportTargets(table, at('26.2')))).toEqual(['26.2'])
+  it('exportTargets lists newer snapshots, then the releases of the support window', () => {
+    const now = new Date('2026-11-15T12:00:00Z')
+    expect(ids(exportTargets(withSnaps, at('26.3'), now))).toEqual([
+      '26.4-snapshot-8',
+      '26.3',
+      '26.2',
+      '1.21.8',
+      '1.21.7',
+      '1.21.4'
+    ])
+    // An authoring version older than the window is still offered (export to itself).
+    expect(ids(exportTargets(table, at('1.21.2'), now))).toContain('1.21.2')
   })
 
-  it('canExportTo allows the authoring version and newer snapshots only', () => {
+  it('canExportTo allows other releases and newer snapshots, not older snapshots', () => {
     expect(canExportTo(at('26.3'), at('26.3'))).toBe(true)
     expect(canExportTo(at('26.3'), snap)).toBe(true)
     expect(canExportTo(at('26.2'), snap)).toBe(true)
-    expect(canExportTo(at('26.3'), at('26.2'))).toBe(false)
+    expect(canExportTo(at('26.3'), at('26.2'))).toBe(true)
     expect(canExportTo(at('26.3'), oldSnap)).toBe(false)
   })
 })

@@ -16,9 +16,17 @@ export const ProjectSchema = z.object({
   authoringVersion: z.string(),
   base: PackBaseSchema,
   createdAt: z.string(),
-  updatedAt: z.string()
+  updatedAt: z.string(),
+  /** Last export settings (export profile): the dialog preselects them for a one-click re-export. */
+  exportProfile: z
+    .object({
+      targets: z.array(z.string()).max(40),
+      acceptNewer: z.boolean().default(false)
+    })
+    .optional()
 })
 export type Project = z.infer<typeof ProjectSchema>
+export type ExportProfile = NonNullable<Project['exportProfile']>
 
 /** What the pack selector shows for each pack in the workspace. */
 export interface PackSummary {
@@ -34,6 +42,8 @@ export interface PackSummary {
   updatedAt: string
   /** bs-asset:// URL of pack.png, if any. */
   iconUrl?: string
+  /** Last export settings, if the pack was exported before. */
+  exportProfile?: ExportProfile
 }
 
 export type TextureStatus = 'vanilla' | 'modified' | 'added'
@@ -102,6 +112,8 @@ export interface ExportReport {
   outputPath: string
   targetVersion: string
   packType: ExportPackType
+  /** Textures moved to the target version's path (the authoring version names them differently). */
+  renamed: number
   filesWritten: number
   sizeBytes: number
   skipped: Array<{ path: string; reason: string }>
