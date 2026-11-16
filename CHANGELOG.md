@@ -15,6 +15,10 @@ All notable changes to this project are documented here. Versions follow CalVer 
   `"pack_format": 97, "min_format": [97, 0], "max_format": [97, 1]`, with number arrays on one line
 - A Minecraft folder or jar added by hand in Settings now wins over the same version found in a launcher
   folder
+- The export version list only shows versions the pack can really be exported to: the pack's version and newer
+  snapshots (no more greyed-out entries)
+- New test: every export is loaded by the game's own pack code from your real Minecraft jars (26.3 and
+  26.4-snapshot-8 checked: all 28 exports rated as expected)
 - **26.4-snapshot-8** is now in the export version list. The zip gets the snapshot's format (103.0); textures are
   exported as they are. Snapshots are export targets only: new packs still use the latest release (26.3)
 

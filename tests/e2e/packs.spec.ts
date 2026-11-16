@@ -159,6 +159,11 @@ test('imports a zip, marks modified textures and exports only changed files', as
   await page.getByTestId('export-open').click()
   await page.getByTestId('export-accept-newer').click()
   await page.getByTestId('export-target').click()
+  // Only the targets checked against real jars: the authoring version and the newer snapshot.
+  await expect(page.locator('.n-base-select-option')).toHaveText([
+    '26.3',
+    '26.4-snapshot-8 (snapshot)'
+  ])
   await page.locator('.n-base-select-option', { hasText: '26.4-snapshot-8 (snapshot)' }).click()
   await page.getByTestId('export-run').click()
   await expect(page.getByTestId('report-dialog')).toContainText('26.4-snapshot-8')

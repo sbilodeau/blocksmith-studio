@@ -2,6 +2,7 @@ export { versionTable } from './table'
 export {
   canExportTo,
   comparePackFormats,
+  exportTargets,
   findVersion,
   isSnapshot,
   latest,

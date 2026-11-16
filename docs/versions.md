@@ -7,7 +7,8 @@ How Blocksmith Studio knows which Minecraft Java releases exist, which ones it s
 ## Version table
 
 `resources/data/versions.json` lists every Java **release** from 1.21 to the latest one, newest first, plus the
-latest **snapshot** when it is newer than the latest release (see [Snapshots](#snapshots)). It is validated by `VersionTableSchema` (`src/shared/model/versions.ts`) and imported statically by
+latest **snapshot** when it is newer than the latest release (see [Snapshots](#snapshots)). It is validated by
+`VersionTableSchema` (`src/shared/model/versions.ts`) and imported statically by
 `src/shared/versions/table.ts`, so electron-vite bundles it into main and the renderer.
 
 ```json
@@ -75,8 +76,10 @@ A snapshot entry has `"type": "snapshot"` (releases have no `type`). Snapshots a
 
 - `latest()`, `supportedVersions()` and `versionForPackFormat()` ignore them, so a snapshot is never the
   authoring version of a new pack, never in the support window and never used to map an imported pack.
-- `snapshotTargets(table)` returns the snapshots newer than the latest release; the export dialog lists them
-  first, labelled "26.4-snapshot-8 (snapshot)".
+- `snapshotTargets(table)` returns the snapshots newer than the latest release.
+- `exportTargets(table, authoring)` is what the export dialog lists: the authoring version, then the newer
+  snapshots, labelled "26.4-snapshot-8 (snapshot)". Versions the exporter cannot produce yet (other releases, M7)
+  are not listed at all.
 - `canExportTo(authoring, target)` allows the authoring version or a snapshot newer than it. The zip gets the
   snapshot's pack format (`"min_format": [103, 0], "max_format": [103, 0]` for 26.4-snapshot-8), so it is meant for
   that snapshot; tick "Also accept newer Minecraft versions" to keep the range open.
@@ -146,6 +149,28 @@ For a pre-1.21.9 target the open range spans format 65, so both declarations are
 read `pack_format` / `supported_formats`, newer games `min_format` / `max_format` (the game refuses a pack whose
 two declarations disagree). The app cannot check that the textures still match versions it does not know; the
 dialog says so. The option only changes the exported zip, never the pack folder's own `pack.mcmeta`.
+
+### Checked in real game jars
+
+`tests/real-jar/pack-compat.test.ts` exports every target the app offers (each supported release for itself,
+newer snapshots, with and without "Also accept newer Minecraft versions") with the real exporter, then loads the
+zips with the game's own pack code from real client jars (`tests/real-jar/CheckPacks.java`, which calls
+`Pack.readMetaAndCreate` and prints `COMPATIBLE`, `TOO_OLD` or `TOO_NEW`, as the resource pack screen shows it).
+Each verdict must match the range the exporter declares, and the export for the game's own version must be
+compatible.
+
+- It runs with `npm test` and `npm run test:real-jar` when a Minecraft install is found, and is skipped otherwise
+  (CI). No game file is copied into the repo.
+- Jars: `<dir>/versions/<id>/<id>.jar` (+ `<id>.json` for the libraries) in the official launcher folder, or in
+  the folders listed in `BLOCKSMITH_REAL_JAR_MINECRAFT_DIRS` (separated by `:`, `;` on Windows).
+- Java: 25 or newer with `javac`, from `BLOCKSMITH_REAL_JAR_JAVA_HOME` or the runtime the launcher installs in
+  `<dir>/runtime`.
+- Only 26.1+ jars can run the check (older jars are obfuscated); zips for older targets are still loaded by the
+  26.x games.
+
+Last run (2026-11-16): 26.3 and 26.4-snapshot-8 jars, 28 exports each, all as expected. A 26.3 export is
+compatible in 26.3 and "made for an older version" in the snapshot unless the option is ticked; a snapshot export
+is "made for a newer version" in 26.3.
 
 ## Finding client jars
 

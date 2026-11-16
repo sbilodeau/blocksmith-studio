@@ -60,6 +60,16 @@ export function snapshotTargets(table: VersionTable): McVersion[] {
 }
 
 /**
+ * Export targets offered for a pack authored against `authoring`: the authoring version, then the snapshots
+ * newer than it (newest first). Only these are listed in the export dialog; they are the ones the exporter
+ * supports and tests/real-jar/pack-compat.test.ts checks against real game jars.
+ */
+export function exportTargets(table: VersionTable, authoring: McVersion): McVersion[] {
+  const snapshots = snapshotTargets(table).filter((v) => canExportTo(authoring, v))
+  return [authoring, ...snapshots]
+}
+
+/**
  * Whether a pack authored against `authoring` can be exported to `target`: the authoring version itself, or a
  * snapshot newer than it (the textures are the authoring version's; Minecraft fills the rest from its own).
  * Other releases need the migration tables (M7).

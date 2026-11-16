@@ -13,10 +13,9 @@ import {
   type SelectOption
 } from 'naive-ui'
 import type { ExportReport } from '@shared/model/pack'
-import { snapshotTargets, versionTable } from '@shared/versions'
+import { exportTargets, findVersion, isSnapshot, versionTable } from '@shared/versions'
 import JobProgressBar from '../common/JobProgressBar.vue'
 import type { PackStore } from '../../stores/pack'
-import { useVanillaStore } from '../../stores/vanilla'
 import { useErrorMessage } from '../../composables/useErrorMessage'
 
 const show = defineModel<boolean>('show', { required: true })
@@ -24,7 +23,6 @@ const props = defineProps<{ store: PackStore }>()
 const emit = defineEmits<{ exported: [report: ExportReport] }>()
 
 const { t } = useI18n()
-const vanilla = useVanillaStore()
 const { showError } = useErrorMessage()
 const target = ref<string | null>(null)
 const exporting = ref(false)
@@ -35,25 +33,20 @@ const acceptNewer = computed({
 })
 
 const authoring = computed(() => props.store.summary?.authoringVersion ?? null)
-// Exporting to other releases arrives with the migration tables (M7); they are listed but disabled for now.
-// The newest snapshot (when newer than the latest release) is listed first and enabled: the pack's textures are
-// exported as they are, with the snapshot's pack format.
-const options = computed<SelectOption[]>(() => [
-  ...snapshotTargets(versionTable).map((v) => ({
+// Only the targets that export correctly and are checked against real game jars (tests/real-jar): the pack's
+// authoring version and newer snapshots. Other releases arrive with the migration tables (M7).
+const options = computed<SelectOption[]>(() => {
+  const version = authoring.value ? findVersion(versionTable, authoring.value) : undefined
+  if (!version) return []
+  return exportTargets(versionTable, version).map((v) => ({
     value: v.id,
-    label: t('export.snapshotLabel', { version: v.id })
-  })),
-  ...vanilla.versions.map((v) => ({
-    value: v.versionId,
-    label: v.versionId,
-    disabled: v.versionId !== authoring.value
+    label: isSnapshot(v) ? t('export.snapshotLabel', { version: v.id }) : v.id
   }))
-])
+})
 
-watch(show, async (open) => {
+watch(show, (open) => {
   if (!open) return
   target.value = authoring.value
-  if (!vanilla.loaded) await vanilla.refresh().catch(showError)
 })
 
 async function run(): Promise<void> {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { VersionTableSchema, type McVersion, type VersionTable } from '@shared/model/versions'
 import {
   canExportTo,
+  exportTargets,
   comparePackFormats,
   findVersion,
   latest,
@@ -131,6 +132,11 @@ describe('snapshots', () => {
   it('snapshotTargets keeps only snapshots newer than the latest release', () => {
     expect(ids(snapshotTargets(withSnaps))).toEqual(['26.4-snapshot-8'])
     expect(snapshotTargets(table)).toEqual([])
+  })
+
+  it('exportTargets lists the authoring version, then newer snapshots', () => {
+    expect(ids(exportTargets(withSnaps, at('26.3')))).toEqual(['26.3', '26.4-snapshot-8'])
+    expect(ids(exportTargets(table, at('26.2')))).toEqual(['26.2'])
   })
 
   it('canExportTo allows the authoring version and newer snapshots only', () => {
