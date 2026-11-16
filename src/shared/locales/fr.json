@@ -324,6 +324,9 @@
     "upgrade": {
       "obsolete": "N'est plus utilisée par cette version de Minecraft (gardée dans le pack)",
       "conflict": "Non déplacée : une texture porte déjà son nouveau nom (les deux sont gardées)"
+    },
+    "doctor": {
+      "proportions": "Proportions différentes de la texture de Minecraft : les modèles l’afficheront étirée ou coupée"
     }
   },
   "editor": {
@@ -760,5 +763,16 @@
     "confirm": "Passer ce pack à Minecraft {version} ? Les textures renommées prennent leur nouveau nom et pack.mcmeta reçoit le nouveau format. Les exports vers les anciennes versions restent possibles.",
     "done": "Pack mis à jour",
     "summary": "Passé de Minecraft {from} à {to} : {count} textures renommées ont été déplacées."
+  },
+  "doctor": {
+    "title": "Docteur du pack",
+    "checked": "{count} fichiers vérifiés. | 1 fichier vérifié. | {count} fichiers vérifiés.",
+    "problems": "Problèmes",
+    "none": "Aucun problème trouvé.",
+    "targets": "Autres versions de Minecraft",
+    "targetsHint": "Ce qu'un export vers chaque version change : les textures renommées pour cette version, et celles qui n'y existent pas (ignorées ; survolez le nombre pour les voir).",
+    "version": "Version",
+    "renamed": "Renommées",
+    "skipped": "Ignorées"
   }
 }

@@ -324,6 +324,9 @@
     "upgrade": {
       "obsolete": "No longer used by this Minecraft version (kept in the pack)",
       "conflict": "Not moved: a texture with its new name already exists (both kept)"
+    },
+    "doctor": {
+      "proportions": "Proportions differ from the Minecraft texture: models will show it stretched or cut"
     }
   },
   "editor": {
@@ -760,5 +763,16 @@
     "confirm": "Move this pack to Minecraft {version}? Renamed textures move to their new names and pack.mcmeta gets the new format. Exports to older versions stay available.",
     "done": "Pack upgraded",
     "summary": "Moved from Minecraft {from} to {to}: {count} renamed textures were moved."
+  },
+  "doctor": {
+    "title": "Pack Doctor",
+    "checked": "{count} files checked. | 1 file checked. | {count} files checked.",
+    "problems": "Problems",
+    "none": "No problem found.",
+    "targets": "Other Minecraft versions",
+    "targetsHint": "What an export to each version changes: textures moved to that version's name, and textures that do not exist there (skipped; hover the number to list them).",
+    "version": "Version",
+    "renamed": "Renamed",
+    "skipped": "Skipped"
   }
 }

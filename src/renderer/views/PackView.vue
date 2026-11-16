@@ -16,6 +16,7 @@ import StyleBriefDrawer from '../components/ai/StyleBriefDrawer.vue'
 import NavigationAgentPanel from '../components/ai/NavigationAgentPanel.vue'
 import CreationAgentPanel from '../components/ai/CreationAgentPanel.vue'
 import PackHistoryDrawer from '../components/pack/PackHistoryDrawer.vue'
+import PackDoctorDrawer from '../components/pack/PackDoctorDrawer.vue'
 import VanillaPrepare from '../components/vanilla/VanillaPrepare.vue'
 import { IpcError } from '../services/ipc'
 import { useVanillaStore } from '../stores/vanilla'
@@ -35,6 +36,7 @@ const store = computed(() => usePackStore(props.packId))
 const showExport = ref(false)
 const showBrief = ref(false)
 const showHistory = ref(false)
+const showDoctor = ref(false)
 const router = useRouter()
 /**
  * The AI panel sits next to the overview (creation agent, whole pack) or the grid (navigation agent, selection),
@@ -202,6 +204,9 @@ const exportItems = computed(() => {
             <n-button size="small" data-testid="pack-history-open" @click="showHistory = true">
               {{ t('history.title') }}
             </n-button>
+            <n-button size="small" data-testid="pack-doctor-open" @click="showDoctor = true">
+              {{ t('doctor.title') }}
+            </n-button>
             <n-button
               v-if="!store.editing"
               size="small"
@@ -253,6 +258,7 @@ const exportItems = computed(() => {
     </div>
     <style-brief-drawer v-model:show="showBrief" :pack-id="packId" />
     <pack-history-drawer v-model:show="showHistory" :pack-id="packId" />
+    <pack-doctor-drawer v-model:show="showDoctor" :pack-id="packId" />
     <export-dialog
       v-model:show="showExport"
       :store="store"

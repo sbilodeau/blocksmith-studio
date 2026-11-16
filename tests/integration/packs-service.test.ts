@@ -2,7 +2,7 @@ import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { decode } from 'fast-png'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createTestEnv, type TestEnv } from './packs-fixtures'
+import { createTestEnv, makePng, type TestEnv } from './packs-fixtures'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
@@ -149,6 +149,35 @@ describe('pack service: workspace and packs', () => {
     await expect(env.service.upgrade(pack.id, '9.9')).rejects.toMatchObject({
       code: 'packs.upgradeNotSupported'
     })
+  })
+
+  it('doctor lists problems and what each export target would rename or skip', async () => {
+    const pack = await env.service.create({
+      name: 'Doc',
+      base: 'vanilla',
+      authoringVersion: '26.3'
+    })
+    const T = (p: string): string => `assets/minecraft/textures/${p}.png`
+    const put = async (path: string, data: Uint8Array | string): Promise<void> => {
+      await mkdir(join(pack.folder, ...path.split('/').slice(0, -1)), { recursive: true })
+      await writeFile(join(pack.folder, ...path.split('/')), data)
+    }
+    await put(T('block/stone'), makePng(32, 16, [255, 0, 0, 255])) // vanilla stone is 16x16
+    await put(T('block/dirt'), makePng(32, 32, [255, 0, 0, 255])) // HD: same proportions, fine
+    await put(T('block/iron_chain'), makePng(16, 16, [255, 0, 0, 255]))
+    await put(T('entity/cow/temperate_cow'), makePng(64, 32, [255, 0, 0, 255]))
+    await put('assets/minecraft/models/block/broken.json', '{ nope')
+    const report = await env.service.doctor(pack.id)
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        { code: 'doctor.proportions', path: T('block/stone') },
+        { code: 'export.invalidJson', path: 'assets/minecraft/models/block/broken.json' }
+      ])
+    )
+    expect(report.issues.some((i) => i.path === T('block/dirt'))).toBe(false)
+    const old = report.targets.find((t) => t.version === '1.21.4')!
+    expect(old).toEqual({ version: '1.21.4', renamed: 1, missing: [T('entity/cow/temperate_cow')] })
+    expect(report.targets.map((t) => t.version)).not.toContain('26.3')
   })
 
   it('rejects unsupported versions and a vanilla base whose vanilla is not extracted', async () => {

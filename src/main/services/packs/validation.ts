@@ -22,6 +22,30 @@ export const ValidationCode = {
   missingPackPng: 'export.missingPackPng'
 } as const
 
+/**
+ * Textures whose proportions differ from the vanilla texture of the same path (a 32x16 texture where vanilla is
+ * 16x16): models map their faces by proportion, so these show up stretched or cut. Animated strips are compared by
+ * width only.
+ */
+export function proportionWarnings(
+  files: readonly PackFile[],
+  vanillaSize: (path: string) => { width?: number; height?: number; animated?: boolean } | undefined
+): PackWarning[] {
+  const out: PackWarning[] = []
+  for (const { path, data } of files) {
+    if (!/^assets\/[^/]+\/textures\/.+\.png$/.test(path)) continue
+    const v = vanillaSize(path)
+    const header = readPngHeader(data)
+    if (!v?.width || !v.height || !header) continue
+    if (v.animated || header.height !== header.width * (v.height / v.width)) {
+      if (v.animated ? header.width % v.width !== 0 && v.width % header.width !== 0 : true) {
+        out.push({ code: 'doctor.proportions', path })
+      }
+    }
+  }
+  return out
+}
+
 /** Atlas textures (mipmapped): non power-of-two sizes are worth a warning there, not for GUI or entities. */
 const ATLAS_TEXTURE = /^assets\/[^/]+\/textures\/(block|item)\//
 

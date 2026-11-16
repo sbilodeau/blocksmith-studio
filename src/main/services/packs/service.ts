@@ -7,6 +7,7 @@ import {
   PACK_TYPE_FILE_SUFFIX,
   type CategorySummary,
   type CreatePackInput,
+  type DoctorReport,
   type ExportPackType,
   type ExportProfile,
   type ExportReport,
@@ -22,7 +23,8 @@ import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
-import { FileInfoCache, writeFileAtomic } from './files'
+import { FileInfoCache, mapLimit, writeFileAtomic } from './files'
+import { proportionWarnings, validatePackFiles } from './validation'
 import { importPackZip, type ImportLimits } from './importer'
 import { isRecord, mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
 import { comparePaths, createUniqueFolder, scanFiles, slugify } from './paths'
@@ -113,6 +115,11 @@ export interface PackService {
    * Textures that no longer exist are left in place and listed.
    */
   upgrade(packId: string, toVersion: string): Promise<UpgradeReport>
+  /**
+   * Pack Doctor: validates every pack file (the export checks plus texture proportions against vanilla) and, for each
+   * export target, counts the textures an export would rename or skip.
+   */
+  doctor(packId: string): Promise<DoctorReport>
   /** Remembers the last export settings in project.json (the dialog preselects them). */
   saveExportProfile(packId: string, profile: ExportProfile): Promise<void>
   /** Checks that `targetVersion` can be exported and returns the default file name "<slug>-<version>.zip". */
@@ -504,6 +511,47 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         obsolete,
         conflicts
       }
+    },
+
+    async doctor(packId) {
+      const location = await requireLocation(packId)
+      const authoring = location.project.authoringVersion
+      const scanned = await scanFiles(location.folder)
+      const files = await mapLimit(scanned, 32, async (f) => ({
+        path: f.path,
+        data: new Uint8Array(await fs.readFile(f.abs))
+      }))
+      const index = await deps.vanilla.getIndex(authoring)
+      const issues = [
+        ...validatePackFiles(files),
+        ...proportionWarnings(files, (path) => index?.entries[path])
+      ]
+      const mcmeta = files.find((f) => f.path === 'pack.mcmeta')
+      if (!mcmeta || !isRecord(parseJson(mcmeta.data)))
+        issues.push({ code: 'export.invalidMcmeta' })
+      if (!index) issues.push({ code: 'export.vanillaNotReady' })
+
+      const current = deps.vanilla.getVersion(authoring)
+      const textures = files.filter((f) => /^assets\/minecraft\/textures\/.+\.png$/.test(f.path))
+      const targets: DoctorReport['targets'] = []
+      if (current) {
+        const versions = deps.vanilla
+          .supportedVersions()
+          .filter((v) => v.id !== authoring && canExportTo(current, v))
+        for (const v of versions) {
+          if (!canMigrate(authoring, v.id)) continue
+          const migrator = new PathMigrator(authoring, v.id)
+          let renamed = 0
+          const missing: string[] = []
+          for (const t of textures) {
+            const r = migrator.migrate(t.path)
+            if (!('path' in r)) missing.push(t.path)
+            else if (r.renamed) renamed++
+          }
+          targets.push({ version: v.id, renamed, missing })
+        }
+      }
+      return { issues, targets, files: files.length }
     },
 
     async saveExportProfile(packId, profile) {

@@ -87,6 +87,16 @@ export const CreatePackInputSchema = z
   .strict()
 export type CreatePackInput = z.input<typeof CreatePackInputSchema>
 
+/** Pack Doctor (PLAN 8.5): problems in the pack, and what an export to each version would change. */
+export interface DoctorReport {
+  /** Same codes as export warnings (`warnings.<code>`), plus doctor.* codes. */
+  issues: Array<{ code: string; path?: string }>
+  /** Every export target: textures that would be renamed, and the ones it would skip. */
+  targets: Array<{ version: string; renamed: number; missing: string[] }>
+  /** Files checked. */
+  files: number
+}
+
 /** Result of moving a pack to a newer authoring version. */
 export interface UpgradeReport {
   pack: PackSummary

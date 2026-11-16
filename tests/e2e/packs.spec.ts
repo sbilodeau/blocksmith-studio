@@ -250,4 +250,11 @@ test('a pack made for an older version is upgraded to the latest one', async () 
   await page.getByTestId('report-dialog').getByRole('button').last().click()
   await expect(page.getByTestId('pack-view')).toContainText('Minecraft 26.3')
   await expect(page.getByTestId('pack-upgrade')).toHaveCount(0)
+
+  // Pack Doctor: nothing wrong in a fresh pack, and every other version is listed.
+  await page.getByTestId('pack-doctor-open').click()
+  const doctor = page.getByTestId('pack-doctor')
+  await expect(doctor.getByTestId('doctor-ok')).toBeVisible()
+  await expect(doctor.getByTestId('doctor-targets')).toContainText('1.21.4')
+  await expect(doctor.getByTestId('doctor-targets')).not.toContainText('26.3')
 })

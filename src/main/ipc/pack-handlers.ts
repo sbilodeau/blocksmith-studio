@@ -56,6 +56,7 @@ export function registerPackHandlers({ packs, dialogs }: PackHandlerDeps): void 
     return report
   })
 
+  handle('pack.doctor', ({ packId }) => packs.doctor(packId))
   handle('pack.upgrade', ({ packId, targetVersion }) => packs.upgrade(packId, targetVersion))
 
   handle('pack.exportMany', async ({ packId, targetVersions, acceptNewer, packType }) => {
