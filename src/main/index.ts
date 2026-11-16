@@ -9,6 +9,8 @@ import { registerPreviewHandlers } from './ipc/preview-handlers'
 import { registerAiProviderHandlers } from './ipc/ai-provider-handlers'
 import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
 import { registerBulkHandlers } from './ipc/bulk-handlers'
+import { registerMergeHandlers } from './ipc/merge-handlers'
+import { createMergeService } from './services/merge'
 import { createBulkService, createDefaultBulkRunner } from './services/bulk'
 import { registerAiEvalHandlers } from './ipc/ai-eval-handlers'
 import { send } from './ipc/registry'
@@ -189,6 +191,9 @@ if (!app.requestSingleInstanceLock()) {
       readVanillaPng: async (packId, path) => (await textures.read(packId, path)).vanillaPng,
       previewModel: (packId, path) => preview.preview(packId, path),
       emit: (event) => send(webContents(), 'ai.event', event)
+    })
+    registerMergeHandlers({
+      merge: createMergeService({ packs, history, brief: agentServices.brief })
     })
     registerAiEvalHandlers({
       providers: aiProviders,

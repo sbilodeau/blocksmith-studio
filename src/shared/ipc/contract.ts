@@ -42,6 +42,12 @@ import type {
   ProposalApplyResult,
   ProviderStatus
 } from '../ai/types'
+import {
+  MergeApplyInputSchema,
+  MergePreviewInputSchema,
+  type MergePlan,
+  type MergeResult
+} from '../model/merge'
 
 /** Typed, i18n-keyed error returned across IPC (message key: `errors.<code>`). */
 export interface AppError {
@@ -203,6 +209,9 @@ export const inputSchemas = {
   'bulk.preview': BulkPreviewInputSchema,
   'bulk.apply': BulkApplyInputSchema,
   'bulk.discard': z.object({ previewId: z.string().min(1).max(64) }).strict(),
+  'merge.preview': MergePreviewInputSchema,
+  'merge.apply': MergeApplyInputSchema,
+  'merge.discard': z.object({ planId: z.string().min(1).max(64) }).strict(),
   'brief.get': PackRef,
   'brief.update': PackRef.extend({ patch: StyleBriefPatchSchema }).strict(),
   'ai.eval.run': z.object({ model: ModelRefSchema, quick: z.boolean().default(true) }).strict(),
@@ -290,6 +299,11 @@ export interface InvokeOutputs {
   /** Writes the ticked textures of a preview as one undoable history entry. */
   'bulk.apply': BulkApplyResult
   'bulk.discard': void
+  /** Reads and classifies; nothing is written. */
+  'merge.preview': MergePlan
+  /** One history entry in the target (created first for a new pack). */
+  'merge.apply': MergeResult
+  'merge.discard': void
   'brief.get': StyleBrief
   'brief.update': StyleBrief
   /** Runs the FR/EN evaluation against a model (quick: a subset). Progress arrives as 'ai.eval.progress'. */

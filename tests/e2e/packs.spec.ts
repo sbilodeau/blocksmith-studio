@@ -258,3 +258,67 @@ test('a pack made for an older version is upgraded to the latest one', async () 
   await expect(doctor.getByTestId('doctor-targets')).toContainText('1.21.4')
   await expect(doctor.getByTestId('doctor-targets')).not.toContainText('26.3')
 })
+
+test('merges two packs into a new one, then sends a texture to a pack', async () => {
+  launched = await launchWithFixture()
+  const { page, workspaceDir } = launched
+  await prepareVanilla(launched)
+  await createPack(launched, 'Source A')
+  await page.getByTestId('tab-home').click()
+  await createPack(launched, 'Source B')
+  const T = (p: string): string => `assets/minecraft/textures/${p}.png`
+  const put = async (pack: string, path: string, rgb: [number, number, number]): Promise<void> => {
+    const abs = join(workspaceDir, 'packs', pack, ...path.split('/'))
+    await mkdir(join(abs, '..'), { recursive: true })
+    await writeFile(abs, png(rgb))
+  }
+  await put('source-a', T('block/stone'), [255, 0, 0])
+  await put('source-b', T('block/stone'), [0, 0, 255])
+  await put('source-b', T('item/ruby'), [200, 0, 50])
+
+  // Merge A and B (A first) into a new pack.
+  await page.getByTestId('tab-home').click()
+  await page.getByTestId('merge-open').click()
+  const dialog = page.getByTestId('merge-dialog')
+  await dialog.getByTestId('merge-sources').locator('.n-base-suffix').click()
+  await page.locator('.n-base-select-option', { hasText: 'Source A' }).click()
+  await page.locator('.n-base-select-option', { hasText: 'Source B' }).click()
+  await page.keyboard.press('Escape')
+  await expect(dialog.getByTestId('merge-order')).toContainText('1.Source A')
+  await dialog.getByTestId('merge-target').click()
+  await page.locator('.n-base-select-option', { hasText: 'A new pack' }).click()
+  await dialog.getByTestId('merge-new-name').locator('input').fill('Merged')
+  await dialog.getByTestId('merge-preview').click()
+
+  const review = dialog.getByTestId('merge-review')
+  await expect(review.getByTestId('merge-added')).toContainText('1 file added')
+  await expect(review.getByTestId('merge-conflicts')).toContainText('block/stone.png')
+  // Keep Source B's blue stone instead of the first source's.
+  await review.getByTestId('merge-choice-Source B').click()
+  await dialog.getByTestId('merge-apply').click()
+  await expect(page.getByTestId('pack-name')).toHaveText('Merged')
+  await page.getByTestId('cat-all').click()
+  await expect(page.getByTestId('tile-stone')).toHaveAttribute('data-status', 'modified')
+  await expect(page.getByTestId('tile-ruby')).toHaveAttribute('data-status', 'added')
+  await page.getByTestId('pack-history-open').click()
+  await expect(page.getByTestId('pack-history')).toContainText('Merged 3 files from 2 packs') // stone, ruby and the icon
+  await page.keyboard.press('Escape')
+
+  // Send Source A's red stone to "Merged": a conflict with its blue stone.
+  await page.locator('[data-testid^="tab-"]', { hasText: 'Source A' }).first().click()
+  // The files were written outside the app: tell the open tab to reload (the app sends this after its own writes).
+  await launched.app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0]!.webContents.send('packs.changed', {})
+  )
+  await page.getByTestId('cat-all').click()
+  await page.getByTestId('tile-stone').click()
+  await page.getByTestId('selection-send').click()
+  const send = page.getByTestId('merge-dialog')
+  await expect(send).toContainText('1 file from "Source A"')
+  await send.getByTestId('merge-target').click()
+  await page.locator('.n-base-select-option', { hasText: 'Merged' }).click()
+  await send.getByTestId('merge-preview').click()
+  await expect(send.getByTestId('merge-conflicts')).toContainText('block/stone.png')
+  await send.getByTestId('merge-apply').click()
+  await expect(send).toBeHidden()
+})

@@ -13,6 +13,7 @@ import {
 } from 'naive-ui'
 import TextureTile from './TextureTile.vue'
 import BulkDialog from '../bulk/BulkDialog.vue'
+import MergeDialog from '../merge/MergeDialog.vue'
 import { usePackStore, type StatusFilter } from '../../stores/pack'
 
 const props = defineProps<{ packId: string }>()
@@ -22,9 +23,16 @@ const { t } = useI18n()
 
 const filters: StatusFilter[] = ['all', 'changed', 'vanilla']
 const showBulk = ref(false)
+const showSend = ref(false)
 /** Selected textures in pack order (bulk actions and the navigation agent use this order). */
 const selectedPaths = computed(() =>
   store.value.textures.filter((tex) => store.value.selection.has(tex.path)).map((tex) => tex.path)
+)
+/** Send to pack: only the pack's own files (unchanged vanilla textures are not copied). */
+const sendPaths = computed(() =>
+  store.value.textures
+    .filter((tex) => store.value.selection.has(tex.path) && tex.status !== 'vanilla')
+    .map((tex) => tex.path)
 )
 
 // The editor replaces the grid: keep its scroll position, and on return show the last edited tile
@@ -85,30 +93,43 @@ function onKeydown(e: KeyboardEvent): void {
       </n-text>
     </n-space>
 
-    <div v-if="store.selection.size > 0" class="selection" data-testid="selection-bar">
-      <n-text>{{
-        t('grid.selected', { count: store.selection.size }, store.selection.size)
-      }}</n-text>
-      <n-button size="tiny" quaternary @click="store.selectAll()">{{
-        t('grid.selectAll')
-      }}</n-button>
-      <n-button size="tiny" quaternary @click="store.clearSelection()">{{
-        t('grid.clearSelection')
-      }}</n-button>
-      <span class="spacer" />
-      <n-button size="tiny" data-testid="selection-bulk" @click="showBulk = true">{{
-        t('bulk.open')
-      }}</n-button>
-      <n-button
-        size="tiny"
-        :type="store.aiPanel ? 'primary' : 'default'"
-        data-testid="selection-ai"
-        @click="store.aiPanel = true"
-      >
-        {{ t('ai.askSelection') }}
-      </n-button>
+    <!-- The bar's row is always reserved so selecting a tile never moves the grid (a double-click stays on it). -->
+    <div class="selection-slot">
+      <div v-if="store.selection.size > 0" class="selection" data-testid="selection-bar">
+        <n-text class="selected-count">{{
+          t('grid.selected', { count: store.selection.size }, store.selection.size)
+        }}</n-text>
+        <n-button size="tiny" quaternary @click="store.selectAll()">{{
+          t('grid.selectAll')
+        }}</n-button>
+        <n-button size="tiny" quaternary @click="store.clearSelection()">{{
+          t('grid.clearSelection')
+        }}</n-button>
+        <span class="spacer" />
+        <n-button size="tiny" data-testid="selection-bulk" @click="showBulk = true">{{
+          t('bulk.open')
+        }}</n-button>
+        <n-button
+          size="tiny"
+          :disabled="sendPaths.length === 0"
+          :title="sendPaths.length === 0 ? t('merge.sendNothing') : undefined"
+          data-testid="selection-send"
+          @click="showSend = true"
+        >
+          {{ t('merge.send') }}
+        </n-button>
+        <n-button
+          size="tiny"
+          :type="store.aiPanel ? 'primary' : 'default'"
+          data-testid="selection-ai"
+          @click="store.aiPanel = true"
+        >
+          {{ t('ai.askSelection') }}
+        </n-button>
+      </div>
     </div>
     <bulk-dialog v-model:show="showBulk" :pack-id="packId" :paths="selectedPaths" />
+    <merge-dialog v-model:show="showSend" mode="send" :source-pack-id="packId" :paths="sendPaths" />
 
     <div ref="scroller" class="scroll" tabindex="0" data-testid="texture-grid" @keydown="onKeydown">
       <n-empty v-if="store.visible.length === 0" :description="t('grid.empty')" class="empty" />
@@ -140,15 +161,35 @@ function onKeydown(e: KeyboardEvent): void {
 .count {
   font-size: 12px;
 }
+.selection-slot {
+  flex-shrink: 0;
+  height: 30px;
+  margin-bottom: 6px;
+}
+/* One line at any width: labels shrink with an ellipsis instead of wrapping. */
 .selection {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 8px;
-  margin-bottom: 6px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
   border-radius: 6px;
   background: rgba(24, 160, 88, 0.12);
   font-size: 13px;
+}
+.selected-count {
+  flex-shrink: 0;
+}
+.selection :deep(.n-button) {
+  flex-shrink: 1;
+  min-width: 0;
+}
+.selection :deep(.n-button__content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .spacer {
   flex: 1;
