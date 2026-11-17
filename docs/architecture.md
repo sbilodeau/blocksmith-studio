@@ -51,6 +51,7 @@ renderer must be resolved and checked to stay inside an allowed root.
 | `contextIsolation`, `sandbox`, no Node     | `src/main/window.ts`                                     |
 | Strict CSP (meta tag + response header)    | `src/main/security-policy.ts`, `electron.vite.config.ts` |
 | No navigation, no new windows, no webview  | `src/main/security.ts`                                   |
+| App windows only created by main           | `createPopoutWindow` in `src/main/window.ts`             |
 | External links: https only, system browser | `src/main/security-policy.ts`                            |
 | Permission requests denied                 | `src/main/security.ts`                                   |
 | IPC only from the app's own frames         | `isTrustedSender` in `src/main/security-policy.ts`       |
@@ -131,7 +132,10 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 - `stores/editor.ts` creates one pixel-editor store per open pack (`editor/<packId>`); see [editor.md](editor.md).
 - `src/shared/image/` is the pure image core (RGBA buffers, transforms, drawing, colors, PNG); see
   [image-core.md](image-core.md). It runs unchanged in the renderer, in main and in tests.
-- `router/` uses hash history (works with `file://`).
+- `router/` uses hash history (works with `file://`). Routes with `meta.bare` (the pop-out 3D preview window,
+  [preview.md](preview.md#pop-out-window)) render without the app header; `main.ts` waits for the first route before
+  mounting.
+- `stores/popout.ts` (one per pack tab) relays the editor state to a pop-out preview window through main.
 
 ## Updates
 

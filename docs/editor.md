@@ -72,6 +72,38 @@ A custom playback order in the `.mcmeta` (`frames` with repeats) is kept and fol
 Only vertical strips of full-width frames are edited frame by frame; frames laid out in a grid are edited as one
 image.
 
+## Layers
+
+Layers are optional. The **Layers** panel (Draw tab, under the colors) starts empty: **Add layer** turns the texture
+into the bottom layer ("Texture") and adds an empty layer above it, so you can paint on top without touching the
+original pixels. The list shows the top layer first.
+
+| Action                     | How                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| Choose the layer to paint  | Click it (or focus the list and use the Up / Down arrow keys)                  |
+| Show / hide                | The eye button of the layer                                                    |
+| Opacity                    | Slider under the list (the active layer); one undo step per slider drag        |
+| Rename                     | Double-click the name, the pencil button or F2 in the list (Enter, Escape)     |
+| Add, duplicate, delete     | Buttons in the panel header (at most 16 layers; the last layer cannot go)      |
+| Move up / down             | Arrow buttons                                                                  |
+| Merge into the layer below | Merge button (uses the upper layer's opacity and visibility)                   |
+| Flatten                    | Combines the visible layers into one image and removes the layers (undoable)   |
+
+- Every tool paints into the active layer; the canvas, the eyedropper, the palette, the 3D preview and the AI agent see
+  the composite of the visible layers. Rotating or flipping without a selection applies to the active layer only; a
+  rotation that would change the size (non-square texture) is refused while there are layers.
+- Every layer action is one unsaved edit; undoing a stroke selects its layer again.
+- **Saving** writes the composite PNG (what Minecraft reads) and keeps the layers in
+  `.blocksmith/layers/<texture path>.json` (each layer as a base64 PNG, with its name, visibility and opacity). The
+  file is outside the pack history and never exported. Reopening the texture brings the layers back.
+- If the texture changed after the layers were saved (an undo in the saved history, an AI proposal applied from the
+  grid, an edit outside the app), the layers no longer add up to the texture: they are not loaded, a notice says so,
+  and the next save removes the file. **Revert to vanilla** removes it too.
+- An AI proposal applied to a layered texture goes into a new top layer named "AI" (hide or delete it to compare).
+  When the proposal erases or lightens pixels, which a layer on top cannot do, the layers are flattened into the
+  result instead.
+- Layers are not available for animated textures, and **Animate** is hidden while a texture has layers.
+
 ## Undo levels
 
 1. **Unsaved edits** (left list in the History panel): every stroke, fill, shape, move, rotate or flip is one
@@ -91,6 +123,10 @@ image.
   parts (parse and write `.mcmeta`, split and join frames, keep a custom playback order on the same images when frames
   are added, removed or moved, playback timing) are in `src/shared/animation/`. GIF decoding (with frame disposal)
   runs in main (`src/main/services/packs/gif.ts`, channel `texture.importGif`).
+- Layers: the store keeps `layers` (bottom first) and `activeLayer`, with `image` pointing at the active layer's
+  image, and a computed `view` (the composite) that `strip` uses. Compositing (`compositeLayers`, straight-alpha
+  "over" with each layer's opacity) and the AI overlay (`overlayDiff`) are in `src/shared/image/layers.ts`. Layers
+  travel with `texture.read` / `texture.save` (`layers`, schema in `src/shared/model/layers.ts`).
 - `src/renderer/components/editor/PixelCanvas.vue`: Canvas 2D rendering at integer zoom with smoothing disabled,
   input handling for every tool. Pixel data is never read back from the canvas: the image core buffer is the source of
   truth, so colors stay exact (no premultiplied-alpha or color-management rounding).
