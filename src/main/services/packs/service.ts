@@ -25,7 +25,7 @@ import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { exportPackZip } from './exporter'
-import { FileInfoCache, mapLimit, writeFileAtomic } from './files'
+import { FileInfoCache, PNG_HEADER_BYTES, mapLimit, readFileHead, writeFileAtomic } from './files'
 import {
   dataSchemaWarnings,
   missingAnimationWarnings,
@@ -572,9 +572,12 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
       const location = await requireLocation(packId)
       const authoring = location.project.authoringVersion
       const scanned = await scanFiles(location.folder)
+      // Every PNG check only needs the IHDR: read the first bytes of images, not whole high-resolution files.
       const files = await mapLimit(scanned, 32, async (f) => ({
         path: f.path,
-        data: new Uint8Array(await fs.readFile(f.abs))
+        data: f.path.endsWith('.png')
+          ? await readFileHead(f.abs, PNG_HEADER_BYTES)
+          : new Uint8Array(await fs.readFile(f.abs))
       }))
       await deps.vanilla.prepareData(authoring)
       const index = await deps.vanilla.getIndex(authoring)

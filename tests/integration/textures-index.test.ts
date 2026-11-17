@@ -266,4 +266,14 @@ describe('texture index I/O', () => {
     // Unchanged: same url.
     expect(byPath(await env.service.textures(pack.id)).get(path)!.url).toBe(second.url)
   })
+
+  it('Pack Doctor reads only the header of PNG files', async () => {
+    await put(pack.folder, T('block/stone.png'), makePng(32, 16))
+    await put(pack.folder, T('block/added.png'), makePng(512, 512))
+    const reads = countReads()
+    const report = await env.service.doctor(pack.id)
+    expect(report.issues).toContainEqual({ code: 'doctor.proportions', path: T('block/stone.png') })
+    expect(reads.full.size).toBe(0)
+    expect(reads.header.get(T('block/added.png'))).toBe(1)
+  })
 })
