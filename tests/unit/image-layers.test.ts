@@ -56,11 +56,7 @@ describe('compositeLayers', () => {
     expect(getPixel(out, 0, 0)).toEqual(getPixel(expected, 0, 0))
     expect(getPixel(out, 0, 0)).toEqual([127, 0, 128, 255])
     expect(
-      getPixel(
-        compositeLayers([{ image: solid(BLUE), visible: true, opacity: 0 }], 2, 2),
-        0,
-        0
-      )
+      getPixel(compositeLayers([{ image: solid(BLUE), visible: true, opacity: 0 }], 2, 2), 0, 0)
     ).toEqual([0, 0, 0, 0])
   })
 
