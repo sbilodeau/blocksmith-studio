@@ -3,15 +3,22 @@ import { mkdir, readFile, readdir, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { strFromU8, unzipSync } from 'fflate'
 import { cleanup, launchApp, stubSaveDialog, type LaunchedApp } from './app'
+import {
+  jsonFixture,
+  startFakeProviderServer,
+  type FakeProviderServer
+} from '../fixtures/ai/server'
 
 type MakeFixtureJar = (outPath: string, versionId: string) => Promise<void>
 
 let launched: LaunchedApp | undefined
+let server: FakeProviderServer | undefined
 
 /** A pack of `kind` on the fixture jar (vanilla data: 2 recipes, a loot table, 2 tags, an advancement). */
 async function setup(
   name: string,
-  kind: 'resource' | 'data'
+  kind: 'resource' | 'data',
+  ai?: { url: string; model: string }
 ): Promise<{ launched: LaunchedApp; packFile: (path: string) => Promise<string> }> {
   const first = await launchApp()
   const mc = join(first.root, 'minecraft')
@@ -24,6 +31,14 @@ async function setup(
   const settingsPath = join(first.userDataDir, 'settings.json')
   const settings = JSON.parse(await readFile(settingsPath, 'utf8'))
   settings.minecraftPaths = [mc]
+  if (ai) {
+    settings.ai = {
+      providers: [
+        { id: 'local', kind: 'ollama', label: 'Ollama local', baseUrl: ai.url, enabled: true }
+      ],
+      agents: { creation: { model: { providerId: 'local', modelId: ai.model } } }
+    }
+  }
   await writeFile(settingsPath, JSON.stringify(settings))
   const l = await launchApp({ root: first.root })
   const { page } = l
@@ -55,7 +70,9 @@ async function setEditorText(page: Page, text: string): Promise<void> {
 
 test.afterEach(async () => {
   if (launched) await cleanup(launched)
+  await server?.close()
   launched = undefined
+  server = undefined
 })
 
 test('edits a vanilla recipe with live checks, creates a file and exports a data pack', async () => {
@@ -145,4 +162,64 @@ test('turns a resource pack into a combined pack with a data section', async () 
   await expect(page.getByTestId('export-run')).toContainText('Export 2 .zip files')
   const meta = JSON.parse(await readFile(await ctx.packFile('pack.mcmeta'), 'utf8'))
   expect(meta.pack.pack_format).toBe(97)
+})
+
+test('explains an edited vanilla recipe with the AI, comparing it with the original', async () => {
+  const MODEL = 'qwen3:32b'
+  server = await startFakeProviderServer()
+  server.on('GET', '/api/tags', jsonFixture('ollama/tags.json'))
+  server.on('POST', '/api/show', jsonFixture('ollama/show-qwen3.json'))
+  server.on('POST', '/api/chat', (_req, res) => {
+    const at = '2026-11-16T10:00:00.000Z'
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
+    res.end(
+      [
+        {
+          model: MODEL,
+          created_at: at,
+          message: { role: 'assistant', content: '3 stone now make 3 slabs instead of 6.' },
+          done: false
+        },
+        {
+          model: MODEL,
+          created_at: at,
+          message: { role: 'assistant', content: '' },
+          done: true,
+          done_reason: 'stop',
+          prompt_eval_count: 900,
+          eval_count: 20
+        }
+      ]
+        .map((l) => JSON.stringify(l))
+        .join('\n') + '\n'
+    )
+  })
+  const ctx = await setup('Explained', 'data', { url: server.url, model: MODEL })
+  launched = ctx.launched
+  const { page } = launched
+  await page.getByTestId('data-row-minecraft:stone_slab').click()
+  await setEditorText(
+    page,
+    '{"type": "minecraft:crafting_shaped", "pattern": ["###"], "key": {"#": "minecraft:stone"}, "result": {"id": "minecraft:stone_slab", "count": 3}}'
+  )
+  await page.getByTestId('data-explain-open').click()
+  const panel = page.getByTestId('data-explain')
+  await expect(panel.getByTestId('data-explain-text')).toHaveText(
+    '3 stone now make 3 slabs instead of 6.',
+    { timeout: 15_000 }
+  )
+  // The model got the original, the computed change and the unsaved state, without tools.
+  const chat = server.requests.find((r) => r.path === '/api/chat')!.body as {
+    messages: Array<{ role: string; content: string }>
+    tools?: unknown[]
+  }
+  expect(chat.tools).toBeUndefined()
+  expect(chat.messages[0]!.content).toContain('Reply in English')
+  const user = chat.messages.find((m) => m.role === 'user')!.content
+  expect(user).toContain('ORIGINAL (vanilla 26.3) FILE:')
+  expect(user).toContain('- result.count: 6 -> 3')
+  expect(user).toContain('The edits are not saved yet')
+  // Editing again flags the explanation as out of date.
+  await setEditorText(page, '{}')
+  await expect(panel.getByTestId('data-explain-stale')).toBeVisible()
 })

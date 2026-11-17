@@ -90,6 +90,8 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
     return fakeBridge.evalReports[model.modelId]
   },
   'ai.eval.stop': () => undefined,
+  'ai.data.explain': () => ({ runId: 'explain-1' }),
+  'ai.agent.stop': () => undefined,
   'bulk.preview': () => fakeBridge.bulkPreview,
   'bulk.apply': (input) => ({ applied: (input as { paths: string[] }).paths.length }),
   'bulk.discard': () => undefined,

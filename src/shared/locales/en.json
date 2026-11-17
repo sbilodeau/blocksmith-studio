@@ -959,6 +959,17 @@
       "warnings": "no warnings | 1 warning | {count} warnings",
       "line": "Line {line}"
     },
+    "explain": {
+      "button": "Explain",
+      "buttonHint": "The AI explains in simple terms what this file does in the game, compared with Minecraft's original.",
+      "title": "Explanation",
+      "close": "Close",
+      "run": "Explain this file",
+      "again": "Explain again",
+      "hint": "Sent to the AI: this file as in the editor, Minecraft's original, the changes and the checks. Nothing is changed.",
+      "stale": "The file changed since this explanation.",
+      "working": "Reading the file..."
+    },
     "type": {
       "string": "a text",
       "number": "a number",

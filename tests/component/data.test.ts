@@ -9,6 +9,10 @@ import { useDataStore } from '@renderer/stores/data'
 import NewDataDialog from '@renderer/components/data/NewDataDialog.vue'
 import DataEditor from '@renderer/components/data/DataEditor.vue'
 import CreationReview from '@renderer/components/ai/CreationReview.vue'
+import DataExplain from '@renderer/components/data/DataExplain.vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { routes } from '@renderer/router'
+import { useAiStore } from '@renderer/stores/ai'
 import { createAppI18n } from '@renderer/i18n'
 import { fakeBridge } from './setup'
 
@@ -43,7 +47,8 @@ function mountWith(component: unknown, props: Record<string, unknown>): VueWrapp
     setup: () => () =>
       h(NDialogProvider, () => h(NMessageProvider, () => h(component as never, props)))
   })
-  return mount(Host, { global: { plugins: [createAppI18n()] }, attachTo: document.body })
+  const router = createRouter({ history: createMemoryHistory(), routes })
+  return mount(Host, { global: { plugins: [createAppI18n(), router] }, attachTo: document.body })
 }
 
 beforeEach(() => {
@@ -55,6 +60,8 @@ beforeEach(() => {
     ids: { items: ['minecraft:stone', 'minecraft:stone_slab'], blocks: [], tags: {} }
   }
   fakeBridge.dataFiles = {}
+  fakeBridge.providers = []
+  fakeBridge.models = []
   document.body.innerHTML = ''
 })
 
@@ -202,6 +209,66 @@ describe('creation plan review', () => {
     )
     // No texture step: the button just applies.
     expect(document.querySelector('[data-testid="plan-apply"]')!.textContent).toContain('Apply')
+    wrapper.unmount()
+  })
+})
+
+describe('explain panel', () => {
+  const text = '{"type": "minecraft:crafting_shaped"}'
+
+  it('asks main for an explanation with the editor text and the UI language, and shows the streamed answer', async () => {
+    fakeBridge.providers = [
+      {
+        id: 'fake',
+        kind: 'ollama',
+        label: 'Fake',
+        baseUrl: 'http://localhost',
+        enabled: true,
+        hasKey: true,
+        keyRequired: true
+      }
+    ]
+    fakeBridge.models = [
+      { id: 'm1', providerId: 'fake', label: 'M1', capabilities: { tools: true } }
+    ]
+    fakeBridge.settings = { ...fakeBridge.settings, language: 'fr' }
+    const { useSettingsStore } = await import('@renderer/stores/settings')
+    await useSettingsStore().load()
+    useAiStore().init()
+    const wrapper = mountWith(DataExplain, { packId: 'p1', path: RECIPE, text })
+    await flushPromises()
+    const req = fakeBridge.calls.find((c) => c.channel === 'ai.data.explain')!.payload
+    expect(req).toEqual({
+      packId: 'p1',
+      path: RECIPE,
+      text,
+      model: { providerId: 'fake', modelId: 'm1' },
+      language: 'fr',
+      thinking: 'off'
+    })
+    fakeBridge.emit('ai.event', {
+      runId: 'explain-1',
+      type: 'text',
+      delta: '**Résumé** : 3 dalles'
+    })
+    fakeBridge.emit('ai.event', { runId: 'explain-1', type: 'done', reason: 'end' })
+    await flushPromises()
+    // Markdown markup the model adds anyway is dropped.
+    expect(document.querySelector('[data-testid="data-explain-text"]')!.textContent).toBe(
+      'Résumé : 3 dalles'
+    )
+    expect(document.querySelector('[data-testid="data-explain-run"]')!.textContent).toContain(
+      'Explain again'
+    )
+    wrapper.unmount()
+    fakeBridge.settings = { ...fakeBridge.settings, language: 'en' }
+  })
+
+  it('points to Settings when no AI provider is set up', async () => {
+    const wrapper = mountWith(DataExplain, { packId: 'p2', path: RECIPE, text })
+    await flushPromises()
+    expect(document.body.textContent).toContain('Open Settings')
+    expect(fakeBridge.calls.some((c) => c.channel === 'ai.data.explain')).toBe(false)
     wrapper.unmount()
   })
 })

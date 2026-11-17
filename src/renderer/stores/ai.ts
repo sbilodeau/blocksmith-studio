@@ -41,7 +41,10 @@ export interface AgentSession {
   loaded: boolean
 }
 
-function sessionKey(packId: string, agent: AgentKind): string {
+/** A session of an agent, or of the data editor's "Explain" (one answer at a time, never persisted). */
+export type SessionKind = AgentKind | 'explain'
+
+function sessionKey(packId: string, agent: SessionKind): string {
   return `${packId}:${agent}`
 }
 
@@ -149,7 +152,7 @@ export const useAiStore = defineStore('ai', () => {
   }
 
   // ---------- sessions ----------
-  function session(packId: string, agent: AgentKind): AgentSession {
+  function session(packId: string, agent: SessionKind): AgentSession {
     const key = sessionKey(packId, agent)
     if (!sessions.value[key]) {
       sessions.value[key] = { key, items: [], runId: null, proposals: {}, loaded: false }
@@ -214,6 +217,24 @@ export const useAiStore = defineStore('ai', () => {
     )
   }
 
+  /**
+   * Explains a data file in plain words (PLAN M10): replaces the previous explanation of the pack with a new streamed
+   * answer. `text` is the editor's text, unsaved edits included.
+   */
+  async function explainData(args: {
+    packId: string
+    path: string
+    text: string
+    model: ModelRef
+    language: Language
+    thinking?: ReasoningLevel
+  }): Promise<void> {
+    const s = session(args.packId, 'explain')
+    if (s.runId) await call('ai.agent.stop', { runId: s.runId }).catch(() => undefined)
+    s.items = []
+    await startRun(s, null, () => call('ai.data.explain', { ...args, model: { ...args.model } }))
+  }
+
   /** Applies the ticked steps of a creation plan (resolves when written, or after Stop). */
   async function applyCreation(
     packId: string,
@@ -240,13 +261,17 @@ export const useAiStore = defineStore('ai', () => {
     await call('ai.creation.stopApply', { proposalId })
   }
 
-  /** Shows the user message and a "working" bubble, starts the run, then routes its events to the session. */
+  /**
+   * Shows the user message (if any) and a "working" bubble, starts the run, then routes its events to the session.
+   */
   async function startRun(
     s: AgentSession,
-    message: string,
+    message: string | null,
     begin: () => Promise<{ runId: string }>
   ): Promise<void> {
-    s.items.push({ id: nextId(), role: 'user', text: message, thinking: '', toolCalls: [] })
+    if (message !== null) {
+      s.items.push({ id: nextId(), role: 'user', text: message, thinking: '', toolCalls: [] })
+    }
     s.items.push({
       id: nextId(),
       role: 'assistant',
@@ -277,7 +302,7 @@ export const useAiStore = defineStore('ai', () => {
     for (const e of buffered) onEvent(e)
   }
 
-  async function stop(packId: string, agent: AgentKind): Promise<void> {
+  async function stop(packId: string, agent: SessionKind): Promise<void> {
     const s = session(packId, agent)
     if (s.runId) await call('ai.agent.stop', { runId: s.runId })
   }
@@ -422,6 +447,7 @@ export const useAiStore = defineStore('ai', () => {
     sendNavigation,
     applyNavigation,
     sendCreation,
+    explainData,
     applyCreation,
     stopCreationApply,
     stop,

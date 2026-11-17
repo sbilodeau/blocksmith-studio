@@ -959,6 +959,17 @@
       "warnings": "aucun avertissement | 1 avertissement | {count} avertissements",
       "line": "Ligne {line}"
     },
+    "explain": {
+      "button": "Expliquer",
+      "buttonHint": "L'IA explique en termes simples ce que ce fichier fait dans le jeu, par rapport à l'original de Minecraft.",
+      "title": "Explication",
+      "close": "Fermer",
+      "run": "Expliquer ce fichier",
+      "again": "Expliquer de nouveau",
+      "hint": "Envoyé à l'IA : ce fichier tel que dans l'éditeur, l'original de Minecraft, les changements et les vérifications. Rien n'est modifié.",
+      "stale": "Le fichier a changé depuis cette explication.",
+      "working": "Lecture du fichier..."
+    },
     "type": {
       "string": "un texte",
       "number": "un nombre",

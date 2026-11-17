@@ -22,6 +22,7 @@ import {
 } from '@shared/datapack'
 import type { DataFileData } from '@shared/model/data'
 import CodeEditor from './CodeEditor.vue'
+import DataExplain from './DataExplain.vue'
 import { call } from '../../services/ipc'
 import { useDataStore } from '../../stores/data'
 import { useErrorMessage } from '../../composables/useErrorMessage'
@@ -42,6 +43,8 @@ const saved = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const compare = ref(false)
+/** The "Explain" side panel (AI). */
+const explaining = ref(false)
 const editorRef = ref<InstanceType<typeof CodeEditor> | null>(null)
 
 const dirty = computed(() => text.value !== saved.value)
@@ -219,6 +222,19 @@ defineExpose({ guardUnsaved })
         >
           {{ t('data.editor.format') }}
         </n-button>
+        <n-tooltip v-if="file">
+          <template #trigger>
+            <n-button
+              size="small"
+              :type="explaining ? 'primary' : 'default'"
+              data-testid="data-explain-open"
+              @click="explaining = !explaining"
+            >
+              {{ t('data.explain.button') }}
+            </n-button>
+          </template>
+          {{ t('data.explain.buttonHint') }}
+        </n-tooltip>
         <n-tooltip v-if="file?.vanillaText">
           <template #trigger>
             <n-button
@@ -278,6 +294,9 @@ defineExpose({ guardUnsaved })
         <div v-if="compare && file?.vanillaText" class="pane" data-testid="data-vanilla">
           <n-text depth="3" class="pane-label">{{ t('data.editor.vanilla') }}</n-text>
           <code-editor :value="file.vanillaText" mode="json" read-only />
+        </div>
+        <div v-if="explaining && file && path" class="explain-pane">
+          <data-explain :pack-id="packId" :path="path" :text="text" @close="explaining = false" />
         </div>
       </div>
     </n-spin>
@@ -347,6 +366,13 @@ defineExpose({ guardUnsaved })
 }
 .pane > :last-child {
   flex: 1;
+}
+.explain-pane {
+  flex: none;
+  width: 320px;
+  min-height: 0;
+  border-left: 1px solid rgba(128, 128, 128, 0.2);
+  padding-left: 8px;
 }
 .pane-label {
   font-size: 12px;
