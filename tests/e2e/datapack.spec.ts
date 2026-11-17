@@ -6,7 +6,8 @@ import { cleanup, launchApp, stubSaveDialog, type LaunchedApp } from './app'
 import {
   jsonFixture,
   startFakeProviderServer,
-  type FakeProviderServer
+  type FakeProviderServer,
+  type RouteHandler
 } from '../fixtures/ai/server'
 
 type MakeFixtureJar = (outPath: string, versionId: string) => Promise<void>
@@ -66,6 +67,57 @@ async function setEditorText(page: Page, text: string): Promise<void> {
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A')
   await page.keyboard.press('Delete')
   await page.keyboard.insertText(text)
+}
+
+const MODEL = 'qwen3:32b'
+
+/** One NDJSON chat response from the fake Ollama server: text and/or tool calls, then the final chunk. */
+function ollamaReply(opts: {
+  text?: string
+  toolCalls?: Array<{ name: string; arguments: Record<string, unknown> }>
+}): string {
+  const at = '2026-11-16T10:00:00.000Z'
+  const lines: unknown[] = []
+  if (opts.toolCalls?.length) {
+    lines.push({
+      model: MODEL,
+      created_at: at,
+      message: {
+        role: 'assistant',
+        content: '',
+        tool_calls: opts.toolCalls.map((c, index) => ({
+          function: { index, name: c.name, arguments: c.arguments }
+        }))
+      },
+      done: false
+    })
+  }
+  if (opts.text) {
+    lines.push({
+      model: MODEL,
+      created_at: at,
+      message: { role: 'assistant', content: opts.text },
+      done: false
+    })
+  }
+  lines.push({
+    model: MODEL,
+    created_at: at,
+    message: { role: 'assistant', content: '' },
+    done: true,
+    done_reason: 'stop',
+    prompt_eval_count: 900,
+    eval_count: 20
+  })
+  return lines.map((l) => JSON.stringify(l)).join('\n') + '\n'
+}
+
+async function startServer(chat: RouteHandler): Promise<FakeProviderServer> {
+  const s = await startFakeProviderServer()
+  s.on('GET', '/api/tags', jsonFixture('ollama/tags.json'))
+  s.on('POST', '/api/show', jsonFixture('ollama/show-qwen3.json'))
+  s.on('POST', '/api/chat', chat)
+  return s
 }
 
 test.afterEach(async () => {
@@ -165,34 +217,9 @@ test('turns a resource pack into a combined pack with a data section', async () 
 })
 
 test('explains an edited vanilla recipe with the AI, comparing it with the original', async () => {
-  const MODEL = 'qwen3:32b'
-  server = await startFakeProviderServer()
-  server.on('GET', '/api/tags', jsonFixture('ollama/tags.json'))
-  server.on('POST', '/api/show', jsonFixture('ollama/show-qwen3.json'))
-  server.on('POST', '/api/chat', (_req, res) => {
-    const at = '2026-11-16T10:00:00.000Z'
+  server = await startServer((_req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
-    res.end(
-      [
-        {
-          model: MODEL,
-          created_at: at,
-          message: { role: 'assistant', content: '3 stone now make 3 slabs instead of 6.' },
-          done: false
-        },
-        {
-          model: MODEL,
-          created_at: at,
-          message: { role: 'assistant', content: '' },
-          done: true,
-          done_reason: 'stop',
-          prompt_eval_count: 900,
-          eval_count: 20
-        }
-      ]
-        .map((l) => JSON.stringify(l))
-        .join('\n') + '\n'
-    )
+    res.end(ollamaReply({ text: '3 stone now make 3 slabs instead of 6.' }))
   })
   const ctx = await setup('Explained', 'data', { url: server.url, model: MODEL })
   launched = ctx.launched
@@ -202,7 +229,8 @@ test('explains an edited vanilla recipe with the AI, comparing it with the origi
     page,
     '{"type": "minecraft:crafting_shaped", "pattern": ["###"], "key": {"#": "minecraft:stone"}, "result": {"id": "minecraft:stone_slab", "count": 3}}'
   )
-  await page.getByTestId('data-explain-open').click()
+  await page.getByTestId('data-ai-open').click()
+  await page.locator('[data-testid="data-ai"] .n-tabs-tab[data-name="explain"]').click()
   const panel = page.getByTestId('data-explain')
   await expect(panel.getByTestId('data-explain-text')).toHaveText(
     '3 stone now make 3 slabs instead of 6.',
@@ -222,4 +250,56 @@ test('explains an edited vanilla recipe with the AI, comparing it with the origi
   // Editing again flags the explanation as out of date.
   await setEditorText(page, '{}')
   await expect(panel.getByTestId('data-explain-stale')).toBeVisible()
+})
+
+test('the AI chat proposes a new version of the open file, applied to the editor then saved', async () => {
+  const changed = {
+    type: 'minecraft:crafting_shaped',
+    category: 'building',
+    key: { '#': 'minecraft:stone' },
+    pattern: ['###'],
+    result: { count: 8, id: 'minecraft:stone_slab' }
+  }
+  server = await startServer((req, res) => {
+    const body = req.body as { messages: Array<{ role: string }> }
+    const last = body.messages[body.messages.length - 1]
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
+    res.end(
+      last?.role === 'tool'
+        ? ollamaReply({ text: 'Crafting 3 stone now gives 8 slabs.' })
+        : ollamaReply({ toolCalls: [{ name: 'edit_file', arguments: { json: changed } }] })
+    )
+  })
+  const ctx = await setup('Chatted', 'data', { url: server.url, model: MODEL })
+  launched = ctx.launched
+  const { page } = launched
+  await page.getByTestId('data-row-minecraft:stone_slab').click()
+  await page.getByTestId('data-ai-open').click()
+  const panel = page.getByTestId('data-agent')
+  await expect(panel.getByTestId('data-agent-file')).toContainText('minecraft:stone_slab')
+  await panel.getByTestId('agent-input').locator('textarea').fill('make it give 8 slabs')
+  await panel.getByTestId('agent-send').click()
+
+  const review = panel.getByTestId('data-proposal')
+  await expect(review).toBeVisible({ timeout: 15_000 })
+  await expect(review.getByTestId('data-proposal-changes')).toHaveText('- result.count: 6 -> 8')
+  await expect(panel.getByTestId('agent-text')).toContainText('8 slabs')
+  // The request carried the open file and the data tools only.
+  const sent = server.requests.find((r) => r.path === '/api/chat')!.body as {
+    messages: Array<{ role: string; content: string }>
+    tools: Array<{ function: { name: string } }>
+  }
+  expect(sent.tools.map((t) => t.function.name)).toEqual(['edit_file', 'read_json', 'list_data'])
+  expect(sent.messages.at(-1)!.content).toContain('File: data/minecraft/recipe/stone_slab.json')
+
+  // Applying puts the text in the editor, unsaved; the user's save writes it.
+  await review.getByTestId('data-proposal-apply').click()
+  await expect(review.getByTestId('data-proposal-status')).toContainText('Applied to the editor')
+  await expect(page.getByTestId('data-dirty')).toBeVisible()
+  await page.getByTestId('data-save').click()
+  await expect(page.getByTestId('data-dirty')).toHaveCount(0)
+  const saved = JSON.parse(
+    await readFile(await ctx.packFile('data/minecraft/recipe/stone_slab.json'), 'utf8')
+  )
+  expect(saved.result).toEqual({ id: 'minecraft:stone_slab', count: 8 })
 })

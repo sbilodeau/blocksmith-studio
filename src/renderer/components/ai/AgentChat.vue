@@ -15,7 +15,7 @@ import {
   NText,
   NTooltip
 } from 'naive-ui'
-import type { AgentKind, AnyProposal, ModelRef, ReasoningLevel } from '@shared/ai/types'
+import type { AgentKind, EmittedProposal, ModelRef, ReasoningLevel } from '@shared/ai/types'
 import ModelPicker from './ModelPicker.vue'
 import { useAiStore, type ChatItem } from '../../stores/ai'
 import { useSettingsStore } from '../../stores/settings'
@@ -38,7 +38,7 @@ const emit = defineEmits<{
   send: [request: { text: string; model: ModelRef; thinking: ReasoningLevel }]
 }>()
 defineSlots<{
-  proposal(props: { proposalId: string; proposal: AnyProposal }): unknown
+  proposal(props: { proposalId: string; proposal: EmittedProposal }): unknown
   context?(): unknown
 }>()
 const { t, te } = useI18n()
@@ -51,14 +51,19 @@ const defaults = computed(() => settings.settings.ai.agents[props.agent])
 const input = ref('')
 const scroller = ref<InstanceType<typeof NScrollbar> | null>(null)
 
-/** Model for this tab: starts from the agent default, can be switched on the fly. */
-const model = ref<ModelRef | undefined>(defaults.value.model)
-watch(
-  () => defaults.value.model,
-  (m) => {
-    if (!model.value) model.value = m
-  }
+/**
+ * Model for this tab: starts from the agent default, can be switched on the fly. The data agent, new in M10, falls
+ * back to the creation agent's model until it has its own default.
+ */
+const defaultModel = computed(
+  () =>
+    defaults.value.model ??
+    (props.agent === 'data' ? settings.settings.ai.agents.creation.model : undefined)
 )
+const model = ref<ModelRef | undefined>(defaultModel.value)
+watch(defaultModel, (m) => {
+  if (!model.value) model.value = m
+})
 
 /** Reasoning level for this tab: starts from the agent default, can be changed per request. */
 const thinking = ref<ReasoningLevel>(defaults.value.thinking)

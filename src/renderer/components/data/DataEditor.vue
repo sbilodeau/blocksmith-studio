@@ -3,14 +3,16 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton,
+  NDropdown,
   NEmpty,
-  NPopconfirm,
-  NSpace,
   NSpin,
+  NTab,
+  NTabs,
   NTag,
   NText,
   NTooltip,
-  useDialog
+  useDialog,
+  type DropdownOption
 } from 'naive-ui'
 import type { Diagnostic } from '@codemirror/lint'
 import {
@@ -23,6 +25,7 @@ import {
 import type { DataFileData } from '@shared/model/data'
 import CodeEditor from './CodeEditor.vue'
 import DataExplain from './DataExplain.vue'
+import DataAgentPanel from './DataAgentPanel.vue'
 import { call } from '../../services/ipc'
 import { useDataStore } from '../../stores/data'
 import { useErrorMessage } from '../../composables/useErrorMessage'
@@ -43,8 +46,12 @@ const saved = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const compare = ref(false)
-/** The "Explain" side panel (AI). */
-const explaining = ref(false)
+/** The AI side panel and its tab: the data agent's chat, or the explanation of the file. */
+const aiTab = ref<'chat' | 'explain' | null>(null)
+const explainSeen = ref(false)
+watch(aiTab, (tab) => {
+  if (tab === 'explain') explainSeen.value = true
+})
 const editorRef = ref<InstanceType<typeof CodeEditor> | null>(null)
 
 const dirty = computed(() => text.value !== saved.value)
@@ -144,6 +151,39 @@ async function removeFile(): Promise<void> {
   }
 }
 
+/** Less frequent actions, in the "More" menu (keeps the toolbar on one line). */
+const moreOptions = computed<DropdownOption[]>(() => [
+  ...(file.value?.vanillaText && text.value !== file.value.vanillaText
+    ? [{ key: 'vanilla', label: t('data.editor.useVanilla') }]
+    : []),
+  ...(file.value?.origin === 'pack'
+    ? [
+        {
+          key: 'remove',
+          label: file.value.vanillaText ? t('editor.revert') : t('data.editor.delete')
+        }
+      ]
+    : [])
+])
+
+function onMore(key: string): void {
+  if (key === 'vanilla') revertText()
+  if (key !== 'remove') return
+  const revert = !!file.value?.vanillaText
+  dialog.warning({
+    title: revert ? t('editor.revert') : t('data.editor.delete'),
+    content: revert ? t('data.editor.revertConfirm') : t('data.editor.deleteConfirm'),
+    positiveText: revert ? t('editor.revert') : t('data.editor.delete'),
+    negativeText: t('common.cancel'),
+    onPositiveClick: () => removeFile()
+  })
+}
+
+/** The data agent's proposal goes into the editor, unsaved (the user saves it). */
+function applyProposal(next: string): void {
+  text.value = next
+}
+
 /** Runs `action` after asking what to do with unsaved changes (save, discard or cancel). */
 function guardUnsaved(action: () => void): void {
   if (!dirty.value) {
@@ -196,13 +236,13 @@ defineExpose({ guardUnsaved })
 
 <template>
   <div class="data-editor" data-testid="data-editor">
-    <n-space justify="space-between" align="center" class="head" :wrap="false">
-      <n-space align="center" :wrap="false">
+    <div class="head">
+      <div class="head-left">
         <n-button size="small" data-testid="data-back" @click="back">{{
           t('data.editor.back')
         }}</n-button>
         <div class="title">
-          <n-text strong data-testid="data-name">{{ info?.id }}</n-text>
+          <n-text strong class="name" data-testid="data-name">{{ info?.id }}</n-text>
           <n-tag size="tiny" :type="statusTag.type" :bordered="false" data-testid="data-status">
             {{ statusTag.label }}
           </n-tag>
@@ -211,8 +251,8 @@ defineExpose({ guardUnsaved })
           </n-tag>
           <n-text depth="3" class="path">{{ path }}</n-text>
         </div>
-      </n-space>
-      <n-space align="center" :wrap="false">
+      </div>
+      <div class="head-right">
         <n-button
           v-if="isJson"
           size="small"
@@ -222,19 +262,6 @@ defineExpose({ guardUnsaved })
         >
           {{ t('data.editor.format') }}
         </n-button>
-        <n-tooltip v-if="file">
-          <template #trigger>
-            <n-button
-              size="small"
-              :type="explaining ? 'primary' : 'default'"
-              data-testid="data-explain-open"
-              @click="explaining = !explaining"
-            >
-              {{ t('data.explain.button') }}
-            </n-button>
-          </template>
-          {{ t('data.explain.buttonHint') }}
-        </n-tooltip>
         <n-tooltip v-if="file?.vanillaText">
           <template #trigger>
             <n-button
@@ -248,22 +275,27 @@ defineExpose({ guardUnsaved })
           </template>
           {{ t('data.editor.compareHint') }}
         </n-tooltip>
-        <n-button
-          v-if="file?.vanillaText && text !== file.vanillaText"
-          size="small"
-          data-testid="data-vanilla-text"
-          @click="revertText"
-        >
-          {{ t('data.editor.useVanilla') }}
-        </n-button>
-        <n-popconfirm v-if="file?.origin === 'pack'" @positive-click="removeFile">
+        <n-tooltip v-if="file">
           <template #trigger>
-            <n-button size="small" data-testid="data-remove">
-              {{ file?.vanillaText ? t('editor.revert') : t('data.editor.delete') }}
+            <n-button
+              size="small"
+              :type="aiTab ? 'primary' : 'default'"
+              data-testid="data-ai-open"
+              @click="aiTab = aiTab ? null : 'chat'"
+            >
+              {{ t('data.agent.button') }}
             </n-button>
           </template>
-          {{ file?.vanillaText ? t('data.editor.revertConfirm') : t('data.editor.deleteConfirm') }}
-        </n-popconfirm>
+          {{ t('data.agent.buttonHint') }}
+        </n-tooltip>
+        <n-dropdown
+          v-if="moreOptions.length"
+          trigger="click"
+          :options="moreOptions"
+          @select="onMore"
+        >
+          <n-button size="small" data-testid="data-more">{{ t('data.editor.more') }}</n-button>
+        </n-dropdown>
         <n-button
           size="small"
           type="primary"
@@ -274,8 +306,8 @@ defineExpose({ guardUnsaved })
         >
           {{ t('editor.save') }}
         </n-button>
-      </n-space>
-    </n-space>
+      </div>
+    </div>
 
     <n-spin :show="loading" class="spin">
       <div class="panes">
@@ -295,8 +327,33 @@ defineExpose({ guardUnsaved })
           <n-text depth="3" class="pane-label">{{ t('data.editor.vanilla') }}</n-text>
           <code-editor :value="file.vanillaText" mode="json" read-only />
         </div>
-        <div v-if="explaining && file && path" class="explain-pane">
-          <data-explain :pack-id="packId" :path="path" :text="text" @close="explaining = false" />
+        <div v-if="aiTab && file && path" class="ai-pane" data-testid="data-ai">
+          <n-tabs v-model:value="aiTab" type="line" size="small" class="ai-tabs">
+            <n-tab name="chat" :tab="t('data.agent.chatTab')" />
+            <n-tab name="explain" :tab="t('data.agent.explainTab')" />
+            <template #suffix>
+              <n-button size="tiny" quaternary data-testid="data-ai-close" @click="aiTab = null">
+                {{ t('common.close') }}
+              </n-button>
+            </template>
+          </n-tabs>
+          <div class="ai-body">
+            <data-agent-panel
+              v-show="aiTab === 'chat'"
+              :pack-id="packId"
+              :path="path"
+              :text="text"
+              @apply="applyProposal"
+            />
+            <!-- Mounted the first time its tab opens (opening it asks for an explanation), then kept. -->
+            <data-explain
+              v-if="explainSeen"
+              v-show="aiTab === 'explain'"
+              :pack-id="packId"
+              :path="path"
+              :text="text"
+            />
+          </div>
         </div>
       </div>
     </n-spin>
@@ -332,10 +389,36 @@ defineExpose({ guardUnsaved })
   min-height: 0;
   gap: 8px;
 }
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.head-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
 .title {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+.name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   min-width: 0;
 }
 .path {
@@ -367,12 +450,29 @@ defineExpose({ guardUnsaved })
 .pane > :last-child {
   flex: 1;
 }
-.explain-pane {
+.ai-pane {
   flex: none;
-  width: 320px;
+  width: 360px;
   min-height: 0;
+  overflow: hidden;
   border-left: 1px solid rgba(128, 128, 128, 0.2);
   padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.ai-tabs {
+  flex: none;
+}
+.ai-body {
+  flex: 1;
+  min-height: 0;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.ai-body > * {
+  flex: 1;
+  min-height: 0;
 }
 .pane-label {
   font-size: 12px;

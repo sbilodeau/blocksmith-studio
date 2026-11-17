@@ -24,7 +24,6 @@ import { useErrorMessage } from '../../composables/useErrorMessage'
  * (vanilla's file, the computed changes, the checks, the tags the file uses, item names); nothing is ever written.
  */
 const props = defineProps<{ packId: string; path: string; text: string }>()
-const emit = defineEmits<{ close: [] }>()
 const { t, te } = useI18n()
 const router = useRouter()
 const ai = useAiStore()
@@ -116,13 +115,6 @@ onMounted(async () => {
 
 <template>
   <div class="explain" data-testid="data-explain">
-    <n-space justify="space-between" align="center" :wrap="false" class="head">
-      <n-text strong>{{ t('data.explain.title') }}</n-text>
-      <n-button size="tiny" quaternary data-testid="data-explain-close" @click="emit('close')">
-        {{ t('data.explain.close') }}
-      </n-button>
-    </n-space>
-
     <n-alert v-if="!ai.hasUsableProvider" type="info" :show-icon="false">
       <p class="para">{{ t('ai.noProvider') }}</p>
       <n-button size="small" type="primary" @click="router.push({ name: 'settings' })">
@@ -199,9 +191,6 @@ onMounted(async () => {
   gap: 8px;
   min-height: 0;
   height: 100%;
-}
-.head {
-  flex: none;
 }
 .para {
   margin: 0 0 8px;

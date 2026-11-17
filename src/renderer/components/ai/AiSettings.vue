@@ -33,7 +33,7 @@ const form = ref<string | null>(null)
 function openForm(target: string | null): void {
   form.value = target
 }
-const AGENTS: AgentKind[] = ['editor', 'navigation', 'creation']
+const AGENTS: AgentKind[] = ['editor', 'navigation', 'creation', 'data']
 
 async function saveKey(providerId: string): Promise<void> {
   try {
@@ -186,7 +186,6 @@ onMounted(async () => {
         <n-text strong>{{ t('ai.agentDefaults') }}</n-text>
         <n-tabs type="line" size="small" animated>
           <n-tab-pane v-for="a in AGENTS" :key="a" :name="a" :tab="t(`ai.agents.${a}`)">
-            <n-text v-if="a !== 'editor'" depth="3" class="hint">{{ t('ai.agentLater') }}</n-text>
             <agent-settings-form :agent="a" hide-title />
           </n-tab-pane>
         </n-tabs>

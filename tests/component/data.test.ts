@@ -10,6 +10,8 @@ import NewDataDialog from '@renderer/components/data/NewDataDialog.vue'
 import DataEditor from '@renderer/components/data/DataEditor.vue'
 import CreationReview from '@renderer/components/ai/CreationReview.vue'
 import DataExplain from '@renderer/components/data/DataExplain.vue'
+import DataFileReview from '@renderer/components/data/DataFileReview.vue'
+import type { DataFileProposal } from '@shared/ai/types'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { routes } from '@renderer/router'
 import { useAiStore } from '@renderer/stores/ai'
@@ -270,5 +272,59 @@ describe('explain panel', () => {
     expect(document.body.textContent).toContain('Open Settings')
     expect(fakeBridge.calls.some((c) => c.channel === 'ai.data.explain')).toBe(false)
     wrapper.unmount()
+  })
+})
+
+describe('data agent proposal', () => {
+  const before =
+    '{"type":"minecraft:stonecutting","ingredient":"minecraft:stone","result":{"id":"minecraft:stone_slab","count":2}}'
+  const after =
+    '{\n  "type": "minecraft:stonecutting",\n  "ingredient": "minecraft:stone",\n  "result": {\n    "id": "minecraft:stone_slab",\n    "count": 3\n  }\n}\n'
+  const proposal = (status: DataFileProposal['status'] = 'pending'): DataFileProposal => ({
+    id: 'p',
+    runId: 'r',
+    agent: 'data',
+    kind: 'file',
+    packId: 'p1',
+    path: RECIPE,
+    before,
+    after,
+    warnings: 1,
+    status
+  })
+
+  it('lists the changes and emits apply / discard; warns when the editor changed since', async () => {
+    const applied: string[] = []
+    let discarded = 0
+    const wrapper = mountWith(DataFileReview, {
+      proposal: proposal(),
+      currentText: before,
+      onApply: (t: string) => applied.push(t),
+      onDiscard: () => discarded++
+    })
+    await flushPromises()
+    expect(document.querySelector('[data-testid="data-proposal-changes"]')!.textContent).toBe(
+      '- result.count: 2 -> 3'
+    )
+    expect(document.body.textContent).toContain('1 warning')
+    expect(document.body.textContent).not.toContain('applying replaces')
+    ;(document.querySelector('[data-testid="data-proposal-apply"]') as HTMLButtonElement).click()
+    ;(document.querySelector('[data-testid="data-proposal-discard"]') as HTMLButtonElement).click()
+    expect(applied).toEqual([after])
+    expect(discarded).toBe(1)
+    wrapper.unmount()
+
+    const outdated = mountWith(DataFileReview, { proposal: proposal(), currentText: '{}' })
+    await flushPromises()
+    expect(document.body.textContent).toContain('applying replaces those edits')
+    outdated.unmount()
+
+    const done = mountWith(DataFileReview, { proposal: proposal('applied'), currentText: after })
+    await flushPromises()
+    expect(document.querySelector('[data-testid="data-proposal-apply"]')).toBeNull()
+    expect(document.querySelector('[data-testid="data-proposal-status"]')!.textContent).toContain(
+      'Applied to the editor'
+    )
+    done.unmount()
   })
 })
