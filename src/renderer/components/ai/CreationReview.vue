@@ -6,6 +6,7 @@ import type { CreationProposal, PlanScope, ProposalStep } from '@shared/ai/types
 import PngThumb from './PngThumb.vue'
 import JobProgressBar from '../common/JobProgressBar.vue'
 import { useOpLabel } from '../../composables/useOpLabel'
+import { usePackStore } from '../../stores/pack'
 
 /**
  * Review of a creation-agent plan (PLAN 6.3, M6): one checkbox per step. A texture step shows what it covers
@@ -59,8 +60,18 @@ function toggle(id: string, on: boolean): void {
   kept.value = next
 }
 
+/** Custom categories (category editor) show their own label. */
+const categoryLabels = computed(
+  () =>
+    new Map(
+      usePackStore(props.proposal.packId).categories.flatMap((c) =>
+        c.label ? [[c.id, c.label] as const] : []
+      )
+    )
+)
+
 function category(id: string): string {
-  return te(`category.${id}`) ? t(`category.${id}`) : id
+  return categoryLabels.value.get(id) ?? (te(`category.${id}`) ? t(`category.${id}`) : id)
 }
 
 /** "Ores, Blocks · block/* · *_ore" */

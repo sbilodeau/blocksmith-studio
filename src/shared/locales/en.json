@@ -164,6 +164,11 @@
       "tooLarge": "The file is too large.",
       "exists": "\"{path}\" already exists.",
       "notInPack": "The pack has no file \"{path}\"."
+    },
+    "categories": {
+      "invalidGlob": "The pattern \"{glob}\" of the category {category} is not valid.",
+      "duplicateId": "Two categories have the id {id}.",
+      "invalidRule": "The category {category} is not valid."
     }
   },
   "common": {
@@ -1044,6 +1049,71 @@
       "invalidUnicode": "invalid unicode escape",
       "invalidEscapeCharacter": "invalid escape (\\\\)",
       "invalidCharacter": "invalid character in text"
+    }
+  },
+  "categoriesEditor": {
+    "open": "Edit categories",
+    "title": "Texture categories",
+    "tabs": {
+      "all": "All packs",
+      "pack": "This pack"
+    },
+    "allHint": "Applies to every pack. You can change or hide the built-in categories, and add or delete your own.",
+    "packHint": "Rules for this pack only, applied on top of \"All packs\": replace a category or add your own.",
+    "packEmpty": "This pack uses the \"All packs\" categories as they are.",
+    "builtin": "Built-in",
+    "custom": "Custom",
+    "hidden": "Hidden",
+    "replaces": "Replaces \"All packs\"",
+    "packOnly": "This pack only",
+    "matches": "no textures | 1 texture | {count} textures",
+    "countsHint": "Counts are for the textures of this pack.",
+    "select": "Select a category to edit it.",
+    "name": "Name",
+    "id": "Id: {id}",
+    "icon": "Icon texture",
+    "iconPlaceholder": "assets/minecraft/textures/block/stone.png",
+    "order": "Order",
+    "hide": "Hide this category",
+    "include": "Include: textures matching any of these patterns",
+    "exclude": "Exclude: removed even when an include pattern matches",
+    "addPattern": "Add pattern",
+    "removePattern": "Remove pattern",
+    "remove": "Remove",
+    "patternPlaceholder": "item/*_sword.png",
+    "globHelp": "Patterns match the path below textures/, such as block/stone.png. * = any characters except /, ** = any folders, ? = one character, {'{'}a,b{'}'} = a or b.",
+    "otherFixed": "Textures that match no other category go here. It cannot be deleted or hidden.",
+    "newName": "New category name",
+    "add": "Add category",
+    "override": "Replace a category in this pack",
+    "delete": "Delete category",
+    "removeOverride": "Remove from this pack",
+    "reset": "Reset to defaults",
+    "resetConfirm": "Go back to the default categories? Your changes to \"All packs\" are replaced when you save.",
+    "testPath": "Test a path",
+    "testPlaceholder": "block/stone.png",
+    "testResult": "Categories:",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Categories saved.",
+    "hasIssues": "Fix the highlighted problems before saving.",
+    "issues": {
+      "invalidId": "Invalid id (use a-z, 0-9, _ and -).",
+      "duplicateId": "Another category has the same id.",
+      "labelRequired": "Give this category a name.",
+      "labelTooLong": "The name is too long.",
+      "fallbackHidden": "The \"Other\" category cannot be hidden.",
+      "iconTooLong": "The icon path is too long.",
+      "tooManyGlobs": "Too many patterns.",
+      "tooManyCategories": "Too many categories."
+    },
+    "globIssues": {
+      "empty": "Empty pattern.",
+      "tooLong": "Pattern too long.",
+      "braces": "Unbalanced {'{'} {'}'}.",
+      "absolute": "Do not start with /: patterns match the path below textures/.",
+      "backslash": "Use / between folders, not \\.",
+      "invalid": "This pattern is not valid."
     }
   }
 }
