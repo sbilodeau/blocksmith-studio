@@ -5,6 +5,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+## 26.47.1 - 2026-11-17
+
 ### M13 - Install in Minecraft and live mode
 
 - **Play in Minecraft** (pack header): install the pack straight into Minecraft's folders, made for the version you
