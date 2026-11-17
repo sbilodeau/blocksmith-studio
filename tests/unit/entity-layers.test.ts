@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { globToRegExp } from '@shared/categories/glob'
-import { entityLayerTable, findEntityLayer } from '@shared/preview/entity-layers'
+import { entityLayerTable, findEntityLayer, isUprightLayer } from '@shared/preview/entity-layers'
 
 const T = (p: string): string => `assets/minecraft/textures/entity/${p}`
 
@@ -9,6 +9,15 @@ describe('texture -> jar layer table', () => {
     const table = entityLayerTable()
     expect(table.entries.length).toBeGreaterThan(200)
     for (const e of table.entries) expect(e.layer).toMatch(/^[a-z0-9_/]+#[a-z0-9_]+$/)
+  })
+
+  it('lists upright block entity layers that the table uses', () => {
+    const table = entityLayerTable()
+    const used = new Set(table.entries.map((e) => e.layer))
+    expect(table.upright.length).toBeGreaterThan(0)
+    for (const layer of table.upright) expect(used.has(layer), layer).toBe(true)
+    expect(isUprightLayer('chest#main')).toBe(true)
+    expect(isUprightLayer('zombie#main')).toBe(false)
   })
 
   it('finds the layer of adult, baby and equipment textures', () => {

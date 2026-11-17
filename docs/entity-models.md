@@ -48,9 +48,11 @@ Limits:
   whole texture.
 - Animations (`setupAnim`) are not interpreted: models show their rest pose, with the preview's own walk animation
   when the part names match.
-- Block entity models that vanilla draws y up without the entity flip (chests, checked on `chest#main`) go through the
-  same conversion, so their jar models show upside down and back to front. The built-in chest definitions are upright
-  (see [Conventions and decisions](#conventions-and-decisions)).
+- Block entity models that vanilla draws y up without the entity flip (chests, the bell, the decorated pot) go through
+  the same conversion, which leaves them upside down and back to front. The table's `upright` list names those layers
+  (checked on the 26.3 jar: the chest lid and the bell base came out under the body); the preview service wraps them
+  in a root part turned 180 degrees around x, like the built-in chest definitions (see
+  [Conventions and decisions](#conventions-and-decisions)).
 
 ### The texture -> layer table
 
