@@ -50,23 +50,25 @@ export interface ExportDeps {
   onProgress: ProgressFn
 }
 
+/** What a pack exports to for one target and pack type, before it is zipped (or copied as a folder). */
+export interface CollectedExport {
+  files: PackFile[]
+  packType: ExportPackType
+  renamed: number
+  skipped: ExportReport['skipped']
+  warnings: ExportReport['warnings']
+}
+
 /**
- * Exports a pack folder as a resource pack zip (default) or a data pack zip for `target` (the authoring version, or a
- * newer snapshot). A resource pack gets everything but data/; a data pack gets only data/ (Minecraft never loads
- * textures from a data pack) and the target's data pack format.
- * - collects the pack files, excluding hidden entries (.blocksmith/, .git...), OS junk and files byte-identical to
- *   the target's vanilla (Minecraft falls back to vanilla for those). For a snapshot target the authoring
- *   version's vanilla is used: snapshots are not extracted.
- * - regenerates pack.mcmeta for the target, keeping extra top-level sections of the pack's own file
- * - validates (Pack Doctor basics) and writes a deterministic zip
+ * Collects the files a pack exports to for `target` (see exportPackZip): the same list whether it ends up in a zip
+ * (export, install in Minecraft) or in a folder (live mode).
  */
-export async function exportPackZip(
+export async function collectExportFiles(
   location: PackLocation,
   target: McVersion,
-  outputPath: string,
   deps: ExportDeps,
   options: ExportOptions = {}
-): Promise<ExportReport> {
+): Promise<CollectedExport> {
   const packType = options.packType ?? 'resource'
   const { vanilla, onProgress } = deps
   const warnings: ExportReport['warnings'] = []
@@ -166,7 +168,33 @@ export async function exportPackZip(
   if (packType === 'data') {
     warnings.push(...dataSchemaWarnings(files, index ? Object.keys(index.entries) : []))
   }
+  return { files, packType, renamed, skipped, warnings }
+}
 
+/**
+ * Exports a pack folder as a resource pack zip (default) or a data pack zip for `target` (the authoring version, or a
+ * newer snapshot). A resource pack gets everything but data/; a data pack gets only data/ (Minecraft never loads
+ * textures from a data pack) and the target's data pack format.
+ * - collects the pack files, excluding hidden entries (.blocksmith/, .git...), OS junk and files byte-identical to
+ *   the target's vanilla (Minecraft falls back to vanilla for those). For a snapshot target the authoring
+ *   version's vanilla is used: snapshots are not extracted.
+ * - regenerates pack.mcmeta for the target, keeping extra top-level sections of the pack's own file
+ * - validates (Pack Doctor basics) and writes a deterministic zip
+ */
+export async function exportPackZip(
+  location: PackLocation,
+  target: McVersion,
+  outputPath: string,
+  deps: ExportDeps,
+  options: ExportOptions = {}
+): Promise<ExportReport> {
+  const { files, packType, renamed, skipped, warnings } = await collectExportFiles(
+    location,
+    target,
+    deps,
+    options
+  )
+  const { onProgress } = deps
   onProgress('write', 0, 1)
   const zip = buildDeterministicZip(files)
   await writeFileAtomic(outputPath, zip)
