@@ -108,7 +108,20 @@ describe('findEntityDefinition', () => {
     expect(idOf('entity/shulker/shulker_light_blue.png')).toBe('shulker')
   })
 
+  it('resolves chests and boats', () => {
+    expect(idOf('entity/chest/normal.png')).toBe('chest')
+    expect(idOf('entity/chest/ender.png')).toBe('chest')
+    expect(idOf('entity/chest/copper_oxidized.png')).toBe('chest')
+    expect(idOf('entity/chest/trapped_left.png')).toBe('double_chest_left')
+    expect(idOf('entity/chest/christmas_right.png')).toBe('double_chest_right')
+    expect(idOf('entity/boat/oak.png')).toBe('boat')
+    expect(idOf('entity/chest_boat/pale_oak.png')).toBe('chest_boat')
+  })
+
   it('leaves look-alike textures of other layouts flat', () => {
+    // The bamboo raft has its own model.
+    expect(idOf('entity/boat/bamboo.png')).toBeUndefined()
+    expect(idOf('entity/chest_boat/bamboo.png')).toBeUndefined()
     expect(idOf('entity/shulker/spark.png')).toBeUndefined()
     expect(idOf('entity/llama/spit.png')).toBeUndefined()
     expect(idOf('entity/bee/bee_stinger.png')).toBeUndefined()

@@ -363,6 +363,83 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
       'shulker_white',
       'shulker_yellow'
     ]
+  ],
+  // chest
+  [
+    'entity/chest',
+    [64, 64],
+    [
+      'christmas',
+      'copper',
+      'copper_exposed',
+      'copper_oxidized',
+      'copper_weathered',
+      'ender',
+      'normal',
+      'trapped'
+    ]
+  ],
+  // double_chest_left
+  [
+    'entity/chest',
+    [64, 64],
+    [
+      'christmas_left',
+      'copper_exposed_left',
+      'copper_left',
+      'copper_oxidized_left',
+      'copper_weathered_left',
+      'normal_left',
+      'trapped_left'
+    ]
+  ],
+  // double_chest_right
+  [
+    'entity/chest',
+    [64, 64],
+    [
+      'christmas_right',
+      'copper_exposed_right',
+      'copper_oxidized_right',
+      'copper_right',
+      'copper_weathered_right',
+      'normal_right',
+      'trapped_right'
+    ]
+  ],
+  // boat
+  [
+    'entity/boat',
+    [128, 64],
+    [
+      'acacia',
+      'birch',
+      'cherry',
+      'dark_oak',
+      'jungle',
+      'mangrove',
+      'oak',
+      'pale_oak',
+      'poplar',
+      'spruce'
+    ]
+  ],
+  // chest_boat
+  [
+    'entity/chest_boat',
+    [128, 128],
+    [
+      'acacia',
+      'birch',
+      'cherry',
+      'dark_oak',
+      'jungle',
+      'mangrove',
+      'oak',
+      'pale_oak',
+      'poplar',
+      'spruce'
+    ]
   ]
 ]
 
@@ -584,7 +661,12 @@ const EXPECTED_HEIGHTS: Record<string, number> = {
   strider: 29,
   turtle: 9,
   witch: 43.394,
-  zombie_villager: 34
+  zombie_villager: 34,
+  chest: 14,
+  double_chest_left: 14,
+  double_chest_right: 14,
+  boat: 14.138,
+  chest_boat: 15
 }
 
 describe('entity model files', () => {
@@ -747,7 +829,14 @@ const ASYMMETRIC_PARTS = new Set<string>([
   'strider/right_top_bristle',
   'strider/left_top_bristle',
   'strider/left_middle_bristle',
-  'strider/left_bottom_bristle'
+  'strider/left_bottom_bristle',
+  // Each half of a double chest is one side of a two-block chest.
+  'double_chest_left/bottom',
+  'double_chest_left/lid',
+  'double_chest_left/lock',
+  'double_chest_right/bottom',
+  'double_chest_right/lid',
+  'double_chest_right/lock'
 ])
 
 describe('entity rest-pose geometry', () => {
@@ -902,6 +991,17 @@ describe('entity rest-pose geometry', () => {
     ])
     expect(part(byId('player_slim'), 'right_arm').boxes[0].size).toEqual([3, 12, 4])
     expect(part(byId('skeleton'), 'right_arm').boxes[0].size).toEqual([2, 12, 2])
+  })
+
+  it('stands chests upright with the lock at the front', () => {
+    // Block entity models are y up in vanilla: a root part turned 180 degrees around x puts them on their feet.
+    for (const id of ['chest', 'double_chest_left', 'double_chest_right']) {
+      const placed = placedBoxes(byId(id))
+      const named = (name: string): Aabb => unionBounds(placed.filter((p) => p.part.name === name))
+      expect(named('bottom').min[1], id).toBe(0)
+      expect(named('lid').min[1], id).toBe(named('bottom').max[1] - 1)
+      expect(named('lock').max[2], id).toBeGreaterThan(named('lid').max[2])
+    }
   })
 
   it('lays the animal bodies down with the back texture on top and the belly below', () => {

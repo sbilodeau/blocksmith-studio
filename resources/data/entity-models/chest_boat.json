@@ -1,0 +1,83 @@
+{
+  "id": "chest_boat",
+  "textureSize": [128, 128],
+  "animation": "none",
+  "textures": [
+    "assets/minecraft/textures/entity/chest_boat/{acacia,birch,cherry,dark_oak,jungle,mangrove,oak,pale_oak,poplar,spruce}.png"
+  ],
+  "parts": [
+    {
+      "name": "boat",
+      "pivot": [0, 6, 0],
+      "rotation": [0, -90, 0],
+      "boxes": [],
+      "children": [
+        {
+          "name": "bottom",
+          "pivot": [0, 3, -1],
+          "rotation": [90, 0, 0],
+          "boxes": [{ "origin": [-14, -4, -1], "size": [28, 16, 3], "uv": [0, 0] }]
+        },
+        {
+          "name": "back",
+          "pivot": [-15, 2, -4],
+          "rotation": [0, -270, 0],
+          "boxes": [{ "origin": [-28, 3, -5], "size": [18, 6, 2], "uv": [0, 19] }]
+        },
+        {
+          "name": "front",
+          "pivot": [15, 2, 0],
+          "rotation": [0, -90, 0],
+          "boxes": [{ "origin": [7, 3, -1], "size": [16, 6, 2], "uv": [0, 27] }]
+        },
+        {
+          "name": "right",
+          "pivot": [0, 2, 9],
+          "rotation": [0, -180, 0],
+          "boxes": [{ "origin": [-14, 3, 8], "size": [28, 6, 2], "uv": [0, 35] }]
+        },
+        {
+          "name": "left",
+          "pivot": [0, 2, -9],
+          "boxes": [{ "origin": [-14, 3, -10], "size": [28, 6, 2], "uv": [0, 43] }]
+        },
+        {
+          "name": "left_paddle",
+          "pivot": [3, 11, -9],
+          "rotation": [0, 0, -11.25],
+          "boxes": [
+            { "origin": [2, 9, -22], "size": [2, 2, 18], "uv": [62, 0] },
+            { "origin": [1.999, 8, -24], "size": [1, 6, 7], "uv": [62, 0] }
+          ]
+        },
+        {
+          "name": "right_paddle",
+          "pivot": [3, 11, 9],
+          "rotation": [0, -180, -11.25],
+          "boxes": [
+            { "origin": [2, 9, -4], "size": [2, 2, 18], "uv": [62, 20] },
+            { "origin": [3.001, 8, -6], "size": [1, 6, 7], "uv": [62, 20] }
+          ]
+        },
+        {
+          "name": "chest_bottom",
+          "pivot": [-2, 11, 6],
+          "rotation": [0, 90, 0],
+          "boxes": [{ "origin": [-2, 3, -6], "size": [12, 8, 12], "uv": [0, 76] }]
+        },
+        {
+          "name": "chest_lid",
+          "pivot": [-2, 15, 6],
+          "rotation": [0, 90, 0],
+          "boxes": [{ "origin": [-2, 11, -6], "size": [12, 4, 12], "uv": [0, 59] }]
+        },
+        {
+          "name": "chest_lock",
+          "pivot": [-1, 12, 1],
+          "rotation": [0, 90, 0],
+          "boxes": [{ "origin": [-1, 8, 0], "size": [2, 4, 1], "uv": [0, 59] }]
+        }
+      ]
+    }
+  ]
+}

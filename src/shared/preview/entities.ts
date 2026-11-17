@@ -52,6 +52,11 @@ import snowGolem from '../../../resources/data/entity-models/snow_golem.json'
 import hoglin from '../../../resources/data/entity-models/hoglin.json'
 import strider from '../../../resources/data/entity-models/strider.json'
 import shulker from '../../../resources/data/entity-models/shulker.json'
+import chest from '../../../resources/data/entity-models/chest.json'
+import doubleChestLeft from '../../../resources/data/entity-models/double_chest_left.json'
+import doubleChestRight from '../../../resources/data/entity-models/double_chest_right.json'
+import boat from '../../../resources/data/entity-models/boat.json'
+import chestBoat from '../../../resources/data/entity-models/chest_boat.json'
 
 /**
  * Built-in entity geometry definitions (resources/data/entity-models/*.json), authored for Blocksmith Studio
@@ -111,7 +116,12 @@ const RAW_DEFINITIONS: Record<string, unknown> = {
   'snow_golem.json': snowGolem,
   'hoglin.json': hoglin,
   'strider.json': strider,
-  'shulker.json': shulker
+  'shulker.json': shulker,
+  'chest.json': chest,
+  'double_chest_left.json': doubleChestLeft,
+  'double_chest_right.json': doubleChestRight,
+  'boat.json': boat,
+  'chest_boat.json': chestBoat
 }
 
 interface CompiledDefinition {
