@@ -106,6 +106,9 @@ describe('findEntityDefinition', () => {
     expect(idOf('entity/blaze/blaze.png')).toBe('blaze')
     expect(idOf('entity/shulker/shulker.png')).toBe('shulker')
     expect(idOf('entity/shulker/shulker_light_blue.png')).toBe('shulker')
+    expect(idOf('entity/silverfish.png')).toBe('silverfish')
+    expect(idOf('entity/endermite/endermite.png')).toBe('endermite')
+    expect(idOf('entity/parrot/parrot_red_blue.png')).toBe('parrot')
   })
 
   it('resolves chests and boats', () => {

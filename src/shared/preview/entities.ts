@@ -59,6 +59,9 @@ import boat from '../../../resources/data/entity-models/boat.json'
 import chestBoat from '../../../resources/data/entity-models/chest_boat.json'
 import shield from '../../../resources/data/entity-models/shield.json'
 import banner from '../../../resources/data/entity-models/banner.json'
+import silverfish from '../../../resources/data/entity-models/silverfish.json'
+import endermite from '../../../resources/data/entity-models/endermite.json'
+import parrot from '../../../resources/data/entity-models/parrot.json'
 
 /**
  * Built-in entity geometry definitions (resources/data/entity-models/*.json), authored for Blocksmith Studio
@@ -125,7 +128,10 @@ const RAW_DEFINITIONS: Record<string, unknown> = {
   'boat.json': boat,
   'chest_boat.json': chestBoat,
   'shield.json': shield,
-  'banner.json': banner
+  'banner.json': banner,
+  'silverfish.json': silverfish,
+  'endermite.json': endermite,
+  'parrot.json': parrot
 }
 
 interface CompiledDefinition {

@@ -1,0 +1,77 @@
+{
+  "id": "parrot",
+  "textureSize": [32, 32],
+  "animation": "none",
+  "textures": ["assets/minecraft/textures/entity/parrot/*.png"],
+  "parts": [
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 7.514, 3],
+      "rotation": [28.287, 0, 0],
+      "boxes": [{ "origin": [-1.5, 1.514, 1.5], "size": [3, 6, 3], "uv": [2, 8] }]
+    },
+    {
+      "name": "tail",
+      "role": "tail",
+      "pivot": [0, 2.944, -1.16],
+      "rotation": [58.155, 0, 0],
+      "boxes": [{ "origin": [-1.5, -0.056, -1.16], "size": [3, 4, 1], "uv": [22, 1] }]
+    },
+    {
+      "name": "left_wing",
+      "role": "wing",
+      "pivot": [1.5, 7.074, 2.76],
+      "rotation": [-39.998, 180, 0],
+      "boxes": [{ "origin": [1, 2.074, 1.26], "size": [1, 5, 3], "uv": [19, 8] }]
+    },
+    {
+      "name": "right_wing",
+      "role": "wing",
+      "pivot": [-1.5, 7.074, 2.76],
+      "rotation": [-39.998, 180, 0],
+      "boxes": [{ "origin": [-2, 2.074, 1.26], "size": [1, 5, 3], "uv": [19, 8] }]
+    },
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 8.324, 2.76],
+      "boxes": [{ "origin": [-1, 6.824, 1.76], "size": [2, 3, 2], "uv": [2, 2] }],
+      "children": [
+        {
+          "name": "head2",
+          "pivot": [0, 10.324, 3.76],
+          "boxes": [{ "origin": [-1, 9.824, 1.76], "size": [2, 1, 4], "uv": [10, 0] }]
+        },
+        {
+          "name": "beak1",
+          "pivot": [0, 8.824, 4.26],
+          "boxes": [{ "origin": [-0.5, 7.824, 3.76], "size": [1, 2, 1], "uv": [11, 7] }]
+        },
+        {
+          "name": "beak2",
+          "pivot": [0, 10.074, 5.21],
+          "boxes": [{ "origin": [-0.5, 8.074, 4.71], "size": [1, 2, 1], "uv": [16, 7] }]
+        },
+        {
+          "name": "feather",
+          "pivot": [0, 10.474, 2.61],
+          "rotation": [-12.685, 0, 0],
+          "boxes": [{ "origin": [0, 9.474, 0.61], "size": [0, 5, 4], "uv": [2, 18] }]
+        }
+      ]
+    },
+    {
+      "name": "left_leg",
+      "pivot": [1, 2.014, 1.05],
+      "rotation": [-1.713, 0, 0],
+      "boxes": [{ "origin": [0.5, 0.014, 0.55], "size": [1, 2, 1], "uv": [14, 18] }]
+    },
+    {
+      "name": "right_leg",
+      "pivot": [-1, 2.014, 1.05],
+      "rotation": [-1.713, 0, 0],
+      "boxes": [{ "origin": [-1.5, 0.014, 0.55], "size": [1, 2, 1], "uv": [14, 18] }]
+    }
+  ]
+}

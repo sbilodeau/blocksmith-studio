@@ -545,7 +545,19 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
       'triangles_top'
     ]
   ],
-  ['entity', [64, 64], ['banner_base']]
+  ['entity', [64, 64], ['banner_base']],
+  // silverfish
+  ['entity', [64, 32], ['silverfish']],
+  ['entity/silverfish', [64, 32], ['silverfish']],
+  // endermite
+  ['entity', [64, 32], ['endermite']],
+  ['entity/endermite', [64, 32], ['endermite']],
+  // parrot
+  [
+    'entity/parrot',
+    [32, 32],
+    ['parrot_blue', 'parrot_green', 'parrot_grey', 'parrot_red_blue', 'parrot_yellow_blue']
+  ]
 ]
 
 const tex = (key: string): string => `assets/minecraft/textures/${key}`
@@ -773,7 +785,10 @@ const EXPECTED_HEIGHTS: Record<string, number> = {
   boat: 14.138,
   chest_boat: 15,
   shield: 22,
-  banner: 44
+  banner: 44,
+  silverfish: 8,
+  endermite: 4,
+  parrot: 14.816
 }
 
 describe('entity model files', () => {
