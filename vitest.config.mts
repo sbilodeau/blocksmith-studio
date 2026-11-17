@@ -53,6 +53,17 @@ export default defineConfig({
       {
         resolve: { alias },
         test: {
+          name: 'perf',
+          environment: 'node',
+          include: ['tests/perf/**/*.test.ts'],
+          env: Object.fromEntries(
+            Object.entries(process.env).filter(([k]) => k.startsWith('BLOCKSMITH_PERF'))
+          ) as Record<string, string>
+        }
+      },
+      {
+        resolve: { alias },
+        test: {
           name: 'ai-eval',
           environment: 'node',
           include: ['tests/ai-eval/**/*.test.ts'],
