@@ -105,71 +105,110 @@ try {
   record('DOM elements', dom.nodes)
   record('renderer JS heap (MiB)', dom.heap)
 
-  // Scroll through the whole grid, one viewport per frame.
-  const scroll = await page.evaluate(async () => {
-    const el = document.querySelector('[data-testid="texture-grid"]')
-    const frames = []
-    let last = performance.now()
-    const start = last
-    el.scrollTop = 0
-    while (el.scrollTop + el.clientHeight < el.scrollHeight - 1) {
-      el.scrollTop += el.clientHeight
-      await new Promise((r) => requestAnimationFrame(r))
-      const now = performance.now()
-      frames.push(now - last)
-      last = now
-    }
-    frames.sort((a, b) => a - b)
-    return {
-      total: performance.now() - start,
-      count: frames.length,
-      median: frames[Math.floor(frames.length / 2)] ?? 0,
-      p95: frames[Math.floor(frames.length * 0.95)] ?? 0,
-      max: frames[frames.length - 1] ?? 0
-    }
-  })
+  /** Scrolls through the whole grid, one viewport per frame, and returns frame statistics. */
+  const scrollGrid = () =>
+    page.evaluate(async () => {
+      const el = document.querySelector('[data-testid="texture-grid"]')
+      const frames = []
+      el.scrollTop = 0
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+      let last = performance.now()
+      const start = last
+      while (el.scrollTop + el.clientHeight < el.scrollHeight - 1) {
+        el.scrollTop += el.clientHeight
+        await new Promise((r) => requestAnimationFrame(r))
+        const now = performance.now()
+        frames.push(now - last)
+        last = now
+      }
+      frames.sort((a, b) => a - b)
+      return {
+        total: performance.now() - start,
+        count: frames.length,
+        median: frames[Math.floor(frames.length / 2)] ?? 0,
+        p95: frames[Math.floor(frames.length * 0.95)] ?? 0,
+        max: frames[frames.length - 1] ?? 0
+      }
+    })
+  const setSearch = (q) =>
+    page.evaluate(
+      ([frames, value]) => {
+        const input = document.querySelector('[data-testid="grid-search"] input')
+        input.value = value
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        return new Function(`return (${frames})()`)()
+      },
+      [FRAMES.toString(), q]
+    )
+  const rendererMemory = async () => {
+    const metrics = await app.evaluate(({ app: a }) => a.getAppMetrics())
+    const renderer = metrics.filter((m) => m.type === 'Tab' || m.type === 'Renderer')
+    return renderer.reduce((sum, m) => sum + m.memory.workingSetSize, 0) / 1024
+  }
+
+  let scroll = await scrollGrid()
   record(`scroll whole grid (${scroll.count} viewport steps), total`, scroll.total)
   record('scroll frame, median', scroll.median)
   record('scroll frame, p95', scroll.p95)
   record('scroll frame, max', scroll.max)
+  record('renderer working set after scrolling (MiB)', await rendererMemory())
+
+  // Only the 512 px textures (thumbnail decoding).
+  await setSearch('hd_')
+  scroll = await scrollGrid()
+  record(`scroll 512 px textures only (${scroll.count} steps), total`, scroll.total)
+  record('scroll 512 px frame, median', scroll.median)
+  record('scroll 512 px frame, p95', scroll.p95)
+  record('scroll 512 px frame, max', scroll.max)
+  await setSearch('')
 
   // Selection: click the first tile, shift-click a tile one viewport further, select all, Escape.
-  const sel = await page.evaluate(async (frames) => {
-    const wait = new Function(`return (${frames})()`)
-    const el = document.querySelector('[data-testid="texture-grid"]')
-    el.scrollTop = 0
-    await wait()
-    const click = (tile, init = {}) =>
-      tile.dispatchEvent(new MouseEvent('click', { bubbles: true, ...init }))
-    const tiles = () => [...el.querySelectorAll('[data-path]')]
-    let t = performance.now()
-    click(tiles()[0])
-    await wait()
-    const single = performance.now() - t
-    el.scrollTop = el.clientHeight
-    await wait()
-    const list = tiles()
-    t = performance.now()
-    click(list[list.length - 1], { shiftKey: true })
-    await wait()
-    const range = performance.now() - t
-    const key = (k, init = {}) =>
-      el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...init }))
-    t = performance.now()
-    key('a', { ctrlKey: true })
-    await wait()
-    const all = performance.now() - t
-    // A click with everything selected (replaces the whole selection).
-    t = performance.now()
-    click(tiles()[1], { ctrlKey: true })
-    await wait()
-    const toggle = performance.now() - t
-    t = performance.now()
-    key('Escape')
-    await wait()
-    const clear = performance.now() - t
-    return { single, range, all, toggle, clear }
-  }, FRAMES.toString())
+  // Repeated 5 times; the median is recorded.
+  const median = (list) => [...list].sort((a, b) => a - b)[Math.floor(list.length / 2)]
+  const runs = []
+  for (let run = 0; run < 5; run++) {
+    runs.push(
+      await page.evaluate(async (frames) => {
+        const wait = new Function(`return (${frames})()`)
+        const el = document.querySelector('[data-testid="texture-grid"]')
+        el.scrollTop = 0
+        await wait()
+        const click = (tile, init = {}) =>
+          tile.dispatchEvent(new MouseEvent('click', { bubbles: true, ...init }))
+        const tiles = () => [...el.querySelectorAll('[data-path]')]
+        let t = performance.now()
+        click(tiles()[0])
+        await wait()
+        const single = performance.now() - t
+        el.scrollTop = el.clientHeight
+        await wait()
+        const list = tiles()
+        t = performance.now()
+        click(list[list.length - 1], { shiftKey: true })
+        await wait()
+        const range = performance.now() - t
+        const key = (k, init = {}) =>
+          el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...init }))
+        t = performance.now()
+        key('a', { ctrlKey: true })
+        await wait()
+        const all = performance.now() - t
+        // A ctrl-click with everything selected (copies the whole selection).
+        t = performance.now()
+        click(tiles()[1], { ctrlKey: true })
+        await wait()
+        const toggle = performance.now() - t
+        t = performance.now()
+        key('Escape')
+        await wait()
+        const clear = performance.now() - t
+        return { single, range, all, toggle, clear }
+      }, FRAMES.toString())
+    )
+  }
+  const sel = Object.fromEntries(
+    Object.keys(runs[0]).map((k) => [k, median(runs.map((r) => r[k]))])
+  )
   record('click one tile', sel.single)
   record('shift-click range (one viewport)', sel.range)
   record('select all (Ctrl+A)', sel.all)
@@ -196,15 +235,7 @@ try {
 
   // Editor on a 512x512 texture.
   const hdName = `hd_${String(args.animated).padStart(5, '0')}`
-  await page.evaluate(
-    ([frames, q]) => {
-      const input = document.querySelector('[data-testid="grid-search"] input')
-      input.value = q
-      input.dispatchEvent(new Event('input', { bubbles: true }))
-      return new Function(`return (${frames})()`)()
-    },
-    [FRAMES.toString(), 'hd_']
-  )
+  await setSearch('hd_')
   t = Date.now()
   await page.getByTestId(`tile-${hdName}`).dblclick()
   await page.waitForSelector('[data-testid="pixel-canvas"]')
