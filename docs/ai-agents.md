@@ -281,6 +281,12 @@ In the plan review a data step shows its path, **New file** / **Changed file**, 
 `DataService.saveMany`), then the texture steps as before; the result has `filesWritten`. The FR/EN evaluation has 3
 data cases on the `sample_datapack` fixture (a recipe, a loot table change, a tag addition).
 
+### Explain (data editor)
+
+The data editor's **Explain** button reuses the agent loop for one answer without tools (`explain.ts`, agent
+`explain` in the `started` event): no proposal, no conversation file. See [datapacks.md](datapacks.md#explain) for
+the context it sends.
+
 ## Conversation files
 
 `.blocksmith/conversations/<agent>.jsonl`, one `ConversationTurn` per line, append-only, writes serialized per

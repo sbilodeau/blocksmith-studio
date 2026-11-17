@@ -20,6 +20,9 @@ All notable changes to this project are documented here. Versions follow CalVer 
 - Pack Doctor checks data files; merging packs combines their tags like Minecraft does
 - The creation agent works on data packs: it reads Minecraft's files and proposes whole JSON files (`write_json`),
   each checked before it reaches the plan; accepted files are one History entry
+- **Explain** in the data editor: the AI describes in simple terms, in the interface language, what the file does in
+  the game and what it changes compared with Minecraft's original (the app sends it the original, the computed
+  changes, the checks, the tags the file uses and item names; nothing is changed)
 - Vanilla data comes from your Minecraft installation like the textures (versions set up before this update get it
   automatically from the game file); every vanilla data file of 1.21.4 and 26.3 passes the checks (real-jar test)
 

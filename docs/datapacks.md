@@ -86,6 +86,9 @@ in the gutter, a clickable issue list with line numbers, completion of item ids 
 **Delete** and **Save** (also Ctrl/Cmd+S). Leaving with unsaved changes asks to save or discard. Function files are
 plain text (not checked).
 
+**Explain** opens a side panel where the AI describes in simple terms, in the UI language, what the file does in
+game and what it changes compared with Minecraft's original (see [Explain](#explain)).
+
 **New file** picks the kind, a template (shaped / shapeless / smelting / stonecutting / smithing recipe, block / chest
 / mob loot, empty tag, advancement, function, empty JSON), the namespace (the pack name as a namespace, or
 `minecraft` to replace a vanilla file), the tag registry and the name. Templates are valid in every supported
@@ -101,6 +104,9 @@ version. An existing path offers **Open it** instead.
 | `data.create`  | `{ packId, path, text }` | `DataEntry`    | Refused when the pack or vanilla has the path        |
 | `data.delete`  | `{ packId, path }`       | `void`         | Removes the pack's copy (back to vanilla, or gone)   |
 | `pack.setKind` | `{ packId, kind }`       | `PackSummary`  | Rewrites the folder's pack.mcmeta format             |
+
+"Explain" uses `ai.data.explain` (`{ packId, path, text, model, language, thinking? }` -> `{ runId }`), streamed as
+`ai.event` and stopped with `ai.agent.stop`.
 
 Paths are validated by the contract (`data/<ns>/....json|.mcfunction`, no `.` / `..` / empty segment) and again in
 main (`parseDataPath`, resolved inside the pack). Files are limited to 1 MiB.
@@ -119,6 +125,28 @@ History labels: `saveData`, `createData`, `deleteData`, and `aiDataFiles` for th
 Data pack tags are combined automatically (merge kind `tag`), the way Minecraft stacks packs: values from the top
 source down, and a source with `"replace": true` hides the sources below it (the result keeps `replace`). Other data
 files are conflicts when they differ.
+
+## Explain
+
+The **Explain** button of the editor asks the AI for a plain-language explanation of the open file
+(`src/main/services/ai/agent/explain.ts`, `DataExplain.vue`). It is one answer without tools: nothing is proposed or
+written. The model defaults to the creation agent's model (Settings > AI) and can be switched in the panel; the panel
+flags an explanation older than the editor text, and a new file needs a new click (each one is a paid request).
+
+Main builds the context itself (the renderer only sends the editor text, unsaved edits included), so the model has
+facts rather than guesses:
+
+| Part                 | What the model gets                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| Instructions         | Reply language, plain-text format (one summary sentence, then up to 6 effects), game terms for numbers  |
+| Kind guide           | How Minecraft reads that kind of file (recipe types, loot pools / conditions / functions, tags...)      |
+| Situation            | Replaces a vanilla file, new file, or identical to vanilla; saved, unsaved, or not in the pack yet      |
+| Original and current | Vanilla's file (whatever the pack's base) and the editor text, both formatted, cut at 12,000 characters |
+| Changes              | Path-by-path differences computed by the app (`jsonChanges`: `result.count: 6 -> 3`)                    |
+| Tag effect           | For tags: ids the game gains and loses, and vanilla ids removed from the file that the game still keeps |
+| Checks               | Errors (Minecraft will not load the file) and warnings, from the same checks as the editor              |
+| Tags used            | Content in game of up to 10 `#tags` the file names (pack file merged with vanilla's), 40 ids each       |
+| Names                | English names of up to 80 ids, from vanilla's `en_us.json` (the model translates them)                  |
 
 ## Creation agent
 
