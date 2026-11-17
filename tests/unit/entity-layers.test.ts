@@ -19,6 +19,7 @@ describe('texture -> jar layer table', () => {
     expect(findEntityLayer(T('equipment/horse_body/diamond.png'))).toBe('horse_armor#main')
     expect(findEntityLayer('assets/minecraft/textures/block/stone.png')).toBeUndefined()
     expect(findEntityLayer(T('equipment/humanoid/diamond.png'))).toBeUndefined()
+    expect(findEntityLayer(T('equipment/humanoid_baby/diamond.png'))).toBe('zombie_baby#chestplate')
   })
 
   it('never lets two entries claim the same texture', () => {
