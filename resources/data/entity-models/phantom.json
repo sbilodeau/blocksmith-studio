@@ -1,0 +1,72 @@
+{
+  "id": "phantom",
+  "textureSize": [64, 64],
+  "animation": "none",
+  "textures": [
+    "assets/minecraft/textures/entity/{phantom,phantom_eyes,phantom/phantom,phantom/phantom_eyes}.png"
+  ],
+  "parts": [
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0.5, 2.251, 0],
+      "rotation": [-5.73, 0, 0],
+      "boxes": [{ "origin": [-2.5, 1.251, -1], "size": [5, 3, 9], "uv": [0, 8] }],
+      "children": [
+        {
+          "name": "tail_base",
+          "pivot": [0.5, 4.251, -1],
+          "boxes": [{ "origin": [-1.5, 2.251, -7], "size": [3, 2, 6], "uv": [3, 20] }],
+          "children": [
+            {
+              "name": "tail_tip",
+              "pivot": [0.5, 3.751, -7],
+              "boxes": [{ "origin": [-0.5, 2.751, -13], "size": [1, 1, 6], "uv": [4, 29] }]
+            }
+          ]
+        },
+        {
+          "name": "left_wing_base",
+          "role": "wing",
+          "pivot": [2.5, 4.251, 8],
+          "rotation": [0, 0, -5.73],
+          "boxes": [{ "origin": [2.5, 2.251, -1], "size": [6, 2, 9], "uv": [23, 12] }],
+          "children": [
+            {
+              "name": "left_wing_tip",
+              "pivot": [8.5, 4.251, 8],
+              "rotation": [0, 0, -5.73],
+              "boxes": [{ "origin": [8.5, 3.251, -1], "size": [13, 1, 9], "uv": [16, 24] }]
+            }
+          ]
+        },
+        {
+          "name": "right_wing_base",
+          "role": "wing",
+          "pivot": [-2.5, 4.251, 8],
+          "rotation": [0, 0, 5.73],
+          "boxes": [
+            { "origin": [-8.5, 2.251, -1], "size": [6, 2, 9], "uv": [23, 12], "mirror": true }
+          ],
+          "children": [
+            {
+              "name": "right_wing_tip",
+              "pivot": [-8.5, 4.251, 8],
+              "rotation": [0, 0, 5.73],
+              "boxes": [
+                { "origin": [-21.5, 3.251, -1], "size": [13, 1, 9], "uv": [16, 24], "mirror": true }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "role": "head",
+          "pivot": [0.5, 1.251, 7],
+          "rotation": [11.459, 0, 0],
+          "boxes": [{ "origin": [-3.5, 0.251, 7], "size": [7, 3, 5], "uv": [0, 0] }]
+        }
+      ]
+    }
+  ]
+}

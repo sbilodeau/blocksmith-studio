@@ -28,6 +28,8 @@ import donkey from '../../../resources/data/entity-models/donkey.json'
 import cowVariants from '../../../resources/data/entity-models/cow_variants.json'
 import zombieVillager from '../../../resources/data/entity-models/zombie_villager.json'
 import ironGolem from '../../../resources/data/entity-models/iron_golem.json'
+import slime from '../../../resources/data/entity-models/slime.json'
+import magmaCube from '../../../resources/data/entity-models/magma_cube.json'
 import fox from '../../../resources/data/entity-models/fox.json'
 import bee from '../../../resources/data/entity-models/bee.json'
 import llama from '../../../resources/data/entity-models/llama.json'
@@ -43,6 +45,13 @@ import frog from '../../../resources/data/entity-models/frog.json'
 import turtle from '../../../resources/data/entity-models/turtle.json'
 import dolphin from '../../../resources/data/entity-models/dolphin.json'
 import squid from '../../../resources/data/entity-models/squid.json'
+import phantom from '../../../resources/data/entity-models/phantom.json'
+import bat from '../../../resources/data/entity-models/bat.json'
+import blaze from '../../../resources/data/entity-models/blaze.json'
+import snowGolem from '../../../resources/data/entity-models/snow_golem.json'
+import hoglin from '../../../resources/data/entity-models/hoglin.json'
+import strider from '../../../resources/data/entity-models/strider.json'
+import shulker from '../../../resources/data/entity-models/shulker.json'
 
 /**
  * Built-in entity geometry definitions (resources/data/entity-models/*.json), authored for Blocksmith Studio
@@ -79,6 +88,8 @@ const RAW_DEFINITIONS: Record<string, unknown> = {
   'zombie.json': zombie,
   'zombie_villager.json': zombieVillager,
   'iron_golem.json': ironGolem,
+  'slime.json': slime,
+  'magma_cube.json': magmaCube,
   'fox.json': fox,
   'bee.json': bee,
   'llama.json': llama,
@@ -93,7 +104,14 @@ const RAW_DEFINITIONS: Record<string, unknown> = {
   'frog.json': frog,
   'turtle.json': turtle,
   'dolphin.json': dolphin,
-  'squid.json': squid
+  'squid.json': squid,
+  'phantom.json': phantom,
+  'bat.json': bat,
+  'blaze.json': blaze,
+  'snow_golem.json': snowGolem,
+  'hoglin.json': hoglin,
+  'strider.json': strider,
+  'shulker.json': shulker
 }
 
 interface CompiledDefinition {

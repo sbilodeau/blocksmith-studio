@@ -1,0 +1,37 @@
+{
+  "id": "snow_golem",
+  "textureSize": [64, 64],
+  "animation": "none",
+  "textures": ["assets/minecraft/textures/entity/{snow_golem,snow_golem/snow_golem}.png"],
+  "parts": [
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 20, 0],
+      "boxes": [{ "origin": [-4, 20, -4], "size": [8, 8, 8], "uv": [0, 0], "inflate": -0.5 }]
+    },
+    {
+      "name": "left_arm",
+      "pivot": [5, 18, 0],
+      "rotation": [0, 0, -57.296],
+      "boxes": [{ "origin": [4, 16, -1], "size": [12, 2, 2], "uv": [32, 0], "inflate": -0.5 }]
+    },
+    {
+      "name": "right_arm",
+      "pivot": [-5, 18, 0],
+      "rotation": [0, -180, 57.296],
+      "boxes": [{ "origin": [-6, 16, -1], "size": [12, 2, 2], "uv": [32, 0], "inflate": -0.5 }]
+    },
+    {
+      "name": "upper_body",
+      "role": "body",
+      "pivot": [0, 11, 0],
+      "boxes": [{ "origin": [-5, 11, -5], "size": [10, 10, 10], "uv": [0, 16], "inflate": -0.5 }]
+    },
+    {
+      "name": "lower_body",
+      "pivot": [0, 0, 0],
+      "boxes": [{ "origin": [-6, 0, -6], "size": [12, 12, 12], "uv": [0, 36], "inflate": -0.5 }]
+    }
+  ]
+}

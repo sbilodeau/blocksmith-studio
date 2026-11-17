@@ -230,6 +230,10 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
       'iron_golem_crackiness_medium'
     ]
   ],
+  // slime
+  ['entity/slime', [64, 32], ['slime']],
+  // magma_cube
+  ['entity/slime', [64, 64], ['magmacube']],
   // fox
   [
     'entity/fox',
@@ -318,7 +322,48 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
   ['entity', [64, 64], ['dolphin']],
   ['entity/dolphin', [64, 64], ['dolphin']],
   // squid
-  ['entity/squid', [64, 32], ['glow_squid', 'squid']]
+  ['entity/squid', [64, 32], ['glow_squid', 'squid']],
+  // phantom
+  ['entity', [64, 64], ['phantom', 'phantom_eyes']],
+  ['entity/phantom', [64, 64], ['phantom', 'phantom_eyes']],
+  // bat
+  ['entity', [32, 32], ['bat']],
+  ['entity/bat', [32, 32], ['bat']],
+  // blaze
+  ['entity', [64, 32], ['blaze']],
+  ['entity/blaze', [64, 32], ['blaze']],
+  // snow_golem
+  ['entity', [64, 64], ['snow_golem']],
+  ['entity/snow_golem', [64, 64], ['snow_golem']],
+  // hoglin
+  ['entity/hoglin', [128, 64], ['hoglin', 'zoglin']],
+  // strider
+  ['entity/equipment/strider_saddle', [64, 128], ['saddle']],
+  ['entity/strider', [64, 128], ['strider', 'strider_cold', 'strider_saddle']],
+  // shulker
+  [
+    'entity/shulker',
+    [64, 64],
+    [
+      'shulker',
+      'shulker_black',
+      'shulker_blue',
+      'shulker_brown',
+      'shulker_cyan',
+      'shulker_gray',
+      'shulker_green',
+      'shulker_light_blue',
+      'shulker_light_gray',
+      'shulker_lime',
+      'shulker_magenta',
+      'shulker_orange',
+      'shulker_pink',
+      'shulker_purple',
+      'shulker_red',
+      'shulker_white',
+      'shulker_yellow'
+    ]
+  ]
 ]
 
 const tex = (key: string): string => `assets/minecraft/textures/${key}`
@@ -514,20 +559,29 @@ const EXPECTED_HEIGHTS: Record<string, number> = {
   villager: 34,
   wolf: 15.5,
   zombie: 32,
+  bat: 13,
   bee: 9,
+  blaze: 23,
   dolphin: 13.722,
   fox: 11.5,
   frog: 8.01,
   goat: 26,
+  hoglin: 31,
   illager: 34,
   iron_golem: 43,
   llama: 36,
+  magma_cube: 8,
   panda: 20.5,
+  phantom: 5.04,
   piglin: 32,
   pillager: 34,
   polar_bear: 19,
   rabbit: 17,
+  shulker: 16,
+  slime: 8,
+  snow_golem: 28,
   squid: 33,
+  strider: 29,
   turtle: 9,
   witch: 43.394,
   zombie_villager: 34
@@ -756,6 +810,7 @@ describe('entity rest-pose geometry', () => {
       'dolphin',
       'fox',
       'goat',
+      'hoglin',
       'llama',
       'panda',
       'polar_bear',

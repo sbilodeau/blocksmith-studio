@@ -71,6 +71,7 @@ describe('findEntityDefinition', () => {
     expect(idOf('entity/witch.png')).toBe('witch')
     expect(idOf('entity/witch/witch.png')).toBe('witch')
     expect(idOf('entity/iron_golem/iron_golem_crackiness_low.png')).toBe('iron_golem')
+    expect(idOf('entity/snow_golem.png')).toBe('snow_golem')
   })
 
   it('resolves animals under their 1.21.4 and 26.x names', () => {
@@ -91,6 +92,20 @@ describe('findEntityDefinition', () => {
     expect(idOf('entity/turtle/turtle.png')).toBe('turtle')
     expect(idOf('entity/dolphin.png')).toBe('dolphin')
     expect(idOf('entity/squid/glow_squid.png')).toBe('squid')
+    expect(idOf('entity/hoglin/zoglin.png')).toBe('hoglin')
+    expect(idOf('entity/strider/strider_cold.png')).toBe('strider')
+    expect(idOf('entity/equipment/strider_saddle/saddle.png')).toBe('strider')
+  })
+
+  it('resolves monsters without legs or with odd shapes', () => {
+    expect(idOf('entity/slime/slime.png')).toBe('slime')
+    expect(idOf('entity/slime/magmacube.png')).toBe('magma_cube')
+    expect(idOf('entity/phantom.png')).toBe('phantom')
+    expect(idOf('entity/phantom/phantom_eyes.png')).toBe('phantom')
+    expect(idOf('entity/bat.png')).toBe('bat')
+    expect(idOf('entity/blaze/blaze.png')).toBe('blaze')
+    expect(idOf('entity/shulker/shulker.png')).toBe('shulker')
+    expect(idOf('entity/shulker/shulker_light_blue.png')).toBe('shulker')
   })
 
   it('leaves look-alike textures of other layouts flat', () => {
