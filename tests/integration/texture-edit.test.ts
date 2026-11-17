@@ -113,7 +113,8 @@ describe('texture editing and pack history', () => {
         origin: 'vanilla',
         vanillaPng: vanillaStone,
         mcmeta: null,
-        mcmetaOrigin: 'none'
+        mcmetaOrigin: 'none',
+        layers: null
       })
       await writePackFile(STONE, RED)
       data = await textures.read(packId, STONE)
@@ -129,7 +130,8 @@ describe('texture editing and pack history', () => {
         origin: 'none',
         vanillaPng: null,
         mcmeta: null,
-        mcmetaOrigin: 'none'
+        mcmetaOrigin: 'none',
+        layers: null
       })
     })
 
@@ -381,7 +383,8 @@ describe('texture editing and pack history', () => {
 
       await history.undo(packId)
       expect(new Uint8Array(await readFile(packFile(STONE)))).toEqual(RED)
-      expect((await entry(STONE)).url).not.toBe(blue.url)
+      const red = await entry(STONE)
+      expect(red.url).not.toBe(blue.url)
 
       let state = await history.undo(packId)
       expect(await exists(STONE)).toBe(false)
@@ -389,8 +392,12 @@ describe('texture editing and pack history', () => {
       expect(state).toMatchObject({ canUndo: false, canRedo: true })
 
       await history.redo(packId)
+      expect((await entry(STONE)).url).not.toBe(urls.vanilla)
       await history.redo(packId)
-      expect((await entry(STONE)).url).toBe(blue.url)
+      // Back to the blue file: a fresh url (a file whose size differs from vanilla is versioned per read, not
+      // by content), so the thumbnail reloads.
+      expect((await entry(STONE)).url).not.toBe(red.url)
+      expect(new Uint8Array(await readFile(packFile(STONE)))).toEqual(BLUE)
       state = await history.redo(packId)
       expect(await exists(STONE)).toBe(false)
       expect(state).toMatchObject({ canUndo: true, canRedo: false })
@@ -412,6 +419,57 @@ describe('texture editing and pack history', () => {
       expect(await exists('.blocksmith/history/journal.jsonl')).toBe(true)
       const list = await packs.textures(packId)
       expect(list.some((e) => e.path.includes('.blocksmith'))).toBe(false)
+    })
+  })
+  describe('editor layers', () => {
+    const layersPath = `.blocksmith/layers/${STONE}.json`
+    const layers = {
+      active: 1,
+      items: [
+        { name: 'Texture', visible: true, opacity: 100, png: RED },
+        { name: 'Top', visible: false, opacity: 40, png: BLUE }
+      ]
+    }
+
+    it('saves layers next to the project, reads them back and removes them on demand', async () => {
+      await textures.save(packId, STONE, RED, undefined, layers)
+      const file = JSON.parse(await readPackText(layersPath))
+      expect(file).toMatchObject({ schemaVersion: 1, active: 1 })
+      expect(file.layers.map((l: { name: string }) => l.name)).toEqual(['Texture', 'Top'])
+      const read = await textures.read(packId, STONE)
+      expect(read.layers).toEqual(layers)
+      // Layers are not part of the pack history: only the PNG is recorded.
+      expect((await history.get(packId)).entries[0]!.paths).toEqual([STONE])
+
+      // Saving without a layers argument keeps them; null removes them.
+      await textures.save(packId, STONE, BLUE)
+      expect(await exists(layersPath)).toBe(true)
+      await textures.save(packId, STONE, RED, undefined, null)
+      expect(await exists(layersPath)).toBe(false)
+      expect((await textures.read(packId, STONE)).layers).toBeNull()
+    })
+
+    it('refuses layers of another size, and reverting drops them', async () => {
+      const small = makePng(8, 8, [0, 0, 0, 255])
+      await expect(
+        textures.save(packId, STONE, RED, undefined, {
+          active: 0,
+          items: [{ name: 'A', visible: true, opacity: 100, png: small }]
+        })
+      ).rejects.toMatchObject({ code: 'texture.invalidPng' })
+      expect(await exists(STONE)).toBe(false)
+
+      await textures.save(packId, STONE, RED, undefined, layers)
+      await textures.revert(packId, STONE)
+      expect(await exists(layersPath)).toBe(false)
+    })
+
+    it('ignores an unreadable layers file', async () => {
+      await writePackFile(layersPath, '{"schemaVersion":1,"active":3,"layers":[]}')
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+      expect((await textures.read(packId, STONE)).layers).toBeNull()
+      expect(warn).toHaveBeenCalled()
+      warn.mockRestore()
     })
   })
 })

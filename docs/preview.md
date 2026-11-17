@@ -2,6 +2,7 @@
 
 The 3D preview shows the texture open in the editor on its real shape and updates on every stroke (PLAN 3.4).
 Open it with the **3D** button in the editor header (or press 3); drag the handle on its left edge to resize it.
+**Pop out** moves it into its own window (see below).
 The model contract is `PreviewModel` in `src/shared/model/preview.ts`.
 
 ## Using the preview
@@ -21,7 +22,29 @@ The model contract is `PreviewModel` in `src/shared/model/preview.ts`.
 - **Linked hover**: hovering a pixel on the 3D model outlines it in pink on the 2D canvas; hovering the 2D canvas
   highlights that pixel (inverted color) on the model.
 - **Animated textures** play using the `.png.mcmeta` timing (`frametime`, `frames`, `height`).
-- Not in M2b: the pop-out preview window (planned for M11, with painting directly on the 3D model).
+- **Paint**: in paint mode the left button paints on the model with the editor's current tool (pencil, eraser,
+  bucket or eyedropper; line, rectangle and select paint like the pencil), with the first color, or the second with
+  Shift, and the mirror settings. The right button orbits and the wheel zooms. Each stroke is one unsaved edit, like
+  on the 2D canvas. Pixels next to each other are joined by a line; a jump to another face starts a new segment.
+  Only the frame being edited can be painted on an animated texture.
+
+## Pop-out window
+
+**Pop out** opens the preview in its own window (for example on a second screen), titled "<pack> - 3D preview".
+The docked panel closes while the window is open; the **3D** button (or 3) brings it back and closes the window.
+
+- The window follows the editor of its pack tab: the open texture, every stroke, the frame being edited and the
+  hovered pixel. Going back to the grid shows "Open a texture in the editor"; closing the pack tab closes the
+  window. Hover and paint mode work in the window and edit the texture in the editor.
+- One window per pack tab. It is the same sandboxed renderer at the bare route `/popout/preview/<packId>` (no app
+  header), created by `createPopoutWindow` in `src/main/window.ts`.
+- The editor never shares memory with the window: `stores/popout.ts` pushes the state through main
+  (`preview.popout.push`: path, `.mcmeta`, frame, hover, and the RGBA pixels only when they changed, at most once
+  per animation frame). The window sends input back (`preview.popout.input`: ready, hover, paint start / move /
+  end). `src/main/services/preview/popout.ts` relays only between the editor window that opened a pop-out and that
+  pop-out, refuses any other sender, and tells the editor when the window closes (`preview.popout.closed`).
+- `Preview3D.vue` reads a `PreviewSource` (`src/renderer/components/preview3d/source.ts`): the editor store for the
+  docked panel, the relayed state in the window.
 
 ## Main process: model resolution
 

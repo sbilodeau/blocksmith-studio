@@ -14,12 +14,68 @@ export interface FileInfo {
   json?: unknown
 }
 
+/** PNG size read from the first bytes of the file, without hashing it. */
+export interface PngHeaderInfo {
+  width?: number
+  height?: number
+  /**
+   * Version token for asset URLs: the hash prefix when the file was hashed, otherwise a token that changes every
+   * time the file is read again (size or mtime change, or `delete`).
+   */
+  version: string
+}
+
+/** IHDR ends at byte 33 (8-byte signature, chunk length and type, 13 bytes of data, CRC). */
+export const PNG_HEADER_BYTES = 33
+
+/** The first `length` bytes of a file (fewer when the file is shorter). */
+export async function readFileHead(abs: string, length: number): Promise<Uint8Array> {
+  const data = new Uint8Array(length)
+  const handle = await fs.open(abs, 'r')
+  try {
+    const { bytesRead } = await handle.read(data, 0, length, 0)
+    return data.subarray(0, bytesRead)
+  } finally {
+    await handle.close()
+  }
+}
+
 /**
  * Per-file hash/metadata cache keyed by absolute path and invalidated by size + mtime, so a texture index
  * refresh only re-reads files that changed.
  */
 export class FileInfoCache {
   private readonly entries = new Map<string, { size: number; mtimeMs: number; info: FileInfo }>()
+  private readonly headers = new Map<
+    string,
+    { size: number; mtimeMs: number; info: PngHeaderInfo }
+  >()
+  private headerReads = 0
+
+  /**
+   * PNG width and height from the IHDR, reading only the first bytes (a full read when the file is already
+   * hashed). For files whose status does not depend on their hash (no vanilla counterpart, different size), so a
+   * pack of high-resolution textures is not read and hashed in full.
+   */
+  async pngHeader(file: ScannedFile): Promise<PngHeaderInfo> {
+    const full = this.entries.get(file.abs)
+    if (full && full.size === file.size && full.mtimeMs === file.mtimeMs) {
+      const { width, height, sha256: sha } = full.info
+      return { width, height, version: sha.slice(0, 12) }
+    }
+    const hit = this.headers.get(file.abs)
+    if (hit && hit.size === file.size && hit.mtimeMs === file.mtimeMs) return hit.info
+    const data = await readFileHead(file.abs, PNG_HEADER_BYTES)
+    // "h" is not a hex digit, so a header token never equals a hash prefix.
+    const info: PngHeaderInfo = { version: `h${(++this.headerReads).toString(36)}` }
+    const header = readPngHeader(data)
+    if (header) {
+      info.width = header.width
+      info.height = header.height
+    }
+    this.headers.set(file.abs, { size: file.size, mtimeMs: file.mtimeMs, info })
+    return info
+  }
 
   async get(file: ScannedFile): Promise<FileInfo> {
     const hit = this.entries.get(file.abs)
@@ -42,16 +98,20 @@ export class FileInfoCache {
   /** Drops the entry of one absolute file path (file rewritten in-process). */
   delete(abs: string): void {
     this.entries.delete(abs)
+    this.headers.delete(abs)
   }
 
   /** Drops every entry under an absolute folder path (pack deleted or workspace changed). */
   forget(folderAbs: string): void {
     const prefix = folderAbs.endsWith(sep) ? folderAbs : folderAbs + sep
-    for (const key of this.entries.keys()) if (key.startsWith(prefix)) this.entries.delete(key)
+    for (const map of [this.entries, this.headers]) {
+      for (const key of map.keys()) if (key.startsWith(prefix)) map.delete(key)
+    }
   }
 
   clear(): void {
     this.entries.clear()
+    this.headers.clear()
   }
 }
 

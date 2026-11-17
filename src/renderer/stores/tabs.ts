@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { disposePackStore } from './pack'
 import { disposeDataStore } from './data'
 import { disposeEditorStore } from './editor'
+import { disposePopoutStore } from './popout'
 
 /**
  * Workspace tabs. The "home" tab (pack selector) is always present; from M1 on, each open pack gets its own
@@ -43,6 +44,7 @@ export const useTabsStore = defineStore('tabs', () => {
     if (removed.kind === 'pack') {
       disposePackStore(removed.id)
       disposeDataStore(removed.id)
+      disposePopoutStore(removed.id)
       disposeEditorStore(removed.id)
     }
     if (activeId.value === id) activeId.value = tabs.value[Math.max(0, index - 1)].id

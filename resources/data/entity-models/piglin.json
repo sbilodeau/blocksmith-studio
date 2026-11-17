@@ -1,0 +1,80 @@
+{
+  "id": "piglin",
+  "textureSize": [64, 64],
+  "animation": "biped",
+  "textures": [
+    "assets/minecraft/textures/entity/piglin/{piglin,piglin_brute,zombified_piglin}.png"
+  ],
+  "parts": [
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 24, 0],
+      "boxes": [
+        { "origin": [-5, 24, -4], "size": [10, 8, 8], "uv": [0, 0] },
+        { "origin": [-2, 24, 4], "size": [4, 4, 1], "uv": [31, 1] },
+        { "origin": [2, 24, 4], "size": [1, 2, 1], "uv": [2, 4] },
+        { "origin": [-3, 24, 4], "size": [1, 2, 1], "uv": [2, 0] }
+      ],
+      "children": [
+        {
+          "name": "left_ear",
+          "pivot": [4.5, 30, 0],
+          "rotation": [0, 0, 30],
+          "boxes": [{ "origin": [4.5, 25, -2], "size": [1, 5, 4], "uv": [51, 6] }]
+        },
+        {
+          "name": "right_ear",
+          "pivot": [-4.5, 30, 0],
+          "rotation": [0, 0, -30],
+          "boxes": [{ "origin": [-5.5, 25, -2], "size": [1, 5, 4], "uv": [39, 6] }]
+        }
+      ]
+    },
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 24, 0],
+      "boxes": [
+        { "origin": [-4, 12, -2], "size": [8, 12, 4], "uv": [16, 16] },
+        { "origin": [-4, 12, -2], "size": [8, 12, 4], "uv": [16, 32], "inflate": 0.25 }
+      ]
+    },
+    {
+      "name": "right_arm",
+      "role": "rightArm",
+      "pivot": [-5, 22, 0],
+      "boxes": [
+        { "origin": [-8, 12, -2], "size": [4, 12, 4], "uv": [40, 16] },
+        { "origin": [-8, 12, -2], "size": [4, 12, 4], "uv": [40, 32], "inflate": 0.25 }
+      ]
+    },
+    {
+      "name": "left_arm",
+      "role": "leftArm",
+      "pivot": [5, 22, 0],
+      "boxes": [
+        { "origin": [4, 12, -2], "size": [4, 12, 4], "uv": [32, 48] },
+        { "origin": [4, 12, -2], "size": [4, 12, 4], "uv": [48, 48], "inflate": 0.25 }
+      ]
+    },
+    {
+      "name": "right_leg",
+      "role": "rightLeg",
+      "pivot": [-1.9, 12, 0],
+      "boxes": [
+        { "origin": [-3.9, 0, -2], "size": [4, 12, 4], "uv": [0, 16] },
+        { "origin": [-3.9, 0, -2], "size": [4, 12, 4], "uv": [0, 32], "inflate": 0.25 }
+      ]
+    },
+    {
+      "name": "left_leg",
+      "role": "leftLeg",
+      "pivot": [1.9, 12, 0],
+      "boxes": [
+        { "origin": [-0.1, 0, -2], "size": [4, 12, 4], "uv": [16, 48] },
+        { "origin": [-0.1, 0, -2], "size": [4, 12, 4], "uv": [0, 48], "inflate": 0.25 }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import type { TextureLayers } from './layers'
 import type { PackPath } from './pack'
 
 /** One entry of a pack's persisted operation journal (.blocksmith/history/journal.jsonl). */
@@ -34,4 +35,9 @@ export interface TextureData {
    * pack above it), so a pack PNG with a vanilla-only .mcmeta loses its animation: saving copies it into the pack.
    */
   mcmetaOrigin: 'pack' | 'vanilla' | 'none'
+  /**
+   * Editor layers saved with the texture (`.blocksmith/layers/`), or null. They may be stale (the PNG changed
+   * since, for example through a history undo): the editor compares their composite with `png`.
+   */
+  layers: TextureLayers | null
 }

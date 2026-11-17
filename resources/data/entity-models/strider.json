@@ -1,0 +1,73 @@
+{
+  "id": "strider",
+  "textureSize": [64, 128],
+  "animation": "biped",
+  "textures": [
+    "assets/minecraft/textures/entity/strider/{strider,strider_cold,strider_saddle}.png",
+    "assets/minecraft/textures/entity/equipment/strider_saddle/*.png"
+  ],
+  "parts": [
+    {
+      "name": "right_leg",
+      "role": "rightLeg",
+      "pivot": [-4, 16, 0],
+      "boxes": [{ "origin": [-6, 0, -2], "size": [4, 16, 4], "uv": [0, 32] }]
+    },
+    {
+      "name": "left_leg",
+      "role": "leftLeg",
+      "pivot": [4, 16, 0],
+      "boxes": [{ "origin": [2, 0, -2], "size": [4, 16, 4], "uv": [0, 55] }]
+    },
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 23, 0],
+      "boxes": [{ "origin": [-8, 15, -8], "size": [16, 14, 16], "uv": [0, 0] }],
+      "children": [
+        {
+          "name": "right_bottom_bristle",
+          "pivot": [-8, 19, 8],
+          "rotation": [0, 0, 70],
+          "boxes": [
+            { "origin": [-20, 19, -8], "size": [12, 0, 16], "uv": [16, 65], "mirror": true }
+          ]
+        },
+        {
+          "name": "right_middle_bristle",
+          "pivot": [-8, 24, 8],
+          "rotation": [0, 0, 65],
+          "boxes": [
+            { "origin": [-20, 24, -8], "size": [12, 0, 16], "uv": [16, 49], "mirror": true }
+          ]
+        },
+        {
+          "name": "right_top_bristle",
+          "pivot": [-8, 28, 8],
+          "rotation": [0, 0, 50],
+          "boxes": [
+            { "origin": [-20, 28, -8], "size": [12, 0, 16], "uv": [16, 33], "mirror": true }
+          ]
+        },
+        {
+          "name": "left_top_bristle",
+          "pivot": [8, 29, 8],
+          "rotation": [0, 0, -50],
+          "boxes": [{ "origin": [8, 29, -8], "size": [12, 0, 16], "uv": [16, 33] }]
+        },
+        {
+          "name": "left_middle_bristle",
+          "pivot": [8, 25, 8],
+          "rotation": [0, 0, -65],
+          "boxes": [{ "origin": [8, 25, -8], "size": [12, 0, 16], "uv": [16, 49] }]
+        },
+        {
+          "name": "left_bottom_bristle",
+          "pivot": [8, 20, 8],
+          "rotation": [0, 0, -70],
+          "boxes": [{ "origin": [8, 20, -8], "size": [12, 0, 16], "uv": [16, 65] }]
+        }
+      ]
+    }
+  ]
+}

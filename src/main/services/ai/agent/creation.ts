@@ -78,6 +78,8 @@ export interface CreationRunInput {
   request: CreationAgentRequest
   /** Every texture of the pack (vanilla, modified and added), with its categories. */
   textures: TextureEntry[]
+  /** Plain-text names of the user's custom categories, by id (shown next to the id in the category list). */
+  categoryLabels?: Record<string, string>
   /** Representative textures, decoded (contact sheet and previews). */
   samples: CreationSample[]
   pack: { name: string; description: string; base?: 'vanilla' | 'empty'; kind?: PackKind }
@@ -338,7 +340,7 @@ function sheetTexture(index: number, s: CreationSample, image = s.image): SheetT
 
 /** The user message of a creation run: pack, categories, samples (+ contact sheet for vision), then the request. */
 export function buildCreationMessage(
-  input: Pick<CreationRunInput, 'textures' | 'samples' | 'pack' | 'data'>,
+  input: Pick<CreationRunInput, 'textures' | 'samples' | 'pack' | 'data' | 'categoryLabels'>,
   message: string,
   withImage: boolean
 ): ChatMessage {
@@ -379,7 +381,10 @@ export function buildCreationMessage(
     'Categories (id: textures, modified):',
     ...Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .map(([id, n]) => `- ${id}: ${n}${changed[id] ? `, ${changed[id]} modified` : ''}`),
+      .map(
+        ([id, n]) =>
+          `- ${id}${input.categoryLabels?.[id] ? ` (${JSON.stringify(input.categoryLabels[id])}, custom)` : ''}: ${n}${changed[id] ? `, ${changed[id]} modified` : ''}`
+      ),
     `Top folders: ${[...folders]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 15)

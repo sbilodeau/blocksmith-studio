@@ -57,3 +57,40 @@ export function parseAssetUrl(url: string): ParsedAssetUrl | null {
   if (host === 'vanilla') return { kind: 'vanilla', versionId: root, path }
   return null
 }
+
+/**
+ * Thumbnails: `thumb=<size>` asks main for a downscaled PNG that fits in size x size (an animated strip shows its
+ * first frame), so a grid of 512 px textures does not decode and keep full-size images.
+ */
+export const THUMBNAIL_SIZES = [64, 128, 256] as const
+export type ThumbnailSize = (typeof THUMBNAIL_SIZES)[number]
+
+export function isThumbnailSize(value: number): value is ThumbnailSize {
+  return (THUMBNAIL_SIZES as readonly number[]).includes(value)
+}
+
+/**
+ * Thumbnail size for a texture shown at `displayPx` device pixels, or null when the original is small enough to
+ * be used as it is (decoded, it is at most four times the thumbnail).
+ */
+export function thumbnailSizeFor(
+  displayPx: number,
+  width: number,
+  height: number
+): ThumbnailSize | null {
+  const size =
+    THUMBNAIL_SIZES.find((s) => s >= displayPx) ?? THUMBNAIL_SIZES[THUMBNAIL_SIZES.length - 1]
+  return width * height > 4 * size * size ? size : null
+}
+
+/** Adds the thumbnail parameter to an asset URL. */
+export function withThumbnail(url: string, size: ThumbnailSize): string {
+  return `${url}${url.includes('?') ? '&' : '?'}thumb=${size}`
+}
+
+/** Thumbnail size requested by an asset URL, or null. */
+export function thumbnailParam(url: string): ThumbnailSize | null {
+  const match = /[?&]thumb=(\d+)(?:&|$)/.exec(url)
+  const size = match ? Number(match[1]) : NaN
+  return isThumbnailSize(size) ? size : null
+}

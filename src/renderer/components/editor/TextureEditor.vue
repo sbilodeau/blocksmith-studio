@@ -19,12 +19,15 @@ import EditorToolbar from './EditorToolbar.vue'
 import ColorPanel from './ColorPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import AnimationPanel from './AnimationPanel.vue'
+import LayersPanel from './LayersPanel.vue'
 import EditorIcon from './EditorIcon.vue'
 import Preview3d from '../preview3d/Preview3D.vue'
+import { editorPreviewSource } from '../preview3d/source'
 import EditorAgentPanel from '../ai/EditorAgentPanel.vue'
 import { useRouter } from 'vue-router'
 import { useEditorStore, type EditorTool } from '../../stores/editor'
 import { usePackStore } from '../../stores/pack'
+import { usePopoutStore } from '../../stores/popout'
 import { useErrorMessage } from '../../composables/useErrorMessage'
 
 const props = defineProps<{ packId: string }>()
@@ -35,6 +38,29 @@ const { showError } = useErrorMessage()
 const pack = computed(() => usePackStore(props.packId))
 const editor = computed(() => useEditorStore(props.packId))
 const canvasRef = ref<InstanceType<typeof PixelCanvas> | null>(null)
+const popout = computed(() => usePopoutStore(props.packId))
+/** The docked 3D preview reads the editor store directly. */
+const previewSource = editorPreviewSource(() => editor.value)
+
+/** The 3D button: shows / hides the docked preview, or brings a popped-out preview back. */
+function toggle3d(): void {
+  if (popout.value.open) {
+    editor.value.show3d = true
+    void popout.value.dock().catch(showError)
+    return
+  }
+  editor.value.show3d = !editor.value.show3d
+}
+
+async function popOut(): Promise<void> {
+  try {
+    const packName = pack.value.summary?.name ?? ''
+    await popout.value.popOut(t('preview.popoutTitle', { pack: packName }))
+    editor.value.show3d = false
+  } catch (err) {
+    showError(err)
+  }
+}
 const router = useRouter()
 /** Right panel tab: drawing tools or the AI agent. */
 const sideTab = ref<'draw' | 'ai'>('draw')
@@ -162,8 +188,17 @@ function isTyping(e: KeyboardEvent): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
 }
 
+/** Enter and Space belong to the focused control (button, switch, tab...), not to the editor shortcuts. */
+function activatesControl(e: KeyboardEvent): boolean {
+  if (e.key !== 'Enter' && e.key !== ' ') return false
+  const el = e.target as HTMLElement | null
+  return !!el?.closest(
+    'button, a[href], [role="button"], [role="switch"], [role="tab"], [role="checkbox"]'
+  )
+}
+
 function onKeydown(e: KeyboardEvent): void {
-  if (isTyping(e)) return
+  if (isTyping(e) || activatesControl(e)) return
   const ed = editor.value
   const mod = e.metaKey || e.ctrlKey
   const key = e.key.toLowerCase()
@@ -191,7 +226,7 @@ function onKeydown(e: KeyboardEvent): void {
   else if (key === '-') canvasRef.value?.zoomBy(-1)
   else if (key === '0') canvasRef.value?.fit()
   else if (key === 'c' && ed.vanilla) ed.peekVanilla = true
-  else if (key === '3') ed.show3d = !ed.show3d
+  else if (key === '3') toggle3d()
   else if (key === ',' && ed.frames) ed.selectFrame(ed.frameIndex - 1)
   else if (key === '.' && ed.frames) ed.selectFrame(ed.frameIndex + 1)
   else if (key === 'pageup' || (e.altKey && key === 'arrowleft')) go('prev')
@@ -272,16 +307,20 @@ const statusTag = computed(() => {
           <template #trigger>
             <n-button
               size="small"
-              :type="editor.show3d ? 'primary' : 'default'"
+              :type="editor.show3d || popout.open ? 'primary' : 'default'"
               data-testid="editor-3d"
-              @click="editor.show3d = !editor.show3d"
+              @click="toggle3d"
             >
               {{ t('preview.toggle') }}
             </n-button>
           </template>
-          {{ t('editor.shortcut', { label: t('preview.toggleHint'), key: '3' }) }}
+          {{
+            popout.open
+              ? t('preview.dockHint')
+              : t('editor.shortcut', { label: t('preview.toggleHint'), key: '3' })
+          }}
         </n-tooltip>
-        <n-tooltip v-if="editor.image && !editor.frames && !editor.animation">
+        <n-tooltip v-if="editor.image && !editor.frames && !editor.animation && !editor.layers">
           <template #trigger>
             <n-button size="small" data-testid="editor-animate" @click="editor.animate()">
               {{ t('animation.animate') }}
@@ -330,10 +369,10 @@ const statusTag = computed(() => {
             </n-text>
             <pixel-canvas ref="canvasRef" :pack-id="packId" @hover="(h) => (hoverInfo = h)" />
           </div>
-          <template v-if="editor.show3d">
+          <template v-if="editor.show3d && !popout.open">
             <div class="resizer" data-testid="preview3d-resizer" @pointerdown="startResize" />
             <div class="pane preview-pane" :style="{ flex: `0 0 ${previewWidth}px` }">
-              <preview3d :pack-id="packId" />
+              <preview3d :source="previewSource" @popout="popOut" />
             </div>
           </template>
         </div>
@@ -367,6 +406,7 @@ const statusTag = computed(() => {
           <n-tab-pane name="draw" :tab="t('editor.tabDraw')" display-directive="show">
             <div class="side-scroll">
               <color-panel :pack-id="packId" />
+              <layers-panel :pack-id="packId" />
               <history-panel :pack-id="packId" />
             </div>
           </n-tab-pane>

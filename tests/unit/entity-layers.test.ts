@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { globToRegExp } from '@shared/categories/glob'
-import { entityLayerTable, findEntityLayer } from '@shared/preview/entity-layers'
+import { entityLayerTable, findEntityLayer, isUprightLayer } from '@shared/preview/entity-layers'
 
 const T = (p: string): string => `assets/minecraft/textures/entity/${p}`
 
@@ -11,6 +11,15 @@ describe('texture -> jar layer table', () => {
     for (const e of table.entries) expect(e.layer).toMatch(/^[a-z0-9_/]+#[a-z0-9_]+$/)
   })
 
+  it('lists upright block entity layers that the table uses', () => {
+    const table = entityLayerTable()
+    const used = new Set(table.entries.map((e) => e.layer))
+    expect(table.upright.length).toBeGreaterThan(0)
+    for (const layer of table.upright) expect(used.has(layer), layer).toBe(true)
+    expect(isUprightLayer('chest#main')).toBe(true)
+    expect(isUprightLayer('zombie#main')).toBe(false)
+  })
+
   it('finds the layer of adult, baby and equipment textures', () => {
     expect(findEntityLayer(T('axolotl/axolotl_lucy_baby.png'))).toBe('axolotl_baby#main')
     expect(findEntityLayer(T('axolotl/axolotl_lucy.png'))).toBe('axolotl#main')
@@ -19,6 +28,7 @@ describe('texture -> jar layer table', () => {
     expect(findEntityLayer(T('equipment/horse_body/diamond.png'))).toBe('horse_armor#main')
     expect(findEntityLayer('assets/minecraft/textures/block/stone.png')).toBeUndefined()
     expect(findEntityLayer(T('equipment/humanoid/diamond.png'))).toBeUndefined()
+    expect(findEntityLayer(T('equipment/humanoid_baby/diamond.png'))).toBe('zombie_baby#chestplate')
   })
 
   it('never lets two entries claim the same texture', () => {

@@ -15,7 +15,14 @@ import {
   type Rgba
 } from '@shared/image'
 import { TRANSPARENT, useEditorStore } from '../../stores/editor'
-import { ZOOM_LEVELS, mirrorTransforms, nextZoom, normalizeRect, rectContains } from './geometry'
+import {
+  ZOOM_LEVELS,
+  mirrorTransforms,
+  nextZoom,
+  normalizeRect,
+  rectContains,
+  visibleSpan
+} from './geometry'
 
 const props = defineProps<{
   packId: string
@@ -45,7 +52,8 @@ let resizeObserver: ResizeObserver | null = null
 const displayed = computed<RgbaImage | null>(() => {
   void editor.value.revision
   if (props.source === 'vanilla' || editor.value.peekVanilla) return editor.value.vanillaView
-  return editor.value.image
+  // With layers: the composite of the visible layers (tools still paint into the active layer).
+  return editor.value.view
 })
 
 // The read-only vanilla pane keeps its own zoom so the two compare panes do not fight over it.
@@ -127,7 +135,10 @@ function render(): void {
   const w = img.width * z
   const h = img.height * z
 
-  // Checkerboard behind transparent pixels.
+  // Only the part of the image inside the canvas is drawn (a 512 px texture at 32x is 16384 px wide).
+  const view = visibleSpan(ox, oy, w, h, width, height)
+
+  // Checkerboard behind transparent pixels (cells aligned on the image origin).
   const cell = 8
   ctx.save()
   ctx.beginPath()
@@ -136,9 +147,11 @@ function render(): void {
   ctx.fillStyle = '#d8d8d8'
   ctx.fillRect(ox, oy, w, h)
   ctx.fillStyle = '#f4f4f4'
-  for (let y = 0; y < h; y += cell) {
-    for (let x = (y / cell) % 2 === 0 ? 0 : cell; x < w; x += cell * 2)
-      ctx.fillRect(ox + x, oy + y, cell, cell)
+  const firstCellY = Math.floor((view.y0 - oy) / cell)
+  const firstCellX = Math.floor((view.x0 - ox) / cell)
+  for (let cy = firstCellY; oy + cy * cell < view.y1; cy++) {
+    for (let cx = firstCellX + ((firstCellX + cy) & 1); ox + cx * cell < view.x1; cx += 2)
+      ctx.fillRect(ox + cx * cell, oy + cy * cell, cell, cell)
   }
   ctx.restore()
 
@@ -155,7 +168,7 @@ function render(): void {
   }
 
   const f = editor.value.floating
-  if (f && !props.readonly && displayed.value === editor.value.image) {
+  if (f && !props.readonly && displayed.value === editor.value.view) {
     floatCanvas = imageToCanvas(f.image, floatCanvas)
     ctx.drawImage(floatCanvas, ox + f.x * z, oy + f.y * z, f.image.width * z, f.image.height * z)
   }
@@ -171,18 +184,22 @@ function render(): void {
   // Pixel grid (only when pixels are big enough), stronger every 16 px.
   if (editor.value.showGrid && z >= 6) {
     ctx.lineWidth = 1 / dpr
-    for (let x = 0; x <= img.width; x++) {
+    const x0 = Math.max(0, Math.floor((view.x0 - ox) / z))
+    const x1 = Math.min(img.width, Math.ceil((view.x1 - ox) / z))
+    const y0 = Math.max(0, Math.floor((view.y0 - oy) / z))
+    const y1 = Math.min(img.height, Math.ceil((view.y1 - oy) / z))
+    for (let x = x0; x <= x1; x++) {
       ctx.strokeStyle = x % 16 === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.15)'
       ctx.beginPath()
-      ctx.moveTo(ox + x * z + 0.5 / dpr, oy)
-      ctx.lineTo(ox + x * z + 0.5 / dpr, oy + h)
+      ctx.moveTo(ox + x * z + 0.5 / dpr, view.y0)
+      ctx.lineTo(ox + x * z + 0.5 / dpr, view.y1)
       ctx.stroke()
     }
-    for (let y = 0; y <= img.height; y++) {
+    for (let y = y0; y <= y1; y++) {
       ctx.strokeStyle = y % 16 === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.15)'
       ctx.beginPath()
-      ctx.moveTo(ox, oy + y * z + 0.5 / dpr)
-      ctx.lineTo(ox + w, oy + y * z + 0.5 / dpr)
+      ctx.moveTo(view.x0, oy + y * z + 0.5 / dpr)
+      ctx.lineTo(view.x1, oy + y * z + 0.5 / dpr)
       ctx.stroke()
     }
   }
@@ -346,10 +363,13 @@ function onPointerDown(e: PointerEvent): void {
       ed.commit(before, 'fill')
       break
     }
-    case 'eyedropper':
-      if (inBounds(img, p.x, p.y))
-        ed.useColor(getPixel(img, p.x, p.y), secondary ? 'secondary' : 'primary')
+    case 'eyedropper': {
+      // Picks what is shown (all visible layers), not only the active layer.
+      const shown = ed.view ?? img
+      if (inBounds(shown, p.x, p.y))
+        ed.useColor(getPixel(shown, p.x, p.y), secondary ? 'secondary' : 'primary')
       break
+    }
     case 'line':
     case 'rect':
       ed.commitFloating()

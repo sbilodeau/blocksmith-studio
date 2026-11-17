@@ -1,6 +1,6 @@
 import type { EntityDefinition, PreviewModel } from '@shared/model/preview'
 import { findEntityDefinition } from '@shared/preview/entities'
-import { findEntityLayer } from '@shared/preview/entity-layers'
+import { findEntityLayer, isUprightLayer } from '@shared/preview/entity-layers'
 import type { VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { resolvePackFile } from '../history/pack-files'
@@ -61,12 +61,25 @@ export function createPreviewService(deps: PreviewServiceDeps): PreviewService {
       const models = await deps.vanilla.entityModels(versionId)
       const found = models?.layers[layer]
       if (!found) return undefined
+      // Block entities are drawn y up without the entity flip: the converted model is upside down and back to
+      // front, so it is turned 180 degrees around x (the built-in chest does the same).
+      const parts = isUprightLayer(layer)
+        ? [
+            {
+              name: 'blocksmith_upright',
+              pivot: [0, 12, 0] as [number, number, number],
+              rotation: [180, 0, 0] as [number, number, number],
+              boxes: [],
+              children: found.parts
+            }
+          ]
+        : found.parts
       return {
         id: layer.replace(/[^a-z0-9_]+/g, '_'),
         textureSize: found.textureSize,
         textures: [path],
         animation: found.animation,
-        parts: found.parts
+        parts
       }
     } catch (err) {
       warn(`[preview] entity models of ${versionId}: ${String(err)}`)

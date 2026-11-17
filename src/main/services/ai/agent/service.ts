@@ -70,6 +70,8 @@ export interface EditorAgentServiceDeps {
   creation?: {
     /** Textures the agent can change: the pack's plus vanilla, whatever the base (see PackService.catalog). */
     catalog(packId: string): Promise<TextureEntry[]>
+    /** Plain-text names of the pack's custom categories, by id (for the agent's context). */
+    categoryLabels?(packId: string): Promise<Record<string, string>>
     /** PNG of a catalog texture: the pack's file, else vanilla. */
     readPng(packId: string, path: string): Promise<Uint8Array | null>
     meta(packId: string): Promise<{
@@ -368,11 +370,14 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       const textures = kind === 'data' ? [] : await creation.catalog(packId)
       if (textures.length === 0 && kind !== 'data') throw new AppErrorException('ai.emptyPack')
       const dataDeps = kind !== 'resource' ? creation.data : undefined
-      const [samples, brief, history, dataList] = await Promise.all([
+      const [samples, brief, history, dataList, categoryLabels] = await Promise.all([
         loadSamples(packId, textures),
         deps.brief.get(packId),
         deps.conversations.read(packId, 'creation'),
-        dataDeps ? dataDeps.list(packId) : Promise.resolve(undefined)
+        dataDeps ? dataDeps.list(packId) : Promise.resolve(undefined),
+        kind !== 'data' && creation.categoryLabels
+          ? creation.categoryLabels(packId).catch(() => ({}))
+          : Promise.resolve({})
       ])
       const data =
         dataDeps && dataList
@@ -396,6 +401,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
           runId,
           request,
           textures,
+          ...(Object.keys(categoryLabels).length ? { categoryLabels } : {}),
           samples,
           pack,
           ...(data ? { data } : {}),

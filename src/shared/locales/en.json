@@ -164,6 +164,11 @@
       "tooLarge": "The file is too large.",
       "exists": "\"{path}\" already exists.",
       "notInPack": "The pack has no file \"{path}\"."
+    },
+    "categories": {
+      "invalidGlob": "The pattern \"{glob}\" of the category {category} is not valid.",
+      "duplicateId": "Two categories have the id {id}.",
+      "invalidRule": "The category {category} is not valid."
     }
   },
   "common": {
@@ -259,7 +264,8 @@
     "selected": "no texture selected | 1 texture selected | {count} textures selected",
     "selectAll": "Select all",
     "clearSelection": "Clear",
-    "empty": "No texture matches."
+    "empty": "No texture matches.",
+    "label": "Textures"
   },
   "export": {
     "open": "Export",
@@ -429,7 +435,16 @@
       "frameTiming": "Animation timing",
       "animate": "Animate",
       "unanimate": "Remove animation",
-      "importGif": "Import GIF"
+      "importGif": "Import GIF",
+      "layerAdd": "Add layer",
+      "layerDuplicate": "Duplicate layer",
+      "layerDelete": "Delete layer",
+      "layerMove": "Move layer",
+      "layerVisibility": "Layer visibility",
+      "layerOpacity": "Layer opacity",
+      "layerRename": "Rename layer",
+      "layerMerge": "Merge layers",
+      "layerFlatten": "Flatten layers"
     },
     "shortcut": "{label} ({key})",
     "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan.",
@@ -515,7 +530,14 @@
     },
     "noEntityModel": "No 3D model for this entity texture yet: it is shown flat, as in the editor.",
     "fromGame": "game model",
-    "fromGameHint": "Exact model read from your Minecraft files for this version."
+    "fromGameHint": "Exact model read from your Minecraft files for this version.",
+    "paint": "Paint",
+    "paintHint": "Paint on the model with the current tool (pencil, eraser, bucket or eyedropper; other tools paint like the pencil). Shift uses the secondary color. Right-drag rotates, the wheel zooms.",
+    "popOut": "Pop out",
+    "popOutHint": "Open the 3D preview in its own window (for example on a second screen)",
+    "popoutTitle": "{pack} - 3D preview",
+    "popoutEmpty": "Open a texture in the editor to see it here.",
+    "dockHint": "Bring the 3D preview back into the editor (closes its window)"
   },
   "ai": {
     "title": "AI",
@@ -724,7 +746,9 @@
     "creationNoTextures": "No textures found for this pack yet. Prepare the Minecraft textures of its version in Settings.",
     "creationEmptyBase": "Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack (1 texture so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack.",
     "creationDataContext": "Whole data pack: recipes, loot tables, tags and advancements",
-    "emptyCreationData": "Describe what the data pack should do (\"diamond ore drops two diamonds\", \"a recipe for saddles\"). The AI proposes the files; you review each one before anything changes."
+    "emptyCreationData": "Describe what the data pack should do (\"diamond ore drops two diamonds\", \"a recipe for saddles\"). The AI proposes the files; you review each one before anything changes.",
+    "providerEnabled": "{name}: enabled",
+    "messages": "Conversation"
   },
   "brief": {
     "open": "Style brief",
@@ -1045,5 +1069,96 @@
       "invalidEscapeCharacter": "invalid escape (\\\\)",
       "invalidCharacter": "invalid character in text"
     }
+  },
+  "layers": {
+    "title": "Layers",
+    "hint": "Add a layer to paint on top of the texture without changing it. The pack keeps the combined image.",
+    "animated": "Layers are not available for animated textures.",
+    "stale": "The saved layers no longer match this texture (it changed after they were saved), so they were not loaded. Saving removes them.",
+    "add": "Add layer",
+    "duplicate": "Duplicate layer",
+    "delete": "Delete layer",
+    "up": "Move layer up",
+    "down": "Move layer down",
+    "mergeDown": "Merge into the layer below",
+    "flatten": "Flatten",
+    "flattenHint": "Flatten: combine the visible layers into one image and remove the layers",
+    "rename": "Rename layer",
+    "show": "Show {name}",
+    "hide": "Hide {name}",
+    "opacity": "Opacity",
+    "defaultName": "Layer {n}",
+    "baseName": "Texture",
+    "copyName": "{name} copy",
+    "aiName": "AI"
+  },
+  "categoriesEditor": {
+    "open": "Edit categories",
+    "title": "Texture categories",
+    "tabs": {
+      "all": "All packs",
+      "pack": "This pack"
+    },
+    "allHint": "Applies to every pack. You can change or hide the built-in categories, and add or delete your own.",
+    "packHint": "Rules for this pack only, applied on top of \"All packs\": replace a category or add your own.",
+    "packEmpty": "This pack uses the \"All packs\" categories as they are.",
+    "builtin": "Built-in",
+    "custom": "Custom",
+    "hidden": "Hidden",
+    "replaces": "Replaces \"All packs\"",
+    "packOnly": "This pack only",
+    "matches": "no textures | 1 texture | {count} textures",
+    "countsHint": "Counts are for the textures of this pack.",
+    "select": "Select a category to edit it.",
+    "name": "Name",
+    "id": "Id: {id}",
+    "icon": "Icon texture",
+    "iconPlaceholder": "assets/minecraft/textures/block/stone.png",
+    "order": "Order",
+    "hide": "Hide this category",
+    "include": "Include: textures matching any of these patterns",
+    "exclude": "Exclude: removed even when an include pattern matches",
+    "addPattern": "Add pattern",
+    "removePattern": "Remove pattern",
+    "remove": "Remove",
+    "patternPlaceholder": "item/*_sword.png",
+    "globHelp": "Patterns match the path below textures/, such as block/stone.png. * = any characters except /, ** = any folders, ? = one character, {'{'}a,b{'}'} = a or b.",
+    "otherFixed": "Textures that match no other category go here. It cannot be deleted or hidden.",
+    "newName": "New category name",
+    "add": "Add category",
+    "override": "Replace a category in this pack",
+    "delete": "Delete category",
+    "removeOverride": "Remove from this pack",
+    "reset": "Reset to defaults",
+    "resetConfirm": "Go back to the default categories? Your changes to \"All packs\" are replaced when you save.",
+    "testPath": "Test a path",
+    "testPlaceholder": "block/stone.png",
+    "testResult": "Categories:",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Categories saved.",
+    "hasIssues": "Fix the highlighted problems before saving.",
+    "issues": {
+      "invalidId": "Invalid id (use a-z, 0-9, _ and -).",
+      "duplicateId": "Another category has the same id.",
+      "labelRequired": "Give this category a name.",
+      "labelTooLong": "The name is too long.",
+      "fallbackHidden": "The \"Other\" category cannot be hidden.",
+      "iconTooLong": "The icon path is too long.",
+      "tooManyGlobs": "Too many patterns.",
+      "tooManyCategories": "Too many categories."
+    },
+    "globIssues": {
+      "empty": "Empty pattern.",
+      "tooLong": "Pattern too long.",
+      "braces": "Unbalanced {'{'} {'}'}.",
+      "absolute": "Do not start with /: patterns match the path below textures/.",
+      "backslash": "Use / between folders, not \\.",
+      "invalid": "This pattern is not valid."
+    }
+  },
+  "a11y": {
+    "decrease": "Decrease",
+    "increase": "Increase"
   }
 }

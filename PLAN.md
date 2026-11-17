@@ -947,6 +947,19 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 ### M11 - Polish and extras
 - Category mapping editor UI; optional layers in the editor; pop-out 3D preview window; paint directly on the 3D preview model; more entity definitions; performance pass for huge packs; accessibility pass.
 - Investigation note on Bedrock support (not implementation).
+- Built: a category editor with two scopes, "All packs" (`userData/categories.json`) and "This pack"
+  (`project.categoryOverrides`), with custom labels, hidden categories and live counts (docs/categories.md);
+  optional layers for still textures, where the pack keeps the composite PNG and the layers are saved in
+  `.blocksmith/layers/` outside the history and ignored once stale (docs/editor.md); paint mode on the 3D model, and
+  a pop-out preview window that main relays to and from the editor window that opened it (docs/preview.md); 42
+  more built-in entity definitions (419 of the 743 entity textures of 26.3 versus 174), baby armor mapped to the jar,
+  and jar block entities turned upright (docs/entity-models.md); an accessibility pass checked by axe-core in both
+  themes, with keyboard navigation in the texture grid; a measured performance pass (docs/performance.md: shared
+  texture scans, size-first hashing, a virtual grid, downscaled thumbnails, a lighter editor render; a 12,000
+  texture pack opens in 0.3 s instead of 2.4 s; the export still blocks main for about 3 s on 1 GiB, left for a
+  streaming zip writer in a worker); the Bedrock note (docs/bedrock.md, recommendation: export to `.mcpack` as its
+  own milestone if wanted).
+  Light theme colors were darkened for WCAG AA contrast.
 
 ---
 

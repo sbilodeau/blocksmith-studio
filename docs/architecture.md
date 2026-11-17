@@ -51,6 +51,7 @@ renderer must be resolved and checked to stay inside an allowed root.
 | `contextIsolation`, `sandbox`, no Node     | `src/main/window.ts`                                     |
 | Strict CSP (meta tag + response header)    | `src/main/security-policy.ts`, `electron.vite.config.ts` |
 | No navigation, no new windows, no webview  | `src/main/security.ts`                                   |
+| App windows only created by main           | `createPopoutWindow` in `src/main/window.ts`             |
 | External links: https only, system browser | `src/main/security-policy.ts`                            |
 | Permission requests denied                 | `src/main/security.ts`                                   |
 | IPC only from the app's own frames         | `isTrustedSender` in `src/main/security-policy.ts`       |
@@ -109,7 +110,10 @@ Mojang download with consent), including the vanilla recipes, loot tables, tags 
 `userData/vanilla/<version>/` and writes `index.json` last. A vanilla-based pack
 stores only changed and added files; everything else is read from that cache. The renderer shows thumbnails through
 `bs-asset://pack/<packId>/<path>` (pack file, else vanilla) and `bs-asset://vanilla/<version>/<path>`. The protocol
-only serves `.png`, `.json` and `.mcmeta` files and checks every resolved path stays inside its root.
+only serves `.png`, `.json` and `.mcmeta` files and checks every resolved path stays inside its root. A
+`thumb=64|128|256` parameter on a PNG serves a downscaled copy (first frame of a strip), made with Electron's
+`nativeImage` and kept in a 64 MiB LRU cache (`src/main/thumbnails.ts`); the texture grid asks for one when the
+original is more than four times the size it is shown at. See [performance.md](performance.md).
 
 ## Settings
 
@@ -126,12 +130,39 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 - `App.vue` wraps everything in Naive UI's config provider (theme, locale) and keeps vue-i18n in sync with settings.
 - `stores/tabs.ts` manages workspace tabs: a permanent home tab plus one tab per open pack.
 - `stores/pack.ts` creates one Pinia store per open pack (`pack/<id>`), holding its textures, categories and view
-  state (category, search, status filter, zoom, selection). It is disposed when the tab closes.
+  state (category, search, status filter, zoom, selection). It is disposed when the tab closes. The texture list and
+  the selection are shallow refs, replaced on change and never edited in place.
+- `components/pack/TextureGrid.vue` is a virtual grid: tiles have a fixed size per zoom level
+  (`components/pack/grid-layout.ts`) and only the rows in view, plus three above and below, are rendered, so a pack
+  of 10,000 textures keeps about a hundred tiles in the DOM.
+  It is a multi-select `listbox` for screen readers: arrow keys, Home / End and Page Up / Down move a keyboard
+  cursor (Shift extends the selection, Ctrl/Cmd moves without selecting), Space toggles a tile, Enter opens it, and
+  `aria-activedescendant` follows the cursor tile, which is always scrolled into the rendered rows.
 - `stores/packs.ts` (pack list), `stores/vanilla.ts` (installs and versions), `stores/jobs.ts` (progress).
 - `stores/editor.ts` creates one pixel-editor store per open pack (`editor/<packId>`); see [editor.md](editor.md).
 - `src/shared/image/` is the pure image core (RGBA buffers, transforms, drawing, colors, PNG); see
   [image-core.md](image-core.md). It runs unchanged in the renderer, in main and in tests.
-- `router/` uses hash history (works with `file://`).
+- `router/` uses hash history (works with `file://`). Routes with `meta.bare` (the pop-out 3D preview window,
+  [preview.md](preview.md#pop-out-window)) render without the app header; `main.ts` waits for the first route before
+  mounting.
+- `stores/popout.ts` (one per pack tab) relays the editor state to a pop-out preview window through main.
+
+## Accessibility
+
+Checked by `tests/e2e/accessibility.spec.ts`: axe-core (a dev dependency, injected into the renderer over the DevTools
+protocol) scans the home screen, settings, the new pack dialog, the navigator, the category editor, the grid and the
+editor with layers and the 3D panel, in the light and the dark theme, and fails on any serious or critical WCAG 2.1
+A/AA violation. Conventions:
+
+- Icon-only buttons get `aria-label` (the tooltip text) and toggles `aria-pressed`; switches, sliders, number
+  inputs and filterable selects get a name (`aria-label` or `input-props`).
+- Naive UI gaps the props cannot reach are filled by `src/renderer/services/a11y.ts` (a MutationObserver started in
+  `main.ts`): card headings get a level, slider handles take their slider's `aria-label`, number input buttons get
+  names, and `n-scrollbar` areas marked `data-a11y-scroll` become keyboard-scrollable.
+- `App.vue` darkens Naive UI's light-theme secondary text, green and blue so text reaches 4.5:1 (and the dark
+  theme's empty-state text).
+- No nested interactive controls (a row with its own buttons uses a separate button to select it); Enter and Space go
+  to the focused control before the editor's shortcuts.
 
 ## Updates
 

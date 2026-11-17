@@ -265,6 +265,31 @@ describe('texture.preview', () => {
       env.vanilla.models.clear()
     })
 
+    it('turns block entity layers from the jar upright', async () => {
+      const path = T('entity/chest/normal.png')
+      const parts = [{ name: 'bottom', pivot: [0, 24, 0] as [number, number, number], boxes: [] }]
+      env.vanilla.models.set('26.3', {
+        schemaVersion: 1,
+        versionId: '26.3',
+        generatedAt: '2026-11-15T00:00:00.000Z',
+        layers: { 'chest#main': { textureSize: [64, 64], animation: 'none', parts } },
+        skipped: [],
+        stats: { steps: 1, aborts: 0 }
+      })
+      const result = await service.preview(packId, path)
+      expect(result).toMatchObject({ kind: 'entity', source: 'jar' })
+      expect(result.kind === 'entity' && result.definition.parts).toEqual([
+        {
+          name: 'blocksmith_upright',
+          pivot: [0, 12, 0],
+          rotation: [180, 0, 0],
+          boxes: [],
+          children: parts
+        }
+      ])
+      env.vanilla.models.clear()
+    })
+
     it('uses the built-in entity definitions by default', async () => {
       const plain = createPreviewService({ packs: env.service, vanilla: env.vanilla })
       const result = await plain.preview(packId, T('entity/not_a_real_entity.png'))

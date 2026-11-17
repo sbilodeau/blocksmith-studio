@@ -102,6 +102,7 @@ onMounted(async () => {
           <n-form-item :label="t('settings.autoCheck')">
             <n-switch
               :value="settingsStore.settings.updates.autoCheck"
+              :aria-label="t('settings.autoCheck')"
               data-testid="auto-check"
               @update:value="setAutoCheck"
             />

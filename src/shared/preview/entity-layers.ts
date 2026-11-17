@@ -9,6 +9,8 @@ import raw from '../../../resources/data/entity-layers.json'
 export const EntityLayerTableSchema = z.object({
   schemaVersion: z.literal(1),
   description: z.string().optional(),
+  /** Block entity layers drawn without the entity flip (chests, bells, pots): turned upright by the preview. */
+  upright: z.array(z.string().regex(/^[a-z0-9_/]+#[a-z0-9_]+$/)).default([]),
   entries: z
     .array(
       z.strictObject({
@@ -42,4 +44,12 @@ export function entityLayerTable(): EntityLayerTable {
 export function findEntityLayer(packPath: string): string | undefined {
   const path = packPath.replace(/\\/g, '/')
   return load().find((e) => e.patterns.some((p) => p.test(path)))?.layer
+}
+
+let upright: Set<string> | null = null
+
+/** Whether the preview must turn this jar layer upright (a block entity drawn without the entity flip). */
+export function isUprightLayer(layer: string): boolean {
+  upright ??= new Set(EntityLayerTableSchema.parse(raw).upright)
+  return upright.has(layer)
 }

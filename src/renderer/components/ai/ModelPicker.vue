@@ -44,6 +44,7 @@ function renderLabel(option: SelectOption): ReturnType<typeof h> {
     :render-label="renderLabel"
     :loading="ai.modelsLoading"
     :placeholder="t('ai.pickModel')"
+    :input-props="{ 'aria-label': t('ai.pickModel') }"
     :size="size ?? 'small'"
     filterable
     data-testid="model-picker"

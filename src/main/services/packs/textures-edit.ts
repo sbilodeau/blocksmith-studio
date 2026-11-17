@@ -1,11 +1,18 @@
 import { decode } from 'fast-png'
+import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import type { HistoryEntry, TextureData } from '@shared/model/history'
+import { LAYERS_DIR, LayersFileSchema, type TextureLayers } from '@shared/model/layers'
 import type { TextureEntry } from '@shared/model/pack'
 import type { VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import type { HistoryService } from '../history'
-import { assertInsidePack, readOptional, resolvePackFile } from '../history/pack-files'
+import {
+  assertInsidePack,
+  readOptional,
+  resolvePackFile,
+  writeOrDelete
+} from '../history/pack-files'
 import { isValidResourcePath } from './paths'
 import { readPngHeader } from './png'
 import type { PackLocation } from './project'
@@ -45,8 +52,16 @@ export interface TextureEditService {
   /**
    * Writes the PNG and, when `mcmeta` is given, its .png.mcmeta (null removes the pack's copy), as one history
    * entry. A texture identical to vanilla is removed from the pack, and so is a .mcmeta identical to vanilla's then.
+   * `layers` (editor layers, same size as the PNG) are written to `.blocksmith/layers/` outside the history; null
+   * removes them, undefined leaves them as they are.
    */
-  save(packId: string, path: string, png: Uint8Array, mcmeta?: string | null): Promise<TextureEntry>
+  save(
+    packId: string,
+    path: string,
+    png: Uint8Array,
+    mcmeta?: string | null,
+    layers?: TextureLayers | null
+  ): Promise<TextureEntry>
   revert(packId: string, path: string): Promise<TextureEntry>
   /**
    * Writes several textures as ONE history entry (bulk operations, AI proposals over a selection). Textures that
@@ -85,6 +100,46 @@ function sameJson(a: Uint8Array, b: Uint8Array): boolean {
   } catch {
     return false
   }
+}
+
+/** `.blocksmith/layers/<texture path>.json` of a pack (the texture path is already validated). */
+function layersFile(location: PackLocation, path: string): string {
+  return `${join(location.folder, ...LAYERS_DIR.split('/'), ...path.split('/'))}.json`
+}
+
+/** Saved layers of a texture; null when there are none or the file is unreadable (logged, never fatal). */
+async function readLayers(abs: string): Promise<TextureLayers | null> {
+  const bytes = await readOptional(abs)
+  if (!bytes) return null
+  try {
+    const file = LayersFileSchema.parse(JSON.parse(new TextDecoder().decode(bytes)))
+    return {
+      active: file.active,
+      items: file.layers.map((l) => ({
+        name: l.name,
+        visible: l.visible,
+        opacity: l.opacity,
+        png: new Uint8Array(Buffer.from(l.png, 'base64'))
+      }))
+    }
+  } catch (err) {
+    console.warn(`Ignoring unreadable layers file ${abs}: ${String(err)}`)
+    return null
+  }
+}
+
+function encodeLayers(layers: TextureLayers): Uint8Array {
+  const file = {
+    schemaVersion: 1,
+    active: layers.active,
+    layers: layers.items.map((l) => ({
+      name: l.name,
+      visible: l.visible,
+      opacity: l.opacity,
+      png: Buffer.from(l.png).toString('base64')
+    }))
+  }
+  return new TextEncoder().encode(`${JSON.stringify(file)}\n`)
 }
 
 /** "assets/minecraft/textures/block/stone.png" -> "stone" */
@@ -142,7 +197,8 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
         origin: packPng ? 'pack' : vanillaPng ? 'vanilla' : 'none',
         vanillaPng,
         mcmeta: mcmeta ? new TextDecoder().decode(mcmeta) : null,
-        mcmetaOrigin: packMeta ? 'pack' : mcmeta ? 'vanilla' : 'none'
+        mcmetaOrigin: packMeta ? 'pack' : mcmeta ? 'vanilla' : 'none',
+        layers: await readLayers(layersFile(location, path))
       }
     },
 
@@ -154,11 +210,28 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
       return vanilla ? readOptional(vanilla) : null
     },
 
-    async save(packId, path, png, mcmeta) {
+    async save(packId, path, png, mcmeta, layers) {
       const location = await requireLocation(packId)
       const abs = texturePath(location, path)
       if (!isValidTexturePng(png)) throw new AppErrorException(TextureErrorCode.invalidPng)
       await assertInsidePack(location.folder, abs, path)
+      const layersAbs = layersFile(location, path)
+      if (layers) {
+        const size = readPngHeader(png)!
+        for (const layer of layers.items) {
+          const header = readPngHeader(layer.png)
+          if (
+            !header ||
+            header.width !== size.width ||
+            header.height !== size.height ||
+            !isValidTexturePng(layer.png)
+          )
+            throw new AppErrorException(TextureErrorCode.invalidPng)
+        }
+      }
+      if (layers !== undefined) {
+        await assertInsidePack(location.folder, layersAbs, `${LAYERS_DIR}/${path}.json`)
+      }
       const vanillaPng = await readOptional(vanillaFile(location, path))
       // Identical to vanilla: the pack keeps only changed files, so the copy is removed instead.
       const after = vanillaPng && sameBytes(vanillaPng, png) ? null : png
@@ -179,6 +252,7 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
         label: { key: 'save', params: { name: textureName(path) } },
         changes
       })
+      if (layers !== undefined) await writeOrDelete(layersAbs, layers ? encodeLayers(layers) : null)
       return freshEntry(location, path)
     },
 
@@ -217,6 +291,8 @@ export function createTextureEditService(deps: TextureEditServiceDeps): TextureE
         label: { key: 'revert', params: { name: textureName(path) } },
         changes
       })
+      // The editor layers described the pack's copy, which is gone.
+      await writeOrDelete(layersFile(location, path), null)
       return freshEntry(location, path)
     }
   }

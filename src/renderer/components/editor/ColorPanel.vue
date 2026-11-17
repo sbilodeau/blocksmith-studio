@@ -13,7 +13,8 @@ const { t } = useI18n()
 
 const palette = computed(() => {
   void editor.value.revision
-  const img = editor.value.image
+  // With layers, the colors of what is shown (all visible layers).
+  const img = editor.value.view
   return img ? extractPalette(img, { max: 64 }).map((e) => toHex(e.color)) : []
 })
 
@@ -77,7 +78,13 @@ function swatchStyle(hex: string): Record<string, string> {
       </div>
       <n-tooltip>
         <template #trigger>
-          <n-button quaternary size="small" data-testid="swap-colors" @click="editor.swapColors()">
+          <n-button
+            quaternary
+            size="small"
+            :aria-label="t('editor.swapColors')"
+            data-testid="swap-colors"
+            @click="editor.swapColors()"
+          >
             <editor-icon name="swap" />
           </n-button>
         </template>
@@ -95,7 +102,13 @@ function swatchStyle(hex: string): Record<string, string> {
       <n-text depth="3" class="label">{{
         t('editor.tolerance', { value: editor.bucketTolerance })
       }}</n-text>
-      <n-slider v-model:value="editor.bucketTolerance" :min="0" :max="128" :step="1" />
+      <n-slider
+        v-model:value="editor.bucketTolerance"
+        :min="0"
+        :max="128"
+        :step="1"
+        :aria-label="t('editor.tolerance', { value: editor.bucketTolerance })"
+      />
       <n-checkbox v-model:checked="editor.bucketContiguous" size="small">{{
         t('editor.contiguous')
       }}</n-checkbox>

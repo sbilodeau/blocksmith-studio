@@ -61,6 +61,7 @@ const COMMON_TEXTURES = [
   [`${T}item/stick.png`, 16, 16],
   [`${T}entity/zombie/zombie.png`, 64, 64],
   [`${T}entity/chest/normal.png`, 64, 64],
+  [`${T}entity/experience/experience_orb.png`, 64, 64],
   [`${T}gui/sprites/hud/heart/full.png`, 9, 9],
   [`${T}gui/title/background/panorama_0.png`, 32, 32],
   [`${T}particle/flame.png`, 8, 8],

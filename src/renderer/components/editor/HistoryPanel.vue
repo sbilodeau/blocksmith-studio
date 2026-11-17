@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NEmpty, NScrollbar, NSpace, NText } from 'naive-ui'
+import { NButton, NEmpty, NSpace, NText } from 'naive-ui'
 import { useEditorStore } from '../../stores/editor'
 import { useErrorMessage } from '../../composables/useErrorMessage'
 
@@ -42,7 +42,12 @@ onMounted(() => {
         </n-button>
       </n-space>
     </n-space>
-    <n-scrollbar style="max-height: 140px">
+    <div
+      class="scroll"
+      style="max-height: 140px"
+      tabindex="0"
+      :aria-label="t('editor.unsavedEdits')"
+    >
       <ol class="list" data-testid="local-history">
         <li v-for="(edit, i) in [...editor.undoStack].reverse()" :key="`u${i}`">
           {{ t(`editor.edit.${edit.label}`) }}
@@ -54,7 +59,7 @@ onMounted(() => {
       <n-text v-if="!editor.undoStack.length && !editor.redoStack.length" depth="3" class="empty">
         {{ t('editor.noEdits') }}
       </n-text>
-    </n-scrollbar>
+    </div>
 
     <n-space justify="space-between" align="center" class="saved-head">
       <n-text strong class="title">{{ t('editor.savedHistory') }}</n-text>
@@ -77,7 +82,12 @@ onMounted(() => {
         </n-button>
       </n-space>
     </n-space>
-    <n-scrollbar style="max-height: 160px">
+    <div
+      class="scroll"
+      style="max-height: 160px"
+      tabindex="0"
+      :aria-label="t('editor.savedHistory')"
+    >
       <n-empty
         v-if="!editor.packHistory?.entries.length"
         size="small"
@@ -93,11 +103,19 @@ onMounted(() => {
           <n-text depth="3" class="when">{{ d(new Date(entry.at), 'time') }}</n-text>
         </li>
       </ol>
-    </n-scrollbar>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.scroll {
+  overflow-y: auto;
+  border-radius: 4px;
+}
+.scroll:focus-visible {
+  outline: 2px solid #13904f;
+  outline-offset: 1px;
+}
 .history {
   display: flex;
   flex-direction: column;

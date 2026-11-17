@@ -1,0 +1,26 @@
+{
+  "id": "banner",
+  "textureSize": [64, 64],
+  "animation": "none",
+  "textures": [
+    "assets/minecraft/textures/entity/banner_base.png",
+    "assets/minecraft/textures/entity/banner/*.png"
+  ],
+  "parts": [
+    {
+      "name": "flag",
+      "pivot": [0, 44, 0],
+      "boxes": [{ "origin": [-10, 4, 1], "size": [20, 40, 1], "uv": [0, 0] }]
+    },
+    {
+      "name": "pole",
+      "pivot": [0, 12, 0],
+      "boxes": [{ "origin": [-1, 0, -1], "size": [2, 42, 2], "uv": [44, 0] }]
+    },
+    {
+      "name": "bar",
+      "pivot": [0, 12, 0],
+      "boxes": [{ "origin": [-10, 42, -1], "size": [20, 2, 2], "uv": [0, 42] }]
+    }
+  ]
+}

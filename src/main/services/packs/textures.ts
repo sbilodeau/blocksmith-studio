@@ -69,6 +69,9 @@ interface CachedIndex {
 export class TextureIndexer {
   private readonly cache = new Map<string, CachedIndex>()
   private readonly vanillaTextures = new WeakMap<VanillaIndex, VanillaIndexEntry[]>()
+  private readonly pending = new Map<string, Promise<TextureEntry[]>>()
+  /** Bumped by `forget`, so a scan that started before it does not cache its (possibly stale) result. */
+  private epoch = 0
 
   constructor(
     private readonly vanilla: VanillaStore,
@@ -82,10 +85,16 @@ export class TextureIndexer {
   }
 
   forget(packId?: string): void {
-    if (packId === undefined) this.cache.clear()
-    else {
-      this.cache.delete(packId)
-      this.cache.delete(`${packId}:catalog`)
+    // A scan already running may have read files before the change: later calls start a new one.
+    this.epoch++
+    if (packId === undefined) {
+      this.cache.clear()
+      this.pending.clear()
+    } else {
+      for (const key of [packId, `${packId}:catalog`]) {
+        this.cache.delete(key)
+        this.pending.delete(key)
+      }
     }
   }
 
@@ -111,8 +120,25 @@ export class TextureIndexer {
     location: PackLocation,
     options: { catalog?: boolean } = {}
   ): Promise<TextureEntry[]> {
-    const index = await this.vanillaIndexFor(location, options.catalog === true)
+    // Concurrent calls for the same list (a pack tab asks for pack.get, pack.textures and pack.categories at
+    // once) share one scan instead of each reading the pack.
     const key = options.catalog ? `${location.id}:catalog` : location.id
+    const running = this.pending.get(key)
+    if (running) return running
+    const promise = this.load(location, key, options.catalog === true).finally(() => {
+      if (this.pending.get(key) === promise) this.pending.delete(key)
+    })
+    this.pending.set(key, promise)
+    return promise
+  }
+
+  private async load(
+    location: PackLocation,
+    key: string,
+    catalog: boolean
+  ): Promise<TextureEntry[]> {
+    const epoch = this.epoch
+    const index = await this.vanillaIndexFor(location, catalog)
     const files = await scanPackTextures(location.folder)
     const signature =
       `${index ? `${index.versionId}@${index.createdAt}` : '-'}\n` +
@@ -121,7 +147,7 @@ export class TextureIndexer {
     if (hit && hit.signature === signature) return hit.entries
 
     const entries = await this.build(location, index, files)
-    this.cache.set(key, { signature, entries })
+    if (epoch === this.epoch) this.cache.set(key, { signature, entries })
     return entries
   }
 
@@ -184,7 +210,17 @@ export class TextureIndexer {
 
     const pngs = files.filter((f) => f.path.endsWith('.png'))
     const metas = new Map(files.filter((f) => f.path.endsWith('.mcmeta')).map((f) => [f.path, f]))
-    const infos = await mapLimit(pngs, 32, (f) => this.files.get(f))
+    // Only a file the same size as its vanilla counterpart needs a full read and hash to get its status; any
+    // other one is 'added' or 'modified' from its header alone (huge high-resolution packs open much faster).
+    const infos = await mapLimit(pngs, 32, async (f) => {
+      const v = index?.entries[f.path]
+      if (v && v.size === f.size) {
+        const info = await this.files.get(f)
+        return { ...info, version: info.sha256, status: computeStatus(info.sha256, v.sha256) }
+      }
+      const header = await this.files.pngHeader(f)
+      return { ...header, status: v ? 'modified' : ('added' as TextureStatus) }
+    })
 
     pngs.forEach((file, i) => {
       const info = infos[i]
@@ -194,12 +230,12 @@ export class TextureIndexer {
       const animated = v?.animated ?? false
       // Animated in vanilla but no pack .mcmeta: assume vertical strip of square frames.
       let frameCount = animated && width > 0 ? Math.max(1, Math.floor(height / width)) : undefined
-      if (animated && v?.sha256 === info.sha256) frameCount = v.frameCount ?? frameCount
+      if (animated && v && info.status === 'vanilla') frameCount = v.frameCount ?? frameCount
       const e = this.entry(
         packId,
         file.path,
-        { width, height, animated, frameCount, status: computeStatus(info.sha256, v?.sha256) },
-        info.sha256
+        { width, height, animated, frameCount, status: info.status },
+        info.version
       )
       if (e) byPath.set(file.path, e)
     })
@@ -238,7 +274,8 @@ export function summarizeCategories(
     const icon = list.find((e) => e.path === rule.icon) ?? list[0]
     summaries.push({
       id: rule.id,
-      i18nKey: rule.i18nKey,
+      ...(rule.i18nKey ? { i18nKey: rule.i18nKey } : {}),
+      ...(rule.label ? { label: rule.label } : {}),
       count: list.length,
       changedCount: list.filter((e) => e.status !== 'vanilla').length,
       iconUrl: icon.url

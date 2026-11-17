@@ -1,6 +1,14 @@
 {
   "schemaVersion": 1,
-  "description": "Which model layer of the Minecraft jar each entity texture is drawn on (names only, no geometry). Read by the 3D preview with the models extracted from the user's jar.",
+  "description": "Which model layer of the Minecraft jar each entity texture is drawn on (names only, no geometry). Read by the 3D preview with the models extracted from the user's jar. \"upright\" lists block entity layers Minecraft draws without the entity flip: the preview turns them the right way up.",
+  "upright": [
+    "bell#main",
+    "chest#main",
+    "decorated_pot_base#main",
+    "decorated_pot_sides#main",
+    "double_chest_left#main",
+    "double_chest_right#main"
+  ],
   "entries": [
     { "textures": ["assets/minecraft/textures/entity/allay/*.png"], "layer": "allay#main" },
     {
@@ -324,6 +332,10 @@
     {
       "textures": ["assets/minecraft/textures/entity/equipment/horse_saddle/*.png"],
       "layer": "horse#saddle"
+    },
+    {
+      "textures": ["assets/minecraft/textures/entity/equipment/humanoid_baby/*.png"],
+      "layer": "zombie_baby#chestplate"
     },
     {
       "textures": ["assets/minecraft/textures/entity/equipment/llama_body/*_baby.png"],

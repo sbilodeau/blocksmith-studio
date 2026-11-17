@@ -69,6 +69,7 @@ onMounted(() => {
       >
         <n-switch
           :value="settings.settings.allowMojangDownload"
+          :aria-label="t('vanilla.allowDownload')"
           data-testid="settings-mojang-consent"
           @update:value="(v: boolean) => settings.update({ allowMojangDownload: v })"
         />

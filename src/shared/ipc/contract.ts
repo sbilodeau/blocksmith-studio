@@ -7,6 +7,7 @@ import {
   CreatePackInputSchema,
   ExportPackTypeSchema,
   PackKindSchema,
+  type CategoryMappingState,
   type CategorySummary,
   type ExportReport,
   type ImportReport,
@@ -16,6 +17,7 @@ import {
   type TextureEntry
 } from '../model/pack'
 import type { JobProgress } from '../model/jobs'
+import { CategoryRuleSchema, MAX_CATEGORIES, type CategoryRule } from '../categories/engine'
 import {
   BulkApplyInputSchema,
   BulkPreviewInputSchema,
@@ -24,6 +26,13 @@ import {
   type BulkPreview
 } from '../model/bulk'
 import type { HistoryState, TextureData } from '../model/history'
+import { TextureLayersSchema } from '../model/layers'
+import {
+  PopoutInputSchema,
+  PopoutStateSchema,
+  type PopoutInput,
+  type PopoutState
+} from '../model/popout'
 import {
   MAX_DATA_FILE_BYTES,
   type DataEntry,
@@ -104,6 +113,8 @@ const DataRef = PackRef.extend({ path: DataPathSchema }).strict()
 const DataText = z.string().max(MAX_DATA_FILE_BYTES)
 const MAX_PNG_BYTES = 16 * 1024 * 1024
 const VersionId = z.string().regex(/^[0-9][0-9a-z.-]{0,31}$/)
+/** A category rule list from the editor (size-bounded here; validated in depth by main). */
+const CategoryRulesInput = z.array(CategoryRuleSchema).max(MAX_CATEGORIES)
 
 /** Runtime input validation for every invoke channel. Main validates each payload against this. */
 export const inputSchemas = {
@@ -149,6 +160,12 @@ export const inputSchemas = {
   'pack.upgrade': PackRef.extend({ targetVersion: VersionId }).strict(),
   'pack.doctor': PackRef,
   'pack.setKind': PackRef.extend({ kind: PackKindSchema }).strict(),
+  'categories.get': NoInput,
+  /** Globs, ids and labels are checked again in main (categories.* errors). */
+  'categories.save': z.object({ rules: CategoryRulesInput }).strict(),
+  'categories.reset': NoInput,
+  'pack.categoryOverrides': PackRef,
+  'pack.setCategoryOverrides': PackRef.extend({ overrides: CategoryRulesInput }).strict(),
   'data.list': PackRef,
   'data.read': DataRef,
   'data.save': DataRef.extend({ text: DataText }).strict(),
@@ -162,7 +179,9 @@ export const inputSchemas = {
       .string()
       .max(64 * 1024)
       .nullable()
-      .optional()
+      .optional(),
+    /** Editor layers to keep with the PNG (null removes them; missing leaves them as they are). */
+    layers: TextureLayersSchema.nullable().optional()
   }).strict(),
   'texture.revert': TextureRef,
   'texture.importGif': z
@@ -175,6 +194,13 @@ export const inputSchemas = {
   'history.undo': PackRef,
   'history.redo': PackRef,
   'texture.preview': TextureRef,
+  /** Opens (or focuses) the pop-out 3D preview of a pack tab; the calling window owns it. */
+  'preview.popout.open': PackRef.extend({ title: z.string().max(120) }).strict(),
+  'preview.popout.close': PackRef,
+  /** Editor window -> its pop-out. */
+  'preview.popout.push': PackRef.extend({ state: PopoutStateSchema }).strict(),
+  /** Pop-out -> the editor window that opened it. */
+  'preview.popout.input': PackRef.extend({ input: PopoutInputSchema }).strict(),
   'ai.providers.list': NoInput,
   'ai.providers.save': ProviderConfigSchema,
   'ai.providers.delete': z.object({ providerId: z.string().min(1).max(40) }).strict(),
@@ -325,6 +351,16 @@ export interface InvokeOutputs {
   'pack.doctor': DoctorReport
   /** Resource pack, data pack or both: rewrites the folder's pack.mcmeta format (files are kept). */
   'pack.setKind': PackSummary
+  /** The "All packs" category mapping (user copy or defaults). */
+  'categories.get': CategoryMappingState
+  /** Saves the whole "All packs" mapping; every open pack tab reloads ('packs.changed'). */
+  'categories.save': CategoryMappingState
+  /** Back to the default mapping (removes userData/categories.json). */
+  'categories.reset': CategoryMappingState
+  /** The pack's own category rules (project.json categoryOverrides). */
+  'pack.categoryOverrides': CategoryRule[]
+  /** Saves the pack's category rules (empty list removes them); the tab reloads ('packs.changed'). */
+  'pack.setCategoryOverrides': CategoryRule[]
   /** The pack's data files plus vanilla's (copy-on-write), with ids for completion and warnings. */
   'data.list': DataList
   'data.read': DataFileData
@@ -349,6 +385,11 @@ export interface InvokeOutputs {
   'history.redo': HistoryState
   /** How to show the texture in 3D: block model, item sprite, entity geometry or flat fallback. */
   'texture.preview': PreviewModel
+  'preview.popout.open': void
+  'preview.popout.close': void
+  /** False when the pack has no pop-out open by this window (the caller stops pushing). */
+  'preview.popout.push': boolean
+  'preview.popout.input': boolean
   'ai.providers.list': ProviderStatus[]
   'ai.providers.save': ProviderStatus[]
   'ai.providers.delete': ProviderStatus[]
@@ -405,6 +446,12 @@ export interface EventPayloads {
   'packs.changed': { packId?: string }
   'ai.event': AgentEvent
   'ai.eval.progress': EvalProgress
+  /** To a pop-out preview: the state of its editor. */
+  'preview.popout.state': { packId: string; state: PopoutState }
+  /** To the editor window: input from its pop-out preview. */
+  'preview.popout.input': { packId: string; input: PopoutInput }
+  /** To the editor window: the pop-out of this pack was closed. */
+  'preview.popout.closed': { packId: string }
 }
 
 export type EventPayload<E extends EventChannel> = EventPayloads[E]

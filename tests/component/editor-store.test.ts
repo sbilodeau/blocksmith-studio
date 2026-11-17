@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { createImage, encodePng, getPixel, setPixel } from '@shared/image'
+import { createImage, decodePng, encodePng, getPixel, setPixel, type Rgba } from '@shared/image'
+import type { TextureLayers } from '@shared/model/layers'
 import { useEditorStore } from '@renderer/stores/editor'
 import { texture } from './fixtures'
 
@@ -263,5 +264,224 @@ describe('editor store: animated textures', () => {
       frames: [0, { index: 1, time: 6 }],
       height: 6
     })
+  })
+})
+
+describe('editor store: layers', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  /** 2x2 red texture (pack copy), with the given saved layers. */
+  async function openLayered(layers: TextureLayers | null = null): Promise<{
+    editor: ReturnType<typeof useEditorStore>
+    calls: Array<[string, unknown]>
+  }> {
+    const png = encodePng(createImage(2, 2, [...RED]))
+    const calls: Array<[string, unknown]> = []
+    window.blocksmith.invoke = (async (channel: string, payload: unknown) => {
+      calls.push([channel, payload])
+      if (channel === 'texture.read') {
+        return {
+          ok: true,
+          value: {
+            path: 'p',
+            png,
+            origin: 'pack',
+            vanillaPng: null,
+            mcmeta: null,
+            mcmetaOrigin: 'none',
+            layers
+          }
+        }
+      }
+      if (channel === 'texture.save') {
+        return {
+          ok: true,
+          value: texture('assets/minecraft/textures/block/stone.png', 'added', [])
+        }
+      }
+      return { ok: true, value: { entries: [], canUndo: false, canRedo: false } }
+    }) as typeof window.blocksmith.invoke
+    const editor = useEditorStore('fire')
+    await editor.open(texture('assets/minecraft/textures/block/stone.png', 'added', ['blocks']))
+    return { editor, calls }
+  }
+
+  function paint(editor: ReturnType<typeof useEditorStore>, x: number, y: number, c: Rgba): void {
+    const before = editor.snapshot()!
+    setPixel(editor.image!, x, y, c)
+    editor.commit(before, 'draw')
+  }
+
+  it('adds a layer over the texture, paints into it and shows the composite', async () => {
+    const { editor } = await openLayered()
+    expect(editor.layers).toBeNull()
+    editor.addLayer('Layer 2', 'Texture')
+    expect(editor.layers!.map((l) => l.name)).toEqual(['Texture', 'Layer 2'])
+    expect(editor.activeLayer).toBe(1)
+    expect(getPixel(editor.image!, 0, 0)).toEqual([0, 0, 0, 0])
+    expect(editor.dirty).toBe(true)
+
+    paint(editor, 0, 0, BLUE)
+    expect(getPixel(editor.view!, 0, 0)).toEqual(BLUE)
+    expect(getPixel(editor.view!, 1, 0)).toEqual(RED)
+    expect(getPixel(editor.strip!, 0, 0)).toEqual(BLUE)
+    expect(getPixel(editor.layers![0]!.image, 0, 0)).toEqual(RED)
+
+    // Undo of the stroke returns to its layer even after another layer was selected.
+    editor.selectLayer(0)
+    editor.undo()
+    expect(editor.activeLayer).toBe(1)
+    expect(getPixel(editor.view!, 0, 0)).toEqual(RED)
+    editor.undo()
+    expect(editor.layers).toBeNull()
+    expect(editor.dirty).toBe(false)
+  })
+
+  it('hides, fades (one undo step per drag), moves, merges and flattens layers', async () => {
+    const { editor } = await openLayered()
+    editor.addLayer('Top', 'Texture')
+    paint(editor, 0, 0, BLUE)
+    editor.setLayerVisible(1, false)
+    expect(getPixel(editor.view!, 0, 0)).toEqual(RED)
+    editor.setLayerVisible(1, true)
+
+    editor.setLayerOpacity(1, 80)
+    editor.setLayerOpacity(1, 50)
+    expect(editor.undoStack.at(-1)!.label).toBe('layerOpacity')
+    expect(editor.undoStack.filter((e) => e.label === 'layerOpacity')).toHaveLength(1)
+    expect(getPixel(editor.view!, 0, 0)).toEqual([127, 0, 128, 255])
+
+    editor.moveLayer(-1)
+    expect(editor.layers!.map((l) => l.name)).toEqual(['Top', 'Texture'])
+    expect(getPixel(editor.view!, 0, 0)).toEqual(RED)
+    editor.undo()
+    expect(editor.layers!.map((l) => l.name)).toEqual(['Texture', 'Top'])
+
+    editor.renameLayer(1, '  Flames ')
+    expect(editor.layers![1]!.name).toBe('Flames')
+    editor.mergeDown()
+    expect(editor.layers).toHaveLength(1)
+    expect(editor.layers![0]!.name).toBe('Texture')
+    expect(getPixel(editor.layers![0]!.image, 0, 0)).toEqual([127, 0, 128, 255])
+
+    editor.undo()
+    editor.flattenLayers()
+    expect(editor.layers).toBeNull()
+    expect(getPixel(editor.image!, 0, 0)).toEqual([127, 0, 128, 255])
+    // Rotating a non-square layer is refused; this 2x2 one turns.
+    editor.undo()
+    editor.rotate('clockwise')
+    expect(editor.undoStack.at(-1)!.label).toBe('rotateCw')
+  })
+
+  it('saves the composite with its layers and reloads them; stale layers are not loaded', async () => {
+    const { editor, calls } = await openLayered()
+    editor.addLayer('Top', 'Texture')
+    paint(editor, 1, 1, BLUE)
+    await editor.save()
+    const save = calls.find(([c]) => c === 'texture.save')![1] as {
+      png: Uint8Array
+      layers: TextureLayers
+    }
+    expect(getPixel(decodePng(save.png), 1, 1)).toEqual(BLUE)
+    expect(save.layers.active).toBe(1)
+    expect(save.layers.items.map((l) => [l.name, l.visible, l.opacity])).toEqual([
+      ['Texture', true, 100],
+      ['Top', true, 100]
+    ])
+    expect(getPixel(decodePng(save.layers.items[1]!.png), 1, 1)).toEqual(BLUE)
+    expect(editor.dirty).toBe(false)
+
+    // The texture is plain red: layers whose composite is red load, others are stale.
+    const red = encodePng(createImage(2, 2, [...RED]))
+    const empty = encodePng(createImage(2, 2))
+    const matching: TextureLayers = {
+      active: 0,
+      items: [
+        { name: 'A', visible: true, opacity: 100, png: red },
+        { name: 'B', visible: true, opacity: 100, png: empty }
+      ]
+    }
+    const reopened = await openLayered(matching)
+    expect(reopened.editor.layers!.map((l) => l.name)).toEqual(['A', 'B'])
+    expect(reopened.editor.dirty).toBe(false)
+    expect(reopened.editor.layersStale).toBe(false)
+
+    setActivePinia(createPinia())
+    const stale = await openLayered({
+      active: 0,
+      items: [{ name: 'A', visible: true, opacity: 100, png: empty }]
+    })
+    expect(stale.editor.layers).toBeNull()
+    expect(stale.editor.layersStale).toBe(true)
+    // Saving without layers removes the stale file.
+    paint(stale.editor, 0, 0, BLUE)
+    await stale.editor.save()
+    const staleSave = stale.calls.find(([c]) => c === 'texture.save')![1] as { layers: unknown }
+    expect(staleSave.layers).toBeNull()
+  })
+
+  it('puts AI changes into a new top layer, or flattens when they erase pixels', async () => {
+    const { editor } = await openLayered()
+    editor.addLayer('Top', 'Texture')
+    const result = createImage(2, 2, [...RED])
+    setPixel(result, 0, 1, BLUE)
+    editor.applyAiResult(encodePng(result), 'AI')
+    expect(editor.layers!.map((l) => l.name)).toEqual(['Texture', 'Top', 'AI'])
+    expect(getPixel(editor.layers![2]!.image, 0, 1)).toEqual(BLUE)
+    expect(getPixel(editor.layers![2]!.image, 0, 0)).toEqual([0, 0, 0, 0])
+    expect(getPixel(editor.view!, 0, 1)).toEqual(BLUE)
+    editor.undo()
+    expect(editor.layers).toHaveLength(2)
+
+    setPixel(result, 1, 1, [0, 0, 0, 0])
+    editor.applyAiResult(encodePng(result), 'AI')
+    expect(editor.layers).toBeNull()
+    expect(getPixel(editor.image!, 1, 1)).toEqual([0, 0, 0, 0])
+  })
+})
+
+describe('editor store: painting from the 3D view', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('paints strokes with the current tool and mirror, picks colors and fills', async () => {
+    const editor = await openEditor()
+    editor.primary = BLUE
+    editor.tool = 'pencil'
+    editor.paintStart(0, 0)
+    editor.paintMove(0, 1, true)
+    editor.paintEnd()
+    expect(getPixel(editor.image!, 0, 0)).toEqual(BLUE)
+    expect(getPixel(editor.image!, 0, 1)).toEqual(BLUE)
+    expect(editor.undoStack.map((e) => e.label)).toEqual(['draw'])
+
+    // A jump (another face) does not draw a line between the two pixels.
+    editor.tool = 'eraser'
+    editor.mirrorX = true
+    editor.paintStart(1, 0)
+    editor.paintMove(1, 1, false)
+    editor.paintEnd()
+    expect(getPixel(editor.image!, 1, 0)).toEqual([0, 0, 0, 0])
+    expect(getPixel(editor.image!, 2, 1)).toEqual([0, 0, 0, 0])
+    expect(editor.undoStack.at(-1)!.label).toBe('erase')
+    editor.mirrorX = false
+
+    editor.tool = 'eyedropper'
+    editor.paintStart(3, 0)
+    expect(editor.primary).toEqual(BLUE)
+    editor.paintStart(0, 0, true)
+    expect(editor.secondary).toEqual(BLUE)
+
+    editor.tool = 'bucket'
+    editor.primary = RED
+    editor.paintStart(3, 1)
+    expect(getPixel(editor.image!, 3, 0)).toEqual(RED)
+    expect(editor.undoStack.at(-1)!.label).toBe('fill')
+
+    // Outside the image: nothing happens.
+    const count = editor.undoStack.length
+    editor.paintStart(9, 9)
+    editor.paintEnd()
+    expect(editor.undoStack).toHaveLength(count)
   })
 })

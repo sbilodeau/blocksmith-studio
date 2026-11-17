@@ -164,6 +164,11 @@
       "tooLarge": "Le fichier est trop volumineux.",
       "exists": "« {path} » existe déjà.",
       "notInPack": "Le pack n'a pas de fichier « {path} »."
+    },
+    "categories": {
+      "invalidGlob": "Le motif « {glob} » de la catégorie {category} n'est pas valide.",
+      "duplicateId": "Deux catégories ont l'identifiant {id}.",
+      "invalidRule": "La catégorie {category} n'est pas valide."
     }
   },
   "common": {
@@ -259,7 +264,8 @@
     "selected": "aucune texture sélectionnée | 1 texture sélectionnée | {count} textures sélectionnées",
     "selectAll": "Tout sélectionner",
     "clearSelection": "Effacer",
-    "empty": "Aucune texture ne correspond."
+    "empty": "Aucune texture ne correspond.",
+    "label": "Textures"
   },
   "export": {
     "open": "Exporter",
@@ -429,7 +435,16 @@
       "frameTiming": "Durées de l’animation",
       "animate": "Animation",
       "unanimate": "Retrait de l’animation",
-      "importGif": "Import d’un GIF"
+      "importGif": "Import d’un GIF",
+      "layerAdd": "Ajout d’un calque",
+      "layerDuplicate": "Duplication d’un calque",
+      "layerDelete": "Suppression d’un calque",
+      "layerMove": "Déplacement d’un calque",
+      "layerVisibility": "Visibilité d’un calque",
+      "layerOpacity": "Opacité d’un calque",
+      "layerRename": "Renommage d’un calque",
+      "layerMerge": "Fusion de calques",
+      "layerFlatten": "Aplatissement des calques"
     },
     "shortcut": "{label} ({key})",
     "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer.",
@@ -515,7 +530,14 @@
     },
     "noEntityModel": "Pas encore de modèle 3D pour cette texture d'entité : elle est affichée à plat, comme dans l'éditeur.",
     "fromGame": "modèle du jeu",
-    "fromGameHint": "Modèle exact lu dans vos fichiers Minecraft pour cette version."
+    "fromGameHint": "Modèle exact lu dans vos fichiers Minecraft pour cette version.",
+    "paint": "Peindre",
+    "paintHint": "Peignez sur le modèle avec l’outil actif (crayon, gomme, pot de peinture ou pipette ; les autres outils peignent comme le crayon). Maj utilise la couleur secondaire. Glissez avec le bouton droit pour tourner, la molette zoome.",
+    "popOut": "Détacher",
+    "popOutHint": "Ouvrir l’aperçu 3D dans sa propre fenêtre (par exemple sur un deuxième écran)",
+    "popoutTitle": "{pack} - aperçu 3D",
+    "popoutEmpty": "Ouvrez une texture dans l’éditeur pour la voir ici.",
+    "dockHint": "Remettre l’aperçu 3D dans l’éditeur (ferme sa fenêtre)"
   },
   "ai": {
     "title": "IA",
@@ -724,7 +746,9 @@
     "creationNoTextures": "Aucune texture trouvée pour ce pack. Préparez les textures Minecraft de sa version dans les Paramètres.",
     "creationEmptyBase": "Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide (1 texture pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie.",
     "creationDataContext": "Tout le pack de données : recettes, tables de butin, tags et progrès",
-    "emptyCreationData": "Décrivez ce que le pack de données doit faire (« le minerai de diamant donne deux diamants », « une recette de selle »). L'IA propose les fichiers ; vous vérifiez chacun avant tout changement."
+    "emptyCreationData": "Décrivez ce que le pack de données doit faire (« le minerai de diamant donne deux diamants », « une recette de selle »). L'IA propose les fichiers ; vous vérifiez chacun avant tout changement.",
+    "providerEnabled": "{name} : activé",
+    "messages": "Conversation"
   },
   "brief": {
     "open": "Brief de style",
@@ -1045,5 +1069,96 @@
       "invalidEscapeCharacter": "échappement invalide (\\\\)",
       "invalidCharacter": "caractère invalide dans le texte"
     }
+  },
+  "layers": {
+    "title": "Calques",
+    "hint": "Ajoutez un calque pour peindre par-dessus la texture sans la modifier. Le pack garde l’image combinée.",
+    "animated": "Les calques ne sont pas disponibles pour les textures animées.",
+    "stale": "Les calques enregistrés ne correspondent plus à cette texture (elle a changé depuis), ils n’ont donc pas été chargés. Enregistrer les supprime.",
+    "add": "Ajouter un calque",
+    "duplicate": "Dupliquer le calque",
+    "delete": "Supprimer le calque",
+    "up": "Monter le calque",
+    "down": "Descendre le calque",
+    "mergeDown": "Fusionner avec le calque du dessous",
+    "flatten": "Aplatir",
+    "flattenHint": "Aplatir : combiner les calques visibles en une seule image et supprimer les calques",
+    "rename": "Renommer le calque",
+    "show": "Afficher {name}",
+    "hide": "Masquer {name}",
+    "opacity": "Opacité",
+    "defaultName": "Calque {n}",
+    "baseName": "Texture",
+    "copyName": "{name} copie",
+    "aiName": "IA"
+  },
+  "categoriesEditor": {
+    "open": "Modifier les catégories",
+    "title": "Catégories de textures",
+    "tabs": {
+      "all": "Tous les packs",
+      "pack": "Ce pack"
+    },
+    "allHint": "S'applique à tous les packs. Vous pouvez modifier ou masquer les catégories intégrées, et ajouter ou supprimer les vôtres.",
+    "packHint": "Règles propres à ce pack, appliquées par-dessus « Tous les packs » : remplacez une catégorie ou ajoutez les vôtres.",
+    "packEmpty": "Ce pack utilise les catégories de « Tous les packs » telles quelles.",
+    "builtin": "Intégrée",
+    "custom": "Personnalisée",
+    "hidden": "Masquée",
+    "replaces": "Remplace « Tous les packs »",
+    "packOnly": "Ce pack seulement",
+    "matches": "aucune texture | 1 texture | {count} textures",
+    "countsHint": "Les nombres portent sur les textures de ce pack.",
+    "select": "Sélectionnez une catégorie pour la modifier.",
+    "name": "Nom",
+    "id": "Identifiant : {id}",
+    "icon": "Texture d'icône",
+    "iconPlaceholder": "assets/minecraft/textures/block/stone.png",
+    "order": "Ordre",
+    "hide": "Masquer cette catégorie",
+    "include": "Inclure : textures qui correspondent à l'un de ces motifs",
+    "exclude": "Exclure : retirées même si un motif d'inclusion correspond",
+    "addPattern": "Ajouter un motif",
+    "removePattern": "Supprimer le motif",
+    "remove": "Retirer",
+    "patternPlaceholder": "item/*_sword.png",
+    "globHelp": "Les motifs portent sur le chemin sous textures/, par exemple block/stone.png. * = tout caractère sauf /, ** = n'importe quels dossiers, ? = un caractère, {'{'}a,b{'}'} = a ou b.",
+    "otherFixed": "Les textures qui ne correspondent à aucune autre catégorie vont ici. Elle ne peut être ni supprimée ni masquée.",
+    "newName": "Nom de la nouvelle catégorie",
+    "add": "Ajouter une catégorie",
+    "override": "Remplacer une catégorie dans ce pack",
+    "delete": "Supprimer la catégorie",
+    "removeOverride": "Retirer de ce pack",
+    "reset": "Rétablir les valeurs par défaut",
+    "resetConfirm": "Revenir aux catégories par défaut ? Vos modifications de « Tous les packs » seront remplacées à l'enregistrement.",
+    "testPath": "Tester un chemin",
+    "testPlaceholder": "block/stone.png",
+    "testResult": "Catégories :",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saved": "Catégories enregistrées.",
+    "hasIssues": "Corrigez les problèmes signalés avant d'enregistrer.",
+    "issues": {
+      "invalidId": "Identifiant non valide (utilisez a-z, 0-9, _ et -).",
+      "duplicateId": "Une autre catégorie a le même identifiant.",
+      "labelRequired": "Donnez un nom à cette catégorie.",
+      "labelTooLong": "Le nom est trop long.",
+      "fallbackHidden": "La catégorie « Autres » ne peut pas être masquée.",
+      "iconTooLong": "Le chemin de l'icône est trop long.",
+      "tooManyGlobs": "Trop de motifs.",
+      "tooManyCategories": "Trop de catégories."
+    },
+    "globIssues": {
+      "empty": "Motif vide.",
+      "tooLong": "Motif trop long.",
+      "braces": "Accolades {'{'} {'}'} non équilibrées.",
+      "absolute": "Ne commencez pas par / : les motifs portent sur le chemin sous textures/.",
+      "backslash": "Utilisez / entre les dossiers, pas \\.",
+      "invalid": "Ce motif n'est pas valide."
+    }
+  },
+  "a11y": {
+    "decrease": "Diminuer",
+    "increase": "Augmenter"
   }
 }

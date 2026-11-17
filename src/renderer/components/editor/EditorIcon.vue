@@ -24,7 +24,18 @@ export const ICONS = {
   zoomOut: 'M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM20 20l-5.5-5.5M7 10h6',
   fit: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5',
   swap: 'M7 4v12M4 7l3-3 3 3M17 20V8M14 17l3 3 3-3',
-  compare: 'M12 3v18M4 6h6v12H4zM14 6h6v12h-6z'
+  compare: 'M12 3v18M4 6h6v12H4zM14 6h6v12h-6z',
+  plus: 'M12 5v14M5 12h14',
+  duplicate: 'M8 8h11v11H8zM5 16V5h11',
+  trash: 'M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  up: 'M12 19V5M6 11l6-6 6 6',
+  down: 'M12 5v14M6 13l6 6 6-6',
+  merge: 'M7 4v5l5 5 5-5V4M12 14v6',
+  flatten: 'M4 9l8-4 8 4-8 4-8-4zM4 15l8 4 8-4',
+  eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+  eyeOff:
+    'M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.6 6.6C3.8 8.4 2 12 2 12s4 7 10 7a9.6 9.6 0 0 0 4.2-1M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  rename: 'M4 20h4L19 9l-4-4L4 16v4zM13 7l4 4'
 } as const
 </script>
 

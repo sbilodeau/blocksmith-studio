@@ -34,6 +34,12 @@ export const INVOKE_CHANNELS = [
   'pack.upgrade',
   'pack.doctor',
   'pack.setKind',
+  // Category mapping editor (M11): "All packs" mapping and "This pack" rules
+  'categories.get',
+  'categories.save',
+  'categories.reset',
+  'pack.categoryOverrides',
+  'pack.setCategoryOverrides',
   // Data pack files (M10)
   'data.list',
   'data.read',
@@ -49,6 +55,10 @@ export const INVOKE_CHANNELS = [
   'history.undo',
   'history.redo',
   'texture.preview',
+  'preview.popout.open',
+  'preview.popout.close',
+  'preview.popout.push',
+  'preview.popout.input',
   // AI providers, models and agents
   'ai.providers.list',
   'ai.providers.save',
@@ -88,7 +98,10 @@ export const EVENT_CHANNELS = [
   'job.progress',
   'packs.changed',
   'ai.event',
-  'ai.eval.progress'
+  'ai.eval.progress',
+  'preview.popout.state',
+  'preview.popout.input',
+  'preview.popout.closed'
 ] as const
 
 export type InvokeChannel = (typeof INVOKE_CHANNELS)[number]

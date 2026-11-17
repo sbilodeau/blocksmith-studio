@@ -232,11 +232,19 @@ const progress = computed(() => jobs.percent('bulk.preview'))
 
         <div class="params">
           <template v-if="op.kind === 'hue_shift'">
-            <n-slider v-model:value="op.degrees" :min="-180" :max="180" :step="5" class="slider" />
+            <n-slider
+              v-model:value="op.degrees"
+              :min="-180"
+              :max="180"
+              :step="5"
+              class="slider"
+              :aria-label="t(`bulk.op.${op.kind}`)"
+            />
             <n-input-number
               v-model:value="op.degrees"
               :min="-180"
               :max="180"
+              :input-props="{ 'aria-label': t(`bulk.op.${op.kind}`) }"
               size="small"
               class="num-in"
             >
@@ -244,11 +252,19 @@ const progress = computed(() => jobs.percent('bulk.preview'))
             </n-input-number>
           </template>
           <template v-else-if="op.kind === 'saturation' || op.kind === 'brightness'">
-            <n-slider v-model:value="op.percent" :min="-100" :max="100" :step="5" class="slider" />
+            <n-slider
+              v-model:value="op.percent"
+              :min="-100"
+              :max="100"
+              :step="5"
+              class="slider"
+              :aria-label="t(`bulk.op.${op.kind}`)"
+            />
             <n-input-number
               v-model:value="op.percent"
               :min="-100"
               :max="100"
+              :input-props="{ 'aria-label': t(`bulk.op.${op.kind}`) }"
               size="small"
               class="num-in"
             >
