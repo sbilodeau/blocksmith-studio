@@ -40,7 +40,7 @@ export interface CallOutcome {
 }
 
 export interface AgentScope {
-  agent: AgentKind
+  agent: AgentKind | 'explain'
   tools: ToolSpec[]
   /** System prompt, history and the user message. */
   messages: ChatMessage[]

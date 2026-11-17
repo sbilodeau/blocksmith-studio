@@ -258,6 +258,12 @@ export const inputSchemas = {
     })
     .strict(),
   'ai.creation.stopApply': z.object({ proposalId: z.string().min(1).max(64) }).strict(),
+  'ai.data.explain': DataRef.extend({
+    text: DataText,
+    model: ModelRefSchema,
+    language: LanguageSchema,
+    thinking: ReasoningLevelSchema.optional()
+  }).strict(),
   'bulk.preview': BulkPreviewInputSchema,
   'bulk.apply': BulkApplyInputSchema,
   'bulk.discard': z.object({ previewId: z.string().min(1).max(64) }).strict(),
@@ -362,6 +368,7 @@ export interface InvokeOutputs {
   /** Resolves when every accepted step is written (or after Stop); emits job.progress 'ai.plan.apply'. */
   'ai.creation.apply': CreationApplyResult
   'ai.creation.stopApply': void
+  'ai.data.explain': { runId: string }
   /** Computes a manual bulk action (worker thread, emits job.progress). Nothing is written. */
   'bulk.preview': BulkPreview
   /** Writes the ticked textures of a preview as one undoable history entry. */

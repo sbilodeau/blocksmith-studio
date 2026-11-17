@@ -212,6 +212,16 @@ if (!app.requestSingleInstanceLock()) {
         },
         jobs
       },
+      explain: {
+        meta: async (packId) => {
+          const { name, kind, authoringVersion } = await packs.get(packId)
+          return { name, kind, authoringVersion }
+        },
+        vanillaText: (packId, path) => data.vanillaText(packId, path),
+        packText: (packId, path) => data.packText(packId, path),
+        ids: (packId) => data.ids(packId),
+        names: (packId) => data.names(packId)
+      },
       providers: aiProviders,
       getAgentSettings: (agent) => settings.get().ai.agents[agent],
       packs,

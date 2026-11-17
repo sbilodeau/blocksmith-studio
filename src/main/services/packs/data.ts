@@ -45,6 +45,15 @@ export interface DataService {
   ids(packId: string): Promise<DataIds>
   read(packId: string, path: string): Promise<DataFileData>
   /**
+   * Vanilla's file at `path` for the pack's version, whatever the pack's base (Minecraft merges or replaces it even
+   * when the pack started empty); null when vanilla has none. Used by "Explain".
+   */
+  vanillaText(packId: string, path: string): Promise<string | null>
+  /** The pack's own file at `path`; null when the pack does not have it. */
+  packText(packId: string, path: string): Promise<string | null>
+  /** English item and block names of the pack's version ("minecraft:stone" -> "Stone"), from vanilla's en_us.json. */
+  names(packId: string): Promise<Record<string, string>>
+  /**
    * Writes a data file as one history entry. A JSON file equal to vanilla's (formatting aside) is removed from the
    * pack instead: Minecraft uses vanilla's.
    */
@@ -76,7 +85,28 @@ function sameContent(path: string, a: Uint8Array, b: Uint8Array): boolean {
   return x !== undefined && y !== undefined && isDeepStrictEqual(x, y)
 }
 
+/** "item.minecraft.stone_slab" / "block.minecraft.stone" -> "minecraft:stone_slab" / "minecraft:stone". */
+const NAME_KEY_RE = /^(?:item|block)\.minecraft\.([a-z0-9_]+)$/
+
+/** Item and block names of an en_us.json (items win over blocks: "Wheat Seeds" rather than "Wheat Crops"). */
+export function namesFromLang(lang: unknown): Record<string, string> {
+  const names: Record<string, string> = {}
+  if (!lang || typeof lang !== 'object') return names
+  const entries = Object.entries(lang as Record<string, unknown>).sort(([a], [b]) =>
+    a.startsWith('item.') === b.startsWith('item.') ? 0 : a.startsWith('item.') ? -1 : 1
+  )
+  for (const [key, value] of entries) {
+    const m = NAME_KEY_RE.exec(key)
+    if (m && typeof value === 'string' && !names[`minecraft:${m[1]}`]) {
+      names[`minecraft:${m[1]}`] = value
+    }
+  }
+  return names
+}
+
 export function createDataService(deps: DataServiceDeps): DataService {
+  /** Names per Minecraft version (en_us.json is ~1 MB). */
+  const namesCache = new Map<string, Promise<Record<string, string>>>()
   async function requireLocation(packId: string): Promise<PackLocation> {
     const location = await deps.packs.locate(packId)
     if (!location) throw new AppErrorException('packs.notFound', { packId })
@@ -221,6 +251,40 @@ export function createDataService(deps: DataServiceDeps): DataService {
         origin: own ? 'pack' : vanilla ? 'vanilla' : 'none',
         vanillaText: vanilla ? decoder.decode(vanilla) : null
       }
+    },
+
+    async vanillaText(packId, path) {
+      const location = await requireLocation(packId)
+      dataFile(location, path)
+      if (!VANILLA_DATA_RE.test(path)) return null
+      const version = location.project.authoringVersion
+      await deps.vanilla.prepareData(version)
+      const bytes = await readOptional(deps.vanilla.resolveFile(version, path))
+      return bytes ? decoder.decode(bytes) : null
+    },
+
+    async packText(packId, path) {
+      const location = await requireLocation(packId)
+      const bytes = await readOptional(dataFile(location, path))
+      return bytes ? decoder.decode(bytes) : null
+    },
+
+    async names(packId) {
+      const version = (await requireLocation(packId)).project.authoringVersion
+      let names = namesCache.get(version)
+      if (!names) {
+        names = (async () => {
+          const file = deps.vanilla.resolveFile(version, 'assets/minecraft/lang/en_us.json')
+          const bytes = await readOptional(file)
+          return namesFromLang(bytes ? parseJson(bytes) : undefined)
+        })()
+        namesCache.set(version, names)
+        // A version extracted later must not keep an empty map.
+        names
+          .then((n) => Object.keys(n).length === 0 && namesCache.delete(version))
+          .catch(() => namesCache.delete(version))
+      }
+      return names
     },
 
     async save(packId, path, text) {

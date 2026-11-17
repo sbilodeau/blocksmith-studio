@@ -29,7 +29,12 @@ function vanillaWithData(): Record<string, Uint8Array> {
     'assets/minecraft/blockstates/stone.json': json({ variants: {} }),
     [RECIPE]: json(vanillaRecipe),
     [LOOT]: json({ type: 'minecraft:block', pools: [] }),
-    [TAG]: json({ values: ['minecraft:cobblestone'] })
+    [TAG]: json({ values: ['minecraft:cobblestone'] }),
+    'assets/minecraft/lang/en_us.json': json({
+      'block.minecraft.stone': 'Stone',
+      'block.minecraft.stone_slab': 'Stone Slab',
+      'gui.done': 'Done'
+    })
   }
 }
 
@@ -177,6 +182,30 @@ describe('data service', () => {
     await expect(data.save(packId, RECIPE, 'x'.repeat(1024 * 1024 + 1))).rejects.toMatchObject({
       code: 'data.tooLarge'
     })
+  })
+
+  it('reads vanilla and pack texts and English names for explanations', async () => {
+    await put(RECIPE, '{"x":1}')
+    expect(await data.packText(packId, RECIPE)).toBe('{"x":1}')
+    expect(await data.packText(packId, LOOT)).toBeNull()
+    expect(JSON.parse((await data.vanillaText(packId, RECIPE))!)).toEqual(vanillaRecipe)
+    expect(await data.vanillaText(packId, 'data/data/recipe/ruby.json')).toBeNull()
+    await expect(data.vanillaText(packId, 'data/../x.json')).rejects.toMatchObject({
+      code: 'data.invalidPath'
+    })
+    expect(await data.names(packId)).toEqual({
+      'minecraft:stone': 'Stone',
+      'minecraft:stone_slab': 'Stone Slab'
+    })
+    // Minecraft merges or replaces vanilla's file even when the pack started empty.
+    const empty = await packs.create({
+      name: 'Empty',
+      base: 'empty',
+      kind: 'data',
+      authoringVersion: '26.3'
+    })
+    expect((await data.read(empty.id, RECIPE)).vanillaText).toBeNull()
+    expect(await data.vanillaText(empty.id, RECIPE)).not.toBeNull()
   })
 
   it('writes several files as one history entry (AI plans)', async () => {

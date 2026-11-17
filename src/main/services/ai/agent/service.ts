@@ -14,6 +14,7 @@ import {
   type CreationAgentRequest,
   type CreationApplyResult,
   type CreationProposal,
+  type DataExplainRequest,
   type PackMetaPatch,
   type ProposalStep,
   type EditorAgentRequest,
@@ -37,6 +38,8 @@ import { errorOf, frameLayoutOf, runEditorAgent } from './runtime'
 import { replayTargets, runNavigationAgent, type NavigationTexture } from './navigation'
 import type { BulkService } from '../../bulk'
 import { pickSamples, runCreationAgent, type CreationSample } from './creation'
+import { buildExplainMessages, gatherExplainSources, type ExplainDeps } from './explain'
+import { runAgentLoop } from './loop'
 
 /** Largest selection the navigation agent works on. */
 export const MAX_NAVIGATION_TEXTURES = 2000
@@ -85,6 +88,8 @@ export interface EditorAgentServiceDeps {
     }
     jobs?: JobReporter
   }
+  /** "Explain" in the data editor (M10): what the explanation reads about the file and the game. */
+  explain?: ExplainDeps
   /** Default sink for background runs (main forwards it as 'ai.event'). */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -138,6 +143,17 @@ export interface EditorAgentService {
   /** Asks a running applyCreation to stop after the current step. */
   stopCreationApply(proposalId: string): void
   rejectProposal(proposalId: string): Promise<void>
+  /**
+   * Starts an explanation of a data file (one answer, no tools, nothing proposed), streamed as 'ai.event' like the
+   * agents. Stops the pack's previous explanation.
+   */
+  sendExplain(request: DataExplainRequest): Promise<{ runId: string }>
+  runExplain(
+    request: DataExplainRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId?: string
+  ): Promise<void>
   /** Resolves when no background run is active (tests, shutdown). */
   idle(): Promise<void>
 }
@@ -404,6 +420,50 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       runId,
       type: 'done',
       reason: result.reason,
+      ...(result.error ? { error: result.error } : {})
+    })
+  }
+
+  async function runExplain(
+    request: DataExplainRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId = newId()
+  ): Promise<void> {
+    emit({ runId, type: 'started', agent: 'explain', model: request.model })
+    let result: Awaited<ReturnType<typeof runAgentLoop>>
+    try {
+      if (!deps.explain) throw new AppErrorException('ai.agentFailed')
+      const sources = await gatherExplainSources(request, deps.explain)
+      const modelInfo = await deps.providers.getModel(request.model).catch(() => undefined)
+      result = await runAgentLoop(
+        {
+          agent: 'explain',
+          tools: [],
+          messages: buildExplainMessages(sources, request.language),
+          execute: () => ({ ok: false, kind: 'read', summary: '', content: '{}' }),
+          kindOf: () => 'read'
+        },
+        {
+          runId,
+          model: request.model,
+          ...(modelInfo ? { modelInfo } : {}),
+          thinking: request.thinking ?? 'off',
+          maxIterations: 1
+        },
+        { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
+        emit,
+        signal
+      )
+    } catch (err) {
+      emit({ runId, type: 'done', reason: 'error', error: errorOf(err) })
+      return
+    }
+    // One answer: a model that asks for tools anyway still ends here ('budget' would read as an error).
+    emit({
+      runId,
+      type: 'done',
+      reason: result.reason === 'budget' ? 'end' : result.reason,
       ...(result.error ? { error: result.error } : {})
     })
   }
@@ -742,6 +802,18 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     },
 
     run,
+
+    async sendExplain(request) {
+      if (!deps.explain) throw new AppErrorException('ai.agentFailed')
+      if (!(await deps.packs.locate(request.packId))) {
+        throw new AppErrorException('packs.notFound', { packId: request.packId })
+      }
+      return start(`${request.packId}:explain`, (runId, signal) =>
+        runExplain(request, deps.emit, signal, runId)
+      )
+    },
+
+    runExplain,
 
     stop(runId) {
       byRunId.get(runId)?.controller.abort()

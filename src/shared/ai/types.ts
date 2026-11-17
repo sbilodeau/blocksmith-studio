@@ -148,6 +148,19 @@ export interface CreationAgentRequest {
   thinking?: ReasoningLevel
 }
 
+/**
+ * "Explain" in the data editor (PLAN M10): a one-shot model answer, without tools, that describes in plain words what
+ * a data file does in game compared with vanilla's. `text` is the editor's text (unsaved edits included).
+ */
+export interface DataExplainRequest {
+  packId: string
+  path: string
+  text: string
+  model: ModelRef
+  language: Language
+  thinking?: ReasoningLevel
+}
+
 /** A request to the navigation agent about the grid selection. */
 export interface NavigationAgentRequest {
   packId: string
@@ -341,7 +354,7 @@ export interface EvalProgress {
 }
 
 export type AgentEvent =
-  | { runId: string; type: 'started'; agent: AgentKind; model: ModelRef }
+  | { runId: string; type: 'started'; agent: AgentKind | 'explain'; model: ModelRef }
   | { runId: string; type: 'thinking'; delta: string }
   | { runId: string; type: 'text'; delta: string }
   | { runId: string; type: 'tool_call'; call: ToolCall; kind: ToolKind; iteration: number }

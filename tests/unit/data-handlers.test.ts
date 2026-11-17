@@ -25,6 +25,9 @@ describe('registerDataHandlers', () => {
         origin: 'none' as const,
         vanillaText: null
       })),
+      vanillaText: vi.fn(async () => null),
+      packText: vi.fn(async () => null),
+      names: vi.fn(async () => ({})),
       save: vi.fn(async () => ({}) as never),
       create: vi.fn(async () => ({}) as never),
       remove: vi.fn(async () => undefined),
