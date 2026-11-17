@@ -19,8 +19,11 @@ All notable changes to this project are documented here. Versions follow CalVer 
 - 3D models for 42 more entities on Minecraft versions before 26.1 (zombie villager, iron golem, piglins, illagers,
   witch, fox, bee, llama, panda, slimes, phantom, chests, boats, shields, banners and more), and baby armor on 26.x
 - Chests, bells and decorated pots read from the game file are no longer shown upside down
-- Accessibility: every icon button, switch and slider has a name for screen readers, lists can be scrolled from the
-  keyboard, Enter and Space work on focused buttons in the editor, and light theme text and green / blue accents are
+- Faster with huge packs (measured on 12,000 textures, 1 GiB): a pack tab opens in about 0.3 s instead of 2.4 s, the
+  grid only draws the tiles in view and scrolls smoothly, large textures get small thumbnails, selection and search
+  react instantly, and painting a 512 x 512 texture at high zoom stays fluid ([docs/performance.md](docs/performance.md))
+- Accessibility: every icon button, switch and slider has a name for screen readers, the texture grid works with the
+  arrow keys (Shift to extend, Space to toggle, Enter to open), lists can be scrolled from the keyboard, Enter and Space work on focused buttons in the editor, and light theme text and green / blue accents are
   darker for readable contrast
 - Investigation note on Bedrock Edition support ([docs/bedrock.md](docs/bedrock.md))
 

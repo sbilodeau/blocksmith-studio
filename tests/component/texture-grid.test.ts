@@ -113,4 +113,39 @@ describe('TextureGrid (virtual)', () => {
     expect(scroller(w).scrollTop).toBe(12_345)
     expect(tiles(w)[0].dataset['path']).not.toBe(MANY[0].path)
   })
+
+  it('moves a keyboard cursor with the arrows, selects with Shift and Space, and opens with Enter', async () => {
+    const w = mountGrid()
+    await flushPromises()
+    const store = usePackStore('big')
+    const grid = w.find('[data-testid="texture-grid"]')
+    expect(grid.attributes('role')).toBe('listbox')
+    expect(grid.attributes('aria-multiselectable')).toBe('true')
+
+    await grid.trigger('keydown', { key: 'ArrowRight' })
+    expect([...store.selection]).toEqual([MANY[0].path])
+    await grid.trigger('keydown', { key: 'ArrowRight' })
+    expect([...store.selection]).toEqual([MANY[1].path])
+    const active = grid.attributes('aria-activedescendant')!
+    const tile = w.find(`#${active}`)
+    expect(tile.attributes('data-path')).toBe(MANY[1].path)
+    expect(tile.attributes('aria-selected')).toBe('true')
+    expect(tile.attributes('aria-posinset')).toBe('2')
+    expect(tile.attributes('aria-setsize')).toBe('10000')
+
+    await grid.trigger('keydown', { key: 'ArrowRight', shiftKey: true })
+    expect(store.selection.size).toBe(2)
+    await grid.trigger('keydown', { key: 'ArrowRight', ctrlKey: true })
+    expect(store.selection.size).toBe(2)
+    await grid.trigger('keydown', { key: ' ' })
+    expect(store.selection.has(MANY[3].path)).toBe(true)
+
+    // End reaches the last texture, which is rendered once revealed.
+    await grid.trigger('keydown', { key: 'End' })
+    await flushPromises()
+    expect(store.selection.has(MANY[9999].path)).toBe(true)
+    expect(w.find(`#${grid.attributes('aria-activedescendant')}`).exists()).toBe(true)
+    await grid.trigger('keydown', { key: 'Enter' })
+    expect(store.editing).toBe(MANY[9999].path)
+  })
 })

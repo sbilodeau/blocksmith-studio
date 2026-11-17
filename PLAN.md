@@ -954,7 +954,11 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
   a pop-out preview window that main relays to and from the editor window that opened it (docs/preview.md); 42
   more built-in entity definitions (419 of the 743 entity textures of 26.3 versus 174), baby armor mapped to the jar,
   and jar block entities turned upright (docs/entity-models.md); an accessibility pass checked by axe-core in both
-  themes; the Bedrock note (docs/bedrock.md, recommendation: export to `.mcpack` as its own milestone if wanted).
+  themes, with keyboard navigation in the texture grid; a measured performance pass (docs/performance.md: shared
+  texture scans, size-first hashing, a virtual grid, downscaled thumbnails, a lighter editor render; a 12,000
+  texture pack opens in 0.3 s instead of 2.4 s; the export still blocks main for about 3 s on 1 GiB, left for a
+  streaming zip writer in a worker); the Bedrock note (docs/bedrock.md, recommendation: export to `.mcpack` as its
+  own milestone if wanted).
   Light theme colors were darkened for WCAG AA contrast.
 
 ---

@@ -98,6 +98,12 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByTestId('pack-name')).toHaveText('A11y pack')
     found.push(...(await violations(page, 'navigator')))
 
+    await page.getByTestId('edit-categories').click()
+    await expect(page.getByTestId('cat-editor')).toBeVisible()
+    found.push(...(await violations(page, 'category editor')))
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('cat-editor')).toHaveCount(0)
+
     await page.getByTestId('cat-blocks').click()
     found.push(...(await violations(page, 'grid')))
 

@@ -264,7 +264,8 @@
     "selected": "aucune texture sélectionnée | 1 texture sélectionnée | {count} textures sélectionnées",
     "selectAll": "Tout sélectionner",
     "clearSelection": "Effacer",
-    "empty": "Aucune texture ne correspond."
+    "empty": "Aucune texture ne correspond.",
+    "label": "Textures"
   },
   "export": {
     "open": "Exporter",

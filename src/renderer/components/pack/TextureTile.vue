@@ -5,7 +5,16 @@ import type { TextureEntry } from '@shared/model/pack'
 import { thumbnailSizeFor, withThumbnail } from '@shared/assets'
 import { TILE_CHROME } from './grid-layout'
 
-const props = defineProps<{ texture: TextureEntry; size: number; selected: boolean }>()
+const props = defineProps<{
+  texture: TextureEntry
+  size: number
+  selected: boolean
+  /** Keyboard cursor of the grid. */
+  cursor?: boolean
+  /** 1-based position among the grid's textures, and their count (the grid only renders some tiles). */
+  position?: number
+  count?: number
+}>()
 const emit = defineEmits<{ pick: [mode: 'single' | 'toggle' | 'range']; open: [] }>()
 const { t } = useI18n()
 
@@ -33,7 +42,11 @@ function onClick(e: MouseEvent): void {
 <template>
   <div
     class="tile"
-    :class="{ selected }"
+    :class="{ selected, cursor }"
+    role="option"
+    :aria-selected="selected"
+    :aria-posinset="position"
+    :aria-setsize="count"
     :title="texture.path"
     :style="{ width: `${size + TILE_CHROME.width}px`, height: `${size + TILE_CHROME.height}px` }"
     :data-testid="`tile-${texture.name}`"
@@ -72,6 +85,10 @@ function onClick(e: MouseEvent): void {
 }
 .tile:hover {
   background: rgba(128, 128, 128, 0.12);
+}
+.tile.cursor {
+  outline: 2px solid #13904f;
+  outline-offset: -2px;
 }
 .tile.selected {
   border-color: #18a058;

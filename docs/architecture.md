@@ -135,6 +135,9 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 - `components/pack/TextureGrid.vue` is a virtual grid: tiles have a fixed size per zoom level
   (`components/pack/grid-layout.ts`) and only the rows in view, plus three above and below, are rendered, so a pack
   of 10,000 textures keeps about a hundred tiles in the DOM.
+  It is a multi-select `listbox` for screen readers: arrow keys, Home / End and Page Up / Down move a keyboard
+  cursor (Shift extends the selection, Ctrl/Cmd moves without selecting), Space toggles a tile, Enter opens it, and
+  `aria-activedescendant` follows the cursor tile, which is always scrolled into the rendered rows.
 - `stores/packs.ts` (pack list), `stores/vanilla.ts` (installs and versions), `stores/jobs.ts` (progress).
 - `stores/editor.ts` creates one pixel-editor store per open pack (`editor/<packId>`); see [editor.md](editor.md).
 - `src/shared/image/` is the pure image core (RGBA buffers, transforms, drawing, colors, PNG); see
@@ -143,6 +146,23 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
   [preview.md](preview.md#pop-out-window)) render without the app header; `main.ts` waits for the first route before
   mounting.
 - `stores/popout.ts` (one per pack tab) relays the editor state to a pop-out preview window through main.
+
+## Accessibility
+
+Checked by `tests/e2e/accessibility.spec.ts`: axe-core (a dev dependency, injected into the renderer over the DevTools
+protocol) scans the home screen, settings, the new pack dialog, the navigator, the category editor, the grid and the
+editor with layers and the 3D panel, in the light and the dark theme, and fails on any serious or critical WCAG 2.1
+A/AA violation. Conventions:
+
+- Icon-only buttons get `aria-label` (the tooltip text) and toggles `aria-pressed`; switches, sliders, number
+  inputs and filterable selects get a name (`aria-label` or `input-props`).
+- Naive UI gaps the props cannot reach are filled by `src/renderer/services/a11y.ts` (a MutationObserver started in
+  `main.ts`): card headings get a level, slider handles take their slider's `aria-label`, number input buttons get
+  names, and `n-scrollbar` areas marked `data-a11y-scroll` become keyboard-scrollable.
+- `App.vue` darkens Naive UI's light-theme secondary text, green and blue so text reaches 4.5:1 (and the dark
+  theme's empty-state text).
+- No nested interactive controls (a row with its own buttons uses a separate button to select it); Enter and Space go
+  to the focused control before the editor's shortcuts.
 
 ## Updates
 

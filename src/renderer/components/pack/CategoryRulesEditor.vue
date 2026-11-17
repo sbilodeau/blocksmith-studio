@@ -222,7 +222,10 @@ const iconPreview = computed(() =>
         <n-tag v-else-if="isCustom(rule)" size="tiny" :bordered="false" type="success">
           {{ t('categoriesEditor.custom') }}
         </n-tag>
-        <n-text depth="3" class="count">{{ rule.hidden ? '-' : (counts[rule.id] ?? 0) }}</n-text>
+        <!-- Depth 3 gray is too faint on the selected row's green tint (dark theme contrast). -->
+        <n-text :depth="rule.id === selectedId ? 2 : 3" class="count">{{
+          rule.hidden ? '-' : (counts[rule.id] ?? 0)
+        }}</n-text>
       </button>
       <div class="add">
         <n-input

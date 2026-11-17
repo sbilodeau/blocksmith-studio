@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NEmpty,
@@ -46,9 +46,11 @@ const layout = computed(() =>
 // Separate computed values so scrolling within a row range does not re-render the tiles.
 const firstRow = computed(() => rowRange(layout.value, scrollTop.value, viewport.value.height)[0])
 const lastRow = computed(() => rowRange(layout.value, scrollTop.value, viewport.value.height)[1])
+/** Index in `visible` of the first rendered tile. */
+const firstIndex = computed(() => firstRow.value * layout.value.columns)
 const rendered = computed(() => {
   const { columns } = layout.value
-  return store.value.visible.slice(firstRow.value * columns, (lastRow.value + 1) * columns)
+  return store.value.visible.slice(firstIndex.value, (lastRow.value + 1) * columns)
 })
 const windowStyle = computed(() => ({
   transform: `translateY(${firstRow.value * layout.value.rowPitch}px)`,
@@ -107,16 +109,73 @@ onBeforeUnmount(() => {
   if (scroller.value) store.value.gridScroll = scroller.value.scrollTop
 })
 
+// ---------- keyboard ----------
+/**
+ * Keyboard cursor (index in `visible`): arrow keys, Home / End and Page Up / Down move it, with Shift to extend the
+ * selection and Ctrl/Cmd to move without selecting; Space toggles the tile, Enter opens it. Screen readers follow it
+ * through aria-activedescendant (the cursor tile is always scrolled into the rendered rows).
+ */
+const cursor = ref(-1)
+watch(
+  () => store.value.visible,
+  (list) => {
+    if (cursor.value >= list.length) cursor.value = list.length - 1
+  }
+)
+const cursorId = computed(() =>
+  cursor.value >= 0 && store.value.visible[cursor.value]
+    ? `tile-${props.packId}-${cursor.value}`
+    : undefined
+)
+
+function pick(index: number, mode: 'single' | 'toggle' | 'range'): void {
+  const tex = store.value.visible[index]
+  if (!tex) return
+  cursor.value = index
+  store.value.select(tex.path, mode)
+}
+
+function moveCursor(e: KeyboardEvent, to: number): void {
+  const list = store.value.visible
+  if (list.length === 0) return
+  const index = Math.max(0, Math.min(list.length - 1, to))
+  cursor.value = index
+  reveal(list[index]!.path)
+  if (e.shiftKey) store.value.select(list[index]!.path, 'range')
+  else if (!(e.metaKey || e.ctrlKey)) store.value.select(list[index]!.path, 'single')
+}
+
 function onKeydown(e: KeyboardEvent): void {
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+  const { columns, rowPitch } = layout.value
+  const at = cursor.value < 0 ? -1 : cursor.value
+  const pageRows = Math.max(1, Math.floor((viewport.value.height || 1) / rowPitch))
+  const moves: Record<string, number> = {
+    ArrowRight: at + 1,
+    ArrowLeft: Math.max(0, at - 1),
+    ArrowDown: at < 0 ? 0 : at + columns,
+    ArrowUp: Math.max(0, at - columns),
+    Home: 0,
+    End: store.value.visible.length - 1,
+    PageDown: Math.max(0, at) + columns * pageRows,
+    PageUp: Math.max(0, at) - columns * pageRows
+  }
+  if (e.key in moves && !e.altKey) {
+    e.preventDefault()
+    moveCursor(e, moves[e.key]!)
+  } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
     e.preventDefault()
     store.value.selectAll()
   } else if (e.key === 'Escape') {
     store.value.clearSelection()
-  } else if (e.key === 'Enter' && store.value.selection.size > 0) {
-    // Open the first selected texture (in grid order) in the editor.
-    const first = store.value.visible.find((tex) => store.value.selection.has(tex.path))
-    if (first) store.value.openEditor(first.path)
+  } else if (e.key === ' ' && cursor.value >= 0) {
+    e.preventDefault()
+    pick(cursor.value, 'toggle')
+  } else if (e.key === 'Enter') {
+    // The tile under the cursor, else the first selected texture (in grid order).
+    const tex =
+      store.value.visible[cursor.value] ??
+      store.value.visible.find((t) => store.value.selection.has(t.path))
+    if (tex) store.value.openEditor(tex.path)
   }
 }
 </script>
@@ -139,7 +198,14 @@ function onKeydown(e: KeyboardEvent): void {
       </n-radio-group>
       <n-space align="center" size="small" class="zoom">
         <n-text depth="3">{{ t('grid.zoom') }}</n-text>
-        <n-slider v-model:value="store.zoom" :min="32" :max="160" :step="16" style="width: 120px" />
+        <n-slider
+          v-model:value="store.zoom"
+          :min="32"
+          :max="160"
+          :step="16"
+          :aria-label="t('grid.zoom')"
+          style="width: 120px"
+        />
       </n-space>
       <n-text depth="3" class="count" data-testid="grid-count">
         {{ t('grid.count', { shown: store.visible.length, total: store.textures.length }) }}
@@ -188,6 +254,10 @@ function onKeydown(e: KeyboardEvent): void {
       ref="scroller"
       class="scroll"
       tabindex="0"
+      role="listbox"
+      aria-multiselectable="true"
+      :aria-label="t('grid.label')"
+      :aria-activedescendant="cursorId"
       data-testid="texture-grid"
       @keydown="onKeydown"
       @scroll.passive="onScroll"
@@ -196,12 +266,16 @@ function onKeydown(e: KeyboardEvent): void {
       <div v-else class="tiles" :style="{ height: `${layout.totalHeight}px` }">
         <div class="window" data-testid="texture-grid-window" :style="windowStyle">
           <texture-tile
-            v-for="tex in rendered"
+            v-for="(tex, i) in rendered"
+            :id="`tile-${packId}-${firstIndex + i}`"
             :key="tex.path"
             :texture="tex"
             :size="store.zoom"
             :selected="store.selection.has(tex.path)"
-            @pick="(mode) => store.select(tex.path, mode)"
+            :cursor="cursor === firstIndex + i"
+            :position="firstIndex + i + 1"
+            :count="store.visible.length"
+            @pick="(mode) => pick(firstIndex + i, mode)"
             @open="store.openEditor(tex.path)"
           />
         </div>
@@ -261,6 +335,10 @@ function onKeydown(e: KeyboardEvent): void {
   min-height: 0;
   overflow-y: auto;
   outline: none;
+}
+.scroll:focus-visible {
+  box-shadow: inset 0 0 0 2px #13904f;
+  border-radius: 6px;
 }
 .tiles {
   position: relative;
