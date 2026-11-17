@@ -3,11 +3,13 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { NButton, NTabs, NTab } from 'naive-ui'
 import { useTabsStore, HOME_TAB_ID } from '../stores/tabs'
+import { useMinecraftStore } from '../stores/minecraft'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const tabs = useTabsStore()
+const minecraft = useMinecraftStore()
 
 function onSelect(id: string): void {
   tabs.activate(id)
@@ -46,6 +48,13 @@ function openSettings(): void {
         @click="onSelect(tab.id)"
       >
         {{ tab.labelKey ? t(tab.labelKey) : tab.label }}
+        <span
+          v-if="tab.kind === 'pack' && minecraft.isLive(tab.id)"
+          class="live-badge"
+          :title="t('play.badgeTitle')"
+          :data-testid="`tab-live-${tab.id}`"
+          >{{ t('play.badge') }}</span
+        >
       </n-tab>
     </n-tabs>
     <n-button
@@ -61,6 +70,16 @@ function openSettings(): void {
 </template>
 
 <style scoped>
+.live-badge {
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  color: #fff;
+  background: #0e7a43;
+}
 .header {
   display: flex;
   align-items: center;

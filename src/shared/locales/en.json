@@ -91,7 +91,14 @@
       "extractFailed": "Could not extract the textures ({reason})."
     },
     "minecraft": {
-      "noVersionsFound": "No supported Minecraft version was found in {path}."
+      "noVersionsFound": "No supported Minecraft version was found in {path}.",
+      "gameDirMissing": "This Minecraft folder no longer exists. Choose another one.",
+      "worldRequired": "Choose a world for the data pack.",
+      "worldMissing": "The world \"{world}\" no longer exists in this Minecraft folder.",
+      "folderNotOurs": "A folder named \"{name}\" already exists in Minecraft and was not made by Blocksmith Studio. Rename or remove it, then try again.",
+      "notAGameDir": "This is not a Minecraft game folder (it has no options.txt, saves, resourcepacks or versions folder).",
+      "partNotInPack": "This pack has no {part} part.",
+      "syncFailed": "the files could not be copied to Minecraft."
     },
     "packs": {
       "notFound": "This pack no longer exists.",
@@ -1165,5 +1172,40 @@
   "a11y": {
     "decrease": "Decrease",
     "increase": "Increase"
+  },
+  "play": {
+    "open": "Play in Minecraft",
+    "openLive": "Live in Minecraft",
+    "title": "Play in Minecraft",
+    "gameDir": "Minecraft folder",
+    "official": "Minecraft launcher",
+    "custom": "Added folder",
+    "addFolder": "Add a game folder...",
+    "noGameDir": "No Minecraft folder was found. Start Minecraft once from the official launcher, or add the game folder of another launcher's instance.",
+    "version": "Minecraft version",
+    "versionHint": "Choose the version you play: the files are made for it.",
+    "parts": "Parts",
+    "partResource": "Resource pack",
+    "partData": "Data pack",
+    "world": "World (for the data pack)",
+    "noWorlds": "This folder has no world yet: create one in Minecraft first",
+    "install": "Install",
+    "installed": "Installed {names}.",
+    "installHint": "In Minecraft, select it once in Options > Resource Packs.",
+    "installHintData": "The data pack is used the next time the world loads, or after /reload.",
+    "warnings": "{count} warning(s): open Pack Doctor for details.",
+    "reveal": "Show in folder",
+    "live": "Live mode",
+    "liveIntro": "Keeps a copy in Minecraft up to date each time you save.",
+    "liveHint": "Select \"{name}\" once in Options > Resource Packs (and not the installed zip), then press F3+T in the game after a save.",
+    "liveHintData": "For the data pack, run /reload in the world after a save.",
+    "liveLocked": "Turn live mode off to change the destination.",
+    "badge": "LIVE",
+    "badgeTitle": "Live mode: this pack is kept in sync with Minecraft",
+    "status": {
+      "syncing": "Syncing...",
+      "synced": "Synced at {time} ({count} file(s) changed)",
+      "error": "Sync failed: {reason}"
+    }
   }
 }

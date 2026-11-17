@@ -22,6 +22,8 @@ import CategoryOverview from '../components/pack/CategoryOverview.vue'
 import TextureGrid from '../components/pack/TextureGrid.vue'
 import TextureEditor from '../components/editor/TextureEditor.vue'
 import ExportDialog from '../components/pack/ExportDialog.vue'
+import PlayInMinecraftDialog from '../components/pack/PlayInMinecraftDialog.vue'
+import { useMinecraftStore } from '../stores/minecraft'
 import ReportDialog from '../components/common/ReportDialog.vue'
 import StyleBriefDrawer from '../components/ai/StyleBriefDrawer.vue'
 import NavigationAgentPanel from '../components/ai/NavigationAgentPanel.vue'
@@ -49,6 +51,14 @@ const { showError } = useErrorMessage()
 // The same view instance is reused across pack tabs; each pack has its own store (state survives tab switches).
 const store = computed(() => usePackStore(props.packId))
 const showExport = ref(false)
+const showPlay = ref(false)
+const minecraft = useMinecraftStore()
+const liveOn = computed(() => minecraft.isLive(props.packId))
+watch(
+  () => props.packId,
+  (id) => void minecraft.loadStatus(id).catch(() => undefined),
+  { immediate: true }
+)
 const showBrief = ref(false)
 const showHistory = ref(false)
 const showDoctor = ref(false)
@@ -316,6 +326,15 @@ const exportItems = computed(() => {
             </n-button>
             <n-button
               size="small"
+              :type="liveOn ? 'success' : 'default'"
+              :secondary="liveOn"
+              data-testid="play-open"
+              @click="showPlay = true"
+            >
+              {{ liveOn ? t('play.openLive') : t('play.open') }}
+            </n-button>
+            <n-button
+              size="small"
               type="primary"
               data-testid="export-open"
               @click="showExport = true"
@@ -360,6 +379,7 @@ const exportItems = computed(() => {
     <style-brief-drawer v-model:show="showBrief" :pack-id="packId" />
     <pack-history-drawer v-model:show="showHistory" :pack-id="packId" />
     <pack-doctor-drawer v-model:show="showDoctor" :pack-id="packId" />
+    <play-in-minecraft-dialog v-model:show="showPlay" :store="store" />
     <export-dialog
       v-model:show="showExport"
       :store="store"

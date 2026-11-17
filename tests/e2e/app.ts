@@ -8,6 +8,8 @@ export interface LaunchedApp {
   page: Page
   /** Temp root holding userData/, workspace/ and anything a test adds. */
   root: string
+  /** Stands in for the official .minecraft (created only by tests that need it). */
+  minecraftDir: string
   userDataDir: string
   workspaceDir: string
 }
@@ -27,6 +29,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<LaunchedAp
   const root = options.root ?? (await mkdtemp(join(tmpdir(), 'blocksmith-e2e-')))
   const userDataDir = join(root, 'userData')
   const workspaceDir = join(root, 'workspace')
+  const minecraftDir = join(root, 'minecraft')
   if (!options.root) {
     await mkdir(userDataDir, { recursive: true })
     await mkdir(join(workspaceDir, 'packs'), { recursive: true })
@@ -49,11 +52,17 @@ export async function launchApp(options: LaunchOptions = {}): Promise<LaunchedAp
   const app = await electron.launch({
     // Launch the project folder so Electron reads package.json (name, version, main -> out/main/index.js).
     args: [resolve(__dirname, '../..')],
-    env: { ...env, BLOCKSMITH_USER_DATA: userDataDir, NODE_ENV: 'production' }
+    // The official .minecraft is replaced too, so no test can write into the real game folder.
+    env: {
+      ...env,
+      BLOCKSMITH_USER_DATA: userDataDir,
+      BLOCKSMITH_MINECRAFT_DIR: minecraftDir,
+      NODE_ENV: 'production'
+    }
   })
   const page = await app.firstWindow()
   await page.waitForSelector('[data-testid="app-name"]')
-  return { app, page, root, userDataDir, workspaceDir }
+  return { app, page, root, userDataDir, workspaceDir, minecraftDir }
 }
 
 export async function closeApp(launched: LaunchedApp): Promise<void> {

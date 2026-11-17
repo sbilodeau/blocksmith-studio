@@ -91,7 +91,14 @@
       "extractFailed": "Impossible d'extraire les textures ({reason})."
     },
     "minecraft": {
-      "noVersionsFound": "Aucune version prise en charge de Minecraft n'a été trouvée dans {path}."
+      "noVersionsFound": "Aucune version prise en charge de Minecraft n'a été trouvée dans {path}.",
+      "gameDirMissing": "Ce dossier Minecraft n'existe plus. Choisissez-en un autre.",
+      "worldRequired": "Choisissez un monde pour le pack de données.",
+      "worldMissing": "Le monde « {world} » n'existe plus dans ce dossier Minecraft.",
+      "folderNotOurs": "Un dossier nommé « {name} » existe déjà dans Minecraft et n'a pas été créé par Blocksmith Studio. Renommez-le ou supprimez-le, puis réessayez.",
+      "notAGameDir": "Ce n'est pas un dossier de jeu Minecraft (il n'a ni options.txt, ni dossier saves, resourcepacks ou versions).",
+      "partNotInPack": "Ce pack n'a pas de partie {part}.",
+      "syncFailed": "les fichiers n'ont pas pu être copiés dans Minecraft."
     },
     "packs": {
       "notFound": "Ce pack n'existe plus.",
@@ -1165,5 +1172,40 @@
   "a11y": {
     "decrease": "Diminuer",
     "increase": "Augmenter"
+  },
+  "play": {
+    "open": "Jouer dans Minecraft",
+    "openLive": "En direct dans Minecraft",
+    "title": "Jouer dans Minecraft",
+    "gameDir": "Dossier Minecraft",
+    "official": "Lanceur Minecraft",
+    "custom": "Dossier ajouté",
+    "addFolder": "Ajouter un dossier de jeu...",
+    "noGameDir": "Aucun dossier Minecraft trouvé. Lancez Minecraft une fois depuis le lanceur officiel, ou ajoutez le dossier de jeu d'une instance d'un autre lanceur.",
+    "version": "Version de Minecraft",
+    "versionHint": "Choisissez la version à laquelle vous jouez : les fichiers sont faits pour elle.",
+    "parts": "Parties",
+    "partResource": "Pack de ressources",
+    "partData": "Pack de données",
+    "world": "Monde (pour le pack de données)",
+    "noWorlds": "Ce dossier n'a pas encore de monde : créez-en un dans Minecraft d'abord",
+    "install": "Installer",
+    "installed": "{names} installé.",
+    "installHint": "Dans Minecraft, sélectionnez-le une fois dans Options > Packs de ressources.",
+    "installHintData": "Le pack de données est utilisé au prochain chargement du monde, ou après /reload.",
+    "warnings": "{count} avertissement(s) : ouvrez le Docteur du pack pour les détails.",
+    "reveal": "Afficher dans le dossier",
+    "live": "Mode en direct",
+    "liveIntro": "Garde une copie à jour dans Minecraft à chaque enregistrement.",
+    "liveHint": "Sélectionnez « {name} » une fois dans Options > Packs de ressources (et non le zip installé), puis appuyez sur F3+T dans le jeu après un enregistrement.",
+    "liveHintData": "Pour le pack de données, lancez /reload dans le monde après un enregistrement.",
+    "liveLocked": "Désactivez le mode en direct pour changer la destination.",
+    "badge": "DIRECT",
+    "badgeTitle": "Mode en direct : ce pack est synchronisé avec Minecraft",
+    "status": {
+      "syncing": "Synchronisation...",
+      "synced": "Synchronisé à {time} ({count} fichier(s) modifié(s))",
+      "error": "Échec de la synchronisation : {reason}"
+    }
   }
 }
