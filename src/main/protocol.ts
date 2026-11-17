@@ -1,17 +1,19 @@
 import { promises as fs } from 'node:fs'
 import { join, sep } from 'node:path'
-import { protocol } from 'electron'
-import { ASSET_SCHEME, parseAssetUrl } from '@shared/assets'
+import { nativeImage, protocol } from 'electron'
+import { ASSET_SCHEME, parseAssetUrl, thumbnailParam, type ThumbnailSize } from '@shared/assets'
 import type { PackBase } from '@shared/model/pack'
 import type { VanillaStore } from './services/contracts'
 import { isInside } from './services/packs/paths'
+import { ThumbnailCache, createThumbnailMaker, type ThumbnailMaker } from './thumbnails'
 
 /**
  * Read-only `bs-asset://` protocol (URL format in src/shared/assets.ts):
  *   bs-asset://pack/<packId>/<path>        pack file, else the pack's vanilla file (vanilla base)
  *   bs-asset://vanilla/<versionId>/<path>  extracted vanilla file
  * Only .png, .json and .mcmeta files are served; hidden paths (.blocksmith/...) and anything whose real path
- * leaves its root (symlinks included) answer 404.
+ * leaves its root (symlinks included) answer 404. A `thumb=<size>` parameter on a PNG serves a downscaled copy
+ * (src/main/thumbnails.ts).
  */
 
 const CONTENT_TYPES: Array<[suffix: string, type: string]> = [
@@ -101,6 +103,33 @@ export async function resolveAssetUrl(
   return filePath ? { filePath, contentType } : null
 }
 
+export interface AssetBodyDeps {
+  thumbnail: ThumbnailMaker
+  cache: ThumbnailCache
+}
+
+/**
+ * Bytes to serve for a resolved asset: the file, or for a PNG with `thumb` a downscaled copy (cached by path,
+ * size and mtime; the original when it does not decode).
+ */
+export async function readAssetBody(
+  asset: ResolvedAsset,
+  thumb: ThumbnailSize | null,
+  deps: AssetBodyDeps
+): Promise<Uint8Array<ArrayBuffer>> {
+  if (thumb === null || asset.contentType !== 'image/png') {
+    return new Uint8Array(await fs.readFile(asset.filePath))
+  }
+  const st = await fs.stat(asset.filePath)
+  const key = `${asset.filePath}\0${st.size}\0${st.mtimeMs}\0${thumb}`
+  const hit = deps.cache.get(key)
+  if (hit) return hit
+  const data = new Uint8Array(await fs.readFile(asset.filePath))
+  const small = deps.thumbnail(data, thumb) ?? data
+  deps.cache.set(key, small)
+  return small
+}
+
 /** Must run before app 'ready'. */
 export function registerAssetScheme(): void {
   protocol.registerSchemesAsPrivileged([
@@ -113,6 +142,10 @@ export function registerAssetScheme(): void {
 
 /** Installs the bs-asset handler on the default session (after app 'ready'). */
 export function handleAssetProtocol(deps: AssetResolverDeps): void {
+  const body: AssetBodyDeps = {
+    thumbnail: createThumbnailMaker((png) => nativeImage.createFromBuffer(Buffer.from(png))),
+    cache: new ThumbnailCache()
+  }
   protocol.handle(ASSET_SCHEME, async (request) => {
     const headers = { 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -121,7 +154,7 @@ export function handleAssetProtocol(deps: AssetResolverDeps): void {
     try {
       const asset = await resolveAssetUrl(request.url, deps)
       if (asset) {
-        const data = new Uint8Array(await fs.readFile(asset.filePath))
+        const data = await readAssetBody(asset, thumbnailParam(request.url), body)
         return new Response(request.method === 'HEAD' ? null : data, {
           status: 200,
           headers: { ...headers, 'Content-Type': asset.contentType }

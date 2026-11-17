@@ -2,17 +2,26 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { TextureEntry } from '@shared/model/pack'
+import { thumbnailSizeFor, withThumbnail } from '@shared/assets'
 import { TILE_CHROME } from './grid-layout'
 
 const props = defineProps<{ texture: TextureEntry; size: number; selected: boolean }>()
 const emit = defineEmits<{ pick: [mode: 'single' | 'toggle' | 'range']; open: [] }>()
 const { t } = useI18n()
 
+// Large textures (512 px, tall animation strips) load a downscaled thumbnail made by main instead of the full
+// image: decoding thousands of them would cost seconds and gigabytes in the renderer.
+const url = computed(() => {
+  const { width, height, url: full } = props.texture
+  const thumb = thumbnailSizeFor(props.size * (window.devicePixelRatio || 1), width, height)
+  return thumb ? withThumbnail(full, thumb) : full
+})
+
 // Animated strips show their first frame (width-fit, top aligned); other textures are contained.
 const style = computed(() => ({
   width: `${props.size}px`,
   height: `${props.size}px`,
-  backgroundImage: `url("${props.texture.url}")`,
+  backgroundImage: `url("${url.value}")`,
   backgroundSize: props.texture.animated ? '100% auto' : 'contain'
 }))
 
