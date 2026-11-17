@@ -5,6 +5,25 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M11 - Polish and extras
+
+- **Edit categories** (category sidebar): change which textures go in each category, add your own categories with
+  their own names, hide categories, for all packs or only this pack, with live counts and a "test a path" field;
+  the AI agents use your categories
+- Optional **layers** in the pixel editor: paint on top of a texture without changing it, with visibility, opacity,
+  order, merge and flatten; the pack keeps the combined image and the layers come back when you reopen the texture.
+  AI changes on a layered texture arrive as a new layer
+- **Paint** directly on the 3D model with the current tool (pencil, eraser, bucket, eyedropper)
+- **Pop out** the 3D preview into its own window (for example on a second screen); it follows the editor and you
+  can paint in it
+- 3D models for 42 more entities on Minecraft versions before 26.1 (zombie villager, iron golem, piglins, illagers,
+  witch, fox, bee, llama, panda, slimes, phantom, chests, boats, shields, banners and more), and baby armor on 26.x
+- Chests, bells and decorated pots read from the game file are no longer shown upside down
+- Accessibility: every icon button, switch and slider has a name for screen readers, lists can be scrolled from the
+  keyboard, Enter and Space work on focused buttons in the editor, and light theme text and green / blue accents are
+  darker for readable contrast
+- Investigation note on Bedrock Edition support ([docs/bedrock.md](docs/bedrock.md))
+
 ### M10 - Data packs
 
 - Choose the pack type when creating a pack: resource pack, data pack, or both in one project; change it later from

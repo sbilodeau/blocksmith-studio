@@ -6,13 +6,15 @@ Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resour
 pixel editor, a live 3D preview, a checked JSON editor and AI agents that propose changes you review before
 anything is applied.
 
-> Status: early development (milestone M10 - data packs). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M11 - polish and extras). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
 - Multiple packs open at once, one tab per pack, with merging between packs
-- Textures browsed by category (Blocks, Ores, Tools, Weapons, Armor, Food, Entities, GUI...)
-- Pixel editor with undo/redo, compare with vanilla, and a live 3D preview for blocks, items and entities
+- Textures browsed by category (Blocks, Ores, Tools, Weapons, Armor, Food, Entities, GUI...), with your own
+  categories for all packs or one pack
+- Pixel editor with optional layers, undo/redo, compare with vanilla, and a live 3D preview for blocks, items and
+  entities that you can paint on directly or pop out into its own window
 - Animated textures edited frame by frame: timeline, playback, onion skin, frame timing, GIF import
 - Data packs (or resource + data packs): recipes, loot tables, tags, advancements and functions, edited with live
   checks against Minecraft's format, item id completion, new-file templates, an AI chat that refines the open file
