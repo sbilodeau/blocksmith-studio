@@ -15,8 +15,8 @@ anything is applied.
 - Pixel editor with undo/redo, compare with vanilla, and a live 3D preview for blocks, items and entities
 - Animated textures edited frame by frame: timeline, playback, onion skin, frame timing, GIF import
 - Data packs (or resource + data packs): recipes, loot tables, tags, advancements and functions, edited with live
-  checks against Minecraft's format, item id completion, new-file templates and an AI **Explain** button that says in
-  simple terms what a file changes in the game
+  checks against Minecraft's format, item id completion, new-file templates, an AI chat that refines the open file
+  and an **Explain** tab that says in simple terms what a file changes in the game
 - Bulk edits of a selection (hue, brightness, palette, outline, flip...) reviewed texture by texture
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
 - Export to any Minecraft Java version released in the last two years
@@ -41,8 +41,9 @@ sample textures before and after. Tick the steps you want and apply: each step i
 **History** (you can stop between steps, and undo the last steps without losing the others). It also works on an
 empty pack: "un squelette en glace" starts from Minecraft's skeleton textures and adds the icy versions to your
 pack. On a data pack it writes the files instead ("le minerai de diamant donne deux diamants", "a recipe for
-saddles"): each proposed file is checked and shown before you apply it. In the data editor, **Explain** asks the AI
-what the open file does in the game compared with Minecraft's original, in simple terms and in your language.
+saddles"): each proposed file is checked and shown before you apply it. In the data editor, the **AI** panel has a chat
+that refines the open file (you apply its proposal to the editor and save it) and an **Explain** tab that says what the
+file does in the game compared with Minecraft's original, in simple terms and in your language.
 
 To use the agents, open Settings > AI, paste your [Ollama Cloud](https://ollama.com) API key and pick a model (models that
 support tools are listed, with badges for vision and reasoning, and `$` / `$$` / `$$$` when the price is known).

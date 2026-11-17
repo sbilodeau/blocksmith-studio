@@ -939,8 +939,10 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
   export both zips; data pack import, Pack Doctor checks and tag merging; `write_json`, `read_json` and `list_data`
   for the creation agent (data steps applied as one history entry). Formats that changed inside the window (26.1
   loot table fields) are let through rather than checked, and data files are exported to other versions as they are.
-  Added on request: an **Explain** button in the data editor (one AI answer without tools, in the UI language) with
-  context built in main: vanilla's file, computed changes, checks, tag merge effect, tags used, English names.
+  Added on request: an **AI** panel in the data editor with a chat (the `data` agent: `edit_file` proposes the whole
+  open file, applied to the editor unsaved, then saved by the user) and an **Explain** tab (one answer without tools,
+  in the UI language). Both get context built in main: vanilla's file, computed changes, checks, tag merge effect,
+  tags used, English names.
 
 ### M11 - Polish and extras
 - Category mapping editor UI; optional layers in the editor; pop-out 3D preview window; paint directly on the 3D preview model; more entity definitions; performance pass for huge packs; accessibility pass.

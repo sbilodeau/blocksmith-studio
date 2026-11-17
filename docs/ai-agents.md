@@ -281,9 +281,18 @@ In the plan review a data step shows its path, **New file** / **Changed file**, 
 `DataService.saveMany`), then the texture steps as before; the result has `filesWritten`. The FR/EN evaluation has 3
 data cases on the `sample_datapack` fixture (a recipe, a loot table change, a tag addition).
 
+### Data agent (data editor)
+
+The data editor's **AI** panel has a chat with the data agent (`data-agent.ts`, agent kind `data`): it refines the
+ONE open data file with `edit_file` (the whole new file, checked like the editor; errors refuse it), `read_json` and
+`list_data`. Its proposal (`DataFileProposal`, `kind: 'file'`) is emitted but not kept in the proposal store: the
+renderer applies it to the editor, unsaved, and the user's save writes it. The FR/EN evaluation has a `data` context
+(3 cases on files of `sample_datapack`: a recipe count, a tag addition, a loot table change). See
+[datapacks.md](datapacks.md#data-agent).
+
 ### Explain (data editor)
 
-The data editor's **Explain** button reuses the agent loop for one answer without tools (`explain.ts`, agent
+The data editor's **Explain** tab reuses the agent loop for one answer without tools (`explain.ts`, agent
 `explain` in the `started` event): no proposal, no conversation file. See [datapacks.md](datapacks.md#explain) for
 the context it sends.
 

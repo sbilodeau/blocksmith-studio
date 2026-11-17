@@ -20,7 +20,12 @@ All notable changes to this project are documented here. Versions follow CalVer 
 - Pack Doctor checks data files; merging packs combines their tags like Minecraft does
 - The creation agent works on data packs: it reads Minecraft's files and proposes whole JSON files (`write_json`),
   each checked before it reaches the plan; accepted files are one History entry
-- **Explain** in the data editor: the AI describes in simple terms, in the interface language, what the file does in
+- **AI chat** in the data editor: ask for a change to the open file ("drop 2 to 4 arrows", "make it give 8 slabs")
+  or a question; the AI proposes a checked new version that you apply to the editor and save yourself. The data agent
+  has its own defaults in Settings > AI
+- The data editor toolbar keeps to one line: **Use vanilla text** and **Revert** / **Delete** moved to **More**
+- Settings > AI no longer says the navigation and creation agents arrive "in a later version"
+- **Explain** in the data editor (AI panel): the AI describes in simple terms, in the interface language, what the file does in
   the game and what it changes compared with Minecraft's original (the app sends it the original, the computed
   changes, the checks, the tags the file uses and item names; nothing is changed)
 - Vanilla data comes from your Minecraft installation like the textures (versions set up before this update get it
