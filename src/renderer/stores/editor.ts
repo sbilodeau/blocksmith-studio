@@ -5,6 +5,7 @@ import {
   clampRect,
   clearRect,
   cloneImage,
+  compositeLayers,
   createImage,
   cropImage,
   decodePng,
@@ -12,6 +13,7 @@ import {
   encodePng,
   flipImage,
   imagesEqual,
+  overlayDiff,
   pasteImage,
   rotateImage,
   toHex,
@@ -39,6 +41,7 @@ import {
   type McmetaDoc
 } from '@shared/animation'
 import type { TextureEntry } from '@shared/model/pack'
+import { MAX_LAYERS, type TextureLayers } from '@shared/model/layers'
 import type { HistoryState } from '@shared/model/history'
 import { call } from '../services/ipc'
 
@@ -55,17 +58,37 @@ export interface LocalEdit {
   resize?: { before: RgbaImage; after: RgbaImage }
   /** Animation frame the patch applies to (undo shows that frame again). */
   frame?: number
+  /** Layer the patch applies to (undo selects that layer again). */
+  layer?: number
   /** Frame or animation change (add, delete, move frames, timing...): undo restores the whole state. */
   structure?: { before: AnimationState; after: AnimationState }
 }
 
-/** Frames, animation settings and current frame, as captured around a structural edit. */
+/** Frames, animation settings, layers and current frame / layer, as captured around a structural edit. */
 export interface AnimationState {
   frames: RgbaImage[] | null
   image: RgbaImage
   meta: McmetaDoc | null
   frameIndex: number
+  layers: EditorLayer[] | null
+  activeLayer: number
 }
+
+/** One editor layer (M11). Layers are optional and only for still textures; the pack keeps the composite. */
+export interface EditorLayer {
+  name: string
+  image: RgbaImage
+  visible: boolean
+  /** Percent (0..100). */
+  opacity: number
+}
+
+function cloneLayer(layer: EditorLayer): EditorLayer {
+  return { ...layer, image: cloneImage(layer.image) }
+}
+
+/** Successive opacity changes of one layer within this delay are one undo step (slider drags). */
+const COALESCE_MS = 800
 
 /** Largest strip the editor builds (texture.save refuses taller images). */
 const MAX_STRIP_HEIGHT = 4096
@@ -153,11 +176,32 @@ export function useEditorStore(packId: string) {
     /** Pixel hovered in the 2D canvas or on the 3D model, highlighted in the other view. */
     const linkedHover = ref<{ x: number; y: number; source: '2d' | '3d' } | null>(null)
 
+    /**
+     * Layers of a still texture, bottom first, or null (no layers). When set, `image` is the ACTIVE layer's image
+     * (tools paint into it) and `view` / `strip` are the composite of the visible layers.
+     */
+    const layers = shallowRef<EditorLayer[] | null>(null)
+    const activeLayer = ref(0)
+    /** Layers as loaded or last saved (dirty check), and whether the pack has a layers file. */
+    let savedLayers: EditorLayer[] | null = null
+    let layersOnDisk = false
+    /** The saved layers no longer matched the texture (it changed since): they were not loaded. */
+    const layersStale = ref(false)
+
+    /** Composite of the visible layers (or the image when there are no layers). */
+    const view = computed<RgbaImage | null>(() => {
+      void revision.value
+      const l = layers.value
+      const img = image.value
+      if (!l || !img) return img
+      return compositeLayers(l, img.width, img.height)
+    })
+
     /** The whole texture: the frames stacked for an animated texture, else the image. */
     const strip = computed<RgbaImage | null>(() => {
       void revision.value
       const f = frames.value
-      return f ? joinFrames(f) : image.value
+      return f ? joinFrames(f) : view.value
     })
     const frameCount = computed(() => frames.value?.length ?? 0)
     /** Pixel row of the current frame in the strip (hover coordinates are shared with the 3D view in strip space). */
@@ -197,6 +241,7 @@ export function useEditorStore(packId: string) {
       if (!img || !base) return false
       if (floating.value) return true
       if (mcmeta.value !== savedMcmeta.value) return true
+      if (layersChanged()) return true
       return img.width !== base.width || img.height !== base.height || !imagesEqual(img, base)
     })
     const canUndo = computed(() => undoStack.value.length > 0)
@@ -206,11 +251,28 @@ export function useEditorStore(packId: string) {
       revision.value++
     }
 
-    /** Replaces the working image (and the current frame of an animated texture). */
+    /** Layers differ from the saved ones (pixels, names, visibility, opacity, order, active layer). */
+    function layersChanged(): boolean {
+      const l = layers.value
+      const s = savedLayers
+      if (!l || !s) return !!l !== !!s
+      if (l.length !== s.length) return true
+      return l.some(
+        (layer, i) =>
+          layer.name !== s[i]!.name ||
+          layer.visible !== s[i]!.visible ||
+          layer.opacity !== s[i]!.opacity ||
+          !imagesEqual(layer.image, s[i]!.image)
+      )
+    }
+
+    /** Replaces the working image (and the current frame of an animated texture, or the active layer). */
     function setImage(img: RgbaImage): void {
       image.value = img
       const f = frames.value
       if (f) f[frameIndex.value] = img
+      const l = layers.value
+      if (l) l[activeLayer.value] = { ...l[activeLayer.value]!, image: img }
     }
 
     /** Splits `img` into frames when the animation describes a vertical strip, else edits it whole. */
@@ -239,6 +301,7 @@ export function useEditorStore(packId: string) {
         const img = data.png ? decodePng(data.png) : null
         saved.value = img ? cloneImage(img) : null
         loadFrames(img)
+        loadLayers(data.layers, img)
         playing.value = false
         vanilla.value = data.vanillaPng ? decodePng(data.vanillaPng) : null
         undoStack.value = []
@@ -253,6 +316,40 @@ export function useEditorStore(packId: string) {
       }
     }
 
+    /** Uses the saved layers when their composite still is the texture; otherwise ignores them (stale). */
+    function loadLayers(data: TextureLayers | null, img: RgbaImage | null): void {
+      layers.value = null
+      activeLayer.value = 0
+      savedLayers = null
+      layersOnDisk = !!data
+      layersStale.value = false
+      if (!data || !img) return
+      let loaded: EditorLayer[] | null
+      try {
+        loaded = data.items.map((l) => ({
+          name: l.name,
+          visible: l.visible,
+          opacity: l.opacity,
+          image: decodePng(l.png)
+        }))
+      } catch {
+        loaded = null
+      }
+      const fits =
+        !!loaded &&
+        !frames.value &&
+        loaded.every((l) => l.image.width === img.width && l.image.height === img.height) &&
+        imagesEqual(compositeLayers(loaded, img.width, img.height), img)
+      if (!fits || !loaded) {
+        layersStale.value = true
+        return
+      }
+      layers.value = loaded
+      activeLayer.value = Math.min(data.active, loaded.length - 1)
+      image.value = loaded[activeLayer.value]!.image
+      savedLayers = loaded.map(cloneLayer)
+    }
+
     function close(): void {
       path.value = null
       entry.value = null
@@ -261,6 +358,11 @@ export function useEditorStore(packId: string) {
       vanilla.value = null
       frames.value = null
       meta.value = null
+      layers.value = null
+      activeLayer.value = 0
+      savedLayers = null
+      layersOnDisk = false
+      layersStale.value = false
       playing.value = false
       undoStack.value = []
       redoStack.value = []
@@ -281,6 +383,7 @@ export function useEditorStore(packId: string) {
       }
       if (!edit) return
       if (frames.value) edit.frame = frameIndex.value
+      if (layers.value) edit.layer = activeLayer.value
       push(edit)
     }
 
@@ -296,7 +399,9 @@ export function useEditorStore(packId: string) {
         frames: frames.value ? frames.value.map(cloneImage) : null,
         image: cloneImage(image.value!),
         meta: meta.value,
-        frameIndex: frameIndex.value
+        frameIndex: frameIndex.value,
+        layers: layers.value ? layers.value.map(cloneLayer) : null,
+        activeLayer: activeLayer.value
       }
     }
 
@@ -311,18 +416,49 @@ export function useEditorStore(packId: string) {
         frameIndex.value = 0
         image.value = cloneImage(state.image)
       }
+      if (state.layers) {
+        layers.value = state.layers.map(cloneLayer)
+        activeLayer.value = Math.min(state.activeLayer, layers.value.length - 1)
+        image.value = layers.value[activeLayer.value]!.image
+      } else {
+        layers.value = null
+        activeLayer.value = 0
+      }
       selection.value = null
     }
 
-    /** Runs a frame / animation change and records it as one undoable edit. */
-    function structural(label: string, change: () => void): void {
+    /** Last structural edit that later changes may merge into (opacity slider drags). */
+    let coalesce: { key: string; at: number; edit: LocalEdit } | null = null
+
+    /**
+     * Runs a frame / animation / layer change and records it as one undoable edit. With `coalesceKey`, a change
+     * made shortly after one with the same key updates that edit instead of adding another.
+     */
+    function structural(label: string, change: () => void, coalesceKey?: string): void {
       if (!image.value) return
       commitFloating()
       playing.value = false
-      const before = captureState()
+      const now = Date.now()
+      const top = undoStack.value[undoStack.value.length - 1]
+      const merge =
+        coalesceKey &&
+        coalesce?.key === coalesceKey &&
+        coalesce.edit === top &&
+        now - coalesce.at < COALESCE_MS
+      const before = merge ? top!.structure!.before : captureState()
       change()
       selection.value = null
-      push({ label, patch: NO_PATCH, structure: { before, after: captureState() } })
+      const edit: LocalEdit = {
+        label,
+        patch: NO_PATCH,
+        structure: { before, after: captureState() }
+      }
+      if (merge) {
+        undoStack.value = [...undoStack.value.slice(0, -1), edit]
+        redoStack.value = []
+        touch()
+      } else push(edit)
+      coalesce = coalesceKey ? { key: coalesceKey, at: now, edit } : null
     }
 
     function currentAnimation(): AnimationMeta {
@@ -412,7 +548,7 @@ export function useEditorStore(packId: string) {
 
     /** Turns a still texture into a one-frame animation (frames are then added in the timeline). */
     function animate(): void {
-      if (frames.value || !image.value) return
+      if (frames.value || layers.value || !image.value) return
       structural('animate', () => {
         frames.value = [image.value!]
         frameIndex.value = 0
@@ -453,10 +589,15 @@ export function useEditorStore(packId: string) {
       return image.value ? cloneImage(image.value) : null
     }
 
-    /** Shows the frame an edit belongs to before undoing / redoing it. */
+    /** Shows the frame / selects the layer an edit belongs to before undoing / redoing it. */
     function showEditFrame(edit: LocalEdit): void {
       if (edit.frame !== undefined && frames.value && edit.frame < frames.value.length)
         showFrame(edit.frame)
+      const l = layers.value
+      if (edit.layer !== undefined && l && edit.layer < l.length) {
+        activeLayer.value = edit.layer
+        image.value = l[edit.layer]!.image
+      }
     }
 
     function undo(): void {
@@ -623,8 +764,12 @@ export function useEditorStore(packId: string) {
         selection.value = { x: sel.x, y: sel.y, width: part.width, height: part.height }
       } else {
         const out = fn(img)
-        // Every frame of an animation has the same size: a turn of a non-square frame is refused.
-        if (frames.value && (out.width !== img.width || out.height !== img.height)) return
+        // Every frame of an animation (and every layer) has the same size: a turn of a non-square one is refused.
+        if (
+          (frames.value || layers.value) &&
+          (out.width !== img.width || out.height !== img.height)
+        )
+          return
         setImage(out)
         if (sel) selection.value = { x: 0, y: 0, width: out.width, height: out.height }
       }
@@ -633,9 +778,9 @@ export function useEditorStore(packId: string) {
 
     /**
      * Puts an applied AI proposal (the whole texture, every frame for an animation) into the editor as ONE undoable
-     * edit (the user saves normally).
+     * edit (the user saves normally). With layers, the changes become a new top layer named `layerName`.
      */
-    function applyAiResult(png: Uint8Array): void {
+    function applyAiResult(png: Uint8Array, layerName = 'AI'): void {
       const img = image.value
       if (!img) return
       const out = decodePng(png)
@@ -649,11 +794,167 @@ export function useEditorStore(packId: string) {
         })
         return
       }
+      const l = layers.value
+      if (l) {
+        // The AI saw the composite: its changes go into a new top layer, or flatten when they erase pixels.
+        const current = view.value!
+        const overlay = overlayDiff(current, out)
+        structural('ai', () => {
+          if (overlay && l.length < MAX_LAYERS) {
+            layers.value = [...l, { name: layerName, image: overlay, visible: true, opacity: 100 }]
+            activeLayer.value = l.length
+            image.value = overlay
+          } else {
+            layers.value = null
+            activeLayer.value = 0
+            image.value = out
+          }
+        })
+        return
+      }
       commitFloating()
       const before = cloneImage(img)
       image.value = out
       selection.value = null
       commit(before, 'ai')
+    }
+
+    // ---------- layers (still textures only) ----------
+    /** Selects the layer tools paint into (not an undoable edit). */
+    function selectLayer(index: number): void {
+      const l = layers.value
+      if (!l || index < 0 || index >= l.length || index === activeLayer.value) return
+      commitFloating()
+      activeLayer.value = index
+      image.value = l[index]!.image
+      touch()
+    }
+
+    function useLayers(next: EditorLayer[], active: number): void {
+      layers.value = next
+      activeLayer.value = Math.max(0, Math.min(active, next.length - 1))
+      image.value = next[activeLayer.value]!.image
+    }
+
+    /**
+     * Adds an empty layer above the active one. Without layers, the texture first becomes the bottom layer
+     * `baseName`.
+     */
+    function addLayer(name: string, baseName: string): void {
+      const img = image.value
+      if (!img || frames.value || (layers.value?.length ?? 1) >= MAX_LAYERS) return
+      structural('layerAdd', () => {
+        const l = layers.value
+          ? [...layers.value]
+          : [{ name: baseName, image: img, visible: true, opacity: 100 }]
+        const at = (layers.value ? activeLayer.value : 0) + 1
+        l.splice(at, 0, {
+          name,
+          image: createImage(img.width, img.height),
+          visible: true,
+          opacity: 100
+        })
+        useLayers(l, at)
+      })
+    }
+
+    function duplicateLayer(name: string): void {
+      const l = layers.value
+      if (!l || l.length >= MAX_LAYERS) return
+      structural('layerDuplicate', () => {
+        const next = [...l]
+        const at = activeLayer.value + 1
+        next.splice(at, 0, { ...cloneLayer(l[activeLayer.value]!), name })
+        useLayers(next, at)
+      })
+    }
+
+    function deleteLayer(): void {
+      const l = layers.value
+      if (!l || l.length < 2) return
+      structural('layerDelete', () => {
+        const next = l.filter((_, i) => i !== activeLayer.value)
+        useLayers(next, activeLayer.value - 1)
+      })
+    }
+
+    /** Moves the active layer up (+1, towards the top) or down (-1). */
+    function moveLayer(step: 1 | -1): void {
+      const l = layers.value
+      const from = activeLayer.value
+      const to = from + step
+      if (!l || to < 0 || to >= l.length) return
+      structural('layerMove', () => {
+        const next = [...l]
+        const [moved] = next.splice(from, 1)
+        next.splice(to, 0, moved!)
+        useLayers(next, to)
+      })
+    }
+
+    function updateLayer(
+      index: number,
+      label: string,
+      patch: Partial<Pick<EditorLayer, 'name' | 'visible' | 'opacity'>>,
+      coalesceKey?: string
+    ): void {
+      const l = layers.value
+      const layer = l?.[index]
+      if (!l || !layer) return
+      if (Object.entries(patch).every(([k, v]) => layer[k as keyof EditorLayer] === v)) return
+      structural(
+        label,
+        () => {
+          const next = [...l]
+          next[index] = { ...layer, ...patch }
+          useLayers(next, activeLayer.value)
+        },
+        coalesceKey
+      )
+    }
+
+    function setLayerVisible(index: number, visible: boolean): void {
+      updateLayer(index, 'layerVisibility', { visible })
+    }
+
+    function setLayerOpacity(index: number, opacity: number): void {
+      const value = Math.max(0, Math.min(100, Math.round(opacity)))
+      updateLayer(index, 'layerOpacity', { opacity: value }, `opacity:${index}`)
+    }
+
+    function renameLayer(index: number, name: string): void {
+      const trimmed = name.trim().slice(0, 40)
+      if (trimmed) updateLayer(index, 'layerRename', { name: trimmed })
+    }
+
+    /** Merges the active layer into the one below (with its opacity and visibility). */
+    function mergeDown(): void {
+      const l = layers.value
+      const i = activeLayer.value
+      if (!l || i < 1) return
+      structural('layerMerge', () => {
+        const below = l[i - 1]!
+        const top = l[i]!
+        const merged = compositeLayers(
+          [{ image: below.image, visible: true, opacity: 100 }, top],
+          below.image.width,
+          below.image.height
+        )
+        const next = [...l]
+        next.splice(i - 1, 2, { ...below, image: merged })
+        useLayers(next, i - 1)
+      })
+    }
+
+    /** Back to a single image: the composite of the visible layers (hidden layers are dropped). */
+    function flattenLayers(): void {
+      if (!layers.value) return
+      structural('layerFlatten', () => {
+        const flat = cloneImage(view.value!)
+        layers.value = null
+        activeLayer.value = 0
+        image.value = flat
+      })
     }
 
     function rotate(direction: RotateDirection): void {
@@ -684,16 +985,34 @@ export function useEditorStore(packId: string) {
           : mcmetaOrigin.value === 'pack'
             ? null
             : undefined
+      const l = layers.value
+      const layersArg: TextureLayers | null | undefined = l
+        ? {
+            active: activeLayer.value,
+            items: l.map((layer) => ({
+              name: layer.name,
+              visible: layer.visible,
+              opacity: layer.opacity,
+              png: new Uint8Array(encodePng(layer.image))
+            }))
+          }
+        : layersOnDisk
+          ? null
+          : undefined
       saving.value = true
       try {
         const updated = await call('texture.save', {
           packId,
           path: p,
           png: new Uint8Array(encodePng(img)),
-          ...(metaArg !== undefined ? { mcmeta: metaArg } : {})
+          ...(metaArg !== undefined ? { mcmeta: metaArg } : {}),
+          ...(layersArg !== undefined ? { layers: layersArg } : {})
         })
         saved.value = cloneImage(img)
         savedMcmeta.value = text
+        savedLayers = l ? l.map(cloneLayer) : null
+        layersOnDisk = !!l
+        layersStale.value = false
         entry.value = updated
         origin.value = updated.status === 'vanilla' ? 'vanilla' : 'pack'
         if (metaArg !== undefined) {
@@ -777,6 +1096,10 @@ export function useEditorStore(packId: string) {
       packHistory,
       show3d,
       linkedHover,
+      layers,
+      activeLayer,
+      layersStale,
+      view,
       dirty,
       canUndo,
       canRedo,
@@ -813,6 +1136,16 @@ export function useEditorStore(packId: string) {
       removeAnimation,
       importFrames,
       applyAiResult,
+      selectLayer,
+      addLayer,
+      duplicateLayer,
+      deleteLayer,
+      moveLayer,
+      setLayerVisible,
+      setLayerOpacity,
+      renameLayer,
+      mergeDown,
+      flattenLayers,
       save,
       revertToVanilla,
       refreshHistory,

@@ -53,5 +53,8 @@ export { hueShift, adjustSaturation, adjustBrightness } from './adjust'
 // ---------- undo patches ----------
 export { diffImages, applyPatch } from './patch'
 
+// ---------- layers ----------
+export { compositeLayers, overlayDiff, type LayerView } from './layers'
+
 // ---------- PNG ----------
 export { decodePng, encodePng } from './png'

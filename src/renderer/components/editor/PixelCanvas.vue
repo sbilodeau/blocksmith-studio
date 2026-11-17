@@ -45,7 +45,8 @@ let resizeObserver: ResizeObserver | null = null
 const displayed = computed<RgbaImage | null>(() => {
   void editor.value.revision
   if (props.source === 'vanilla' || editor.value.peekVanilla) return editor.value.vanillaView
-  return editor.value.image
+  // With layers: the composite of the visible layers (tools still paint into the active layer).
+  return editor.value.view
 })
 
 // The read-only vanilla pane keeps its own zoom so the two compare panes do not fight over it.
@@ -155,7 +156,7 @@ function render(): void {
   }
 
   const f = editor.value.floating
-  if (f && !props.readonly && displayed.value === editor.value.image) {
+  if (f && !props.readonly && displayed.value === editor.value.view) {
     floatCanvas = imageToCanvas(f.image, floatCanvas)
     ctx.drawImage(floatCanvas, ox + f.x * z, oy + f.y * z, f.image.width * z, f.image.height * z)
   }
@@ -346,10 +347,13 @@ function onPointerDown(e: PointerEvent): void {
       ed.commit(before, 'fill')
       break
     }
-    case 'eyedropper':
-      if (inBounds(img, p.x, p.y))
-        ed.useColor(getPixel(img, p.x, p.y), secondary ? 'secondary' : 'primary')
+    case 'eyedropper': {
+      // Picks what is shown (all visible layers), not only the active layer.
+      const shown = ed.view ?? img
+      if (inBounds(shown, p.x, p.y))
+        ed.useColor(getPixel(shown, p.x, p.y), secondary ? 'secondary' : 'primary')
       break
+    }
     case 'line':
     case 'rect':
       ed.commitFloating()

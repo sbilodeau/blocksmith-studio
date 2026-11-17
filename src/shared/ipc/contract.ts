@@ -24,6 +24,7 @@ import {
   type BulkPreview
 } from '../model/bulk'
 import type { HistoryState, TextureData } from '../model/history'
+import { TextureLayersSchema } from '../model/layers'
 import {
   MAX_DATA_FILE_BYTES,
   type DataEntry,
@@ -162,7 +163,9 @@ export const inputSchemas = {
       .string()
       .max(64 * 1024)
       .nullable()
-      .optional()
+      .optional(),
+    /** Editor layers to keep with the PNG (null removes them; missing leaves them as they are). */
+    layers: TextureLayersSchema.nullable().optional()
   }).strict(),
   'texture.revert': TextureRef,
   'texture.importGif': z

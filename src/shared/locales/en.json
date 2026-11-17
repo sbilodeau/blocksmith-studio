@@ -429,7 +429,16 @@
       "frameTiming": "Animation timing",
       "animate": "Animate",
       "unanimate": "Remove animation",
-      "importGif": "Import GIF"
+      "importGif": "Import GIF",
+      "layerAdd": "Add layer",
+      "layerDuplicate": "Duplicate layer",
+      "layerDelete": "Delete layer",
+      "layerMove": "Move layer",
+      "layerVisibility": "Layer visibility",
+      "layerOpacity": "Layer opacity",
+      "layerRename": "Rename layer",
+      "layerMerge": "Merge layers",
+      "layerFlatten": "Flatten layers"
     },
     "shortcut": "{label} ({key})",
     "navHint": "Scroll to move around, Ctrl/Cmd + scroll (or pinch) to zoom, Space + drag to pan.",
@@ -1045,5 +1054,27 @@
       "invalidEscapeCharacter": "invalid escape (\\\\)",
       "invalidCharacter": "invalid character in text"
     }
+  },
+  "layers": {
+    "title": "Layers",
+    "hint": "Add a layer to paint on top of the texture without changing it. The pack keeps the combined image.",
+    "animated": "Layers are not available for animated textures.",
+    "stale": "The saved layers no longer match this texture (it changed after they were saved), so they were not loaded. Saving removes them.",
+    "add": "Add layer",
+    "duplicate": "Duplicate layer",
+    "delete": "Delete layer",
+    "up": "Move layer up",
+    "down": "Move layer down",
+    "mergeDown": "Merge into the layer below",
+    "flatten": "Flatten",
+    "flattenHint": "Flatten: combine the visible layers into one image and remove the layers",
+    "rename": "Rename layer",
+    "show": "Show {name}",
+    "hide": "Hide {name}",
+    "opacity": "Opacity",
+    "defaultName": "Layer {n}",
+    "baseName": "Texture",
+    "copyName": "{name} copy",
+    "aiName": "AI"
   }
 }

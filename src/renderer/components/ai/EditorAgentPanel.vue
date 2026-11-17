@@ -61,7 +61,7 @@ async function apply(proposalId: string, stepIds: string[]): Promise<void> {
   applying.value = proposalId
   try {
     const result = await ai.applyProposal(props.packId, proposalId, stepIds)
-    if (result.appliedStepIds.length) editor.value.applyAiResult(result.png)
+    if (result.appliedStepIds.length) editor.value.applyAiResult(result.png, t('layers.aiName'))
     message.success(
       t('ai.proposal.applied', { count: result.appliedStepIds.length }) +
         (result.briefUpdated ? ` ${t('ai.proposal.briefUpdated')}` : '')

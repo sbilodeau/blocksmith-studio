@@ -19,6 +19,7 @@ import EditorToolbar from './EditorToolbar.vue'
 import ColorPanel from './ColorPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import AnimationPanel from './AnimationPanel.vue'
+import LayersPanel from './LayersPanel.vue'
 import EditorIcon from './EditorIcon.vue'
 import Preview3d from '../preview3d/Preview3D.vue'
 import EditorAgentPanel from '../ai/EditorAgentPanel.vue'
@@ -281,7 +282,7 @@ const statusTag = computed(() => {
           </template>
           {{ t('editor.shortcut', { label: t('preview.toggleHint'), key: '3' }) }}
         </n-tooltip>
-        <n-tooltip v-if="editor.image && !editor.frames && !editor.animation">
+        <n-tooltip v-if="editor.image && !editor.frames && !editor.animation && !editor.layers">
           <template #trigger>
             <n-button size="small" data-testid="editor-animate" @click="editor.animate()">
               {{ t('animation.animate') }}
@@ -367,6 +368,7 @@ const statusTag = computed(() => {
           <n-tab-pane name="draw" :tab="t('editor.tabDraw')" display-directive="show">
             <div class="side-scroll">
               <color-panel :pack-id="packId" />
+              <layers-panel :pack-id="packId" />
               <history-panel :pack-id="packId" />
             </div>
           </n-tab-pane>

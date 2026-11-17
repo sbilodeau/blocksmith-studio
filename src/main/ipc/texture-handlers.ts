@@ -16,8 +16,8 @@ export interface TextureHandlerDeps {
 /** Texture editing and pack history channels. */
 export function registerTextureHandlers({ textures, history, openGif }: TextureHandlerDeps): void {
   handle('texture.read', ({ packId, path }) => textures.read(packId, path))
-  handle('texture.save', ({ packId, path, png, mcmeta }) =>
-    textures.save(packId, path, png, mcmeta)
+  handle('texture.save', ({ packId, path, png, mcmeta, layers }) =>
+    textures.save(packId, path, png, mcmeta, layers)
   )
   handle('texture.revert', ({ packId, path }) => textures.revert(packId, path))
   handle('texture.importGif', async ({ frameWidth, frameHeight }) => {

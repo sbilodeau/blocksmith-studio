@@ -13,7 +13,8 @@ const { t } = useI18n()
 
 const palette = computed(() => {
   void editor.value.revision
-  const img = editor.value.image
+  // With layers, the colors of what is shown (all visible layers).
+  const img = editor.value.view
   return img ? extractPalette(img, { max: 64 }).map((e) => toHex(e.color)) : []
 })
 

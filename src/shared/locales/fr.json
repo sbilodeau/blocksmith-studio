@@ -429,7 +429,16 @@
       "frameTiming": "Durées de l’animation",
       "animate": "Animation",
       "unanimate": "Retrait de l’animation",
-      "importGif": "Import d’un GIF"
+      "importGif": "Import d’un GIF",
+      "layerAdd": "Ajout d’un calque",
+      "layerDuplicate": "Duplication d’un calque",
+      "layerDelete": "Suppression d’un calque",
+      "layerMove": "Déplacement d’un calque",
+      "layerVisibility": "Visibilité d’un calque",
+      "layerOpacity": "Opacité d’un calque",
+      "layerRename": "Renommage d’un calque",
+      "layerMerge": "Fusion de calques",
+      "layerFlatten": "Aplatissement des calques"
     },
     "shortcut": "{label} ({key})",
     "navHint": "Faites défiler pour vous déplacer, Ctrl/Cmd + défilement (ou pincement) pour zoomer, Espace + glisser pour déplacer.",
@@ -1045,5 +1054,27 @@
       "invalidEscapeCharacter": "échappement invalide (\\\\)",
       "invalidCharacter": "caractère invalide dans le texte"
     }
+  },
+  "layers": {
+    "title": "Calques",
+    "hint": "Ajoutez un calque pour peindre par-dessus la texture sans la modifier. Le pack garde l’image combinée.",
+    "animated": "Les calques ne sont pas disponibles pour les textures animées.",
+    "stale": "Les calques enregistrés ne correspondent plus à cette texture (elle a changé depuis), ils n’ont donc pas été chargés. Enregistrer les supprime.",
+    "add": "Ajouter un calque",
+    "duplicate": "Dupliquer le calque",
+    "delete": "Supprimer le calque",
+    "up": "Monter le calque",
+    "down": "Descendre le calque",
+    "mergeDown": "Fusionner avec le calque du dessous",
+    "flatten": "Aplatir",
+    "flattenHint": "Aplatir : combiner les calques visibles en une seule image et supprimer les calques",
+    "rename": "Renommer le calque",
+    "show": "Afficher {name}",
+    "hide": "Masquer {name}",
+    "opacity": "Opacité",
+    "defaultName": "Calque {n}",
+    "baseName": "Texture",
+    "copyName": "{name} copie",
+    "aiName": "IA"
   }
 }

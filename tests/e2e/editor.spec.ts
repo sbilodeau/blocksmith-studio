@@ -166,3 +166,50 @@ test('closing the editor brings back the grid at the same scroll position', asyn
   await expect.poll(() => grid.evaluate((el) => el.scrollTop)).toBeGreaterThanOrEqual(scrolled)
   await expect(tile).toBeInViewport()
 })
+
+test('paints on a layer, saves the composite and keeps the layers for later', async () => {
+  const ctx = await setup()
+  launched = ctx.launched
+  const { page } = launched
+
+  await page.getByTestId('cat-blocks').click()
+  await page.getByTestId('tile-stone').dblclick()
+  await expect(page.getByTestId('layers-hint')).toBeVisible()
+  await page.getByTestId('layer-add').click()
+  await expect(page.getByTestId('layer-list').getByRole('option')).toHaveCount(2)
+  await expect(page.getByTestId('layer-1')).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByTestId('local-history')).toContainText('Add layer')
+
+  await page.getByTestId('tool-pencil').click()
+  await clickCanvasCenter(page)
+  // Hiding the layer hides its pixel; showing it again brings it back (two undoable edits).
+  await page.getByTestId('layer-visible-1').click()
+  await expect(page.getByTestId('layer-visible-1')).toHaveAttribute('aria-pressed', 'false')
+  await page.getByTestId('layer-visible-1').click()
+  await page.getByTestId('editor-save').click()
+  await expect(page.getByTestId('editor-dirty')).toHaveCount(0)
+
+  const folder = await ctx.packFolder()
+  const png = decode(await readFile(join(folder, 'assets/minecraft/textures/block/stone.png')))
+  let black = 0
+  for (let i = 0; i < png.width * png.height; i++) {
+    const o = i * png.channels
+    if (png.data[o] === 0 && png.data[o + 1] === 0 && png.data[o + 2] === 0) black++
+  }
+  expect(black).toBe(1)
+  const layers = JSON.parse(
+    await readFile(
+      join(folder, '.blocksmith/layers/assets/minecraft/textures/block/stone.png.json'),
+      'utf8'
+    )
+  )
+  expect(layers.layers.map((l: { name: string }) => l.name)).toEqual(['Texture', 'Layer 2'])
+
+  // Reopening the texture brings the layers back.
+  await page.getByTestId('editor-back').click()
+  await page.getByTestId('tile-stone').dblclick()
+  await expect(page.getByTestId('layer-list').getByRole('option')).toHaveCount(2)
+  await page.getByTestId('layer-flatten').click()
+  await expect(page.getByTestId('layer-list')).toHaveCount(0)
+  await expect(page.getByTestId('editor-dirty')).toBeVisible()
+})
