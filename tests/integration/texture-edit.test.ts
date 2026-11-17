@@ -383,7 +383,8 @@ describe('texture editing and pack history', () => {
 
       await history.undo(packId)
       expect(new Uint8Array(await readFile(packFile(STONE)))).toEqual(RED)
-      expect((await entry(STONE)).url).not.toBe(blue.url)
+      const red = await entry(STONE)
+      expect(red.url).not.toBe(blue.url)
 
       let state = await history.undo(packId)
       expect(await exists(STONE)).toBe(false)
@@ -391,8 +392,12 @@ describe('texture editing and pack history', () => {
       expect(state).toMatchObject({ canUndo: false, canRedo: true })
 
       await history.redo(packId)
+      expect((await entry(STONE)).url).not.toBe(urls.vanilla)
       await history.redo(packId)
-      expect((await entry(STONE)).url).toBe(blue.url)
+      // Back to the blue file: a fresh url (a file whose size differs from vanilla is versioned per read, not
+      // by content), so the thumbnail reloads.
+      expect((await entry(STONE)).url).not.toBe(red.url)
+      expect(new Uint8Array(await readFile(packFile(STONE)))).toEqual(BLUE)
       state = await history.redo(packId)
       expect(await exists(STONE)).toBe(false)
       expect(state).toMatchObject({ canUndo: true, canRedo: false })

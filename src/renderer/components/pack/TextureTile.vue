@@ -2,16 +2,26 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { TextureEntry } from '@shared/model/pack'
+import { thumbnailSizeFor, withThumbnail } from '@shared/assets'
+import { TILE_CHROME } from './grid-layout'
 
 const props = defineProps<{ texture: TextureEntry; size: number; selected: boolean }>()
 const emit = defineEmits<{ pick: [mode: 'single' | 'toggle' | 'range']; open: [] }>()
 const { t } = useI18n()
 
+// Large textures (512 px, tall animation strips) load a downscaled thumbnail made by main instead of the full
+// image: decoding thousands of them would cost seconds and gigabytes in the renderer.
+const url = computed(() => {
+  const { width, height, url: full } = props.texture
+  const thumb = thumbnailSizeFor(props.size * (window.devicePixelRatio || 1), width, height)
+  return thumb ? withThumbnail(full, thumb) : full
+})
+
 // Animated strips show their first frame (width-fit, top aligned); other textures are contained.
 const style = computed(() => ({
   width: `${props.size}px`,
   height: `${props.size}px`,
-  backgroundImage: `url("${props.texture.url}")`,
+  backgroundImage: `url("${url.value}")`,
   backgroundSize: props.texture.animated ? '100% auto' : 'contain'
 }))
 
@@ -25,7 +35,7 @@ function onClick(e: MouseEvent): void {
     class="tile"
     :class="{ selected }"
     :title="texture.path"
-    :style="{ width: `${size + 16}px` }"
+    :style="{ width: `${size + TILE_CHROME.width}px`, height: `${size + TILE_CHROME.height}px` }"
     :data-testid="`tile-${texture.name}`"
     :data-path="texture.path"
     :data-status="texture.status"
@@ -55,8 +65,8 @@ function onClick(e: MouseEvent): void {
   border-radius: 6px;
   cursor: pointer;
   user-select: none;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 120px;
+  /* Fixed size (set inline from the zoom): the virtual grid computes rows from it. */
+  overflow: hidden;
   border: 2px solid transparent;
   box-sizing: border-box;
 }
@@ -75,6 +85,8 @@ function onClick(e: MouseEvent): void {
 }
 .name {
   font-size: 11px;
+  line-height: 16px;
+  height: 16px;
   max-width: 100%;
   padding: 0 4px;
   box-sizing: border-box;

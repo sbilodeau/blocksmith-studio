@@ -110,7 +110,10 @@ Mojang download with consent), including the vanilla recipes, loot tables, tags 
 `userData/vanilla/<version>/` and writes `index.json` last. A vanilla-based pack
 stores only changed and added files; everything else is read from that cache. The renderer shows thumbnails through
 `bs-asset://pack/<packId>/<path>` (pack file, else vanilla) and `bs-asset://vanilla/<version>/<path>`. The protocol
-only serves `.png`, `.json` and `.mcmeta` files and checks every resolved path stays inside its root.
+only serves `.png`, `.json` and `.mcmeta` files and checks every resolved path stays inside its root. A
+`thumb=64|128|256` parameter on a PNG serves a downscaled copy (first frame of a strip), made with Electron's
+`nativeImage` and kept in a 64 MiB LRU cache (`src/main/thumbnails.ts`); the texture grid asks for one when the
+original is more than four times the size it is shown at. See [performance.md](performance.md).
 
 ## Settings
 
@@ -127,7 +130,11 @@ here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 - `App.vue` wraps everything in Naive UI's config provider (theme, locale) and keeps vue-i18n in sync with settings.
 - `stores/tabs.ts` manages workspace tabs: a permanent home tab plus one tab per open pack.
 - `stores/pack.ts` creates one Pinia store per open pack (`pack/<id>`), holding its textures, categories and view
-  state (category, search, status filter, zoom, selection). It is disposed when the tab closes.
+  state (category, search, status filter, zoom, selection). It is disposed when the tab closes. The texture list and
+  the selection are shallow refs, replaced on change and never edited in place.
+- `components/pack/TextureGrid.vue` is a virtual grid: tiles have a fixed size per zoom level
+  (`components/pack/grid-layout.ts`) and only the rows in view, plus three above and below, are rendered, so a pack
+  of 10,000 textures keeps about a hundred tiles in the DOM.
 - `stores/packs.ts` (pack list), `stores/vanilla.ts` (installs and versions), `stores/jobs.ts` (progress).
 - `stores/editor.ts` creates one pixel-editor store per open pack (`editor/<packId>`); see [editor.md](editor.md).
 - `src/shared/image/` is the pure image core (RGBA buffers, transforms, drawing, colors, PNG); see

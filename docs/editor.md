@@ -128,7 +128,8 @@ original pixels. The list shows the top layer first.
   "over" with each layer's opacity) and the AI overlay (`overlayDiff`) are in `src/shared/image/layers.ts`. Layers
   travel with `texture.read` / `texture.save` (`layers`, schema in `src/shared/model/layers.ts`).
 - `src/renderer/components/editor/PixelCanvas.vue`: Canvas 2D rendering at integer zoom with smoothing disabled,
-  input handling for every tool. Pixel data is never read back from the canvas: the image core buffer is the source of
+  input handling for every tool. The checkerboard and the pixel grid are drawn only where the image is inside the
+  canvas (`visibleSpan` in `geometry.ts`), so a 512 px texture at 32x paints as fast as a small one. Pixel data is never read back from the canvas: the image core buffer is the source of
   truth, so colors stay exact (no premultiplied-alpha or color-management rounding).
 - Loading and saving go through `texture.read` / `texture.save` (PNG bytes over IPC). PNGs are decoded and encoded
   with the image core (`decodePng` / `encodePng`, exact RGBA8).

@@ -1,5 +1,5 @@
 import { defineStore, getActivePinia } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import type {
   CategorySummary,
   ExportPackType,
@@ -25,8 +25,10 @@ export const ALL_CATEGORIES = '__all__'
 export function usePackStore(packId: string) {
   return defineStore(`pack/${packId}`, () => {
     const summary = ref<PackSummary | null>(null)
-    const textures = ref<TextureEntry[]>([])
-    const categories = ref<CategorySummary[]>([])
+    // Shallow: lists are replaced on every load, never edited in place, and a huge pack has thousands of entries
+    // that would otherwise each get a reactive proxy (slower filtering and selection).
+    const textures = shallowRef<TextureEntry[]>([])
+    const categories = shallowRef<CategorySummary[]>([])
     const loading = ref(false)
     const loaded = ref(false)
 
@@ -35,7 +37,8 @@ export function usePackStore(packId: string) {
     const search = ref('')
     const statusFilter = ref<StatusFilter>('all')
     const zoom = ref(64)
-    const selection = ref<Set<string>>(new Set())
+    /** Replaced (never mutated) on every change, so a shallow ref is enough. */
+    const selection = shallowRef<Set<string>>(new Set())
     /** Texture open in the 1:1 editor (null = grid/overview). */
     const editing = ref<string | null>(null)
     const anchor = ref<string | null>(null)
@@ -55,9 +58,15 @@ export function usePackStore(packId: string) {
 
     const changedCount = computed(() => textures.value.filter((t) => t.status !== 'vanilla').length)
 
+    /** Lowercase "name, path" search keys, computed once per load instead of on every keystroke. */
+    const searchKeys = computed(() =>
+      textures.value.map((t) => `${t.name}\n${t.path}`.toLowerCase())
+    )
+
     const visible = computed<TextureEntry[]>(() => {
       const q = search.value.trim().toLowerCase()
-      return textures.value.filter((t) => {
+      const keys = searchKeys.value
+      return textures.value.filter((t, i) => {
         if (
           category.value &&
           category.value !== ALL_CATEGORIES &&
@@ -73,8 +82,15 @@ export function usePackStore(packId: string) {
         ) {
           return false
         }
-        return !q || t.name.toLowerCase().includes(q) || t.path.toLowerCase().includes(q)
+        return !q || keys[i].includes(q)
       })
+    })
+
+    /** Selected textures in pack order (bulk actions and the navigation agent use this order). */
+    const selectedPaths = computed<string[]>(() => {
+      const sel = selection.value
+      if (sel.size === 0) return []
+      return textures.value.filter((t) => sel.has(t.path)).map((t) => t.path)
     })
 
     async function load(): Promise<void> {
@@ -106,12 +122,12 @@ export function usePackStore(packId: string) {
     function select(path: string, mode: 'single' | 'toggle' | 'range'): void {
       const next = new Set(mode === 'single' ? [] : selection.value)
       if (mode === 'range' && anchor.value) {
-        const list = visible.value.map((t) => t.path)
-        const a = list.indexOf(anchor.value)
-        const b = list.indexOf(path)
+        const list = visible.value
+        const a = list.findIndex((t) => t.path === anchor.value)
+        const b = list.findIndex((t) => t.path === path)
         if (a >= 0 && b >= 0) {
           const [from, to] = a < b ? [a, b] : [b, a]
-          for (const p of list.slice(from, to + 1)) next.add(p)
+          for (let i = from; i <= to; i++) next.add(list[i].path)
           selection.value = next
           return
         }
@@ -205,6 +221,7 @@ export function usePackStore(packId: string) {
       setExportAcceptNewer,
       changedCount,
       visible,
+      selectedPaths,
       load,
       openCategory,
       select,

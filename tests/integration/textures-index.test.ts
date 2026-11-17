@@ -1,3 +1,4 @@
+import { promises as fsp } from 'node:fs'
 import { mkdir, utimes, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -171,4 +172,108 @@ describe('texture index', () => {
     expect(warmMs).toBeLessThan(300)
     // Writing 5000 fixture files is slow on Windows CI disks; only the timed section above has a budget.
   }, 60_000)
+})
+
+describe('texture index I/O', () => {
+  let env: TestEnv
+  let pack: PackSummary
+
+  beforeEach(async () => {
+    env = await createTestEnv()
+    pack = await env.service.create({ name: 'Io', base: 'vanilla', authoringVersion: '26.3' })
+  })
+
+  afterEach(async () => {
+    vi.restoreAllMocks()
+    await env.cleanup()
+  })
+
+  /** Counts full reads (readFile) and header reads (open) of the pack's texture files. */
+  function countReads(): { full: Map<string, number>; header: Map<string, number> } {
+    const full = new Map<string, number>()
+    const header = new Map<string, number>()
+    const inPack = (p: unknown): string | null => {
+      const s = String(p)
+      return s.startsWith(pack.folder) && s.endsWith('.png')
+        ? s.slice(pack.folder.length + 1)
+        : null
+    }
+    const readFile = fsp.readFile.bind(fsp)
+    const open = fsp.open.bind(fsp)
+    vi.spyOn(fsp, 'readFile').mockImplementation(((
+      p: Parameters<typeof readFile>[0],
+      o?: never
+    ) => {
+      const rel = inPack(p)
+      if (rel) full.set(rel, (full.get(rel) ?? 0) + 1)
+      return readFile(p, o)
+    }) as typeof readFile)
+    vi.spyOn(fsp, 'open').mockImplementation(((p: Parameters<typeof open>[0], ...rest: never[]) => {
+      const rel = inPack(p)
+      if (rel) header.set(rel, (header.get(rel) ?? 0) + 1)
+      return open(p, ...rest)
+    }) as typeof open)
+    return { full, header }
+  }
+
+  it('reads each file at most once when a tab loads, and only hashes same-size vanilla copies', async () => {
+    const vanilla = vanillaFiles()
+    await put(pack.folder, T('block/dirt.png'), vanilla[T('block/dirt.png')])
+    await put(pack.folder, T('block/stone.png'), makePng(32, 32, [255, 0, 0, 255]))
+    for (let i = 0; i < 20; i++) {
+      await put(pack.folder, T(`block/added_${i}.png`), makePng(512, 512, [i, 0, 0, 255]))
+    }
+    const reads = countReads()
+
+    // What a pack tab asks for at once: summary, textures and categories.
+    const [summary, entries] = await Promise.all([
+      env.service.get(pack.id),
+      env.service.textures(pack.id),
+      env.service.categories(pack.id)
+    ])
+    const map = byPath(entries)
+    expect(map.get(T('block/dirt.png'))!.status).toBe('vanilla')
+    expect(map.get(T('block/stone.png'))).toMatchObject({ status: 'modified', width: 32 })
+    expect(map.get(T('block/added_0.png'))).toMatchObject({
+      status: 'added',
+      width: 512,
+      height: 512
+    })
+    expect(summary.changedCount).toBe(21)
+
+    // The identical copy is hashed once; the others only have their header read, once.
+    expect(Object.fromEntries(reads.full)).toEqual({ [T('block/dirt.png')]: 1 })
+    expect(reads.header.size).toBe(21)
+    expect([...reads.header.values()].every((n) => n === 1)).toBe(true)
+
+    // A warm refresh reads nothing.
+    reads.full.clear()
+    reads.header.clear()
+    expect(await env.service.textures(pack.id)).toBe(entries)
+    expect(reads.full.size + reads.header.size).toBe(0)
+  })
+
+  it('gives a header-only texture a new url when it is rewritten', async () => {
+    const path = T('block/added.png')
+    await put(pack.folder, path, makePng(64, 64, [1, 2, 3, 255]))
+    const first = byPath(await env.service.textures(pack.id)).get(path)!
+    await put(pack.folder, path, makePng(64, 64, [9, 9, 9, 255]))
+    const file = join(pack.folder, ...path.split('/'))
+    const later = new Date(Date.now() + 5000)
+    await utimes(file, later, later)
+    const second = byPath(await env.service.textures(pack.id)).get(path)!
+    expect(second.url).not.toBe(first.url)
+    // Unchanged: same url.
+    expect(byPath(await env.service.textures(pack.id)).get(path)!.url).toBe(second.url)
+  })
+
+  it('Pack Doctor reads only the header of PNG files', async () => {
+    await put(pack.folder, T('block/stone.png'), makePng(32, 16))
+    await put(pack.folder, T('block/added.png'), makePng(512, 512))
+    const reads = countReads()
+    const report = await env.service.doctor(pack.id)
+    expect(report.issues).toContainEqual({ code: 'doctor.proportions', path: T('block/stone.png') })
+    expect(reads.full.size).toBe(0)
+    expect(reads.header.get(T('block/added.png'))).toBe(1)
+  })
 })

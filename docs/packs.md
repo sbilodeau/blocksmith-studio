@@ -55,9 +55,13 @@ Width and height come from the PNG IHDR header; `animated` / `frameCount` from t
 file overrides vanilla). Categories come from the [category engine](categories.md). Each entry has a
 `bs-asset://pack/<id>/<path>?v=<hash>` URL whose `v` changes when the file changes, so thumbnails refresh.
 
-Results are cached per pack. A refresh lists and stats the pack's texture files and only re-hashes files whose size
-or mtime changed. Measured on a test machine with 4000 vanilla textures and 1000 pack files: about 50 ms cold and
-20 ms warm (textures + categories).
+Results are cached per pack. A refresh lists and stats the pack's texture files and only re-reads files whose size
+or mtime changed. Only a pack file the same size as its vanilla counterpart is read in full and hashed (it may be an
+identical copy); any other file is `added` or `modified` from its size alone, and only its PNG header (33 bytes) is
+read. Its URL `v` is then a token that changes each time the file is read again instead of a hash prefix.
+Concurrent requests for the same list (a tab asks for `pack.get`, `pack.textures` and `pack.categories` at once)
+share one scan. On a synthetic pack of 12,000 textures (1 GiB of 512 px images): about 290 ms cold and 100 ms warm;
+see [performance.md](performance.md).
 
 `pack.categories` returns, in display order, every category that has at least one texture: count, changed count
 and an icon URL.
@@ -221,7 +225,8 @@ version (keeping its other sections) and updates `authoringVersion`. Textures th
 
 ## Pack Doctor
 
-`pack.doctor { packId }` (**Pack Doctor** in the pack header) reads every pack file and returns:
+`pack.doctor { packId }` (**Pack Doctor** in the pack header) reads every pack file (only the header of PNGs, which
+is all its checks need) and returns:
 
 - `issues`: the export checks (`export.invalidPng`, `invalidJson`, `invalidPath`, `nonPowerOfTwo`,
   `animationMismatch`, `missingPackPng`, `invalidMcmeta`, `vanillaNotReady`) plus `doctor.proportions`: a texture
