@@ -103,14 +103,52 @@ export function macDmgUrl(version: string, arch: string): string {
   return `https://github.com/${RELEASES_REPO}/releases/download/v${version}/${macDmgFileName(version, arch)}`
 }
 
-function releaseNotesToString(notes: UpdateInfoLike['releaseNotes']): string | undefined {
+/**
+ * Release notes are Markdown from latest.yml (the release workflow puts the changelog there). Without it,
+ * electron-updater falls back to GitHub's HTML feed: that is reduced to Markdown-like text, never shown as HTML.
+ */
+export function releaseNotesToString(notes: UpdateInfoLike['releaseNotes']): string | undefined {
   if (!notes) return undefined
-  if (typeof notes === 'string') return notes
-  const joined = notes
-    .map((n) => n.note ?? '')
-    .filter(Boolean)
-    .join('\n\n')
-  return joined || undefined
+  const text =
+    typeof notes === 'string'
+      ? notes
+      : notes
+          .map((n) => n.note ?? '')
+          .filter(Boolean)
+          .join('\n\n')
+  const result = /<\/?[a-z][^>]*>/i.test(text) ? htmlToText(text) : text.trim()
+  return result || undefined
+}
+
+const ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' '
+}
+
+function htmlToText(html: string): string {
+  return html
+    .replace(
+      /<h([1-6])[^>]*>/gi,
+      (_, level: string) => `\n\n${'#'.repeat(Math.min(4, Number(level)))} `
+    )
+    .replace(/<li[^>]*>/gi, '\n- ')
+    .replace(/<(br|\/p|\/h[1-6]|\/ul|\/ol|\/div)[^>]*>/gi, '\n\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (m, e: string) => {
+      if (e[0] === '#') {
+        const code =
+          e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)
+        return Number.isFinite(code) ? String.fromCodePoint(code) : m
+      }
+      return ENTITIES[e.toLowerCase()] ?? m
+    })
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function errorMessage(err: unknown): string {

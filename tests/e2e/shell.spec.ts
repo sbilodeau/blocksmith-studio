@@ -63,3 +63,23 @@ test('shows that updates are disabled for unpackaged builds', async () => {
     'Updates are disabled in development builds.'
   )
 })
+
+test('shows the bundled release notes from Settings and nothing on launch of a development build', async () => {
+  launched = await launchApp()
+  const { page } = launched
+  // A development build never shows the "updated" dialog on launch.
+  expect(await page.evaluate(() => window.blocksmith.invoke('app.whatsNew'))).toMatchObject({
+    ok: true,
+    value: null
+  })
+  await expect(page.getByTestId('whats-new-dialog')).toHaveCount(0)
+
+  await page.getByTestId('open-settings').click()
+  await page.getByTestId('current-notes').click()
+  const dialog = page.getByTestId('whats-new-dialog')
+  await expect(dialog).toBeVisible()
+  // A development build has no section for its own version: it shows the upcoming (Unreleased) notes.
+  await expect(dialog.getByTestId('whats-new-notes')).toContainText('Releases and updates')
+  await dialog.getByTestId('whats-new-close').click()
+  await expect(dialog).toHaveCount(0)
+})

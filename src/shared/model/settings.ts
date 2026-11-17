@@ -115,7 +115,9 @@ export const SettingsSchema = z.object({
   /** User agreed to download client jars from Mojang when a version is missing locally. */
   allowMojangDownload: z.boolean().default(false),
   /** AI providers (no keys) and per-agent defaults. */
-  ai: AiSettingsSchema
+  ai: AiSettingsSchema,
+  /** Version of the last packaged app that ran (main-process only): shows "What's new" after an update. */
+  lastRunVersion: z.string().optional()
 })
 
 export type Settings = z.infer<typeof SettingsSchema>

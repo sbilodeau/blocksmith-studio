@@ -20,12 +20,14 @@ import {
 import { LANGUAGES, THEMES, type Language, type Theme } from '@shared/model/settings'
 import type { AppInfo } from '@shared/ipc/contract'
 import UpdateActions from '../components/UpdateActions.vue'
+import WhatsNewDialog from '../components/WhatsNewDialog.vue'
 import MinecraftSettings from '../components/vanilla/MinecraftSettings.vue'
 import AiSettings from '../components/ai/AiSettings.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useUpdaterStore } from '../stores/updater'
 import { useUpdaterMessage } from '../composables/useUpdaterMessage'
 import { call } from '../services/ipc'
+import { changelogNotes } from '../services/changelog'
 
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
@@ -40,6 +42,8 @@ const languageOptions = computed(() =>
 )
 const checking = computed(() => status.value.state === 'checking')
 const canCheck = computed(() => status.value.state !== 'disabled')
+const showNotes = ref(false)
+const currentNotes = computed(() => (info.value ? changelogNotes(null, info.value.version) : ''))
 
 function setLanguage(language: Language): void {
   void settingsStore.update({ language })
@@ -97,7 +101,12 @@ onMounted(async () => {
       <n-card :title="t('settings.updates')" size="small">
         <n-form label-placement="left" label-width="160">
           <n-form-item :label="t('settings.currentVersion')">
-            <n-text code data-testid="app-version">{{ info?.version }}</n-text>
+            <n-space align="center">
+              <n-text code data-testid="app-version">{{ info?.version }}</n-text>
+              <n-button size="small" data-testid="current-notes" @click="showNotes = true">
+                {{ t('updater.whatsNew') }}
+              </n-button>
+            </n-space>
           </n-form-item>
           <n-form-item :label="t('settings.autoCheck')">
             <n-switch
@@ -126,6 +135,12 @@ onMounted(async () => {
           </n-form-item>
         </n-form>
       </n-card>
+
+      <whats-new-dialog
+        v-model:show="showNotes"
+        :title="t('updater.whatsNewIn', { version: info?.version ?? '' })"
+        :notes="currentNotes"
+      />
 
       <n-card :title="t('settings.about')" size="small">
         <n-descriptions v-if="info" :column="2" label-placement="left" size="small">

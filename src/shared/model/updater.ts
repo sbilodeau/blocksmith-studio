@@ -14,3 +14,9 @@ export type UpdaterStatus =
   | { state: 'downloading'; version: string; percent: number }
   | { state: 'downloaded'; version: string; mode: UpdateMode; filePath?: string }
   | { state: 'error'; code: string; message?: string }
+
+/** This launch follows an update from `previousVersion` (null: unknown, show only `version`'s notes). */
+export interface WhatsNew {
+  previousVersion: string | null
+  version: string
+}

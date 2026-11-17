@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { InvokeChannel, EventChannel } from './channels'
 import { SettingsPatchSchema, type Settings } from '../model/settings'
-import type { UpdaterStatus } from '../model/updater'
+import type { UpdaterStatus, WhatsNew } from '../model/updater'
 import type { MinecraftInstall, VanillaAvailability } from '../model/vanilla'
 import {
   CreatePackInputSchema,
@@ -120,6 +120,7 @@ const CategoryRulesInput = z.array(CategoryRuleSchema).max(MAX_CATEGORIES)
 export const inputSchemas = {
   'app.getInfo': NoInput,
   'app.openExternal': z.object({ url: z.url({ protocol: /^https$/ }) }).strict(),
+  'app.whatsNew': NoInput,
   'settings.get': NoInput,
   'settings.update': SettingsPatchSchema,
   'updater.getStatus': NoInput,
@@ -313,6 +314,8 @@ export const inputSchemas = {
 export interface InvokeOutputs {
   'app.getInfo': AppInfo
   'app.openExternal': void
+  /** Set once per launch after an update (the first call takes it, later calls get null). */
+  'app.whatsNew': WhatsNew | null
   'settings.get': Settings
   'settings.update': Settings
   'updater.getStatus': UpdaterStatus

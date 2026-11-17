@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 import { defaultSettings, applySettingsPatch, type Settings } from '@shared/model/settings'
-import type { UpdaterStatus } from '@shared/model/updater'
+import type { UpdaterStatus, WhatsNew } from '@shared/model/updater'
 import type { CategorySummary, PackSummary, TextureEntry } from '@shared/model/pack'
 import type { VanillaAvailability } from '@shared/model/vanilla'
 import type { EvalReport, ModelInfo, ModelRef, ProviderStatus } from '@shared/ai/types'
@@ -14,6 +14,8 @@ import type { DataEntry, DataFileData, DataList } from '@shared/model/data'
 export interface FakeBridge {
   settings: Settings
   updater: UpdaterStatus
+  /** Result of app.whatsNew (the launch after an update). */
+  whatsNew: WhatsNew | null
   packs: PackSummary[]
   textures: TextureEntry[]
   categories: CategorySummary[]
@@ -55,6 +57,7 @@ function dataEntry({ path }: { path: string }): DataEntry {
 export const fakeBridge: FakeBridge = {
   settings: defaultSettings(),
   updater: { state: 'disabled', reason: 'dev' },
+  whatsNew: null,
   packs: [],
   textures: [],
   categories: [],
@@ -135,6 +138,8 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
   'pack.categories': () => fakeBridge.categories,
   'minecraft.detect': () => [],
   'vanilla.availability': () => fakeBridge.versions,
+  'app.whatsNew': () => fakeBridge.whatsNew,
+  'app.openExternal': () => undefined,
   'app.getInfo': () => ({
     name: 'Blocksmith Studio',
     version: '26.46.0',
