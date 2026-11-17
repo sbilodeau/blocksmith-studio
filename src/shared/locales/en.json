@@ -524,7 +524,14 @@
     },
     "noEntityModel": "No 3D model for this entity texture yet: it is shown flat, as in the editor.",
     "fromGame": "game model",
-    "fromGameHint": "Exact model read from your Minecraft files for this version."
+    "fromGameHint": "Exact model read from your Minecraft files for this version.",
+    "paint": "Paint",
+    "paintHint": "Paint on the model with the current tool (pencil, eraser, bucket or eyedropper; other tools paint like the pencil). Shift uses the secondary color. Right-drag rotates, the wheel zooms.",
+    "popOut": "Pop out",
+    "popOutHint": "Open the 3D preview in its own window (for example on a second screen)",
+    "popoutTitle": "{pack} - 3D preview",
+    "popoutEmpty": "Open a texture in the editor to see it here.",
+    "dockHint": "Bring the 3D preview back into the editor (closes its window)"
   },
   "ai": {
     "title": "AI",

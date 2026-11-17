@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, net, safeStorage, shell } from 'electron'
-import { createMainWindow, useAppIconInDev } from './window'
+import { createMainWindow, createPopoutWindow, useAppIconInDev } from './window'
 import { hardenSession, hardenWebContents } from './security'
 import { registerIpcHandlers } from './ipc/handlers'
 import { registerVanillaHandlers } from './ipc/vanilla-handlers'
@@ -22,7 +22,7 @@ import { createUpdaterService } from './services/updater'
 import { createDefaultVanillaStore } from './services/vanilla'
 import { createDataService, createPackService, createTextureEditService } from './services/packs'
 import { createHistoryService } from './services/history'
-import { createPreviewService } from './services/preview'
+import { createPopoutManager, createPreviewService } from './services/preview'
 import { createSecretsStore, secretsFilePath } from './services/secrets'
 import { createProviderRegistry } from './services/ai/providers'
 
@@ -97,6 +97,22 @@ if (!app.requestSingleInstanceLock()) {
       notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
     })
     const preview = createPreviewService({ packs, vanilla })
+    const popouts = createPopoutManager({
+      createWindow: (packId, title) => {
+        const win = createPopoutWindow(packId, title)
+        return {
+          webContents: win.webContents,
+          isDestroyed: () => win.isDestroyed(),
+          focus: () => {
+            if (win.isMinimized()) win.restore()
+            win.focus()
+          },
+          close: () => win.close(),
+          setTitle: (t) => win.setTitle(t),
+          onClosed: (listener) => win.on('closed', listener)
+        }
+      }
+    })
     const secrets = createSecretsStore({
       filePath: secretsFilePath(app.getPath('userData')),
       safeStorage
@@ -178,7 +194,7 @@ if (!app.requestSingleInstanceLock()) {
       }
     })
     registerDataHandlers({ data })
-    registerPreviewHandlers({ preview })
+    registerPreviewHandlers({ preview, popouts })
     registerAiProviderHandlers({ settings, secrets, registry: aiProviders })
     const bulk = createBulkService({
       packs,
@@ -240,10 +256,14 @@ if (!app.requestSingleInstanceLock()) {
     handleAssetProtocol({ vanilla, locatePack: (id) => packs.locate(id) })
 
     mainWindow = createMainWindow()
-    mainWindow.on('closed', () => (mainWindow = null))
+    mainWindow.on('closed', () => {
+      mainWindow = null
+      popouts.closeAll()
+    })
 
     settings.onChange((s) => {
-      send(webContents(), 'settings.changed', s)
+      // Every app window follows the language and theme (the main window and pop-out previews).
+      for (const win of BrowserWindow.getAllWindows()) send(win.webContents, 'settings.changed', s)
       updater.start({ autoCheck: s.updates.autoCheck })
     })
     updater.onStatus((status) => send(webContents(), 'updater.status', status))

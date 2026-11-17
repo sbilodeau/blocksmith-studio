@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { createImage, decodePng, encodePng, getPixel, setPixel } from '@shared/image'
+import { createImage, decodePng, encodePng, getPixel, setPixel, type Rgba } from '@shared/image'
 import type { TextureLayers } from '@shared/model/layers'
 import { useEditorStore } from '@renderer/stores/editor'
 import { texture } from './fixtures'
@@ -306,12 +306,7 @@ describe('editor store: layers', () => {
     return { editor, calls }
   }
 
-  function paint(
-    editor: ReturnType<typeof useEditorStore>,
-    x: number,
-    y: number,
-    c: typeof RED
-  ): void {
+  function paint(editor: ReturnType<typeof useEditorStore>, x: number, y: number, c: Rgba): void {
     const before = editor.snapshot()!
     setPixel(editor.image!, x, y, c)
     editor.commit(before, 'draw')
@@ -443,5 +438,50 @@ describe('editor store: layers', () => {
     editor.applyAiResult(encodePng(result), 'AI')
     expect(editor.layers).toBeNull()
     expect(getPixel(editor.image!, 1, 1)).toEqual([0, 0, 0, 0])
+  })
+})
+
+describe('editor store: painting from the 3D view', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('paints strokes with the current tool and mirror, picks colors and fills', async () => {
+    const editor = await openEditor()
+    editor.primary = BLUE
+    editor.tool = 'pencil'
+    editor.paintStart(0, 0)
+    editor.paintMove(0, 1, true)
+    editor.paintEnd()
+    expect(getPixel(editor.image!, 0, 0)).toEqual(BLUE)
+    expect(getPixel(editor.image!, 0, 1)).toEqual(BLUE)
+    expect(editor.undoStack.map((e) => e.label)).toEqual(['draw'])
+
+    // A jump (another face) does not draw a line between the two pixels.
+    editor.tool = 'eraser'
+    editor.mirrorX = true
+    editor.paintStart(1, 0)
+    editor.paintMove(1, 1, false)
+    editor.paintEnd()
+    expect(getPixel(editor.image!, 1, 0)).toEqual([0, 0, 0, 0])
+    expect(getPixel(editor.image!, 2, 1)).toEqual([0, 0, 0, 0])
+    expect(editor.undoStack.at(-1)!.label).toBe('erase')
+    editor.mirrorX = false
+
+    editor.tool = 'eyedropper'
+    editor.paintStart(3, 0)
+    expect(editor.primary).toEqual(BLUE)
+    editor.paintStart(0, 0, true)
+    expect(editor.secondary).toEqual(BLUE)
+
+    editor.tool = 'bucket'
+    editor.primary = RED
+    editor.paintStart(3, 1)
+    expect(getPixel(editor.image!, 3, 0)).toEqual(RED)
+    expect(editor.undoStack.at(-1)!.label).toBe('fill')
+
+    // Outside the image: nothing happens.
+    const count = editor.undoStack.length
+    editor.paintStart(9, 9)
+    editor.paintEnd()
+    expect(editor.undoStack).toHaveLength(count)
   })
 })

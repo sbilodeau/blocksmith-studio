@@ -23,7 +23,7 @@ export const LayerDataSchema = z
   .object({
     ...LayerMetaShape,
     png: z
-      .instanceof(Uint8Array)
+      .custom<Uint8Array>((v) => v instanceof Uint8Array)
       .refine((b) => b.byteLength > 0 && b.byteLength <= MAX_LAYER_PNG_BYTES)
   })
   .strict()

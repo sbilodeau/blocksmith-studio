@@ -71,9 +71,12 @@ describe('registerTextureHandlers', () => {
       status: 'vanilla'
     })
     expect(deps.textures.read).toHaveBeenCalledWith('p', PATH)
-    expect(deps.textures.save).toHaveBeenCalledWith('p', PATH, png, undefined)
+    expect(deps.textures.save).toHaveBeenCalledWith('p', PATH, png, undefined, undefined)
     await handlers.get('texture.save')!({ packId: 'p', path: PATH, png, mcmeta: null })
-    expect(deps.textures.save).toHaveBeenLastCalledWith('p', PATH, png, null)
+    expect(deps.textures.save).toHaveBeenLastCalledWith('p', PATH, png, null, undefined)
+    const layers = { active: 0, items: [{ name: 'A', visible: true, opacity: 100, png }] }
+    await handlers.get('texture.save')!({ packId: 'p', path: PATH, png, layers })
+    expect(deps.textures.save).toHaveBeenLastCalledWith('p', PATH, png, undefined, layers)
     expect(deps.textures.revert).toHaveBeenCalledWith('p', PATH)
   })
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import {
   NConfigProvider,
   NMessageProvider,
@@ -20,6 +21,9 @@ import UpdateBanner from './components/UpdateBanner.vue'
 import { useSettingsStore } from './stores/settings'
 
 const settingsStore = useSettingsStore()
+const route = useRoute()
+/** Windows without the app chrome (the pop-out 3D preview). */
+const bare = computed(() => route.meta['bare'] === true)
 const { locale } = useI18n()
 const osTheme = useOsTheme()
 
@@ -52,9 +56,13 @@ watch(
   >
     <n-message-provider>
       <n-dialog-provider>
+        <n-layout v-if="bare" class="app-layout" content-style="height: 100%;">
+          <router-view />
+        </n-layout>
         <!-- NLayout wraps its children in an inner container: make that one the flex column, so the content area
              has a bounded height and the editor fits the window instead of growing with the AI conversation. -->
         <n-layout
+          v-else
           class="app-layout"
           content-style="display: flex; flex-direction: column; height: 100%; min-height: 0;"
         >

@@ -524,7 +524,14 @@
     },
     "noEntityModel": "Pas encore de modèle 3D pour cette texture d'entité : elle est affichée à plat, comme dans l'éditeur.",
     "fromGame": "modèle du jeu",
-    "fromGameHint": "Modèle exact lu dans vos fichiers Minecraft pour cette version."
+    "fromGameHint": "Modèle exact lu dans vos fichiers Minecraft pour cette version.",
+    "paint": "Peindre",
+    "paintHint": "Peignez sur le modèle avec l’outil actif (crayon, gomme, pot de peinture ou pipette ; les autres outils peignent comme le crayon). Maj utilise la couleur secondaire. Glissez avec le bouton droit pour tourner, la molette zoome.",
+    "popOut": "Détacher",
+    "popOutHint": "Ouvrir l’aperçu 3D dans sa propre fenêtre (par exemple sur un deuxième écran)",
+    "popoutTitle": "{pack} - aperçu 3D",
+    "popoutEmpty": "Ouvrez une texture dans l’éditeur pour la voir ici.",
+    "dockHint": "Remettre l’aperçu 3D dans l’éditeur (ferme sa fenêtre)"
   },
   "ai": {
     "title": "IA",

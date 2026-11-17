@@ -13,7 +13,8 @@ async function bootstrap(): Promise<void> {
   const app = createApp(App)
   const pinia = createPinia()
   const i18n = createAppI18n()
-  app.use(pinia).use(i18n).use(createAppRouter())
+  const router = createAppRouter()
+  app.use(pinia).use(i18n).use(router)
 
   const settings = useSettingsStore()
   await settings.load()
@@ -21,6 +22,8 @@ async function bootstrap(): Promise<void> {
   useJobsStore().init()
   useAiStore().init()
 
+  // The first route decides the window chrome (the pop-out preview has none): resolve it before mounting.
+  await router.isReady()
   app.mount('#app')
 }
 

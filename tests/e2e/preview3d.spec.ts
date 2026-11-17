@@ -97,3 +97,61 @@ test('entity textures without a model are shown flat, facing the camera, with a 
   await expect(page.getByTestId('preview3d-kind')).toHaveText('Flat')
   await expect(page.getByTestId('preview3d-no-model')).toBeVisible()
 })
+
+/** Clicks the middle of a 3D canvas (the model is centered there). */
+async function clickCanvasMiddle(page: Page): Promise<void> {
+  const box = (await page.getByTestId('preview3d-canvas').boundingBox())!
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+}
+
+test('paints directly on the 3D model with the current tool', async () => {
+  launched = await setup()
+  const { page } = launched
+  await openTexture(page, 'stone')
+  await page.getByTestId('editor-3d').click()
+  await expect(page.getByTestId('preview3d-kind')).toHaveText('Block model')
+  await page.getByTestId('tool-pencil').click()
+  await page.getByTestId('preview3d-paint').click()
+  await expect(page.getByTestId('preview3d-paint')).toHaveAttribute('aria-pressed', 'true')
+  await page.waitForTimeout(300)
+  await clickCanvasMiddle(page)
+  await expect(page.getByTestId('editor-dirty')).toBeVisible()
+  await expect(page.getByTestId('local-history')).toContainText('Draw')
+})
+
+test('pops the preview out into its own window, which follows and paints the editor texture', async () => {
+  launched = await setup()
+  const { page, app } = launched
+  await openTexture(page, 'stone')
+  await page.getByTestId('editor-3d').click()
+  const [popout] = await Promise.all([
+    app.waitForEvent('window'),
+    page.getByTestId('preview3d-popout').click()
+  ])
+  await expect(popout.getByTestId('preview3d-popout-window')).toBeVisible()
+  await expect(popout.getByTestId('popout-path')).toHaveText(
+    'assets/minecraft/textures/block/stone.png'
+  )
+  await expect(popout.getByTestId('preview3d-kind')).toHaveText('Block model')
+  const titles = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows().map((w) => w.getTitle())
+  )
+  expect(titles).toContain('Preview pack - 3D preview')
+  // The docked preview gives way to the window.
+  await expect(page.getByTestId('preview3d')).toHaveCount(0)
+
+  // Painting in the window edits the texture in the editor.
+  await popout.getByTestId('preview3d-paint').click()
+  await popout.waitForTimeout(300)
+  await clickCanvasMiddle(popout)
+  await expect(page.getByTestId('editor-dirty')).toBeVisible()
+
+  // Back in the grid the window says no texture is open; closing it lets the 3D button dock it again.
+  await page.getByTestId('editor-save').click()
+  await page.getByTestId('editor-back').click()
+  await expect(popout.getByTestId('popout-empty')).toBeVisible()
+  await popout.close()
+  await page.getByTestId('tile-stone').first().dblclick()
+  await page.getByTestId('editor-3d').click()
+  await expect(page.getByTestId('preview3d')).toBeVisible()
+})

@@ -26,6 +26,12 @@ import {
 import type { HistoryState, TextureData } from '../model/history'
 import { TextureLayersSchema } from '../model/layers'
 import {
+  PopoutInputSchema,
+  PopoutStateSchema,
+  type PopoutInput,
+  type PopoutState
+} from '../model/popout'
+import {
   MAX_DATA_FILE_BYTES,
   type DataEntry,
   type DataFileData,
@@ -178,6 +184,13 @@ export const inputSchemas = {
   'history.undo': PackRef,
   'history.redo': PackRef,
   'texture.preview': TextureRef,
+  /** Opens (or focuses) the pop-out 3D preview of a pack tab; the calling window owns it. */
+  'preview.popout.open': PackRef.extend({ title: z.string().max(120) }).strict(),
+  'preview.popout.close': PackRef,
+  /** Editor window -> its pop-out. */
+  'preview.popout.push': PackRef.extend({ state: PopoutStateSchema }).strict(),
+  /** Pop-out -> the editor window that opened it. */
+  'preview.popout.input': PackRef.extend({ input: PopoutInputSchema }).strict(),
   'ai.providers.list': NoInput,
   'ai.providers.save': ProviderConfigSchema,
   'ai.providers.delete': z.object({ providerId: z.string().min(1).max(40) }).strict(),
@@ -352,6 +365,11 @@ export interface InvokeOutputs {
   'history.redo': HistoryState
   /** How to show the texture in 3D: block model, item sprite, entity geometry or flat fallback. */
   'texture.preview': PreviewModel
+  'preview.popout.open': void
+  'preview.popout.close': void
+  /** False when the pack has no pop-out open by this window (the caller stops pushing). */
+  'preview.popout.push': boolean
+  'preview.popout.input': boolean
   'ai.providers.list': ProviderStatus[]
   'ai.providers.save': ProviderStatus[]
   'ai.providers.delete': ProviderStatus[]
@@ -408,6 +426,12 @@ export interface EventPayloads {
   'packs.changed': { packId?: string }
   'ai.event': AgentEvent
   'ai.eval.progress': EvalProgress
+  /** To a pop-out preview: the state of its editor. */
+  'preview.popout.state': { packId: string; state: PopoutState }
+  /** To the editor window: input from its pop-out preview. */
+  'preview.popout.input': { packId: string; input: PopoutInput }
+  /** To the editor window: the pop-out of this pack was closed. */
+  'preview.popout.closed': { packId: string }
 }
 
 export type EventPayload<E extends EventChannel> = EventPayloads[E]

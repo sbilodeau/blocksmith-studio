@@ -12,13 +12,19 @@ import {
   diffImages,
   encodePng,
   flipImage,
+  floodFill,
+  getPixel,
+  inBounds,
+  linePoints,
   imagesEqual,
   overlayDiff,
   pasteImage,
   rotateImage,
+  setPixel,
   toHex,
   type FlipAxis,
   type Patch,
+  type Point,
   type Rect,
   type RgbaImage,
   type Rgba,
@@ -44,6 +50,7 @@ import type { TextureEntry } from '@shared/model/pack'
 import { MAX_LAYERS, type TextureLayers } from '@shared/model/layers'
 import type { HistoryState } from '@shared/model/history'
 import { call } from '../services/ipc'
+import { mirrorTransforms } from '../components/editor/geometry'
 
 export type EditorTool = 'pencil' | 'eraser' | 'bucket' | 'eyedropper' | 'line' | 'rect' | 'select'
 
@@ -967,6 +974,74 @@ export function useEditorStore(packId: string) {
       transform(axis === 'horizontal' ? 'flipH' : 'flipV', (img) => flipImage(img, axis))
     }
 
+    // ---------- painting from the 3D view (strip coordinates) ----------
+    /** Stroke in progress from the 3D preview (or the pop-out window). */
+    let paintStroke: { before: RgbaImage; last: Point; color: Rgba } | null = null
+
+    /** Strip pixel -> pixel of the edited image (the current frame), or null outside it. */
+    function toImagePoint(x: number, y: number): Point | null {
+      const img = image.value
+      if (!img) return null
+      const p = { x, y: y - frameOffset.value }
+      return inBounds(img, p.x, p.y) ? p : null
+    }
+
+    function paintDot(img: RgbaImage, p: Point, color: Rgba): void {
+      for (const t of mirrorTransforms(img.width, img.height, mirrorX.value, mirrorY.value)) {
+        const q = t(p)
+        setPixel(img, q.x, q.y, color)
+      }
+    }
+
+    /**
+     * Starts painting at a strip pixel with the current tool: the eyedropper picks what is shown, the bucket fills,
+     * the eraser clears, and every other tool paints like the pencil. Mirror painting applies.
+     */
+    function paintStart(x: number, y: number, useSecondary = false): void {
+      const img = image.value
+      const p = toImagePoint(x, y)
+      if (!img || !p || peekVanilla.value) return
+      if (tool.value === 'eyedropper') {
+        const shown = view.value ?? img
+        useColor(getPixel(shown, p.x, p.y), useSecondary ? 'secondary' : 'primary')
+        return
+      }
+      commitFloating()
+      const color =
+        tool.value === 'eraser' ? TRANSPARENT : useSecondary ? secondary.value : primary.value
+      const before = cloneImage(img)
+      if (tool.value === 'bucket') {
+        floodFill(img, p.x, p.y, color, {
+          tolerance: bucketTolerance.value,
+          contiguous: bucketContiguous.value
+        })
+        commit(before, 'fill')
+        return
+      }
+      paintDot(img, p, color)
+      paintStroke = { before, last: p, color }
+      touch()
+    }
+
+    /** Continues the stroke; `connect` draws a line from the previous pixel (same face of the model). */
+    function paintMove(x: number, y: number, connect: boolean): void {
+      const img = image.value
+      const stroke = paintStroke
+      const p = toImagePoint(x, y)
+      if (!img || !stroke || !p) return
+      if (p.x === stroke.last.x && p.y === stroke.last.y) return
+      for (const q of connect ? linePoints(stroke.last, p) : [p]) paintDot(img, q, stroke.color)
+      stroke.last = p
+      touch()
+    }
+
+    /** Ends the stroke as one undoable edit. */
+    function paintEnd(): void {
+      const stroke = paintStroke
+      paintStroke = null
+      if (stroke) commit(stroke.before, tool.value === 'eraser' ? 'erase' : 'draw')
+    }
+
     // ---------- persistence ----------
     async function save(): Promise<TextureEntry | null> {
       const p = path.value
@@ -1136,6 +1211,9 @@ export function useEditorStore(packId: string) {
       removeAnimation,
       importFrames,
       applyAiResult,
+      paintStart,
+      paintMove,
+      paintEnd,
       selectLayer,
       addLayer,
       duplicateLayer,
