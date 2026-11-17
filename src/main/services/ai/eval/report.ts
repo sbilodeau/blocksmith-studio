@@ -1,6 +1,7 @@
 import { formatJson, parseDataPath } from '@shared/datapack'
 import type { DataEntry } from '@shared/model/data'
 import type { CreationData } from '../agent/creation-data'
+import { gatherExplainSources, type ExplainSources } from '../agent/explain'
 import type { ToolCall } from '@shared/ai/types'
 import type { TextureEntry } from '@shared/model/pack'
 import { createImage, drawLine, fillRect, parseHex, type RgbaImage } from '@shared/image'
@@ -318,4 +319,28 @@ function evalDataPack(): {
       read: async (path) => (path in EVAL_DATA ? formatJson(EVAL_DATA[path]) : null)
     }
   }
+}
+
+/** A file of the sample data pack open in the data editor, for "data" cases (the data agent). */
+export async function evalDataFile(path: string): Promise<{
+  text: string
+  sources: ExplainSources
+  entries: DataEntry[]
+  read: (path: string) => Promise<string | null>
+}> {
+  const { data } = evalDataPack()
+  if (!(path in EVAL_DATA)) throw new Error(`unknown eval data file ${path}`)
+  const text = formatJson(EVAL_DATA[path])
+  const sources = await gatherExplainSources(
+    { packId: 'eval', path, text },
+    {
+      meta: async () => ({ name: 'Eval pack', kind: 'data', authoringVersion: '26.3' }),
+      vanillaText: async (_, p) => (p in EVAL_DATA ? formatJson(EVAL_DATA[p]) : null),
+      packText: async () => null,
+      ids: async () => data.ids,
+      names: async () => ({}),
+      entries: async () => data.entries
+    }
+  )
+  return { text, sources, entries: data.entries, read: data.read }
 }

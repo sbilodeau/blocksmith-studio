@@ -103,7 +103,8 @@ export interface ProviderAdapter {
 }
 
 // ---------- agents ----------
-export type AgentKind = 'creation' | 'navigation' | 'editor'
+/** `data`: the chat of the data editor, about the open data file (M10). */
+export type AgentKind = 'creation' | 'navigation' | 'editor' | 'data'
 
 export type ImageMode = 'vision+grid' | 'grid' | 'image'
 
@@ -157,6 +158,17 @@ export interface DataExplainRequest {
   path: string
   text: string
   model: ModelRef
+  language: Language
+  thinking?: ReasoningLevel
+}
+
+/** A chat message to the data agent about the file open in the data editor (`text`: the editor's text). */
+export interface DataAgentRequest {
+  packId: string
+  message: string
+  model: ModelRef
+  path: string
+  text: string
   language: Language
   thinking?: ReasoningLevel
 }
@@ -273,7 +285,30 @@ export interface CreationProposal {
   status: Proposal['status']
 }
 
+/**
+ * A data-agent proposal (M10): the whole new text of the open data file. Applying it puts the text in the editor,
+ * unsaved: the user reviews it there and saves (one history entry), so nothing is written by the AI.
+ */
+export interface DataFileProposal {
+  id: string
+  runId: string
+  agent: 'data'
+  kind: 'file'
+  packId: string
+  path: string
+  /** The editor text the agent started from. */
+  before: string
+  /** The proposed text (checked: no errors). */
+  after: string
+  warnings: number
+  status: 'pending' | 'applied' | 'rejected'
+}
+
+/** Proposals kept in main until applied (a data-agent proposal is applied in the renderer and never stored). */
 export type AnyProposal = Proposal | BulkProposal | CreationProposal
+
+/** Any proposal an agent run can emit. */
+export type EmittedProposal = AnyProposal | DataFileProposal
 
 export function isBulkProposal(p: AnyProposal): p is BulkProposal {
   return (p as BulkProposal).kind === 'bulk'
@@ -281,6 +316,10 @@ export function isBulkProposal(p: AnyProposal): p is BulkProposal {
 
 export function isCreationProposal(p: AnyProposal): p is CreationProposal {
   return (p as CreationProposal).kind === 'plan'
+}
+
+export function isDataFileProposal(p: EmittedProposal): p is DataFileProposal {
+  return (p as DataFileProposal).kind === 'file'
 }
 
 export interface CreationApplyResult {
@@ -360,7 +399,7 @@ export type AgentEvent =
   | { runId: string; type: 'tool_call'; call: ToolCall; kind: ToolKind; iteration: number }
   | { runId: string; type: 'tool_result'; callId: string; ok: boolean; summary: string }
   | { runId: string; type: 'usage'; inputTokens?: number; outputTokens?: number; costUsd?: number }
-  | { runId: string; type: 'proposal'; proposal: AnyProposal }
+  | { runId: string; type: 'proposal'; proposal: EmittedProposal }
   | {
       runId: string
       type: 'done'
@@ -379,6 +418,8 @@ export interface ConversationTurn {
   toolResult?: { callId: string; ok: boolean; summary: string }
   /** Texture the user message was about. */
   texturePath?: string
+  /** Data file the user message was about (data agent). */
+  dataPath?: string
   model?: ModelRef
   usage?: { inputTokens?: number; outputTokens?: number; costUsd?: number }
   proposalId?: string

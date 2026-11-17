@@ -212,7 +212,7 @@ if (!app.requestSingleInstanceLock()) {
         },
         jobs
       },
-      explain: {
+      dataAi: {
         meta: async (packId) => {
           const { name, kind, authoringVersion } = await packs.get(packId)
           return { name, kind, authoringVersion }
@@ -220,7 +220,8 @@ if (!app.requestSingleInstanceLock()) {
         vanillaText: (packId, path) => data.vanillaText(packId, path),
         packText: (packId, path) => data.packText(packId, path),
         ids: (packId) => data.ids(packId),
-        names: (packId) => data.names(packId)
+        names: (packId) => data.names(packId),
+        entries: async (packId) => (await data.list(packId)).entries
       },
       providers: aiProviders,
       getAgentSettings: (agent) => settings.get().ai.agents[agent],

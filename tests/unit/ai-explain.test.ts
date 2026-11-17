@@ -46,6 +46,7 @@ const deps = {
     blocks: [],
     tags: { item: ['minecraft:planks', 'minecraft:stone_tool_materials'] }
   }),
+  entries: async () => [],
   names: async () => ({
     'minecraft:stone': 'Stone',
     'minecraft:stone_slab': 'Stone Slab',
@@ -222,7 +223,7 @@ describe('explain runs', () => {
       brief: createBriefService({ locate }),
       conversations: createConversationStore({ locate }),
       readVanillaPng: async () => null,
-      explain: deps,
+      dataAi: deps,
       emit: (e) => events.push(e),
       newId: seqIds()
     })

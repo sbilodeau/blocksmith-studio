@@ -80,7 +80,9 @@ behavior, read the vanilla file and write the same path). Data packs cannot add 
 const SCOPE_INSTRUCTIONS: Record<AgentKind, string> = {
   editor: EDITOR_INSTRUCTIONS,
   navigation: NAVIGATION_INSTRUCTIONS,
-  creation: CREATION_INSTRUCTIONS
+  creation: CREATION_INSTRUCTIONS,
+  // The data agent builds its own prompt (data-agent.ts).
+  data: ''
 }
 
 function fill(template: string, values: Record<string, string | number>): string {

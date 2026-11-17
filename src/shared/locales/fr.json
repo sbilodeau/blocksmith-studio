@@ -542,7 +542,8 @@
     "agents": {
       "editor": "Agent Éditeur",
       "navigation": "Agent Navigation",
-      "creation": "Agent Création"
+      "creation": "Agent Création",
+      "data": "Agent Données"
     },
     "editorAgent": "Agent Éditeur",
     "refreshModels": "Actualiser les modèles",
@@ -665,7 +666,6 @@
     "invalidHeaders": "Chaque ligne doit avoir la forme Nom: valeur.",
     "editProvider": "Modifier",
     "agentDefaults": "Réglages par agent",
-    "agentLater": "Cet agent arrive dans une version ultérieure ; les réglages choisis ici seront alors utilisés.",
     "models": {
       "title": "Modèles",
       "hint": "Tous les modèles de vos fournisseurs, avec ce qu'ils savent faire et leur prix. Ajustez un modèle quand son fournisseur se trompe ou ne donne pas de prix.",
@@ -957,18 +957,30 @@
       "noProblems": "Aucun problème",
       "errors": "aucune erreur | 1 erreur | {count} erreurs",
       "warnings": "aucun avertissement | 1 avertissement | {count} avertissements",
-      "line": "Ligne {line}"
+      "line": "Ligne {line}",
+      "more": "Plus"
     },
     "explain": {
-      "button": "Expliquer",
-      "buttonHint": "L'IA explique en termes simples ce que ce fichier fait dans le jeu, par rapport à l'original de Minecraft.",
-      "title": "Explication",
-      "close": "Fermer",
       "run": "Expliquer ce fichier",
       "again": "Expliquer de nouveau",
       "hint": "Envoyé à l'IA : ce fichier tel que dans l'éditeur, l'original de Minecraft, les changements et les vérifications. Rien n'est modifié.",
       "stale": "Le fichier a changé depuis cette explication.",
       "working": "Lecture du fichier..."
+    },
+    "agent": {
+      "button": "IA",
+      "buttonHint": "Discutez avec l'IA pour modifier ce fichier, ou obtenez une explication de ce qu'il fait dans le jeu.",
+      "chatTab": "Discuter",
+      "explainTab": "Expliquer",
+      "context": "À propos de {id} : l'IA voit ce fichier tel qu'il est dans l'éditeur.",
+      "empty": "Demandez une modification (« fais tomber 2 à 4 flèches », « donne 8 dalles ») ou posez une question sur ce fichier. Les modifications proposées vont dans l'éditeur quand vous les appliquez ; c'est vous qui enregistrez.",
+      "proposal": "Version proposée du fichier",
+      "wholeFile": "Fichier complet",
+      "outdated": "Le fichier a changé dans l'éditeur depuis votre demande : appliquer remplace ces modifications.",
+      "apply": "Appliquer dans l'éditeur",
+      "discard": "Ignorer",
+      "applied": "Appliqué dans l'éditeur (pas encore enregistré).",
+      "discarded": "Ignoré."
     },
     "type": {
       "string": "un texte",

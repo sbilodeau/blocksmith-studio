@@ -116,7 +116,11 @@ function clip(text: string, max: number): string {
 /** One persisted turn as a history message (null when it carries nothing useful for the model). */
 function turnMessage(turn: ConversationTurn): ChatMessage | null {
   if (turn.role === 'user') {
-    const tag = turn.texturePath ? `[Texture: ${turn.texturePath}] ` : ''
+    const tag = turn.texturePath
+      ? `[Texture: ${turn.texturePath}] `
+      : turn.dataPath
+        ? `[File: ${turn.dataPath}] `
+        : ''
     return { role: 'user', text: `${tag}${turn.text ?? ''}` }
   }
   if (turn.role === 'assistant') {

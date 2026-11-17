@@ -8,7 +8,7 @@ import {
   createEditorAgentService,
   type EditorAgentService,
   type EditorAgentServiceDeps,
-  type ExplainDeps
+  type DataAiDeps
 } from '../services/ai/agent'
 
 export interface AiAgentHandlerDeps {
@@ -25,7 +25,7 @@ export interface AiAgentHandlerDeps {
   /** Creation agent: pack name / description and plan progress (needs `navigation`). */
   creation?: EditorAgentServiceDeps['creation']
   /** "Explain" in the data editor (M10). */
-  explain?: ExplainDeps
+  dataAi?: DataAiDeps
   /** Main forwards these to the window as 'ai.event'. */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -50,7 +50,7 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
     previewModel: deps.previewModel,
     ...(deps.navigation ? { navigation: deps.navigation } : {}),
     ...(deps.creation ? { creation: deps.creation } : {}),
-    ...(deps.explain ? { explain: deps.explain } : {}),
+    ...(deps.dataAi ? { dataAi: deps.dataAi } : {}),
     emit: deps.emit,
     now: deps.now,
     newId: deps.newId
@@ -73,6 +73,7 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
     agent.applyCreation(proposalId, acceptedStepIds)
   )
   handle('ai.creation.stopApply', ({ proposalId }) => agent.stopCreationApply(proposalId))
+  handle('ai.data.send', (request) => agent.sendData(request))
   handle('ai.data.explain', (request) => agent.sendExplain(request))
   handle('brief.get', ({ packId }) => brief.get(packId))
   handle('brief.update', ({ packId, patch }) => brief.update(packId, patch, 'user'))

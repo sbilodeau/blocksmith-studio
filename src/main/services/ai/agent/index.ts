@@ -35,6 +35,7 @@ export { renderContactSheet, contactSheetPngs, TILES_PER_SHEET, MAX_SHEETS } fro
 export {
   buildExplainMessages,
   gatherExplainSources,
-  type ExplainDeps,
+  type DataAiDeps,
   type ExplainSources
 } from './explain'
+export { runDataAgent, buildDataAgentMessages, DATA_AGENT_TOOLS } from './data-agent'

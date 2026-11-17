@@ -14,7 +14,9 @@ import {
   type CreationAgentRequest,
   type CreationApplyResult,
   type CreationProposal,
+  type DataAgentRequest,
   type DataExplainRequest,
+  type DataFileProposal,
   type PackMetaPatch,
   type ProposalStep,
   type EditorAgentRequest,
@@ -38,8 +40,9 @@ import { errorOf, frameLayoutOf, runEditorAgent } from './runtime'
 import { replayTargets, runNavigationAgent, type NavigationTexture } from './navigation'
 import type { BulkService } from '../../bulk'
 import { pickSamples, runCreationAgent, type CreationSample } from './creation'
-import { buildExplainMessages, gatherExplainSources, type ExplainDeps } from './explain'
+import { buildExplainMessages, gatherExplainSources, type DataAiDeps } from './explain'
 import { runAgentLoop } from './loop'
+import { runDataAgent } from './data-agent'
 
 /** Largest selection the navigation agent works on. */
 export const MAX_NAVIGATION_TEXTURES = 2000
@@ -89,7 +92,7 @@ export interface EditorAgentServiceDeps {
     jobs?: JobReporter
   }
   /** "Explain" in the data editor (M10): what the explanation reads about the file and the game. */
-  explain?: ExplainDeps
+  dataAi?: DataAiDeps
   /** Default sink for background runs (main forwards it as 'ai.event'). */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -148,6 +151,14 @@ export interface EditorAgentService {
    * agents. Stops the pack's previous explanation.
    */
   sendExplain(request: DataExplainRequest): Promise<{ runId: string }>
+  /** Starts a data-agent run about the open data file (stopping the pack's previous one). */
+  sendData(request: DataAgentRequest): Promise<{ runId: string }>
+  runData(
+    request: DataAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId?: string
+  ): Promise<void>
   runExplain(
     request: DataExplainRequest,
     emit: (event: AgentEvent) => void,
@@ -433,8 +444,8 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     emit({ runId, type: 'started', agent: 'explain', model: request.model })
     let result: Awaited<ReturnType<typeof runAgentLoop>>
     try {
-      if (!deps.explain) throw new AppErrorException('ai.agentFailed')
-      const sources = await gatherExplainSources(request, deps.explain)
+      if (!deps.dataAi) throw new AppErrorException('ai.agentFailed')
+      const sources = await gatherExplainSources(request, deps.dataAi)
       const modelInfo = await deps.providers.getModel(request.model).catch(() => undefined)
       result = await runAgentLoop(
         {
@@ -464,6 +475,83 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       runId,
       type: 'done',
       reason: result.reason === 'budget' ? 'end' : result.reason,
+      ...(result.error ? { error: result.error } : {})
+    })
+  }
+
+  async function runData(
+    request: DataAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId = newId()
+  ): Promise<void> {
+    const { packId } = request
+    emit({ runId, type: 'started', agent: 'data', model: request.model })
+    let result: Awaited<ReturnType<typeof runDataAgent>>
+    let proposal: DataFileProposal | undefined
+    try {
+      const dataAi = deps.dataAi
+      if (!dataAi) throw new AppErrorException('ai.agentFailed')
+      const [sources, entries, history, modelInfo] = await Promise.all([
+        gatherExplainSources(request, dataAi),
+        dataAi.entries(packId).catch(() => []),
+        deps.conversations.read(packId, 'data'),
+        deps.providers.getModel(request.model).catch(() => undefined)
+      ])
+      await deps.conversations.append(packId, 'data', [
+        {
+          id: newId(),
+          at: now().toISOString(),
+          role: 'user',
+          text: request.message,
+          dataPath: request.path,
+          model: request.model
+        }
+      ])
+      const read = async (path: string): Promise<string | null> =>
+        (await dataAi.packText(packId, path).catch(() => null)) ??
+        (await dataAi.vanillaText(packId, path).catch(() => null))
+      result = await runDataAgent(
+        {
+          runId,
+          request,
+          sources,
+          entries,
+          read,
+          settings: deps.getAgentSettings('data'),
+          history,
+          ...(modelInfo ? { modelInfo } : {})
+        },
+        { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
+        emit,
+        signal
+      )
+      if (result.proposal) {
+        proposal = {
+          id: newId(),
+          runId,
+          agent: 'data',
+          kind: 'file',
+          packId,
+          path: request.path,
+          before: request.text,
+          after: result.proposal.after,
+          warnings: result.proposal.warnings,
+          status: 'pending'
+        }
+        const last = [...result.turns].reverse().find((t) => t.role === 'assistant')
+        if (last) last.proposalId = proposal.id
+      }
+      await deps.conversations.append(packId, 'data', result.turns).catch(() => undefined)
+    } catch (err) {
+      emit({ runId, type: 'done', reason: 'error', error: errorOf(err) })
+      return
+    }
+    if (proposal) emit({ runId, type: 'proposal', proposal })
+    emit({
+      runId,
+      type: 'done',
+      reason: result.reason,
       ...(result.error ? { error: result.error } : {})
     })
   }
@@ -804,7 +892,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     run,
 
     async sendExplain(request) {
-      if (!deps.explain) throw new AppErrorException('ai.agentFailed')
+      if (!deps.dataAi) throw new AppErrorException('ai.agentFailed')
       if (!(await deps.packs.locate(request.packId))) {
         throw new AppErrorException('packs.notFound', { packId: request.packId })
       }
@@ -814,6 +902,18 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     },
 
     runExplain,
+
+    async sendData(request) {
+      if (!deps.dataAi) throw new AppErrorException('ai.agentFailed')
+      if (!(await deps.packs.locate(request.packId))) {
+        throw new AppErrorException('packs.notFound', { packId: request.packId })
+      }
+      return start(`${request.packId}:data`, (runId, signal) =>
+        runData(request, deps.emit, signal, runId)
+      )
+    },
+
+    runData,
 
     stop(runId) {
       byRunId.get(runId)?.controller.abort()

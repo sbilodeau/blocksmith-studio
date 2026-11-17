@@ -267,7 +267,9 @@ describe('editor agent service', () => {
     await agent.idle()
     expect(events.at(-1)).toEqual({ runId, type: 'done', reason: 'stopped' })
     const p = events.find((e) => e.type === 'proposal')
-    expect(p?.type === 'proposal' && p.proposal.steps.map((s) => s.tool)).toEqual(['flip'])
+    expect(p?.type === 'proposal' && (p.proposal as Proposal).steps.map((s) => s.tool)).toEqual([
+      'flip'
+    ])
   })
 
   it('a new send stops the previous run of the same pack', async () => {

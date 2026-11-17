@@ -13,6 +13,7 @@ import {
   type DataPathInfo
 } from '@shared/datapack'
 import type { ChatMessage, DataExplainRequest } from '@shared/ai/types'
+import type { DataEntry } from '@shared/model/data'
 import type { PackKind } from '@shared/model/pack'
 import type { Language } from '@shared/model/settings'
 import { AppErrorException } from '../../../ipc/registry'
@@ -52,8 +53,8 @@ export interface ExplainSources {
   names: Record<string, string>
 }
 
-/** Reads what the explanation needs (main wiring: the data service). */
-export interface ExplainDeps {
+/** Reads what the explanation and the data agent need (main wiring: the data service). */
+export interface DataAiDeps {
   meta(packId: string): Promise<{ name: string; kind: PackKind; authoringVersion: string }>
   /** Vanilla's file at `path` for the pack's version, whatever the pack's base; null when vanilla has none. */
   vanillaText(packId: string, path: string): Promise<string | null>
@@ -62,9 +63,11 @@ export interface ExplainDeps {
   ids(packId: string): Promise<DataIds>
   /** English item and block names of the pack's version ("minecraft:stone" -> "Stone"). */
   names(packId: string): Promise<Record<string, string>>
+  /** The pack's data files plus vanilla's (data agent's list_data). */
+  entries(packId: string): Promise<DataEntry[]>
 }
 
-const LANGUAGE_NAMES: Record<Language, string> = { en: 'English', fr: 'French' }
+export const LANGUAGE_NAMES: Record<Language, string> = { en: 'English', fr: 'French' }
 
 function parse(text: string | null): unknown {
   if (text === null) return undefined
@@ -83,7 +86,7 @@ function tagRegistries(info: DataPathInfo): string[] {
 
 /** Content in game of a tag: the pack's file merged with vanilla's (or alone with "replace": true). */
 async function tagInGame(
-  deps: ExplainDeps,
+  deps: DataAiDeps,
   packId: string,
   id: string,
   registries: readonly string[]
@@ -106,8 +109,8 @@ async function tagInGame(
 
 /** Gathers the sources for `request` (validated path; the text is the renderer's). */
 export async function gatherExplainSources(
-  request: DataExplainRequest,
-  deps: ExplainDeps
+  request: Pick<DataExplainRequest, 'packId' | 'path' | 'text'>,
+  deps: DataAiDeps
 ): Promise<ExplainSources> {
   const info = parseDataPath(request.path)
   if (!info) throw new AppErrorException('data.invalidPath', { path: request.path })
@@ -160,8 +163,10 @@ Reply in {{language}}. Write for a player who does not read JSON:
 - If an edit has no effect in game (see the TAG EFFECT section), say so: the user may think it works.
 - Only state what the data says. When an effect depends on something outside the file, say so in a few words.
 - Plain text only: no headings, no bold, no tables, no code blocks. Do not restate or quote the JSON.
+`
 
-How Minecraft reads data packs:
+/** How Minecraft combines data pack files with vanilla's (explanations and the data agent). */
+export const DATA_PACK_RULES = `How Minecraft reads data packs:
 - A file at the same path as a vanilla file (namespace "minecraft") REPLACES the vanilla file completely. Tags are the
   exception: a tag file ADDS its values to vanilla's tag, unless it has "replace": true.
 - A file in another namespace adds something new and changes nothing in vanilla by itself. A new loot table, function
@@ -224,7 +229,7 @@ export const KIND_GUIDES: Record<DataKind, string> = {
   "damage_type", "worldgen/..."). Explain what that kind of file controls, then this one.`
 }
 
-const VERSION_NOTES = `Format notes: 26.1 renamed loot table "conditions" to "condition" and "functions" to "modifier"; 1.21.5
+export const VERSION_NOTES = `Format notes: 26.1 renamed loot table "conditions" to "condition" and "functions" to "modifier"; 1.21.5
 changed the transmute recipe result from an id to an item stack. Read the file with the rules of its Minecraft version.`
 
 function clip(text: string): string {
@@ -303,17 +308,14 @@ function checksSection(src: ExplainSources): string {
   ].join('\n')
 }
 
-/** System prompt and user message for an explanation. */
-export function buildExplainMessages(src: ExplainSources, language: Language): ChatMessage[] {
+/**
+ * What the app knows about the open file, as sections of a user message: situation, original and current text, computed
+ * changes, tag effect, checks, tags used and English names.
+ */
+export function fileContext(src: ExplainSources): string[] {
   const { info } = src
   const current = info.text ? undefined : parse(src.text)
   const vanilla = info.text ? undefined : parse(src.vanilla)
-  const system = [
-    EXPLAIN_INSTRUCTIONS.replaceAll('{{language}}', LANGUAGE_NAMES[language]),
-    KIND_GUIDES[info.kind],
-    VERSION_NOTES
-  ].join('\n\n')
-
   const parts: string[] = [
     `Pack: "${src.pack.name}" (${KIND_NAMES[src.pack.kind]}). Minecraft version: ${src.version}.`,
     `File: ${info.path}`,
@@ -324,10 +326,10 @@ export function buildExplainMessages(src: ExplainSources, language: Language): C
         ? 'The file is not saved in the pack yet.'
         : src.text === src.vanilla
           ? ''
-          : "The edits are not saved yet (until then the game keeps vanilla's file): explain the edited version below."
+          : "The edits are not saved yet (until then the game keeps vanilla's file); the current file below is the edited version."
       : src.saved === src.text
         ? 'Saved in the pack.'
-        : 'The editor has unsaved edits: explain the text below (the edited version).'
+        : 'The editor has unsaved edits; the current file below is the edited version.'
   ].filter(Boolean)
 
   const lang = info.text ? 'mcfunction' : 'json'
@@ -336,9 +338,7 @@ export function buildExplainMessages(src: ExplainSources, language: Language): C
       `ORIGINAL (vanilla ${src.version}) FILE:\n\`\`\`${lang}\n${shown(src.vanilla, vanilla)}\n\`\`\``
     )
   }
-  parts.push(
-    `CURRENT FILE (the one to explain):\n\`\`\`${lang}\n${shown(src.text, current)}\n\`\`\``
-  )
+  parts.push(`CURRENT FILE (as in the editor):\n\`\`\`${lang}\n${shown(src.text, current)}\n\`\`\``)
 
   if (src.vanilla !== null && current !== undefined && vanilla !== undefined) {
     const changes = jsonChanges(vanilla, current)
@@ -370,8 +370,21 @@ export function buildExplainMessages(src: ExplainSources, language: Language): C
       `ENGLISH IN-GAME NAMES:\n${names.map(([id, name]) => `- ${id} = ${name}`).join('\n')}`
     )
   }
-  parts.push(`Explain this file in ${LANGUAGE_NAMES[language]}, in simple terms.`)
+  return parts
+}
 
+/** System prompt and user message for an explanation. */
+export function buildExplainMessages(src: ExplainSources, language: Language): ChatMessage[] {
+  const system = [
+    EXPLAIN_INSTRUCTIONS.replaceAll('{{language}}', LANGUAGE_NAMES[language]),
+    DATA_PACK_RULES,
+    KIND_GUIDES[src.info.kind],
+    VERSION_NOTES
+  ].join('\n\n')
+  const parts = [
+    ...fileContext(src),
+    `Explain this file in ${LANGUAGE_NAMES[language]}, in simple terms.`
+  ]
   return [
     { role: 'system', text: system },
     { role: 'user', text: parts.join('\n\n') }

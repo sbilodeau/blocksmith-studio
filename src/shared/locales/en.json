@@ -542,7 +542,8 @@
     "agents": {
       "editor": "Editor agent",
       "navigation": "Navigation agent",
-      "creation": "Creation agent"
+      "creation": "Creation agent",
+      "data": "Data agent"
     },
     "editorAgent": "Editor agent",
     "refreshModels": "Refresh models",
@@ -665,7 +666,6 @@
     "invalidHeaders": "Each line must look like Name: value.",
     "editProvider": "Edit",
     "agentDefaults": "Agent defaults",
-    "agentLater": "This agent arrives in a later version; the defaults you choose here will be used then.",
     "models": {
       "title": "Models",
       "hint": "Every model your providers offer, with what it can do and its price. Adjust a model when its provider gets it wrong or gives no price.",
@@ -957,18 +957,30 @@
       "noProblems": "No problems found",
       "errors": "no errors | 1 error | {count} errors",
       "warnings": "no warnings | 1 warning | {count} warnings",
-      "line": "Line {line}"
+      "line": "Line {line}",
+      "more": "More"
     },
     "explain": {
-      "button": "Explain",
-      "buttonHint": "The AI explains in simple terms what this file does in the game, compared with Minecraft's original.",
-      "title": "Explanation",
-      "close": "Close",
       "run": "Explain this file",
       "again": "Explain again",
       "hint": "Sent to the AI: this file as in the editor, Minecraft's original, the changes and the checks. Nothing is changed.",
       "stale": "The file changed since this explanation.",
       "working": "Reading the file..."
+    },
+    "agent": {
+      "button": "AI",
+      "buttonHint": "Chat with the AI to change this file, or get an explanation of what it does in the game.",
+      "chatTab": "Chat",
+      "explainTab": "Explain",
+      "context": "About {id}: the AI sees this file as it is in the editor.",
+      "empty": "Ask for a change (\"drop 2 to 4 arrows\", \"make it give 8 slabs\") or a question about this file. Proposed changes go into the editor when you apply them; you save them yourself.",
+      "proposal": "Proposed version of the file",
+      "wholeFile": "Whole file",
+      "outdated": "The file changed in the editor since your request: applying replaces those edits.",
+      "apply": "Apply to editor",
+      "discard": "Discard",
+      "applied": "Applied to the editor (not saved yet).",
+      "discarded": "Discarded."
     },
     "type": {
       "string": "a text",
