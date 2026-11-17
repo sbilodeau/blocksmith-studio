@@ -15,6 +15,7 @@ import TextureTile from './TextureTile.vue'
 import BulkDialog from '../bulk/BulkDialog.vue'
 import MergeDialog from '../merge/MergeDialog.vue'
 import { usePackStore, type StatusFilter } from '../../stores/pack'
+import { FALLBACK_VIEWPORT, TILE_CHROME, gridLayout, rowRange, scrollToReveal } from './grid-layout'
 
 const props = defineProps<{ packId: string }>()
 // The grid edits its pack's view state (search, filter, zoom) directly in the per-pack store.
@@ -24,33 +25,85 @@ const { t } = useI18n()
 const filters: StatusFilter[] = ['all', 'changed', 'vanilla']
 const showBulk = ref(false)
 const showSend = ref(false)
-/** Selected textures in pack order (bulk actions and the navigation agent use this order). */
-const selectedPaths = computed(() =>
-  store.value.textures.filter((tex) => store.value.selection.has(tex.path)).map((tex) => tex.path)
-)
 /** Send to pack: only the pack's own files (unchanged vanilla textures are not copied). */
-const sendPaths = computed(() =>
-  store.value.textures
-    .filter((tex) => store.value.selection.has(tex.path) && tex.status !== 'vanilla')
+const sendPaths = computed(() => {
+  const sel = store.value.selection
+  if (sel.size === 0) return []
+  return store.value.textures
+    .filter((tex) => sel.has(tex.path) && tex.status !== 'vanilla')
     .map((tex) => tex.path)
+})
+
+// ---------- virtual grid ----------
+// Only the rows in view (plus a few above and below) are in the DOM, so a pack of 10,000 textures scrolls,
+// filters and selects as fast as a small one. Tiles have a fixed size per zoom level, which gives the layout.
+const scroller = ref<HTMLElement | null>(null)
+const viewport = ref({ width: 0, height: 0 })
+const scrollTop = ref(0)
+const layout = computed(() =>
+  gridLayout(store.value.visible.length, store.value.zoom, viewport.value.width)
 )
+// Separate computed values so scrolling within a row range does not re-render the tiles.
+const firstRow = computed(() => rowRange(layout.value, scrollTop.value, viewport.value.height)[0])
+const lastRow = computed(() => rowRange(layout.value, scrollTop.value, viewport.value.height)[1])
+const rendered = computed(() => {
+  const { columns } = layout.value
+  return store.value.visible.slice(firstRow.value * columns, (lastRow.value + 1) * columns)
+})
+const windowStyle = computed(() => ({
+  transform: `translateY(${firstRow.value * layout.value.rowPitch}px)`,
+  gridTemplateColumns: `repeat(${layout.value.columns}, ${layout.value.tileWidth}px)`,
+  gridAutoRows: `${layout.value.tileHeight}px`,
+  gap: `${TILE_CHROME.gap}px`
+}))
+
+function measure(): void {
+  const el = scroller.value
+  if (!el) return
+  const width = el.clientWidth
+  const height = el.clientHeight
+  if (width !== viewport.value.width || height !== viewport.value.height) {
+    viewport.value = { width, height }
+  }
+}
+
+function onScroll(): void {
+  if (scroller.value) scrollTop.value = scroller.value.scrollTop
+}
+
+/** Scrolls the least needed to show a texture's tile (it may not be rendered yet). */
+function reveal(path: string): void {
+  const el = scroller.value
+  const index = store.value.visible.findIndex((tex) => tex.path === path)
+  if (!el || index < 0) return
+  const height = el.clientHeight || FALLBACK_VIEWPORT.height
+  el.scrollTop = scrollToReveal(layout.value, index, el.scrollTop, height)
+  scrollTop.value = el.scrollTop
+}
 
 // The editor replaces the grid: keep its scroll position, and on return show the last edited tile
 // (the editor's previous / next buttons may have moved to a texture further down).
-const scroller = ref<HTMLElement | null>(null)
+let resizeObserver: ResizeObserver | null = null
 onMounted(async () => {
-  await nextTick()
   const el = scroller.value
   if (!el) return
+  measure()
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(measure)
+    resizeObserver.observe(el)
+  }
+  // Let the spacer take the full height before restoring the scroll position.
+  await nextTick()
   el.scrollTop = store.value.gridScroll
+  scrollTop.value = el.scrollTop
   const last = store.value.lastEdited
   if (last) {
-    const tile = el.querySelector<HTMLElement>(`[data-path="${CSS.escape(last)}"]`)
-    tile?.scrollIntoView({ block: 'nearest' })
+    reveal(last)
     store.value.lastEdited = null
   }
 })
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
   if (scroller.value) store.value.gridScroll = scroller.value.scrollTop
 })
 
@@ -128,21 +181,30 @@ function onKeydown(e: KeyboardEvent): void {
         </n-button>
       </div>
     </div>
-    <bulk-dialog v-model:show="showBulk" :pack-id="packId" :paths="selectedPaths" />
+    <bulk-dialog v-model:show="showBulk" :pack-id="packId" :paths="store.selectedPaths" />
     <merge-dialog v-model:show="showSend" mode="send" :source-pack-id="packId" :paths="sendPaths" />
 
-    <div ref="scroller" class="scroll" tabindex="0" data-testid="texture-grid" @keydown="onKeydown">
+    <div
+      ref="scroller"
+      class="scroll"
+      tabindex="0"
+      data-testid="texture-grid"
+      @keydown="onKeydown"
+      @scroll.passive="onScroll"
+    >
       <n-empty v-if="store.visible.length === 0" :description="t('grid.empty')" class="empty" />
-      <div v-else class="tiles">
-        <texture-tile
-          v-for="tex in store.visible"
-          :key="tex.path"
-          :texture="tex"
-          :size="store.zoom"
-          :selected="store.selection.has(tex.path)"
-          @pick="(mode) => store.select(tex.path, mode)"
-          @open="store.openEditor(tex.path)"
-        />
+      <div v-else class="tiles" :style="{ height: `${layout.totalHeight}px` }">
+        <div class="window" data-testid="texture-grid-window" :style="windowStyle">
+          <texture-tile
+            v-for="tex in rendered"
+            :key="tex.path"
+            :texture="tex"
+            :size="store.zoom"
+            :selected="store.selection.has(tex.path)"
+            @pick="(mode) => store.select(tex.path, mode)"
+            @open="store.openEditor(tex.path)"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -201,10 +263,13 @@ function onKeydown(e: KeyboardEvent): void {
   outline: none;
 }
 .tiles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-content: flex-start;
+  position: relative;
+}
+.window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
 }
 .empty {
   margin-top: 48px;
