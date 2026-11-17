@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { app, BrowserWindow, dialog, net, safeStorage, shell } from 'electron'
 import { createMainWindow, createPopoutWindow, useAppIconInDev } from './window'
 import { hardenSession, hardenWebContents } from './security'
@@ -22,6 +23,10 @@ import { CategoryMappingStore } from './services/categories'
 import { registerCategoryHandlers } from './ipc/category-handlers'
 import { createUpdaterService } from './services/updater'
 import { launchWhatsNew } from './services/whats-new'
+import { createMinecraftService, type MinecraftService } from './services/minecraft/service'
+import { MinecraftStore } from './services/minecraft/store'
+import { launcherCandidates } from './services/vanilla/detect'
+import { registerMinecraftHandlers } from './ipc/minecraft-handlers'
 import { createDefaultVanillaStore } from './services/vanilla'
 import { createDataService, createPackService, createTextureEditService } from './services/packs'
 import { createHistoryService } from './services/history'
@@ -79,6 +84,13 @@ if (!app.requestSingleInstanceLock()) {
       getMinecraftPaths: () => settings.get().minecraftPaths
     })
 
+    // Every pack change goes to the renderer and to live mode (which re-syncs the pack's copy in Minecraft).
+    let minecraft: MinecraftService | null = null
+    const packChanged = (packId?: string): void => {
+      send(webContents(), 'packs.changed', { packId })
+      if (packId) minecraft?.packChanged(packId)
+    }
+
     const categories = CategoryMappingStore.forUserData(app.getPath('userData'))
     await categories.load()
 
@@ -93,24 +105,27 @@ if (!app.requestSingleInstanceLock()) {
       },
       trashItem: (path) => shell.trashItem(path),
       showItemInFolder: (path) => shell.showItemInFolder(path),
-      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+      notifyChanged: (packId) => packChanged(packId)
     })
     const history = createHistoryService({
       locate: (id) => packs.locate(id),
-      onFilesChanged: (location, paths) => packs.invalidate(location, paths),
-      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+      onFilesChanged: (location, paths) => {
+        packs.invalidate(location, paths)
+        minecraft?.packChanged(location.id)
+      },
+      notifyChanged: (packId) => packChanged(packId)
     })
     const textures = createTextureEditService({
       packs,
       vanilla,
       history,
-      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+      notifyChanged: (packId) => packChanged(packId)
     })
     const data = createDataService({
       packs,
       vanilla,
       history,
-      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+      notifyChanged: (packId) => packChanged(packId)
     })
     const preview = createPreviewService({ packs, vanilla })
     const popouts = createPopoutManager({
@@ -143,8 +158,41 @@ if (!app.requestSingleInstanceLock()) {
       fetch: (url, init) => net.fetch(url, init)
     })
 
+    const minecraftStore = MinecraftStore.forUserData(app.getPath('userData'))
+    await minecraftStore.load()
+    minecraft = createMinecraftService({
+      packs,
+      store: minecraftStore,
+      // BLOCKSMITH_MINECRAFT_DIR replaces the official .minecraft (E2E tests, portable installs).
+      officialRoot: () =>
+        process.env['BLOCKSMITH_MINECRAFT_DIR'] ??
+        launcherCandidates({
+          platform: process.platform,
+          homedir: homedir(),
+          env: process.env
+        }).find((c) => c.launcher === 'official')?.root ??
+        null,
+      showItemInFolder: (path) => shell.showItemInFolder(path),
+      notifyStatus: (packId, status) =>
+        send(webContents(), 'pack.minecraft.status', { packId, status })
+    })
+    const minecraftService = minecraft
+
     // Dialogs are looked up at call time (E2E tests replace them on the dialog module).
     const parent = (): BrowserWindow | undefined => mainWindow ?? undefined
+    registerMinecraftHandlers({
+      minecraft: minecraftService,
+      chooseGameDir: async () => {
+        const options: Electron.OpenDialogOptions = {
+          properties: ['openDirectory', 'showHiddenFiles', 'dontAddToRecent']
+        }
+        const win = parent()
+        const r = win
+          ? await dialog.showOpenDialog(win, options)
+          : await dialog.showOpenDialog(options)
+        return r.canceled ? null : (r.filePaths[0] ?? null)
+      }
+    })
     registerIpcHandlers({
       settings,
       updater,
@@ -306,7 +354,13 @@ if (!app.requestSingleInstanceLock()) {
       if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow()
     })
 
-    app.on('before-quit', () => updater.dispose())
+    // Packs left in live mode are synced again (they may have changed while the app was closed).
+    minecraftService.resume()
+
+    app.on('before-quit', () => {
+      updater.dispose()
+      minecraftService.dispose()
+    })
   })
 
   app.on('window-all-closed', () => {

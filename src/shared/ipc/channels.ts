@@ -17,6 +17,12 @@ export const INVOKE_CHANNELS = [
   // Minecraft installs and vanilla assets
   'minecraft.detect',
   'minecraft.addPath',
+  'minecraft.gameDirs',
+  'minecraft.addGameDir',
+  'pack.minecraft.get',
+  'pack.minecraft.install',
+  'pack.minecraft.live',
+  'pack.minecraft.reveal',
   'vanilla.availability',
   'vanilla.prepare',
   // Workspace and packs
@@ -98,6 +104,7 @@ export const EVENT_CHANNELS = [
   'updater.status',
   'job.progress',
   'packs.changed',
+  'pack.minecraft.status',
   'ai.event',
   'ai.eval.progress',
   'preview.popout.state',
