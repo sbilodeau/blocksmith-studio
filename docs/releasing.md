@@ -6,24 +6,38 @@ for updates.
 
 ## Cutting a release
 
-1. Make sure the commit you want to ship is on `main` and CI is green.
-2. On GitHub, open **Actions > Release > Run workflow**.
-3. Pick the branch (normally `main`), optionally type extra **notes** (Markdown), and click **Run workflow**.
+What changed goes in `CHANGELOG.md` under `## Unreleased` as part of each pull request (AGENTS.md asks for it).
+That section becomes the release notes, so there is nothing to write at release time.
+
+1. Make sure everything you want to ship is merged into `main` and CI is green.
+2. Start the release, either way:
+   - On GitHub: **Actions > Release > Run workflow**, keep **main**, click **Run workflow**. The optional **notes**
+     field adds text above the changelog notes.
+   - From a terminal: `npm run release`. It shows the version and the notes, asks for confirmation, then starts the
+     same workflow (`npm run release -- --preview` only shows them; needs the GitHub CLI signed in).
+3. Wait about 15 minutes. Installed apps see the new version at their next check.
 
 The workflow (`.github/workflows/release.yml`) then:
 
-| Job       | Runner                       | What it does                                                                                |
-| --------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `version` | ubuntu                       | Computes the next version with `node scripts/calver.mjs` from the existing `v*` tags        |
-| `test`    | ubuntu                       | `npm ci`, lint, typecheck, `npm test`                                                       |
-| `build`   | windows-latest, macos-latest | Writes the version into `package.json` (not committed), builds, packages, uploads the files |
-| `publish` | ubuntu                       | Creates tag `v<version>` on the workflow commit and the GitHub Release with all the files   |
+| Job         | Runner                       | What it does                                                                                            |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `version`   | ubuntu                       | Stops unless run on `main`; computes the next version; takes the `## Unreleased` notes (stops if empty) |
+| `test`      | ubuntu                       | `npm ci`, lint, typecheck, `npm test`                                                                   |
+| `build`     | windows-latest, macos-latest | Sets the version, dates the changelog for the app, adds the notes to `latest*.yml`, builds, packages    |
+| `publish`   | ubuntu                       | Creates tag `v<version>` on the workflow commit and the GitHub Release with all the files               |
+| `changelog` | ubuntu                       | Commits `CHANGELOG.md` to `main` with `## Unreleased` turned into `## <version> - <date>`               |
 
-Only one release runs at a time. The version is never committed back: the git tag is the source of truth.
-The release notes are GitHub's generated notes (merged PRs since the previous tag), with the optional notes
-from the form shown above them.
+Only one release runs at a time. The version in `package.json` is never committed: the git tag is the source of
+truth. The release page shows the changelog notes first, then GitHub's list of merged pull requests and a link to
+the full diff.
 
-To check which version the next release will get, run `npm run calver` locally (after `git fetch --tags`).
+The `changelog` job commits as `github-actions[bot]` (`chore: release v<version>`), so pull `main` afterwards. If
+someone changed the `## Unreleased` section on `main` while the release ran, the job does not guess: it leaves a
+warning and the new version heading has to be added by hand. The changelog scripts are `scripts/changelog.mjs`
+(`notes`, `stamp`) and `scripts/lib/changelog.mjs` (tested in `tests/unit/changelog-script.test.ts`).
+
+To check which version the next release will get, run `npm run calver` locally (after `git fetch --tags`), or
+`npm run release -- --preview`.
 
 ## Versioning (CalVer)
 
@@ -85,6 +99,20 @@ that are not signed with an Apple Developer ID. On macOS, after the DMG opens, d
 The macOS DMG URL is
 `https://github.com/sbilodeau/blocksmith-studio/releases/download/v<v>/Blocksmith-Studio-<v>-<arch>.dmg`.
 If you change `artifactName` in `electron-builder.yml`, update `macDmgFileName()` in the updater too.
+
+### What's new
+
+| When                         | Where                        | Notes shown                                                                    |
+| ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------ |
+| An update is available       | **What's new** on the banner | `releaseNotes` from `latest*.yml` (the build copies `build/release-notes.md`)  |
+| First launch after an update | Opens by itself, once        | Bundled changelog: every version after `settings.lastRunVersion`, newest first |
+| Any time                     | Settings > Updates           | Bundled changelog: the current version's section                               |
+
+A first install shows nothing. An app updated from 26.46.0, which did not record its version, shows the current
+version's notes. Notes are a Markdown subset (headings, paragraphs, bullets, bold, italic, code, links) parsed by
+`src/shared/markdown.ts` and rendered as Vue nodes, never as HTML. Links open in the browser; repository paths
+such as `docs/x.md` open on GitHub. If `latest*.yml` has no notes, electron-updater falls back to GitHub's HTML
+notes, which the updater turns into plain text.
 
 ## First launch of an unsigned build
 
