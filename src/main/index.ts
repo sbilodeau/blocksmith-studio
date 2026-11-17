@@ -21,6 +21,7 @@ import { SettingsService } from './services/settings'
 import { CategoryMappingStore } from './services/categories'
 import { registerCategoryHandlers } from './ipc/category-handlers'
 import { createUpdaterService } from './services/updater'
+import { launchWhatsNew } from './services/whats-new'
 import { createDefaultVanillaStore } from './services/vanilla'
 import { createDataService, createPackService, createTextureEditService } from './services/packs'
 import { createHistoryService } from './services/history'
@@ -60,6 +61,15 @@ if (!app.requestSingleInstanceLock()) {
 
     const settings = SettingsService.forUserData(app.getPath('userData'))
     await settings.load()
+    let whatsNew = launchWhatsNew({
+      isPackaged: app.isPackaged,
+      currentVersion: app.getVersion(),
+      lastRunVersion: settings.get().lastRunVersion,
+      ranBefore: settings.loadedFromFile
+    })
+    if (app.isPackaged && settings.get().lastRunVersion !== app.getVersion()) {
+      await settings.setLastRunVersion(app.getVersion())
+    }
 
     const updater = createUpdaterService()
     const jobs = createJobReporter((progress) => send(webContents(), 'job.progress', progress))
@@ -135,7 +145,15 @@ if (!app.requestSingleInstanceLock()) {
 
     // Dialogs are looked up at call time (E2E tests replace them on the dialog module).
     const parent = (): BrowserWindow | undefined => mainWindow ?? undefined
-    registerIpcHandlers({ settings, updater })
+    registerIpcHandlers({
+      settings,
+      updater,
+      takeWhatsNew: () => {
+        const value = whatsNew
+        whatsNew = null
+        return value
+      }
+    })
     registerVanillaHandlers({
       vanilla,
       settings,

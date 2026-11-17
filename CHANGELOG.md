@@ -5,6 +5,14 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M12 - Releases and updates
+
+- **Release from GitHub in one click**: Actions > Release > Run workflow (or `npm run release`) builds the installers
+  from `main`, gives them the next version number and publishes them with this changelog as the release notes
+- **What's new** before you update: the update banner has a **What's new** button with the new version's notes
+- **What's new** after you update: the first launch of a new version shows what changed since the version you had
+  (every version in between); Settings > Updates has a **What's new** button for the current version
+
 ### M11 - Polish and extras
 
 - **Edit categories** (category sidebar): change which textures go in each category, add your own categories with
@@ -233,6 +241,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
 - Export to a ready-to-use .zip with only changed files, regenerated pack.mcmeta and validation warnings
 - Read-only `bs-asset://` protocol for thumbnails
 - Fix: clicking the Packs tab from Settings now returns to the pack list
+
+## 26.46.0 - 2026-11-15
 
 ### M0 - Foundation and delivery pipeline
 

@@ -6,7 +6,7 @@ Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resour
 pixel editor, a live 3D preview, a checked JSON editor and AI agents that propose changes you review before
 anything is applied.
 
-> Status: early development (milestone M11 - polish and extras). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M12 - releases and updates). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
@@ -23,7 +23,8 @@ anything is applied.
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
 - Export to any Minecraft Java version released in the last two years
 - English and French interface
-- Self-updating releases published on GitHub Releases (CalVer `yy.ww.fix`)
+- Self-updating releases published on GitHub Releases (CalVer `yy.ww.fix`), with a **What's new** window before and
+  after each update
 
 ## AI agents
 
@@ -67,6 +68,10 @@ Download the latest installer from [GitHub Releases](https://github.com/sbilodea
 | macOS (Apple Silicon) | `Blocksmith-Studio-<version>-arm64.dmg` | Notified in the app; the new DMG is downloaded and opened for you |
 | macOS (Intel)         | `Blocksmith-Studio-<version>-x64.dmg`   | Same as above                                                     |
 
+The app checks for a new version 10 seconds after it starts and every 6 hours (Settings > Updates can turn this off
+or check now). When one is out, a banner offers to download it, with a **What's new** button for its notes; after
+the update, the first launch shows what changed since the version you had.
+
 The builds are not code-signed yet:
 
 - **Windows**: SmartScreen may warn about an unknown publisher. Click "More info" then "Run anyway".
@@ -95,6 +100,7 @@ npm run dev          # start the app with hot reload
 | `npm run package:dir` | Build an unpacked app for the current platform (no installer)   |
 | `npm run package`     | Build installers for the current platform (not published)       |
 | `npm run calver`      | Print the next CalVer release version computed from git tags    |
+| `npm run release`     | Start the Release workflow on GitHub for `main` (see releasing) |
 
 Running from a terminal inside VS Code: VS Code sets `ELECTRON_RUN_AS_NODE`, which makes Electron start as plain
 Node. The E2E helper removes it automatically; if `npm run dev` fails with "bad option", run `unset ELECTRON_RUN_AS_NODE`.
@@ -102,7 +108,7 @@ Node. The E2E helper removes it automatically; if `npm run dev` fails with "bad 
 Project documentation:
 
 - [docs/architecture.md](docs/architecture.md) - processes, IPC contract, security model, folder layout
-- [docs/releasing.md](docs/releasing.md) - CalVer, release workflow, auto-update behavior, signing
+- [docs/releasing.md](docs/releasing.md) - one-click releases, CalVer, release notes, auto-update, signing
 - [docs/versions.md](docs/versions.md) - supported Minecraft versions, pack.mcmeta rules, vanilla extraction
 - [docs/packs.md](docs/packs.md) - pack folder layout, texture statuses, import and export
 - [docs/categories.md](docs/categories.md) - texture categories and how to edit the mapping

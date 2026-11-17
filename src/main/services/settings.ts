@@ -18,6 +18,7 @@ export class SettingsService {
   private settings: Settings = defaultSettings()
   private readonly listeners = new Set<(s: Settings) => void>()
   private writeQueue: Promise<void> = Promise.resolve()
+  private fromFile = false
 
   constructor(private readonly filePath: string) {}
 
@@ -29,6 +30,7 @@ export class SettingsService {
     try {
       const raw = await fs.readFile(this.filePath, 'utf8')
       const parsed = SettingsSchema.safeParse(JSON.parse(raw))
+      this.fromFile = true
       if (parsed.success) {
         this.settings = parsed.data
       } else {
@@ -40,6 +42,11 @@ export class SettingsService {
       this.settings = defaultSettings()
     }
     return this.settings
+  }
+
+  /** True when load() found a settings file (the app ran before, even if the file was broken). */
+  get loadedFromFile(): boolean {
+    return this.fromFile
   }
 
   get(): Settings {
@@ -62,6 +69,11 @@ export class SettingsService {
   /** Main-process only: the renderer never sends file system paths into settings. */
   async setWorkspacePath(path: string | undefined): Promise<Settings> {
     return this.replace({ ...this.settings, workspacePath: path })
+  }
+
+  /** Main-process only: the packaged app version that ran last. */
+  async setLastRunVersion(version: string): Promise<Settings> {
+    return this.replace({ ...this.settings, lastRunVersion: version })
   }
 
   /** Main-process only: remembers a Minecraft folder or jar added by hand (deduplicated). */

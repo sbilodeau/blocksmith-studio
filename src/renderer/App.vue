@@ -19,6 +19,7 @@ import {
 } from 'naive-ui'
 import AppHeader from './components/AppHeader.vue'
 import UpdateBanner from './components/UpdateBanner.vue'
+import WhatsNewOnLaunch from './components/WhatsNewOnLaunch.vue'
 import { useSettingsStore } from './stores/settings'
 
 const settingsStore = useSettingsStore()
@@ -99,6 +100,7 @@ watch(
             <app-header />
           </n-layout-header>
           <update-banner />
+          <whats-new-on-launch />
           <n-layout-content
             class="app-content"
             content-style="padding: 16px 24px; height: 100%; box-sizing: border-box;"

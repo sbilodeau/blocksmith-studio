@@ -56,7 +56,12 @@
     "error": "Échec de la mise à jour : {reason}",
     "download": "Télécharger",
     "restart": "Redémarrer et installer",
-    "openInstaller": "Ouvrir l'installateur"
+    "openInstaller": "Ouvrir l'installateur",
+    "whatsNew": "Nouveautés",
+    "whatsNewIn": "Nouveautés de la version {version}",
+    "updatedTo": "Application mise à jour : version {version}",
+    "allReleases": "Toutes les versions",
+    "noNotes": "Aucune note de version pour cette version."
   },
   "errors": {
     "unexpected": "Une erreur est survenue.",

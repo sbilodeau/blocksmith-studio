@@ -33,6 +33,20 @@ describe('SettingsService (filesystem)', () => {
     expect((await reloaded.load()).theme).toBe('dark')
   })
 
+  it('remembers the last version that ran and whether a settings file existed', async () => {
+    const first = SettingsService.forUserData(dir)
+    await first.load()
+    expect(first.loadedFromFile).toBe(false)
+    await first.setLastRunVersion('26.47.0')
+    await first.update({ language: 'fr' })
+
+    const second = SettingsService.forUserData(dir)
+    const settings = await second.load()
+    expect(second.loadedFromFile).toBe(true)
+    expect(settings.lastRunVersion).toBe('26.47.0')
+    expect(settings.language).toBe('fr')
+  })
+
   it('notifies listeners on change', async () => {
     const service = SettingsService.forUserData(dir)
     await service.load()

@@ -56,7 +56,12 @@
     "error": "Update failed: {reason}",
     "download": "Download",
     "restart": "Restart and install",
-    "openInstaller": "Open installer"
+    "openInstaller": "Open installer",
+    "whatsNew": "What's new",
+    "whatsNewIn": "What's new in {version}",
+    "updatedTo": "Updated to {version}",
+    "allReleases": "All releases",
+    "noNotes": "No release notes for this version."
   },
   "errors": {
     "unexpected": "Something went wrong.",

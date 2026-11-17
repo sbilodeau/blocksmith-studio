@@ -6,6 +6,7 @@ import {
   CHECK_INTERVAL_MS,
   FIRST_CHECK_DELAY_MS,
   createUpdaterService,
+  releaseNotesToString,
   macDmgUrl,
   type DownloadProgress,
   type UpdaterDeps,
@@ -159,7 +160,7 @@ describe('updater service: Windows (auto mode)', () => {
       state: 'available',
       version: '26.46.0',
       mode: 'auto',
-      releaseNotes: '<p>New stuff</p>'
+      releaseNotes: 'New stuff'
     })
 
     h.au.downloadUpdate.mockImplementation(async () => {
@@ -214,6 +215,19 @@ describe('updater service: Windows (auto mode)', () => {
       ]
     })
     expect(service.getStatus()).toMatchObject({ releaseNotes: 'B\n\nA' })
+  })
+
+  it('keeps Markdown notes and turns HTML notes into text', () => {
+    expect(releaseNotesToString('### M12\n\n- **Releases** <3\n')).toBe(
+      '### M12\n\n- **Releases** <3'
+    )
+    expect(
+      releaseNotesToString(
+        '<h2>What&#39;s new</h2><ul><li><strong>Faster</strong> &amp; safer</li><li>Fix</li></ul><p>End</p>'
+      )
+    ).toBe("## What's new\n\n- Faster & safer\n- Fix\n\nEnd")
+    expect(releaseNotesToString('<p> </p>')).toBeUndefined()
+    expect(releaseNotesToString(null)).toBeUndefined()
   })
 
   it('shares a single in-flight check', async () => {

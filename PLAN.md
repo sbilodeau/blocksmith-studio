@@ -961,6 +961,15 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
   own milestone if wanted).
   Light theme colors were darkened for WCAG AA contrast.
 
+### M12 - Releases and updates
+- One-click release from `main` (GitHub Actions button or `npm run release`) with the next CalVer version and the
+  `## Unreleased` section of `CHANGELOG.md` as the release notes; the workflow dates that section on `main` after
+  publishing.
+- In the app: the update banner shows the new version's notes (from `latest*.yml`, where electron-builder copies
+  `build/release-notes.md`); the first launch after an update shows the bundled changelog sections since the
+  version that ran before (`settings.lastRunVersion`); Settings > Updates shows the current version's notes.
+- Release notes are rendered from a Markdown subset as Vue nodes, never as HTML (docs/releasing.md).
+
 ---
 
 ## 13. Risks and open points
@@ -982,9 +991,10 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 | LLM responds in the wrong language or misreads FR directions                       | Low    | Explicit conventions in prompts and tool descriptions; FR/EN suite gates prompt changes                                                                                                         |
 
 ### Open points for later (non-blocking)
-- Default Ollama Cloud model per agent: to be chosen by running the FR/EN suite on available cloud models during M3.
-- Pricing data for non-OpenRouter providers (manual table vs fetched).
-- Whether to support snapshots as authoring versions (setting, off by default).
+Decided on 2026-11-17 to drop these: no built-in default model per agent (you pick one in Settings), no built-in
+price table for providers other than OpenRouter (prices are typed in Settings), no snapshots as authoring versions
+(snapshots stay export targets only), and no further 3D preview work on block-shaped item models, blockstate
+rotations or the remaining unmodeled 1.21.x entities (listed in docs/preview.md and docs/entity-models.md).
 
 ---
 

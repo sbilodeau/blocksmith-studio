@@ -7,6 +7,7 @@
 export const INVOKE_CHANNELS = [
   'app.getInfo',
   'app.openExternal',
+  'app.whatsNew',
   'settings.get',
   'settings.update',
   'updater.getStatus',
