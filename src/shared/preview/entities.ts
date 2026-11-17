@@ -57,6 +57,8 @@ import doubleChestLeft from '../../../resources/data/entity-models/double_chest_
 import doubleChestRight from '../../../resources/data/entity-models/double_chest_right.json'
 import boat from '../../../resources/data/entity-models/boat.json'
 import chestBoat from '../../../resources/data/entity-models/chest_boat.json'
+import shield from '../../../resources/data/entity-models/shield.json'
+import banner from '../../../resources/data/entity-models/banner.json'
 
 /**
  * Built-in entity geometry definitions (resources/data/entity-models/*.json), authored for Blocksmith Studio
@@ -121,7 +123,9 @@ const RAW_DEFINITIONS: Record<string, unknown> = {
   'double_chest_left.json': doubleChestLeft,
   'double_chest_right.json': doubleChestRight,
   'boat.json': boat,
-  'chest_boat.json': chestBoat
+  'chest_boat.json': chestBoat,
+  'shield.json': shield,
+  'banner.json': banner
 }
 
 interface CompiledDefinition {

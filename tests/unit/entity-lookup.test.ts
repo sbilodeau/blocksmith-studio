@@ -118,6 +118,15 @@ describe('findEntityDefinition', () => {
     expect(idOf('entity/chest_boat/pale_oak.png')).toBe('chest_boat')
   })
 
+  it('resolves shields and banners with their patterns', () => {
+    expect(idOf('entity/shield_base_nopattern.png')).toBe('shield')
+    expect(idOf('entity/shield/base.png')).toBe('shield')
+    expect(idOf('entity/shield/creeper.png')).toBe('shield')
+    expect(idOf('entity/banner_base.png')).toBe('banner')
+    expect(idOf('entity/banner/banner_base.png')).toBe('banner')
+    expect(idOf('entity/banner/flow.png')).toBe('banner')
+  })
+
   it('leaves look-alike textures of other layouts flat', () => {
     // The bamboo raft has its own model.
     expect(idOf('entity/boat/bamboo.png')).toBeUndefined()
