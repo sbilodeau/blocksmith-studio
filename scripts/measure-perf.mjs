@@ -90,12 +90,16 @@ try {
   })
   record('open pack tab (overview shown)', Date.now() - t)
 
-  // All textures grid.
-  t = Date.now()
-  await page.getByTestId('cat-all').click()
-  await page.waitForSelector('[data-testid="texture-grid"] [data-path]', { timeout: 120_000 })
-  await page.evaluate(FRAMES)
-  record('open "All" grid (first paint)', Date.now() - t)
+  // All textures grid (timed in the page: click to the second frame with tiles).
+  const openGrid = await page.evaluate(async (frames) => {
+    const wait = new Function(`return (${frames})()`)
+    const t = performance.now()
+    document.querySelector('[data-testid="cat-all"]').click()
+    await wait()
+    while (!document.querySelector('[data-testid="texture-grid"] [data-path]')) await wait()
+    return performance.now() - t
+  }, FRAMES.toString())
+  record('open "All" grid (first paint)', openGrid)
   const dom = await page.evaluate(() => ({
     tiles: document.querySelectorAll('[data-testid="texture-grid"] [data-path]').length,
     nodes: document.getElementsByTagName('*').length,
