@@ -5,6 +5,17 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M13 - Install in Minecraft and live mode
+
+- **Play in Minecraft** (pack header): install the pack straight into Minecraft's folders, made for the version you
+  play: the resource pack in `resourcepacks/`, the data pack in a world's `datapacks/` (pick the world). The file
+  keeps the same name (`<pack name>.zip`), so the game keeps it selected after a new install
+- **Live mode**: an unzipped copy (`<pack name> [live]`) kept up to date each time you save, undo or apply a change;
+  press F3+T (or `/reload` for data) in the game to see it. Only changed files are rewritten, it stays on after a
+  restart, the pack tab shows a **LIVE** badge, and it never touches a folder it did not create
+- The official launcher's `.minecraft` is found automatically; another launcher's instance can be added as a game
+  folder ([docs/minecraft-install.md](docs/minecraft-install.md))
+
 ## 26.47.0 - 2026-11-17
 
 ### M12 - Releases and updates

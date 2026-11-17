@@ -970,6 +970,15 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
   version that ran before (`settings.lastRunVersion`); Settings > Updates shows the current version's notes.
 - Release notes are rendered from a Markdown subset as Vue nodes, never as HTML (docs/releasing.md).
 
+### M13 - Install in Minecraft and live mode
+- "Play in Minecraft" in the pack header: install `<pack name>.zip` into the official `.minecraft` (or a game folder
+  added by hand) for a chosen version, resource part in `resourcepacks/`, data part in a world's `datapacks/`.
+- Live mode: an unzipped `<pack name> [live]` copy synced after every change saved in the app (debounced, changed
+  files only, marker file so only the app's own folders are touched), resumed at start-up, removed when switched
+  off or when the pack is deleted. No folder watcher, no symlinks (Minecraft 1.20+ refuses linked packs).
+- Destinations are remembered per pack in `userData/minecraft.json`; launcher instances are not detected (decided
+  2026-11-17: official launcher plus folders added by hand). See docs/minecraft-install.md.
+
 ---
 
 ## 13. Risks and open points
