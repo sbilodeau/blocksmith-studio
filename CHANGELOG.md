@@ -5,6 +5,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+## 26.47.0 - 2026-11-17
+
 ### M12 - Releases and updates
 
 - **Release from GitHub in one click**: Actions > Release > Run workflow (or `npm run release`) builds the installers
