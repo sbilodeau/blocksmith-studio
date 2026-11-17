@@ -2,11 +2,13 @@
 import { useI18n } from 'vue-i18n'
 import { NCard, NText } from 'naive-ui'
 import type { CategorySummary } from '@shared/model/pack'
+import { useCategoryName } from './category-name'
 
 /** Navigator: one card per category with its preview, texture count and modified count. */
 defineProps<{ categories: CategorySummary[] }>()
 const emit = defineEmits<{ open: [id: string] }>()
-const { t, te } = useI18n()
+const { t } = useI18n()
+const categoryName = useCategoryName()
 </script>
 
 <template>
@@ -23,7 +25,7 @@ const { t, te } = useI18n()
       <div class="preview">
         <img v-if="c.iconUrl" :src="c.iconUrl" alt="" class="pixelated" />
       </div>
-      <div class="name">{{ te(c.i18nKey) ? t(c.i18nKey) : c.id }}</div>
+      <div class="name">{{ categoryName(c) }}</div>
       <div class="meta">
         <n-text depth="3">{{ t('pack.textureCount', { count: c.count }, c.count) }}</n-text>
         <n-text v-if="c.changedCount > 0" type="warning">

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { CategoryOverridesSchema, type CategoryRule } from '../categories/engine'
 
 export type PackId = string
 /** POSIX path relative to the pack root, e.g. "assets/minecraft/textures/block/stone.png". */
@@ -47,7 +48,12 @@ export const ProjectSchema = z.object({
         .max(2)
         .optional()
     })
-    .optional()
+    .optional(),
+  /**
+   * "This pack" category rules (category editor, M11), applied on top of the "All packs" mapping: same id replaces
+   * that category, a new id adds one. An invalid value is dropped rather than hiding the whole pack.
+   */
+  categoryOverrides: CategoryOverridesSchema.optional().catch(undefined)
 })
 export type Project = z.infer<typeof ProjectSchema>
 export type ExportProfile = NonNullable<Project['exportProfile']>
@@ -95,11 +101,22 @@ export interface TextureEntry {
 
 export interface CategorySummary {
   id: string
-  i18nKey: string
+  /** Display name key of a built-in category. */
+  i18nKey?: string
+  /** Plain-text name of a custom category (shown as is, wins over i18nKey). */
+  label?: string
   count: number
   changedCount: number
   /** Thumbnail of the category's icon texture. */
   iconUrl?: string
+}
+
+/** The "All packs" category mapping as the editor gets it (categories.get / categories.save). */
+export interface CategoryMappingState {
+  /** The user's mapping, or the defaults (built-in categories added since it was saved are appended). */
+  rules: CategoryRule[]
+  /** False when the defaults apply (no userData/categories.json). */
+  customized: boolean
 }
 
 export const CreatePackInputSchema = z

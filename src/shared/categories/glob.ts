@@ -91,6 +91,39 @@ export function globToRegExp(glob: string): RegExp {
   return new RegExp(`^${convert(glob)}$`)
 }
 
+/** Longest glob accepted by the category editor. */
+export const MAX_GLOB_LENGTH = 512
+
+/** Why a glob typed in the category editor is refused (i18n: `categoriesEditor.globIssues.<code>`). */
+export type GlobIssue = 'empty' | 'tooLong' | 'braces' | 'absolute' | 'backslash' | 'invalid'
+
+function bracesBalanced(glob: string): boolean {
+  let depth = 0
+  for (const c of glob) {
+    if (c === '{') depth++
+    else if (c === '}' && --depth < 0) return false
+  }
+  return depth === 0
+}
+
+/**
+ * Checks a glob typed by the user. The matcher itself accepts anything (unbalanced braces are literal), but these
+ * mistakes never match a texture key, so the editor and main refuse them.
+ */
+export function globIssue(glob: string): GlobIssue | null {
+  if (glob.trim() === '') return 'empty'
+  if (glob.length > MAX_GLOB_LENGTH) return 'tooLong'
+  if (glob.includes('\\')) return 'backslash'
+  if (glob.startsWith('/')) return 'absolute'
+  if (!bracesBalanced(glob)) return 'braces'
+  try {
+    globToRegExp(glob)
+  } catch {
+    return 'invalid'
+  }
+  return null
+}
+
 /** Convenience one-shot match (compile once with globToRegExp when matching many paths). */
 export function matchGlob(glob: string, path: string): boolean {
   return globToRegExp(glob).test(path)

@@ -9,18 +9,42 @@ import { globToRegExp } from './glob'
 
 export const FALLBACK_CATEGORY = 'other'
 
-export const CategoryRuleSchema = z.object({
-  id: z.string().regex(/^[a-z0-9_-]+$/),
-  /** vue-i18n key of the display name, "category.<id>". */
-  i18nKey: z.string().min(1),
-  /** Pack path of the texture used as the category's tile. */
-  icon: z.string(),
-  include: z.array(z.string()),
-  exclude: z.array(z.string()).optional(),
-  /** Display order (ascending). */
-  order: z.number().int()
-})
+/** Category ids: lowercase letters, digits, "_" and "-". */
+export const CATEGORY_ID_RE = /^[a-z0-9_-]{1,40}$/
+/** Longest plain-text label of a custom category. */
+export const MAX_CATEGORY_LABEL = 40
+
+export const CategoryRuleSchema = z
+  .object({
+    id: z.string().regex(CATEGORY_ID_RE),
+    /** vue-i18n key of the display name, "category.<id>" (built-in categories). */
+    i18nKey: z.string().min(1).optional(),
+    /** Plain-text display name typed by the user (custom categories, not translated). Wins over i18nKey. */
+    label: z.string().trim().min(1).max(MAX_CATEGORY_LABEL).optional(),
+    /** Pack path of the texture used as the category's tile. */
+    icon: z.string(),
+    include: z.array(z.string()),
+    exclude: z.array(z.string()).optional(),
+    /** Display order (ascending). */
+    order: z.number().int(),
+    /** A hidden category matches nothing and is not shown (a built-in category the user does not want). */
+    hidden: z.boolean().optional()
+  })
+  .refine((r) => r.i18nKey !== undefined || r.label !== undefined, {
+    message: 'A category needs an i18nKey or a label'
+  })
 export type CategoryRule = z.infer<typeof CategoryRuleSchema>
+
+/** Most categories in a mapping (and in a pack's overrides). */
+export const MAX_CATEGORIES = 100
+/** Most include (or exclude) globs in one category. */
+export const MAX_GLOBS_PER_CATEGORY = 200
+
+/**
+ * Pack-scope rules ("This pack", stored as `categoryOverrides` in .blocksmith/project.json): a rule whose id is in
+ * the "All packs" mapping replaces that category for the pack, any other rule adds a category to the pack.
+ */
+export const CategoryOverridesSchema = z.array(CategoryRuleSchema).max(MAX_CATEGORIES)
 
 export const CategoryMappingSchema = z.object({
   schemaVersion: z.literal(1),
@@ -54,7 +78,10 @@ export function splitTexturePath(
 }
 
 export interface CategoryEngine {
-  /** Rules in display order. The fallback category is always present (added when missing). */
+  /**
+   * Visible rules in display order (hidden ones are left out). The fallback category is always present: added when
+   * missing, and never hidden.
+   */
   readonly rules: readonly CategoryRule[]
   /** Category ids of a texture (pack path), in display order. Never empty. */
   categorize(path: string): string[]
@@ -66,8 +93,24 @@ interface CompiledRule {
   exclude: RegExp[]
 }
 
+/** Compiles globs, skipping any that cannot compile (the editor and main reject them before saving). */
+function compileGlobs(globs: readonly string[]): RegExp[] {
+  const out: RegExp[] = []
+  for (const glob of globs) {
+    try {
+      out.push(globToRegExp(glob))
+    } catch {
+      // An invalid glob matches nothing.
+    }
+  }
+  return out
+}
+
 export function createCategoryEngine(input: readonly CategoryRule[]): CategoryEngine {
-  const rules = [...input].sort((a, b) => a.order - b.order)
+  const rules = input
+    .filter((r) => !r.hidden || r.id === FALLBACK_CATEGORY)
+    .map((r) => (r.hidden ? { ...r, hidden: undefined } : r))
+    .sort((a, b) => a.order - b.order)
   if (!rules.some((r) => r.id === FALLBACK_CATEGORY)) {
     rules.push({
       id: FALLBACK_CATEGORY,
@@ -79,8 +122,8 @@ export function createCategoryEngine(input: readonly CategoryRule[]): CategoryEn
   }
   const compiled: CompiledRule[] = rules.map((r) => ({
     id: r.id,
-    include: r.include.map(globToRegExp),
-    exclude: (r.exclude ?? []).map(globToRegExp)
+    include: compileGlobs(r.include),
+    exclude: compileGlobs(r.exclude ?? [])
   }))
   // Texture paths repeat across packs and calls; categorizing is pure, so memoize it.
   const cache = new Map<string, string[]>()
