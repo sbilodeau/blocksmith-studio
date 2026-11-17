@@ -34,6 +34,12 @@ export const INVOKE_CHANNELS = [
   'pack.upgrade',
   'pack.doctor',
   'pack.setKind',
+  // Category mapping editor (M11): "All packs" mapping and "This pack" rules
+  'categories.get',
+  'categories.save',
+  'categories.reset',
+  'pack.categoryOverrides',
+  'pack.setCategoryOverrides',
   // Data pack files (M10)
   'data.list',
   'data.read',

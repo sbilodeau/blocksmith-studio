@@ -18,6 +18,8 @@ import { send } from './ipc/registry'
 import { registerAssetScheme, handleAssetProtocol } from './protocol'
 import { createJobReporter } from './jobs'
 import { SettingsService } from './services/settings'
+import { CategoryMappingStore } from './services/categories'
+import { registerCategoryHandlers } from './ipc/category-handlers'
 import { createUpdaterService } from './services/updater'
 import { createDefaultVanillaStore } from './services/vanilla'
 import { createDataService, createPackService, createTextureEditService } from './services/packs'
@@ -67,9 +69,13 @@ if (!app.requestSingleInstanceLock()) {
       getMinecraftPaths: () => settings.get().minecraftPaths
     })
 
+    const categories = CategoryMappingStore.forUserData(app.getPath('userData'))
+    await categories.load()
+
     const packs = createPackService({
       vanilla,
       jobs,
+      categoryRules: () => categories.savedRules(),
       documentsDir: app.getPath('documents'),
       getWorkspacePath: () => settings.get().workspacePath,
       setWorkspacePath: async (path) => {
@@ -178,6 +184,11 @@ if (!app.requestSingleInstanceLock()) {
         }
       }
     })
+    registerCategoryHandlers({
+      store: categories,
+      packs,
+      notifyAllPacks: () => send(webContents(), 'packs.changed', {})
+    })
     registerTextureHandlers({
       textures,
       history,
@@ -213,6 +224,10 @@ if (!app.requestSingleInstanceLock()) {
       },
       creation: {
         catalog: (packId) => packs.catalog(packId),
+        categoryLabels: async (packId) =>
+          Object.fromEntries(
+            (await packs.categoryRules(packId)).flatMap((r) => (r.label ? [[r.id, r.label]] : []))
+          ),
         readPng: (packId, path) => textures.readCatalog(packId, path),
         meta: async (packId) => {
           const { name, description, base, kind } = await packs.get(packId)

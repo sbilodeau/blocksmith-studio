@@ -7,6 +7,7 @@ import {
   CreatePackInputSchema,
   ExportPackTypeSchema,
   PackKindSchema,
+  type CategoryMappingState,
   type CategorySummary,
   type ExportReport,
   type ImportReport,
@@ -16,6 +17,7 @@ import {
   type TextureEntry
 } from '../model/pack'
 import type { JobProgress } from '../model/jobs'
+import { CategoryRuleSchema, MAX_CATEGORIES, type CategoryRule } from '../categories/engine'
 import {
   BulkApplyInputSchema,
   BulkPreviewInputSchema,
@@ -111,6 +113,8 @@ const DataRef = PackRef.extend({ path: DataPathSchema }).strict()
 const DataText = z.string().max(MAX_DATA_FILE_BYTES)
 const MAX_PNG_BYTES = 16 * 1024 * 1024
 const VersionId = z.string().regex(/^[0-9][0-9a-z.-]{0,31}$/)
+/** A category rule list from the editor (size-bounded here; validated in depth by main). */
+const CategoryRulesInput = z.array(CategoryRuleSchema).max(MAX_CATEGORIES)
 
 /** Runtime input validation for every invoke channel. Main validates each payload against this. */
 export const inputSchemas = {
@@ -156,6 +160,12 @@ export const inputSchemas = {
   'pack.upgrade': PackRef.extend({ targetVersion: VersionId }).strict(),
   'pack.doctor': PackRef,
   'pack.setKind': PackRef.extend({ kind: PackKindSchema }).strict(),
+  'categories.get': NoInput,
+  /** Globs, ids and labels are checked again in main (categories.* errors). */
+  'categories.save': z.object({ rules: CategoryRulesInput }).strict(),
+  'categories.reset': NoInput,
+  'pack.categoryOverrides': PackRef,
+  'pack.setCategoryOverrides': PackRef.extend({ overrides: CategoryRulesInput }).strict(),
   'data.list': PackRef,
   'data.read': DataRef,
   'data.save': DataRef.extend({ text: DataText }).strict(),
@@ -341,6 +351,16 @@ export interface InvokeOutputs {
   'pack.doctor': DoctorReport
   /** Resource pack, data pack or both: rewrites the folder's pack.mcmeta format (files are kept). */
   'pack.setKind': PackSummary
+  /** The "All packs" category mapping (user copy or defaults). */
+  'categories.get': CategoryMappingState
+  /** Saves the whole "All packs" mapping; every open pack tab reloads ('packs.changed'). */
+  'categories.save': CategoryMappingState
+  /** Back to the default mapping (removes userData/categories.json). */
+  'categories.reset': CategoryMappingState
+  /** The pack's own category rules (project.json categoryOverrides). */
+  'pack.categoryOverrides': CategoryRule[]
+  /** Saves the pack's category rules (empty list removes them); the tab reloads ('packs.changed'). */
+  'pack.setCategoryOverrides': CategoryRule[]
   /** The pack's data files plus vanilla's (copy-on-write), with ids for completion and warnings. */
   'data.list': DataList
   'data.read': DataFileData

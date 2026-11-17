@@ -238,7 +238,8 @@ export function summarizeCategories(
     const icon = list.find((e) => e.path === rule.icon) ?? list[0]
     summaries.push({
       id: rule.id,
-      i18nKey: rule.i18nKey,
+      ...(rule.i18nKey ? { i18nKey: rule.i18nKey } : {}),
+      ...(rule.label ? { label: rule.label } : {}),
       count: list.length,
       changedCount: list.filter((e) => e.status !== 'vanilla').length,
       iconUrl: icon.url

@@ -39,14 +39,18 @@ Everything else is literal and case-sensitive. Globs are anchored: they must mat
 }
 ```
 
-| Field     | Meaning                                                                                     |
-| --------- | ------------------------------------------------------------------------------------------- |
-| `id`      | Stable identifier (`[a-z0-9_-]`), used by the UI and the agents                             |
-| `i18nKey` | Display name key, always `category.<id>` (strings live in `src/shared/locales/*.json`)      |
-| `icon`    | Pack path of the tile texture; when the pack has no such texture, the first texture is used |
-| `order`   | Display order (ascending)                                                                   |
-| `include` | Globs on the texture key                                                                    |
-| `exclude` | Optional globs removed from the category even when an include matches                       |
+| Field     | Meaning                                                                                         |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `id`      | Stable identifier (`[a-z0-9_-]`, 1 to 40 characters), used by the UI and the agents             |
+| `i18nKey` | Built-in categories: display name key, always `category.<id>` (in `src/shared/locales/*.json`)  |
+| `label`   | Custom categories: plain-text name typed by the user (not translated); wins over `i18nKey`      |
+| `icon`    | Pack path of the tile texture; when the pack has no such texture, the first texture is used     |
+| `order`   | Display order (ascending)                                                                       |
+| `include` | Globs on the texture key                                                                        |
+| `exclude` | Optional globs removed from the category even when an include matches                           |
+| `hidden`  | Optional; a hidden category matches nothing and is not shown (`other` can never be hidden)      |
+
+A rule needs an `i18nKey` or a `label`.
 
 ## Default mapping
 
@@ -68,12 +72,49 @@ tools or spears are caught by the wildcard patterns).
 | 110   | `environment` | `environment/**`, `misc/**`, `painting/**`, `mob_effect/**`, `map/**`, `colormap/**`, `effect/**`                                 |
 | 1000  | `other`       | everything else (boats, minecarts, music discs, bundles, potions, banner patterns...)                                             |
 
-## Editing the mapping
+## Editing the mapping in the app
+
+The **Edit categories** button at the bottom of a pack's category sidebar opens the category editor. It has two tabs,
+one per scope:
+
+| Tab           | Stored in                                                    | What can be changed                                                                                        |
+| ------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **All packs** | `userData/categories.json` (same schema as the default)      | globs, icon and order of every category; hide a built-in one; add or delete custom ones; reset to defaults |
+| **This pack** | `categoryOverrides` in the pack's `.blocksmith/project.json` | replace a category for this pack only (any field, including hiding it), or add categories to this pack     |
+
+- **All packs** is the user's copy of the whole mapping. With no file (or an invalid one, kept as
+  `categories.json.bak`), the defaults apply. "Reset to defaults" removes the file. Built-in categories cannot be
+  deleted, only hidden; a built-in category missing from a saved file (added by a newer version of the app) is
+  appended, so updates keep working.
+- **This pack** rules are applied on top of **All packs**: a rule whose `id` exists replaces that category (it keeps its
+  position in the list), any other rule adds a category. An invalid `categoryOverrides` value is ignored rather than
+  hiding the pack.
+- A custom category gets an id derived from its name ("Épées de feu" -> `epees_de_feu`, made unique) and keeps that
+  id when renamed. Its name is shown as typed, in every language.
+- `other` (the fallback) always exists and cannot be deleted or hidden.
+
+While editing, the editor works on the textures of the current pack: each category shows how many textures it would
+hold, each glob how many textures it matches, invalid globs are flagged inline (empty, unbalanced `{ }`, a leading `/`,
+a backslash, longer than 512 characters) and block saving, and a **Test a path** field shows the categories a texture
+key (`block/stone.png`) or pack path would get.
+
+### Saving and where the mapping is applied
+
+- `categories.save` / `categories.reset` (All packs) and `pack.setCategoryOverrides` (This pack) validate the rules again
+  in main (`validateCategoryRules` in `src/shared/categories/mapping.ts`). A bad glob is refused with the typed error
+  `categories.invalidGlob`, a repeated id with `categories.duplicateId`, anything else with `categories.invalidRule`.
+- After a save, main emits `packs.changed` (without a pack id for **All packs**), and every open pack tab reloads its
+  textures and categories: the navigator, the grid filter and the counts follow the new mapping.
+- The pack service resolves each pack's rules (`resolveCategoryRules`) and compiles one engine per distinct rule set
+  (cached by the rules' JSON). The texture index is still built and cached once per pack; when the pack's engine is not
+  the default one, the cached entries' `categories` are recomputed in place, once per index and engine.
+- The creation agent filters by category id (any id, custom ones included) and its context lists custom categories with
+  their label (`- epees_de_feu ("Épées de feu", custom): 12`).
+
+## Changing the default mapping (developers)
 
 1. Edit `resources/data/categories.json`. The file is validated with zod when the module loads
    (`CategoryMappingSchema` in `src/shared/categories/engine.ts`); an invalid file fails fast in tests.
 2. For a new category, add its `category.<id>` string to **both** `src/shared/locales/en.json` and `fr.json`
    (the i18n parity test checks that both files have the same keys).
 3. Add representative paths to `tests/unit/categories-engine.test.ts` and run `npx vitest run tests/unit/categories`.
-
-Per-pack overrides (extra rules stored in a pack's `.blocksmith/project.json`) are planned for a later milestone.

@@ -1,21 +1,24 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NBadge, NText } from 'naive-ui'
+import { NBadge, NButton, NText } from 'naive-ui'
 import type { CategorySummary } from '@shared/model/pack'
 import { ALL_CATEGORIES } from '../../stores/pack'
+import { useCategoryName } from './category-name'
+import CategoryEditorDialog from './CategoryEditorDialog.vue'
 
-defineProps<{
+const props = defineProps<{
   categories: CategorySummary[]
   active: string | null
   total: number
   changed: number
+  /** Pack of the tab: enables the "Edit categories" button (category mapping editor). */
+  packId?: string
 }>()
 const emit = defineEmits<{ select: [id: string | null] }>()
-const { t, te } = useI18n()
-
-function label(c: CategorySummary): string {
-  return te(c.i18nKey) ? t(c.i18nKey) : c.id
-}
+const { t } = useI18n()
+const label = useCategoryName()
+const showEditor = ref(false)
 </script>
 
 <template>
@@ -52,9 +55,20 @@ function label(c: CategorySummary): string {
       <n-badge v-if="c.changedCount > 0" :value="c.changedCount" type="warning" :max="999" />
       <n-text depth="3" class="count">{{ c.count }}</n-text>
     </button>
+    <n-button
+      v-if="props.packId"
+      size="tiny"
+      quaternary
+      class="edit"
+      data-testid="edit-categories"
+      @click="showEditor = true"
+    >
+      {{ t('categoriesEditor.open') }}
+    </n-button>
     <n-text v-if="changed > 0" depth="3" class="footer">{{
       t('pack.changedTotal', { count: changed })
     }}</n-text>
+    <category-editor-dialog v-if="props.packId" v-model:show="showEditor" :pack-id="props.packId" />
   </nav>
 </template>
 
@@ -109,6 +123,10 @@ function label(c: CategorySummary): string {
   height: 1px;
   margin: 6px 0;
   background: rgba(128, 128, 128, 0.2);
+}
+.edit {
+  align-self: flex-start;
+  margin-top: 6px;
 }
 .footer {
   font-size: 12px;

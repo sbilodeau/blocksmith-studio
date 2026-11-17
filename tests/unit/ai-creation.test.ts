@@ -133,6 +133,22 @@ describe('creation scope', () => {
     ).toBeUndefined()
   })
 
+  it('shows the label of custom categories next to their id', () => {
+    const textures = [...TEXTURES, entry('item', 'fire_sword', ['weapons', 'fire_gear'])]
+    const msg = buildCreationMessage(
+      {
+        textures,
+        samples: SAMPLES,
+        pack: { name: 'Fire', description: '' },
+        categoryLabels: { fire_gear: 'Fire "gear"' }
+      },
+      'feu',
+      false
+    )
+    expect(msg.text).toContain('- fire_gear ("Fire \\"gear\\"", custom): 1')
+    expect(msg.text).toContain('- weapons: 2')
+  })
+
   it('system prompt states the pack size and asks for a brief, then category steps', () => {
     const prompt = buildSystemPrompt({
       agent: 'creation',

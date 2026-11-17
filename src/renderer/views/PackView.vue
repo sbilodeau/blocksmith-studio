@@ -246,6 +246,7 @@ const exportItems = computed(() => {
           :active="store.category"
           :total="store.textures.length"
           :changed="store.changedCount"
+          :pack-id="packId"
           @select="store.openCategory"
         />
       </aside>
