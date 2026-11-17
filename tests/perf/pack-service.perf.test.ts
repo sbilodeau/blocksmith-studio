@@ -42,6 +42,23 @@ function service(workspace: string, root: string): PackService {
   })
 }
 
+/** Runs `fn` and returns its duration and the longest event-loop block seen meanwhile (main-process stalls). */
+async function timeWithLag<T>(fn: () => Promise<T>): Promise<[number, number, T]> {
+  let worst = 0
+  let last = performance.now()
+  const timer = setInterval(() => {
+    const now = performance.now()
+    worst = Math.max(worst, now - last - 5)
+    last = now
+  }, 5)
+  try {
+    const [ms, value] = await time(fn)
+    return [ms, worst, value]
+  } finally {
+    clearInterval(timer)
+  }
+}
+
 async function time<T>(fn: () => Promise<T>): Promise<[number, T]> {
   const start = performance.now()
   const value = await fn()
@@ -91,9 +108,10 @@ describe.skipIf(!enabled)('huge pack timings (main process)', () => {
     rows.push(['packs.list, cold (home screen after start)', listMs])
 
     const fresh = service(workspace, root)
-    const [texColdMs, entries] = await time(() => fresh.textures(pack.packId))
+    const [texColdMs, texLag, entries] = await timeWithLag(() => fresh.textures(pack.packId))
     expect(entries.length).toBeGreaterThan(0)
     rows.push([`pack.textures, cold (${entries.length} textures)`, texColdMs])
+    rows.push(['pack.textures, cold: longest event-loop block', texLag])
 
     // What a pack tab does on open: pack.get + pack.textures + pack.categories in parallel.
     const tab = service(workspace, root)
@@ -123,12 +141,16 @@ describe.skipIf(!enabled)('huge pack timings (main process)', () => {
     const [cloneMs] = await time(async () => structuredClone(entries))
     rows.push(['structured clone of the texture list (IPC)', cloneMs])
 
-    const [doctorMs] = await time(() => fresh.doctor(pack.packId))
+    const [doctorMs, doctorLag] = await timeWithLag(() => fresh.doctor(pack.packId))
     rows.push(['pack.doctor', doctorMs])
+    rows.push(['pack.doctor: longest event-loop block', doctorLag])
 
     const out = join(root, 'export.zip')
-    const [exportMs] = await time(() => fresh.exportPack(pack.packId, '26.3', out))
+    const [exportMs, exportLag] = await timeWithLag(() =>
+      fresh.exportPack(pack.packId, '26.3', out)
+    )
     rows.push(['pack.export (26.3)', exportMs])
+    rows.push(['pack.export: longest event-loop block', exportLag])
     const rss = process.memoryUsage().rss
     rows.push(['process RSS after export (MiB)', rss / 2 ** 20])
   }, 600_000)
