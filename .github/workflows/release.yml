@@ -1,12 +1,13 @@
-# Manual release: computes the CalVer version, tests, builds installers on Windows and macOS,
-# then tags the workflow commit and creates the GitHub Release. See docs/releasing.md.
+# Manual release from main: computes the CalVer version, takes the release notes from CHANGELOG.md ("## Unreleased"),
+# tests, builds installers on Windows and macOS, tags the workflow commit, creates the GitHub Release, then dates the
+# changelog section on main. See docs/releasing.md.
 name: Release
 
 on:
   workflow_dispatch:
     inputs:
       notes:
-        description: Extra release notes (Markdown), shown above the generated notes
+        description: Extra release notes (Markdown), shown above the CHANGELOG notes
         required: false
         type: string
         default: ''
@@ -28,7 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.calver.outputs.version }}
+      date: ${{ steps.calver.outputs.date }}
     steps:
+      - name: Release only from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Releases are made from main only (this run is on $GITHUB_REF_NAME)"
+          exit 1
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -39,13 +46,36 @@ jobs:
       - id: calver
         name: Compute CalVer version
         run: |
-          version="$(node scripts/calver.mjs)"
+          date="$(date -u +%F)"
+          version="$(node scripts/calver.mjs --date "$date")"
           if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
             echo "::error::Tag v$version already exists"
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "date=$date" >> "$GITHUB_OUTPUT"
           echo "Releasing **v$version** from \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+      - name: Release notes from CHANGELOG.md
+        env:
+          NOTES: ${{ inputs.notes }}
+        run: |
+          mkdir -p notes
+          node scripts/changelog.mjs notes > notes/changelog.md
+          if [ ! -s notes/changelog.md ] && [ -z "$NOTES" ]; then
+            echo "::error::CHANGELOG.md has nothing under \"## Unreleased\": add what changed before releasing"
+            exit 1
+          fi
+          {
+            if [ -n "$NOTES" ]; then printf '%s\n\n' "$NOTES"; fi
+            cat notes/changelog.md
+          } > notes/release-notes.md
+          { echo; echo '### Release notes'; echo; cat notes/release-notes.md; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notes
+          path: notes/
+          if-no-files-found: error
+          retention-days: 7
 
   test:
     name: Lint, typecheck and tests
@@ -81,6 +111,7 @@ jobs:
         shell: bash
     env:
       VERSION: ${{ needs.version.outputs.version }}
+      RELEASE_DATE: ${{ needs.version.outputs.date }}
       # No signing certificates yet: macOS builds are ad-hoc signed (identity "-" in electron-builder.yml).
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
@@ -92,6 +123,16 @@ jobs:
       - run: npm ci
       - name: Set app version
         run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+          path: notes
+      - name: Release notes in the app and the update metadata
+        # The app bundles CHANGELOG.md for "What's new" after an update: date the section (not committed here).
+        # electron-builder copies build/release-notes.md into latest*.yml, which the installed apps read.
+        run: |
+          node scripts/changelog.mjs stamp --version "$VERSION" --date "$RELEASE_DATE"
+          cp notes/release-notes.md build/release-notes.md
       - run: npm run build
       - name: Package
         run: npx electron-builder ${{ matrix.builder-args }} --publish never
@@ -106,6 +147,10 @@ jobs:
           for yml in "${metadata[@]}"; do
             echo "--- $yml"
             cat "$yml"
+            grep -q '^releaseNotes:' "$yml" || {
+              echo "::error::$yml has no releaseNotes"
+              exit 1
+            }
             # Every file referenced by the update metadata must exist under that exact name
             # (names contain no spaces, so word splitting is safe and would catch a space anyway).
             for name in $(sed -nE 's/^ *(- )?(url|path): *//p' "$yml"); do
@@ -146,6 +191,10 @@ jobs:
           pattern: release-*
           merge-multiple: true
           path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+          path: notes
       - name: List release files
         run: ls -la release
       - name: Create tag and release
@@ -153,11 +202,45 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.version.outputs.version }}
-          NOTES: ${{ inputs.notes }}
         run: |
-          args=(--target "$GITHUB_SHA" --title "Blocksmith Studio $VERSION" --generate-notes --latest)
-          if [ -n "$NOTES" ]; then
-            args+=(--notes "$NOTES")
+          # Creates tag v$VERSION on the workflow commit, then uploads every file. The CHANGELOG notes come first,
+          # followed by GitHub's list of merged pull requests and the full changelog link.
+          gh release create "v$VERSION" release/* --target "$GITHUB_SHA" --title "Blocksmith Studio $VERSION" \
+            --notes-file notes/release-notes.md --generate-notes --latest
+
+  changelog:
+    name: Date the changelog on main
+    needs: [version, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+          path: notes
+      - name: Move the Unreleased notes under the new version
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          RELEASE_DATE: ${{ needs.version.outputs.date }}
+        run: |
+          if [ ! -s notes/changelog.md ]; then
+            echo "No CHANGELOG notes in this release: nothing to date"
+            exit 0
           fi
-          # Creates tag v$VERSION on the workflow commit, then uploads every file.
-          gh release create "v$VERSION" "${args[@]}" release/*
+          # --expect: if main got new changelog entries while the release ran, leave them for the next release
+          # and ask for a manual edit instead of mixing them into this version.
+          if ! node scripts/changelog.mjs stamp --version "$VERSION" --date "$RELEASE_DATE" --expect notes/changelog.md; then
+            echo "::warning::CHANGELOG.md changed on main during the release: add \"## $VERSION - $RELEASE_DATE\" by hand"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "chore: release v$VERSION"
+          git push origin HEAD:main || echo "::warning::Could not push the dated CHANGELOG.md to main: add it by hand"

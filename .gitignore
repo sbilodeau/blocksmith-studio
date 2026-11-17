@@ -37,3 +37,4 @@ Thumbs.db
 # Tool caches
 .eslintcache
 ai-eval-report.md
+build/release-notes.md

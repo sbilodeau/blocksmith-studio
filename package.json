@@ -36,6 +36,7 @@
     "package:win": "npm run build && electron-builder --win --publish never",
     "package:mac": "npm run build && electron-builder --mac --publish never",
     "calver": "node scripts/calver.mjs",
+    "release": "node scripts/release.mjs",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
