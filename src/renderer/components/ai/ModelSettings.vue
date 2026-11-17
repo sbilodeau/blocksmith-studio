@@ -203,6 +203,7 @@ async function saveOverride(reset = false): Promise<void> {
     <n-space align="center" size="small">
       <n-switch
         :value="settings.settings.ai.showAllModels"
+        :aria-label="t('ai.models.showAll')"
         size="small"
         data-testid="show-all-models"
         @update:value="onShowAll"

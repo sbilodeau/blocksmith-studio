@@ -114,6 +114,7 @@ onMounted(async () => {
           </n-space>
           <n-switch
             :value="p.enabled"
+            :aria-label="t('ai.providerEnabled', { name: p.label })"
             size="small"
             @update:value="(v: boolean) => toggle(p.id, v)"
           />

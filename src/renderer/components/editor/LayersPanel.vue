@@ -75,13 +75,18 @@ function onRenameKey(e: KeyboardEvent): void {
   e.stopPropagation()
 }
 
-/** Arrow keys move through the layers when the list has the focus. */
-function onListKey(e: KeyboardEvent): void {
-  if (renaming.value !== null) return
+/** On a layer button: Up / Down select the layer above / below (and move the focus), F2 renames. */
+async function onPickKey(e: KeyboardEvent): Promise<void> {
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
     e.preventDefault()
     e.stopPropagation()
-    editor.value.selectLayer(active.value + (e.key === 'ArrowUp' ? 1 : -1))
+    const next = active.value + (e.key === 'ArrowUp' ? 1 : -1)
+    editor.value.selectLayer(next)
+    await nextTick()
+    const el = (e.currentTarget as HTMLElement | null)
+      ?.closest('ul')
+      ?.querySelector<HTMLElement>(`[data-layer="${editor.value.activeLayer}"]`)
+    el?.focus()
   } else if (e.key === 'F2') {
     e.preventDefault()
     void startRename(active.value)
@@ -255,26 +260,13 @@ onBeforeUnmount(() => {
     </n-text>
 
     <template v-if="layers">
-      <ul
-        class="list"
-        role="listbox"
-        tabindex="0"
-        :aria-label="t('layers.title')"
-        :aria-activedescendant="`layer-${packId}-${active}`"
-        data-testid="layer-list"
-        @keydown="onListKey"
-      >
+      <ul class="list" :aria-label="t('layers.title')" data-testid="layer-list">
         <li
           v-for="{ index, layer } in rows"
-          :id="`layer-${packId}-${index}`"
           :key="index"
-          role="option"
-          :aria-selected="index === active"
           class="row"
           :class="{ active: index === active, hidden: !layer.visible }"
           :data-testid="`layer-${index}`"
-          @click="editor.selectLayer(index)"
-          @dblclick="startRename(index)"
         >
           <n-button
             size="tiny"
@@ -283,11 +275,10 @@ onBeforeUnmount(() => {
             :aria-label="t(layer.visible ? 'layers.hide' : 'layers.show', { name: layer.name })"
             :aria-pressed="layer.visible"
             :data-testid="`layer-visible-${index}`"
-            @click.stop="editor.setLayerVisible(index, !layer.visible)"
+            @click="editor.setLayerVisible(index, !layer.visible)"
           >
             <template #icon><editor-icon :name="layer.visible ? 'eye' : 'eyeOff'" /></template>
           </n-button>
-          <canvas :ref="(el) => setThumb(index, el)" class="thumb" aria-hidden="true" />
           <n-input
             v-if="renaming === index"
             ref="renameInput"
@@ -299,16 +290,29 @@ onBeforeUnmount(() => {
             data-testid="layer-rename-input"
             @blur="finishRename"
             @keydown="onRenameKey"
-            @click.stop
           />
-          <span v-else class="name">{{ layer.name }}</span>
-          <span v-if="layer.opacity < 100" class="opacity">{{ layer.opacity }}%</span>
+          <button
+            v-else
+            type="button"
+            class="pick"
+            :aria-pressed="index === active"
+            :data-layer="index"
+            :data-testid="`layer-pick-${index}`"
+            @click="editor.selectLayer(index)"
+            @dblclick="startRename(index)"
+            @keydown="onPickKey"
+          >
+            <canvas :ref="(el) => setThumb(index, el)" class="thumb" aria-hidden="true" />
+            <span class="name">{{ layer.name }}</span>
+            <span v-if="layer.opacity < 100" class="opacity">{{ layer.opacity }}%</span>
+          </button>
         </li>
       </ul>
       <div v-if="activeLayer" class="opacity-row">
         <n-text depth="3" class="label">{{ t('layers.opacity') }}</n-text>
         <n-slider
           :value="activeLayer.opacity"
+          :aria-label="t('layers.opacity')"
           :min="0"
           :max="100"
           :step="5"
@@ -365,11 +369,25 @@ onBeforeUnmount(() => {
   gap: 2px;
   max-height: 220px;
   overflow-y: auto;
-  border-radius: 6px;
-  outline: none;
 }
-.list:focus-visible {
-  box-shadow: 0 0 0 2px rgba(24, 160, 88, 0.6);
+.pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.pick:focus-visible {
+  outline: 2px solid #13904f;
+  outline-offset: 1px;
 }
 .row {
   display: flex;
@@ -377,7 +395,6 @@ onBeforeUnmount(() => {
   gap: 6px;
   padding: 2px 6px 2px 2px;
   border-radius: 4px;
-  cursor: pointer;
   border: 1px solid transparent;
   font-size: 12px;
 }

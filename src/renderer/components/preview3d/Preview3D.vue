@@ -507,16 +507,26 @@ onBeforeUnmount(() => {
       <n-space size="small" align="center" :wrap="true">
         <n-tooltip>
           <template #trigger>
-            <n-switch v-model:value="autoRotate" size="small" data-testid="preview3d-rotate" />
+            <n-switch
+              v-model:value="autoRotate"
+              size="small"
+              :aria-label="t('preview.autoRotate')"
+              data-testid="preview3d-rotate"
+            />
           </template>
           {{ t('preview.autoRotate') }}
         </n-tooltip>
         <n-text depth="3" class="label">{{ t('preview.autoRotate') }}</n-text>
         <template v-if="canWalk">
-          <n-switch v-model:value="walk" size="small" data-testid="preview3d-walk" />
+          <n-switch
+            v-model:value="walk"
+            size="small"
+            :aria-label="t('preview.walk')"
+            data-testid="preview3d-walk"
+          />
           <n-text depth="3" class="label">{{ t('preview.walk') }}</n-text>
         </template>
-        <n-switch v-model:value="showFloor" size="small" />
+        <n-switch v-model:value="showFloor" size="small" :aria-label="t('preview.floor')" />
         <n-text depth="3" class="label">{{ t('preview.floor') }}</n-text>
         <n-select
           v-model:value="shading"

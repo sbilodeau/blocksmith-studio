@@ -135,6 +135,7 @@ async function copyReport(): Promise<void> {
         :render-label="renderLabel"
         :loading="ai.modelsLoading"
         :placeholder="t('ai.eval.pickModels')"
+        :input-props="{ 'aria-label': t('ai.eval.pickModels') }"
         size="small"
         class="picker"
         data-testid="model-test-models"

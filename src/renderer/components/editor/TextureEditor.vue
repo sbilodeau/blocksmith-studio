@@ -188,8 +188,17 @@ function isTyping(e: KeyboardEvent): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
 }
 
+/** Enter and Space belong to the focused control (button, switch, tab...), not to the editor shortcuts. */
+function activatesControl(e: KeyboardEvent): boolean {
+  if (e.key !== 'Enter' && e.key !== ' ') return false
+  const el = e.target as HTMLElement | null
+  return !!el?.closest(
+    'button, a[href], [role="button"], [role="switch"], [role="tab"], [role="checkbox"]'
+  )
+}
+
 function onKeydown(e: KeyboardEvent): void {
-  if (isTyping(e)) return
+  if (isTyping(e) || activatesControl(e)) return
   const ed = editor.value
   const mod = e.metaKey || e.ctrlKey
   const key = e.key.toLowerCase()

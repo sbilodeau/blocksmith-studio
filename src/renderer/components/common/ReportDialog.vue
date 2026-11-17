@@ -27,7 +27,7 @@ function label(code: string): string {
     <n-alert type="success" :show-icon="false" class="summary">{{ summary }}</n-alert>
     <template v-if="items.length">
       <n-text strong>{{ t('report.warnings', { count: items.length }) }}</n-text>
-      <n-scrollbar style="max-height: 260px" class="list">
+      <n-scrollbar style="max-height: 260px" class="list" data-a11y-scroll>
         <ul>
           <li v-for="(item, i) in items" :key="i">
             {{ label(item.code) }}

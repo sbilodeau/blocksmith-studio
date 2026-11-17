@@ -218,7 +218,12 @@ async function importGif(): Promise<void> {
       <n-tooltip>
         <template #trigger>
           <label class="field">
-            <n-switch v-model:value="editor.onionSkin" size="small" data-testid="anim-onion" />
+            <n-switch
+              v-model:value="editor.onionSkin"
+              size="small"
+              :aria-label="t('animation.onion')"
+              data-testid="anim-onion"
+            />
             <n-text>{{ t('animation.onion') }}</n-text>
           </label>
         </template>
@@ -270,6 +275,7 @@ async function importGif(): Promise<void> {
           <label class="field">
             <n-switch
               :value="anim?.interpolate ?? false"
+              :aria-label="t('animation.interpolate')"
               size="small"
               data-testid="anim-interpolate"
               @update:value="editor.setInterpolate"

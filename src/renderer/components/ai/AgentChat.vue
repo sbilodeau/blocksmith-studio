@@ -224,7 +224,13 @@ onMounted(async () => {
     </n-space>
 
     <slot name="context" />
-    <n-scrollbar ref="scroller" class="messages" data-testid="agent-messages">
+    <n-scrollbar
+      ref="scroller"
+      class="messages"
+      data-a11y-scroll
+      :aria-label="t('ai.messages')"
+      data-testid="agent-messages"
+    >
       <n-empty
         v-if="session.items.length === 0"
         size="small"

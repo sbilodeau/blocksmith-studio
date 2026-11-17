@@ -745,7 +745,9 @@
     "creationNoTextures": "Aucune texture trouvée pour ce pack. Préparez les textures Minecraft de sa version dans les Paramètres.",
     "creationEmptyBase": "Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide (1 texture pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie.",
     "creationDataContext": "Tout le pack de données : recettes, tables de butin, tags et progrès",
-    "emptyCreationData": "Décrivez ce que le pack de données doit faire (« le minerai de diamant donne deux diamants », « une recette de selle »). L'IA propose les fichiers ; vous vérifiez chacun avant tout changement."
+    "emptyCreationData": "Décrivez ce que le pack de données doit faire (« le minerai de diamant donne deux diamants », « une recette de selle »). L'IA propose les fichiers ; vous vérifiez chacun avant tout changement.",
+    "providerEnabled": "{name} : activé",
+    "messages": "Conversation"
   },
   "brief": {
     "open": "Brief de style",
@@ -1153,5 +1155,9 @@
       "backslash": "Utilisez / entre les dossiers, pas \\.",
       "invalid": "Ce motif n'est pas valide."
     }
+  },
+  "a11y": {
+    "decrease": "Diminuer",
+    "increase": "Augmenter"
   }
 }

@@ -105,6 +105,7 @@ async function create(): Promise<void> {
         <n-input
           v-model:value="description"
           type="textarea"
+          :input-props="{ 'aria-label': t('newPack.description') }"
           :maxlength="512"
           :autosize="{ minRows: 2, maxRows: 4 }"
           data-testid="new-pack-description"
@@ -141,6 +142,7 @@ async function create(): Promise<void> {
         <n-select
           v-model:value="version"
           :options="versionOptions"
+          :input-props="{ 'aria-label': t('newPack.version') }"
           filterable
           data-testid="new-pack-version"
           :render-label="

@@ -308,6 +308,7 @@ const iconPreview = computed(() =>
         <label v-if="canHide(selected)" class="inline">
           <n-switch
             :value="selected.hidden === true"
+            :aria-label="t('categoriesEditor.hide')"
             size="small"
             data-testid="cat-edit-hidden"
             @update:value="(v: boolean) => patch({ hidden: v })"

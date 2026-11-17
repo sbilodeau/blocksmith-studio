@@ -745,7 +745,9 @@
     "creationNoTextures": "No textures found for this pack yet. Prepare the Minecraft textures of its version in Settings.",
     "creationEmptyBase": "Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack (1 texture so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack.",
     "creationDataContext": "Whole data pack: recipes, loot tables, tags and advancements",
-    "emptyCreationData": "Describe what the data pack should do (\"diamond ore drops two diamonds\", \"a recipe for saddles\"). The AI proposes the files; you review each one before anything changes."
+    "emptyCreationData": "Describe what the data pack should do (\"diamond ore drops two diamonds\", \"a recipe for saddles\"). The AI proposes the files; you review each one before anything changes.",
+    "providerEnabled": "{name}: enabled",
+    "messages": "Conversation"
   },
   "brief": {
     "open": "Style brief",
@@ -1153,5 +1155,9 @@
       "backslash": "Use / between folders, not \\.",
       "invalid": "This pattern is not valid."
     }
+  },
+  "a11y": {
+    "decrease": "Decrease",
+    "increase": "Increase"
   }
 }

@@ -11,6 +11,7 @@ import {
   NLayoutContent,
   darkTheme,
   useOsTheme,
+  type GlobalThemeOverrides,
   enUS,
   frFR,
   dateEnUS,
@@ -32,6 +33,33 @@ const isDark = computed(() => {
   return pref === 'dark' || (pref === 'system' && osTheme.value === 'dark')
 })
 const theme = computed(() => (isDark.value ? darkTheme : null))
+
+/**
+ * Accessibility (M11): Naive UI's light palette puts secondary text (#767c82), green (#18a058) and blue (#2080f0)
+ * text under the WCAG AA 4.5:1 contrast ratio on white and on their own light tag backgrounds. These darker shades
+ * pass.
+ */
+const LIGHT_OVERRIDES: GlobalThemeOverrides = {
+  common: {
+    primaryColor: '#0e7a43',
+    primaryColorHover: '#13904f',
+    primaryColorPressed: '#0b6236',
+    primaryColorSuppl: '#13904f',
+    successColor: '#0e7a43',
+    successColorHover: '#13904f',
+    successColorPressed: '#0b6236',
+    successColorSuppl: '#13904f',
+    infoColor: '#1866c8',
+    infoColorHover: '#2a78d8',
+    infoColorPressed: '#1054a8',
+    infoColorSuppl: '#2a78d8',
+    textColor3: '#5c6166'
+  },
+  Empty: { textColor: '#5c6166' }
+}
+/** Dark theme: only the empty-state text (#6b6b6d, 3.6:1 on the background) needs a lighter shade. */
+const DARK_OVERRIDES: GlobalThemeOverrides = { Empty: { textColor: '#9a9a9e' } }
+const themeOverrides = computed(() => (isDark.value ? DARK_OVERRIDES : LIGHT_OVERRIDES))
 const naiveLocale = computed(() => (settingsStore.settings.language === 'fr' ? frFR : enUS))
 const naiveDateLocale = computed(() =>
   settingsStore.settings.language === 'fr' ? dateFrFR : dateEnUS
@@ -50,6 +78,7 @@ watch(
 <template>
   <n-config-provider
     :theme="theme"
+    :theme-overrides="themeOverrides"
     :locale="naiveLocale"
     :date-locale="naiveDateLocale"
     class="app-root"

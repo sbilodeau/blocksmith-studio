@@ -176,8 +176,8 @@ test('paints on a layer, saves the composite and keeps the layers for later', as
   await page.getByTestId('tile-stone').dblclick()
   await expect(page.getByTestId('layers-hint')).toBeVisible()
   await page.getByTestId('layer-add').click()
-  await expect(page.getByTestId('layer-list').getByRole('option')).toHaveCount(2)
-  await expect(page.getByTestId('layer-1')).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByTestId('layer-list').locator('li')).toHaveCount(2)
+  await expect(page.getByTestId('layer-pick-1')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByTestId('local-history')).toContainText('Add layer')
 
   await page.getByTestId('tool-pencil').click()
@@ -208,7 +208,7 @@ test('paints on a layer, saves the composite and keeps the layers for later', as
   // Reopening the texture brings the layers back.
   await page.getByTestId('editor-back').click()
   await page.getByTestId('tile-stone').dblclick()
-  await expect(page.getByTestId('layer-list').getByRole('option')).toHaveCount(2)
+  await expect(page.getByTestId('layer-list').locator('li')).toHaveCount(2)
   await page.getByTestId('layer-flatten').click()
   await expect(page.getByTestId('layer-list')).toHaveCount(0)
   await expect(page.getByTestId('editor-dirty')).toBeVisible()

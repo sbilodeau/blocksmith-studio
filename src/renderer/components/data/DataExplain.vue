@@ -141,7 +141,7 @@ onMounted(async () => {
       </n-space>
       <n-text depth="3" class="hint">{{ t('data.explain.hint') }}</n-text>
 
-      <n-scrollbar class="body">
+      <n-scrollbar class="body" data-a11y-scroll>
         <n-alert
           v-if="stale"
           type="warning"

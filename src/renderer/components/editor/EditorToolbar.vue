@@ -37,6 +37,8 @@ function pick(tool: EditorTool): void {
           class="tool"
           :type="editor.tool === tool.id ? 'primary' : 'default'"
           :class="{ active: editor.tool === tool.id }"
+          :aria-label="t(`editor.tools.${tool.id}`)"
+          :aria-pressed="editor.tool === tool.id"
           :data-testid="`tool-${tool.id}`"
           @click="pick(tool.id)"
         >
@@ -55,6 +57,8 @@ function pick(tool: EditorTool): void {
           size="small"
           class="tool"
           :class="{ active: editor.mirrorX }"
+          :aria-label="t('editor.mirrorX')"
+          :aria-pressed="editor.mirrorX"
           data-testid="toggle-mirror-x"
           @click="editor.mirrorX = !editor.mirrorX"
         >
@@ -70,6 +74,8 @@ function pick(tool: EditorTool): void {
           size="small"
           class="tool"
           :class="{ active: editor.mirrorY }"
+          :aria-label="t('editor.mirrorY')"
+          :aria-pressed="editor.mirrorY"
           data-testid="toggle-mirror-y"
           @click="editor.mirrorY = !editor.mirrorY"
         >
@@ -87,6 +93,7 @@ function pick(tool: EditorTool): void {
           quaternary
           size="small"
           class="tool"
+          :aria-label="t('editor.rotateCcw')"
           data-testid="rotate-ccw"
           @click="editor.rotate('counterclockwise')"
         >
@@ -101,6 +108,7 @@ function pick(tool: EditorTool): void {
           quaternary
           size="small"
           class="tool"
+          :aria-label="t('editor.rotateCw')"
           data-testid="rotate-cw"
           @click="editor.rotate('clockwise')"
         >
@@ -115,6 +123,7 @@ function pick(tool: EditorTool): void {
           quaternary
           size="small"
           class="tool"
+          :aria-label="t('editor.flipH')"
           data-testid="flip-h"
           @click="editor.flip('horizontal')"
         >
@@ -129,6 +138,7 @@ function pick(tool: EditorTool): void {
           quaternary
           size="small"
           class="tool"
+          :aria-label="t('editor.flipV')"
           data-testid="flip-v"
           @click="editor.flip('vertical')"
         >
@@ -147,6 +157,8 @@ function pick(tool: EditorTool): void {
           size="small"
           class="tool"
           :class="{ active: editor.showGrid }"
+          :aria-label="t('editor.grid')"
+          :aria-pressed="editor.showGrid"
           data-testid="toggle-grid"
           @click="editor.showGrid = !editor.showGrid"
         >
@@ -161,6 +173,7 @@ function pick(tool: EditorTool): void {
           quaternary
           size="small"
           class="tool"
+          :aria-label="t('editor.zoomIn')"
           data-testid="zoom-in"
           @click="emit('zoom', 1)"
         >
@@ -175,6 +188,7 @@ function pick(tool: EditorTool): void {
           quaternary
           size="small"
           class="tool"
+          :aria-label="t('editor.zoomOut')"
           data-testid="zoom-out"
           @click="emit('zoom', -1)"
         >
@@ -185,7 +199,14 @@ function pick(tool: EditorTool): void {
     </n-tooltip>
     <n-tooltip placement="right">
       <template #trigger>
-        <n-button quaternary size="small" class="tool" data-testid="zoom-fit" @click="emit('fit')">
+        <n-button
+          quaternary
+          size="small"
+          class="tool"
+          :aria-label="t('editor.fit')"
+          data-testid="zoom-fit"
+          @click="emit('fit')"
+        >
           <editor-icon name="fit" />
         </n-button>
       </template>
