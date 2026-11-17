@@ -6,7 +6,7 @@ Desktop app (Windows and macOS) to create and edit Minecraft Java Edition resour
 pixel editor, a live 3D preview, a checked JSON editor and AI agents that propose changes you review before
 anything is applied.
 
-> Status: early development (milestone M12 - releases and updates). See [PLAN.md](PLAN.md) for the full plan and milestones.
+> Status: early development (milestone M13 - install in Minecraft and live mode). See [PLAN.md](PLAN.md) for the full plan and milestones.
 
 ## Highlights (planned)
 
@@ -21,7 +21,8 @@ anything is applied.
   and an **Explain** tab that says in simple terms what a file changes in the game
 - Bulk edits of a selection (hue, brightness, palette, outline, flip...) reviewed texture by texture
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
-- Export to any Minecraft Java version released in the last two years
+- Export to any Minecraft Java version released in the last two years, or install straight into Minecraft, with a
+  **live mode** that updates the game's copy each time you save (press F3+T in the game to see it)
 - English and French interface
 - Self-updating releases published on GitHub Releases (CalVer `yy.ww.fix`), with a **What's new** window before and
   after each update
@@ -111,6 +112,7 @@ Project documentation:
 - [docs/releasing.md](docs/releasing.md) - one-click releases, CalVer, release notes, auto-update, signing
 - [docs/versions.md](docs/versions.md) - supported Minecraft versions, pack.mcmeta rules, vanilla extraction
 - [docs/packs.md](docs/packs.md) - pack folder layout, texture statuses, import and export
+- [docs/minecraft-install.md](docs/minecraft-install.md) - install in Minecraft and live mode (game folders, sync rules)
 - [docs/categories.md](docs/categories.md) - texture categories and how to edit the mapping
 - [docs/editor.md](docs/editor.md) - pixel editor tools, shortcuts and undo levels
 - [docs/image-core.md](docs/image-core.md) - the shared image library (conventions, operations)

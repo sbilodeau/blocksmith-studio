@@ -33,7 +33,7 @@ import { canExportTo, isSnapshot } from '@shared/versions/support'
 import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
-import { exportPackZip } from './exporter'
+import { collectExportFiles, exportPackZip, type CollectedExport } from './exporter'
 import { FileInfoCache, PNG_HEADER_BYTES, mapLimit, readFileHead, writeFileAtomic } from './files'
 import {
   dataSchemaWarnings,
@@ -156,6 +156,15 @@ export interface PackService {
     outputPath: string,
     options?: { acceptNewer?: boolean; packType?: ExportPackType }
   ): Promise<ExportReport>
+  /**
+   * Checks `targetVersion` like an export, then returns the files the export would contain, without writing anything
+   * and without progress events (install in Minecraft, live mode).
+   */
+  exportFiles(
+    packId: string,
+    targetVersion: string,
+    options?: { acceptNewer?: boolean; packType?: ExportPackType }
+  ): Promise<{ project: Project; collected: CollectedExport }>
 }
 
 /**
@@ -551,6 +560,18 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         { vanilla: deps.vanilla, onProgress },
         options
       )
+    },
+
+    async exportFiles(packId, targetVersion, options = {}) {
+      const location = await requireLocation(packId)
+      const target = checkExportTarget(location, targetVersion)
+      const collected = await collectExportFiles(
+        location,
+        target,
+        { vanilla: deps.vanilla, onProgress: () => undefined },
+        options
+      )
+      return { project: location.project, collected }
     },
 
     async exportMany(packId, targetVersions, folder, options = {}) {

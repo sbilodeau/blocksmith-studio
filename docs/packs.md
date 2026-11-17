@@ -215,6 +215,9 @@ Packs screen is checked against the data pack format and shows "Made for an olde
 | `export.nonPowerOfTwo`     | A `block/` or `item/` texture (or its frames) is not a power of two |
 | `export.animationMismatch` | An animated texture is not a whole number of frames                 |
 
+To put the pack straight into the game's folders instead of a zip you move by hand, see
+[minecraft-install.md](minecraft-install.md) (Install and live mode use the same export steps).
+
 ## Upgrade to a newer Minecraft version
 
 `packs.upgrade { packId, targetVersion }` (pack header: **Upgrade to <latest>** when the pack's version is older)

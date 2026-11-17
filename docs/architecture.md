@@ -74,6 +74,7 @@ context isolation enabled, unknown channels refused, CSP present, remote fetch b
 | Data files     | `src/main/services/packs/data.ts` | Data pack files: list (pack + vanilla), read, save, create, delete ([datapacks.md](datapacks.md)) |
 | History        | `src/main/services/history/`      | Per-pack journal, content-addressed blobs, undo / redo with conflict check                        |
 | Bulk           | `src/main/services/bulk/`         | Bulk operations on many textures (worker thread), see [bulk.md](bulk.md)                          |
+| Minecraft      | `src/main/services/minecraft/`    | Install in Minecraft and live mode ([minecraft-install.md](minecraft-install.md))                 |
 | AI agents      | `src/main/services/ai/agent/`     | Editor and navigation agents, proposals, conversations (ai-agents.md)                             |
 | Asset protocol | `src/main/protocol.ts`            | Read-only `bs-asset://` URLs for thumbnails (pack file, else vanilla file)                        |
 | Job reporter   | `src/main/jobs.ts`                | Throttled `job.progress` events for long operations                                               |
@@ -122,7 +123,8 @@ original is more than four times the size it is shown at. See [performance.md](p
 corrupted file is backed up as `settings.json.bak` before falling back to defaults. API keys will never be stored
 here; they will use `safeStorage` in a separate encrypted file (milestone M3).
 
-`BLOCKSMITH_USER_DATA` overrides the user data folder (used by the E2E tests).
+`BLOCKSMITH_USER_DATA` overrides the user data folder, and `BLOCKSMITH_MINECRAFT_DIR` the official `.minecraft`
+(both set by the E2E tests).
 
 ## Renderer
 

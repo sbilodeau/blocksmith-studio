@@ -20,11 +20,13 @@ export function createAppI18n(locale: Language = 'en'): AppI18n {
     datetimeFormats: {
       en: {
         short: { year: 'numeric', month: 'short', day: 'numeric' },
-        time: { hour: '2-digit', minute: '2-digit' }
+        time: { hour: '2-digit', minute: '2-digit' },
+        timeSeconds: { hour: '2-digit', minute: '2-digit', second: '2-digit' }
       },
       fr: {
         short: { year: 'numeric', month: 'short', day: 'numeric' },
-        time: { hour: '2-digit', minute: '2-digit' }
+        time: { hour: '2-digit', minute: '2-digit' },
+        timeSeconds: { hour: '2-digit', minute: '2-digit', second: '2-digit' }
       }
     }
   })

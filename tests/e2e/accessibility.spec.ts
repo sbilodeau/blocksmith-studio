@@ -104,6 +104,13 @@ for (const theme of ['light', 'dark'] as const) {
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('cat-editor')).toHaveCount(0)
 
+    await page.getByTestId('play-open').click()
+    await expect(page.getByTestId('play-dialog')).toBeVisible()
+    await expect(page.getByTestId('play-game-dir')).toContainText('Minecraft launcher')
+    found.push(...(await violations(page, 'play in Minecraft dialog')))
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('play-dialog')).toHaveCount(0)
+
     await page.getByTestId('cat-blocks').click()
     found.push(...(await violations(page, 'grid')))
 

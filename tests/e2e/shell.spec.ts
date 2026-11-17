@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test'
+import { readFile } from 'fs/promises'
+import { join } from 'path'
+import { unreleasedNotes } from '../../scripts/lib/changelog.mjs'
 import { cleanup, launchApp, type LaunchedApp } from './app'
 
 let launched: LaunchedApp
@@ -79,7 +82,11 @@ test('shows the bundled release notes from Settings and nothing on launch of a d
   const dialog = page.getByTestId('whats-new-dialog')
   await expect(dialog).toBeVisible()
   // A development build has no section for its own version: it shows the upcoming (Unreleased) notes.
-  await expect(dialog.getByTestId('whats-new-notes')).toContainText('Releases and updates')
+  const firstHeading = /^### (.+)$/m.exec(
+    unreleasedNotes(await readFile(join(__dirname, '../../CHANGELOG.md'), 'utf8'))
+  )?.[1]
+  expect(firstHeading).toBeTruthy()
+  await expect(dialog.getByTestId('whats-new-notes')).toContainText(firstHeading!)
   await dialog.getByTestId('whats-new-close').click()
   await expect(dialog).toHaveCount(0)
 })

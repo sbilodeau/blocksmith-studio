@@ -2,6 +2,12 @@ import { z } from 'zod'
 import type { InvokeChannel, EventChannel } from './channels'
 import { SettingsPatchSchema, type Settings } from '../model/settings'
 import type { UpdaterStatus, WhatsNew } from '../model/updater'
+import {
+  MinecraftTargetSchema,
+  type GameDir,
+  type InstallResult,
+  type PackMinecraftStatus
+} from '../model/minecraft'
 import type { MinecraftInstall, VanillaAvailability } from '../model/vanilla'
 import {
   CreatePackInputSchema,
@@ -129,6 +135,15 @@ export const inputSchemas = {
   'updater.install': NoInput,
   'minecraft.detect': NoInput,
   'minecraft.addPath': NoInput,
+  'minecraft.gameDirs': NoInput,
+  'minecraft.addGameDir': NoInput,
+  'pack.minecraft.get': PackRef,
+  'pack.minecraft.install': MinecraftTargetSchema,
+  'pack.minecraft.live': z.discriminatedUnion('on', [
+    MinecraftTargetSchema.extend({ on: z.literal(true) }).strict(),
+    z.object({ packId: z.string().min(1).max(64), on: z.literal(false) }).strict()
+  ]),
+  'pack.minecraft.reveal': PackRef,
   'vanilla.availability': NoInput,
   'vanilla.prepare': z.object({ versionId: VersionId }).strict(),
   'workspace.get': NoInput,
@@ -326,6 +341,16 @@ export interface InvokeOutputs {
   'minecraft.detect': MinecraftInstall[]
   /** Opens a folder/jar picker; null when cancelled. */
   'minecraft.addPath': MinecraftInstall | null
+  /** Game folders the app can install into: the official .minecraft and folders added by hand (M13). */
+  'minecraft.gameDirs': GameDir[]
+  /** Folder picker in main; null when cancelled. Throws minecraft.notAGameDir. */
+  'minecraft.addGameDir': GameDir | null
+  'pack.minecraft.get': PackMinecraftStatus
+  /** Writes `<pack name>.zip` into the game folder (resourcepacks/, the world's datapacks/). */
+  'pack.minecraft.install': InstallResult
+  /** Live mode on (first sync done) or off (live folders removed). */
+  'pack.minecraft.live': PackMinecraftStatus
+  'pack.minecraft.reveal': void
   /** One entry per supported version (support window), newest first. */
   'vanilla.availability': VanillaAvailability[]
   /** Extracts (and downloads from Mojang if allowed in settings) the vanilla assets. Emits job.progress. */
@@ -447,6 +472,8 @@ export interface EventPayloads {
   'job.progress': JobProgress
   /** The pack list or a pack's files changed (create, import, delete, external edit). */
   'packs.changed': { packId?: string }
+  /** Live mode or destination of a pack changed (M13). */
+  'pack.minecraft.status': { packId: string; status: PackMinecraftStatus }
   'ai.event': AgentEvent
   'ai.eval.progress': EvalProgress
   /** To a pop-out preview: the state of its editor. */
