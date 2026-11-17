@@ -55,13 +55,40 @@ describe('findEntityDefinition', () => {
     expect(idOf('entity/enderman/enderman.png')).toBe('enderman')
   })
 
+  it('resolves villager-like mobs, piglins and illagers', () => {
+    expect(idOf('entity/wandering_trader.png')).toBe('villager')
+    expect(idOf('entity/wandering_trader/wandering_trader.png')).toBe('villager')
+    expect(idOf('entity/zombie_villager/zombie_villager.png')).toBe('zombie_villager')
+    expect(idOf('entity/zombie_villager/profession/librarian.png')).toBe('zombie_villager')
+    expect(idOf('entity/zombie_villager/type/desert.png')).toBe('zombie_villager')
+    expect(idOf('entity/piglin/piglin.png')).toBe('piglin')
+    expect(idOf('entity/piglin/piglin_brute.png')).toBe('piglin')
+    expect(idOf('entity/piglin/zombified_piglin.png')).toBe('piglin')
+    expect(idOf('entity/illager/vindicator.png')).toBe('illager')
+    expect(idOf('entity/illager/evoker.png')).toBe('illager')
+    expect(idOf('entity/illager/illusioner.png')).toBe('illager')
+    expect(idOf('entity/illager/pillager.png')).toBe('pillager')
+    expect(idOf('entity/witch.png')).toBe('witch')
+    expect(idOf('entity/witch/witch.png')).toBe('witch')
+    expect(idOf('entity/iron_golem/iron_golem_crackiness_low.png')).toBe('iron_golem')
+  })
+
+  it('leaves look-alike textures of other layouts flat', () => {
+    expect(idOf('entity/shulker/spark.png')).toBeUndefined()
+    expect(idOf('entity/llama/spit.png')).toBeUndefined()
+    expect(idOf('entity/bee/bee_stinger.png')).toBeUndefined()
+    expect(idOf('entity/villager/baby/plains.png')).toBeUndefined()
+    expect(idOf('entity/zombie_villager/baby/plains.png')).toBeUndefined()
+    expect(idOf('entity/rabbit/rabbit_brown.png')).toBeUndefined()
+  })
+
   it('also applies to custom textures added to a covered folder', () => {
     expect(idOf('entity/wolf/wolf_custom.png')).toBe('wolf')
     expect(idOf('entity/player/wide/my_skin.png')).toBe('player_wide')
   })
 
   it('returns undefined for unknown entities and non-entity textures', () => {
-    expect(idOf('entity/llama/creamy.png')).toBeUndefined()
+    expect(idOf('entity/ghast/ghast.png')).toBeUndefined()
     expect(idOf('entity/wolf/wolf_baby.png')).toBeUndefined()
     expect(idOf('entity/zombie/zombie.png.mcmeta')).toBeUndefined()
     expect(idOf('block/stone.png')).toBeUndefined()

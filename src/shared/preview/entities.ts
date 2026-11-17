@@ -26,6 +26,12 @@ import horse from '../../../resources/data/entity-models/horse.json'
 import elytra from '../../../resources/data/entity-models/elytra.json'
 import donkey from '../../../resources/data/entity-models/donkey.json'
 import cowVariants from '../../../resources/data/entity-models/cow_variants.json'
+import zombieVillager from '../../../resources/data/entity-models/zombie_villager.json'
+import ironGolem from '../../../resources/data/entity-models/iron_golem.json'
+import piglin from '../../../resources/data/entity-models/piglin.json'
+import illager from '../../../resources/data/entity-models/illager.json'
+import pillager from '../../../resources/data/entity-models/pillager.json'
+import witch from '../../../resources/data/entity-models/witch.json'
 
 /**
  * Built-in entity geometry definitions (resources/data/entity-models/*.json), authored for Blocksmith Studio
@@ -59,7 +65,13 @@ const RAW_DEFINITIONS: Record<string, unknown> = {
   'spider.json': spider,
   'villager.json': villager,
   'wolf.json': wolf,
-  'zombie.json': zombie
+  'zombie.json': zombie,
+  'zombie_villager.json': zombieVillager,
+  'iron_golem.json': ironGolem,
+  'piglin.json': piglin,
+  'illager.json': illager,
+  'pillager.json': pillager,
+  'witch.json': witch
 }
 
 interface CompiledDefinition {

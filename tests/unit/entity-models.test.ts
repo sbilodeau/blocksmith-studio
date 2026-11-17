@@ -183,7 +183,62 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
   ['entity/equipment/zombie_horse_saddle', [64, 64], ['saddle']],
   ['entity/equipment/wolf_body', [64, 32], ['armadillo_scute', 'armadillo_scute_overlay']],
   ['entity/equipment/wings', [64, 32], ['elytra']],
-  ['entity/equipment/pig_saddle', [64, 64], ['saddle']]
+  ['entity/equipment/pig_saddle', [64, 64], ['saddle']],
+  ['entity', [64, 64], ['wandering_trader']],
+  ['entity/wandering_trader', [64, 64], ['wandering_trader']],
+  // M11 additions (1.21.4 and 26.3 paths)
+  // zombie_villager
+  [
+    'entity/zombie_villager/profession',
+    [64, 64],
+    [
+      'armorer',
+      'butcher',
+      'cartographer',
+      'cleric',
+      'farmer',
+      'fisherman',
+      'fletcher',
+      'leatherworker',
+      'librarian',
+      'mason',
+      'nitwit',
+      'shepherd',
+      'toolsmith',
+      'weaponsmith'
+    ]
+  ],
+  [
+    'entity/zombie_villager/profession_level',
+    [64, 64],
+    ['diamond', 'emerald', 'gold', 'iron', 'stone']
+  ],
+  [
+    'entity/zombie_villager/type',
+    [64, 64],
+    ['desert', 'jungle', 'plains', 'savanna', 'snow', 'swamp', 'taiga']
+  ],
+  ['entity/zombie_villager', [64, 64], ['zombie_villager']],
+  // iron_golem
+  [
+    'entity/iron_golem',
+    [128, 128],
+    [
+      'iron_golem',
+      'iron_golem_crackiness_high',
+      'iron_golem_crackiness_low',
+      'iron_golem_crackiness_medium'
+    ]
+  ],
+  // piglin
+  ['entity/piglin', [64, 64], ['piglin', 'piglin_brute', 'zombified_piglin']],
+  // illager
+  ['entity/illager', [64, 64], ['evoker', 'illusioner', 'vindicator']],
+  // pillager
+  ['entity/illager', [64, 64], ['pillager']],
+  // witch
+  ['entity', [64, 128], ['witch']],
+  ['entity/witch', [64, 128], ['witch']]
 ]
 
 const tex = (key: string): string => `assets/minecraft/textures/${key}`
@@ -197,14 +252,15 @@ const KNOWN_ENTITY_TEXTURES: ReadonlyMap<string, [number, number]> = new Map(
 
 /** Vanilla entity textures that have no built-in definition yet (they must fall back to the flat view). */
 const UNCOVERED_ENTITY_TEXTURES: readonly string[] = [
-  tex('entity/piglin/piglin.png'),
-  tex('entity/zombie_villager/zombie_villager.png'),
   tex('entity/creeper/creeper_armor.png'),
-  tex('entity/llama/creamy.png'),
-  tex('entity/equipment/llama_body/blue.png'),
+  tex('entity/ghast/ghast.png'),
+  // 26.x rabbits use a new 64 x 64 layout.
+  tex('entity/rabbit/rabbit_brown.png'),
   // Baby mobs have their own layouts since 26.1.
   tex('entity/wolf/wolf_baby.png'),
   tex('entity/cow/cow_temperate_baby.png'),
+  tex('entity/villager/baby/plains.png'),
+  tex('entity/zombie_villager/baby/plains.png'),
   tex('block/stone.png')
 ]
 
@@ -377,7 +433,13 @@ const EXPECTED_HEIGHTS: Record<string, number> = {
   spider: 13,
   villager: 34,
   wolf: 15.5,
-  zombie: 32
+  zombie: 32,
+  illager: 34,
+  iron_golem: 43,
+  piglin: 32,
+  pillager: 34,
+  witch: 43.394,
+  zombie_villager: 34
 }
 
 describe('entity model files', () => {
@@ -465,13 +527,32 @@ const overlaps = (a: UvRect, b: UvRect): boolean =>
  * the four legs of a quadruped, cow horns, spider legs. Any other overlap between face rectangles is an error,
  * unless listed here as "<definition id>:<box uv>:<box uv>".
  */
-const ALLOWED_UV_OVERLAPS = new Set<string>([])
+const ALLOWED_UV_OVERLAPS = new Set<string>([
+  // Vanilla packs the two 1 x 2 x 3 antennae so that their layouts overlap by two rows.
+  'bee:2,0:2,3'
+])
 
 describe('entity box UVs', () => {
-  it('keeps every box UV layout inside the texture', () => {
+  it('keeps every used face of a box UV layout inside the texture', () => {
+    // Faces only: a flat plane (the frog's belly, 7 x 0 x 9) has empty side faces, and its layout may run past
+    // the texture edge as in vanilla.
     for (const def of definitions) {
       const [tw, th] = def.textureSize
       for (const { part, box } of placedBoxes(def)) {
+        const where = `${def.id}/${part.name} uv ${box.uv.join(',')}`
+        for (const r of faceRects(box)) {
+          expect(r.u1 >= 0 && r.v1 >= 0, where).toBe(true)
+          expect(r.u2 <= tw && r.v2 <= th, where).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('keeps solid box layouts inside the texture', () => {
+    for (const def of definitions) {
+      const [tw, th] = def.textureSize
+      for (const { part, box } of placedBoxes(def)) {
+        if (box.size.some((n) => n === 0)) continue
         const e = boxUvExtent(box)
         const where = `${def.id}/${part.name} uv ${box.uv.join(',')}`
         expect(e.u1 >= 0 && e.v1 >= 0, where).toBe(true)
@@ -507,6 +588,23 @@ describe('entity box UVs', () => {
   })
 })
 
+/** Parts that are off-center in vanilla too, as "<definition id>/<part name>". */
+const ASYMMETRIC_PARTS = new Set<string>([
+  'slime/mouth',
+  // The witch's hat leans to one side; the mole sits on one side of the nose.
+  'witch/hat2',
+  'witch/hat3',
+  'witch/hat4',
+  'witch/mole',
+  // Vanilla sets the strider's left bristles 1 px higher than the right ones.
+  'strider/right_bottom_bristle',
+  'strider/right_middle_bristle',
+  'strider/right_top_bristle',
+  'strider/left_top_bristle',
+  'strider/left_middle_bristle',
+  'strider/left_bottom_bristle'
+])
+
 describe('entity rest-pose geometry', () => {
   it('stands on y = 0 (spider legs end within a pixel of the ground)', () => {
     for (const def of definitions) {
@@ -517,6 +615,10 @@ describe('entity rest-pose geometry', () => {
       } else if (def.id === 'elytra') {
         // Worn on the back: hangs from the shoulders (y = 24), tilted, so it ends above the ground.
         expect(min[1], def.id).toBeGreaterThan(0)
+      } else if (def.id === 'rabbit') {
+        // The front paws are tilted 10 degrees and dip 0.07 px into the ground, as in vanilla.
+        expect(min[1], def.id).toBeGreaterThan(-0.1)
+        expect(min[1], def.id).toBeLessThanOrEqual(0)
       } else if (def.id === 'spider') {
         expect(min[1], def.id).toBeGreaterThanOrEqual(0)
         expect(min[1], def.id).toBeLessThan(1)
@@ -540,6 +642,7 @@ describe('entity rest-pose geometry', () => {
       const placed = placedBoxes(def)
       const all = new Set(placed.map((p) => key(p.bounds.min, p.bounds.max)))
       for (const { part, bounds } of placed) {
+        if (ASYMMETRIC_PARTS.has(`${def.id}/${part.name}`)) continue
         const mirrored = key(
           [-bounds.max[0], bounds.min[1], bounds.min[2]],
           [-bounds.min[0], bounds.max[1], bounds.max[2]]

@@ -2,7 +2,11 @@
   "id": "villager",
   "textureSize": [64, 64],
   "animation": "biped",
-  "textures": ["assets/minecraft/textures/entity/villager/**/*.png"],
+  "textures": [
+    "assets/minecraft/textures/entity/villager/villager.png",
+    "assets/minecraft/textures/entity/villager/{profession,profession_level,type}/*.png",
+    "assets/minecraft/textures/entity/{wandering_trader,wandering_trader/wandering_trader}.png"
+  ],
   "parts": [
     {
       "name": "head",

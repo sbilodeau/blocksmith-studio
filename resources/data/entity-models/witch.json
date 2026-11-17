@@ -1,0 +1,97 @@
+{
+  "id": "witch",
+  "textureSize": [64, 128],
+  "animation": "biped",
+  "textures": ["assets/minecraft/textures/entity/{witch,witch/witch}.png"],
+  "parts": [
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 24, 0],
+      "boxes": [{ "origin": [-4, 24, -4], "size": [8, 10, 8], "uv": [0, 0] }],
+      "children": [
+        {
+          "name": "hat",
+          "pivot": [-5, 34.031, 5],
+          "boxes": [{ "origin": [-5, 32.031, -5], "size": [10, 2, 10], "uv": [0, 64] }],
+          "children": [
+            {
+              "name": "hat2",
+              "pivot": [-3.25, 38.031, 3],
+              "rotation": [-3, 0, -1.5],
+              "boxes": [{ "origin": [-3.25, 34.031, -4], "size": [7, 4, 7], "uv": [0, 76] }],
+              "children": [
+                {
+                  "name": "hat3",
+                  "pivot": [-1.5, 42.031, 1],
+                  "rotation": [-6, 0, -3],
+                  "boxes": [{ "origin": [-1.5, 38.031, -3], "size": [4, 4, 4], "uv": [0, 87] }],
+                  "children": [
+                    {
+                      "name": "hat4",
+                      "pivot": [0.25, 44.031, -1],
+                      "rotation": [-12, 0, -6],
+                      "boxes": [
+                        {
+                          "origin": [0.25, 42.031, -2],
+                          "size": [1, 2, 1],
+                          "uv": [0, 95],
+                          "inflate": 0.25
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "nose",
+          "pivot": [0, 26, 0],
+          "boxes": [{ "origin": [-1, 23, 4], "size": [2, 4, 2], "uv": [24, 0] }],
+          "children": [
+            {
+              "name": "mole",
+              "pivot": [0, 28, 0],
+              "boxes": [
+                { "origin": [0, 24, 5.75], "size": [1, 1, 1], "uv": [0, 0], "inflate": -0.25 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 24, 0],
+      "boxes": [
+        { "origin": [-4, 12, -3], "size": [8, 12, 6], "uv": [16, 20] },
+        { "origin": [-4, 4, -3], "size": [8, 20, 6], "uv": [0, 38], "inflate": 0.5 }
+      ]
+    },
+    {
+      "name": "arms",
+      "pivot": [0, 21, 1],
+      "rotation": [-42.972, 0, 0],
+      "boxes": [
+        { "origin": [-8, 15, -1], "size": [4, 8, 4], "uv": [44, 22] },
+        { "origin": [4, 15, -1], "size": [4, 8, 4], "uv": [44, 22], "mirror": true },
+        { "origin": [-4, 15, -1], "size": [8, 4, 4], "uv": [40, 38] }
+      ]
+    },
+    {
+      "name": "right_leg",
+      "role": "rightLeg",
+      "pivot": [-2, 12, 0],
+      "boxes": [{ "origin": [-4, 0, -2], "size": [4, 12, 4], "uv": [0, 22] }]
+    },
+    {
+      "name": "left_leg",
+      "role": "leftLeg",
+      "pivot": [2, 12, 0],
+      "boxes": [{ "origin": [0, 0, -2], "size": [4, 12, 4], "uv": [0, 22], "mirror": true }]
+    }
+  ]
+}
