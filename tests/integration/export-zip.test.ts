@@ -149,7 +149,11 @@ describe('export .zip', () => {
     await put(
       pack.folder,
       'data/fire/recipe/torch.json',
-      json({ type: 'minecraft:crafting_shaped' })
+      json({
+        type: 'minecraft:crafting_shapeless',
+        ingredients: ['minecraft:coal'],
+        result: { id: 'minecraft:torch' }
+      })
     )
 
     const resourceOut = join(env.root, 'r.zip')

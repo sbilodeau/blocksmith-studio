@@ -1,6 +1,7 @@
 # Packs
 
-How Blocksmith Studio stores, lists, edits, imports and exports resource packs. Code: `src/main/services/packs/`,
+How Blocksmith Studio stores, lists, edits, imports and exports packs (data pack editing:
+[datapacks.md](datapacks.md)). Code: `src/main/services/packs/`,
 `src/main/services/history/`, `src/main/protocol.ts`, `src/main/ipc/pack-handlers.ts` and
 `src/main/ipc/texture-handlers.ts`.
 
@@ -15,14 +16,15 @@ How Blocksmith Studio stores, lists, edits, imports and exports resource packs. 
 
 ## Pack folder layout
 
-The pack folder is a valid resource pack on its own:
+The pack folder is a valid resource pack (or data pack) on its own:
 
 ```
 fire-pack/
-  pack.mcmeta                 generated for the authoring version
+  pack.mcmeta                 generated for the authoring version (data pack format for a data pack)
   pack.png                    64x64, generated at creation
   assets/<ns>/...             only files that differ from vanilla, or new files
-  .blocksmith/project.json    id, name, description, authoring version, base, dates (ProjectSchema)
+  data/<ns>/...               data pack files (data and combined packs, see datapacks.md)
+  .blocksmith/project.json    id, name, description, authoring version, base, kind, dates (ProjectSchema)
   .blocksmith/history/        pack journal for undo / redo (see History)
 ```
 
@@ -145,6 +147,8 @@ an unknown head, means every entry is applied.
    kept and the report warns `import.vanillaNotReady`.
 6. The pack name is the zip file name; the description is the `pack.mcmeta` description flattened to plain text.
    `pack.mcmeta` is regenerated for the authoring version, keeping extra sections such as `language`.
+7. The pack kind comes from the folders: `data/` without `assets/` is a data pack (its format is mapped with the data
+   pack format column), both make a combined pack (see [datapacks.md](datapacks.md#pack-kinds)).
 
 | Error code          | When                                                                   |
 | ------------------- | ---------------------------------------------------------------------- |
@@ -167,9 +171,9 @@ skips, `export.otherFilesAsIs`), compare against that version's vanilla, and rep
 several versions (`pack.exportMany`: one zip per version in a chosen folder) and preselects the last export settings,
 saved as `exportProfile` in project.json. See [versions.md](versions.md#texture-path-migrations).
 
-**Pack type** (`pack.export` `packType`). The dialog does not offer it yet: every export from the UI is a resource
-pack, and the data pack choice comes back with data pack editing (M10). The export pipeline, IPC and real-jar check
-already support both:
+**Pack type** (`pack.export` `packType`, `pack.exportMany` `packTypes`). It follows the pack kind: a resource pack
+exports a resource pack, a data pack a data pack, and a combined pack offers both (two checkboxes, both ticked by
+default; one zip per type and version, remembered in the export profile as `packTypes`):
 
 | Pack type            | Contents                       | pack.mcmeta format         | File name                            | Installed from                                    |
 | -------------------- | ------------------------------ | -------------------------- | ------------------------------------ | ------------------------------------------------- |
@@ -177,8 +181,9 @@ already support both:
 | `data`               | Only `data/` (plus `pack.png`) | Data pack (26.3: 121.0)    | `<name>-<version>-data-pack.zip`     | A world's Data Packs screen, `<world>/datapacks/` |
 
 Minecraft never loads textures from a data pack, so a data pack export leaves `assets/` out (warning
-`export.assetsLeftOut`) and is empty until the pack has `data/` files (`export.noDataFiles`; data pack editing is
-M10). A resource pack export leaves `data/` out (`export.dataLeftOut`). A resource pack dropped on a world's Data
+`export.assetsLeftOut`) and is empty until the pack has `data/` files (`export.noDataFiles`). It also runs the data
+file checks (`doctor.invalidData`, `doctor.dataWarnings`) and, to another version, warns that data files are copied
+as they are (`export.dataAsIs`). A resource pack export leaves `data/` out (`export.dataLeftOut`). A resource pack dropped on a world's Data
 Packs screen is checked against the data pack format and shows "Made for an older version".
 
 1. **Collect** every file of the pack folder for the pack type, except hidden entries (`.blocksmith/`, `.git/`...),
@@ -197,6 +202,7 @@ Packs screen is checked against the data pack format and shows "Made for an olde
 | `export.dataLeftOut`       | Resource pack export: the pack's `data/` files were left out        |
 | `export.assetsLeftOut`     | Data pack export: `assets/` files (textures...) were left out       |
 | `export.noDataFiles`       | Data pack export: the pack has no `data/` file, the zip is empty    |
+| `export.dataAsIs`          | Data pack export to another version: data files copied as they are  |
 | `export.invalidMcmeta`     | The pack's own `pack.mcmeta` does not parse (it is replaced)        |
 | `export.missingPackPng`    | No `pack.png` at the root                                           |
 | `export.invalidPng`        | Bad PNG signature or IHDR                                           |
@@ -222,7 +228,9 @@ version (keeping its other sections) and updates `authoringVersion`. Textures th
   whose proportions differ from the vanilla texture of the same path (a 32x16 stone; 32x32 is fine), which models
   show stretched or cut. Animated vanilla strips are compared by width. `doctor.missingAnimation`: a texture animated
   in vanilla whose pack PNG has no `.png.mcmeta` (Minecraft would not play the animation; saving the texture in the
-  editor copies the `.mcmeta` into the pack).
+  editor copies the `.mcmeta` into the pack). `doctor.invalidData`: a recipe, loot table, tag or advancement
+  Minecraft would reject; `doctor.dataWarnings`: one that names items, blocks or tags the game does not have (see
+  [datapacks.md](datapacks.md#checks)).
 - `targets`: for every other export target, how many textures an export would rename and which ones it would skip.
 
 The drawer groups issues by type; texture paths open in the editor.
@@ -241,13 +249,13 @@ Code: `src/main/services/merge/` (`combine.ts` pure, `service.ts`), IPC `merge.p
 takes the top source's icon). Source paths are migrated to the target's authoring version (a new target uses the
 newest version among the sources; see [versions.md](versions.md#texture-path-migrations)). Every path is then:
 
-| Class     | When                                                                                                                                            |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| identical | the target already has the same content                                                                                                         |
-| added     | not in the target, and every source that has it has the same content                                                                            |
-| merged    | `lang/*.json` and `sounds.json` (key union, the top source wins per key), `atlases/*.json` (`sources` union), `font/*.json` (`providers` union) |
-| conflict  | different contents: candidates side by side (PNG thumbnails, text excerpts), default = top source                                               |
-| skipped   | the file does not exist in the target version (`notInVersion`)                                                                                  |
+| Class     | When                                                                                                                                                                                                             |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| identical | the target already has the same content                                                                                                                                                                          |
+| added     | not in the target, and every source that has it has the same content                                                                                                                                             |
+| merged    | `lang/*.json` and `sounds.json` (key union, the top source wins per key), `atlases/*.json` (`sources` union), `font/*.json` (`providers` union), data pack tags (`values` union, `replace` stops at that source) |
+| conflict  | different contents: candidates side by side (PNG thumbnails, text excerpts), default = top source                                                                                                                |
+| skipped   | the file does not exist in the target version (`notInVersion`)                                                                                                                                                   |
 
 `merge.apply { planId, choices }` creates the target when it is new (base of the top source), then writes added files,
 merged JSON and the chosen conflict versions (`target` keeps the target's) as ONE history entry in the target

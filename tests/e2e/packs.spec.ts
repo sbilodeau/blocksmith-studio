@@ -166,6 +166,8 @@ test('imports a zip, marks modified textures and exports only changed files', as
   await page.getByTestId('export-open').click()
   await page.getByTestId('export-accept-newer').click()
   await page.getByTestId('export-target').locator('.n-base-suffix').click()
+  // allTextContents() does not wait: let the menu render first.
+  await expect(page.locator('.n-base-select-option').first()).toBeVisible()
   // Newer snapshots first, then the pack's version and the older releases of the support window.
   const optionTexts = await page.locator('.n-base-select-option').allTextContents()
   expect(optionTexts.slice(0, 3)).toEqual([

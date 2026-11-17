@@ -26,15 +26,19 @@ const applying = ref<string | null>(null)
 const stopping = ref(false)
 
 const count = computed(() => pack.value.textures.length)
+/** A data pack: the agent works on data files (list_data, read_json, write_json), not textures. */
+const dataPack = computed(() => pack.value.summary?.kind === 'data')
 /** An empty pack works from Minecraft's textures: the agent adds the ones it changes. */
 const emptyBase = computed(() => pack.value.summary?.base === 'empty')
-const ready = computed(() => count.value > 0 || emptyBase.value)
+const ready = computed(() => dataPack.value || count.value > 0 || emptyBase.value)
 const contextText = computed(() =>
-  emptyBase.value
-    ? t('ai.creationEmptyBase', { count: count.value }, count.value)
-    : count.value
-      ? t('ai.creationContext', { count: count.value }, count.value)
-      : t('ai.creationNoTextures')
+  dataPack.value
+    ? t('ai.creationDataContext')
+    : emptyBase.value
+      ? t('ai.creationEmptyBase', { count: count.value }, count.value)
+      : count.value
+        ? t('ai.creationContext', { count: count.value }, count.value)
+        : t('ai.creationNoTextures')
 )
 
 async function send(request: {
@@ -61,11 +65,16 @@ async function apply(proposalId: string, stepIds: string[]): Promise<void> {
   try {
     const result = await ai.applyCreation(props.packId, proposalId, stepIds)
     const parts = [
-      result.stopped
-        ? t('ai.plan.stoppedResult', { count: result.texturesWritten }, result.texturesWritten)
-        : t('ai.plan.appliedResult', { count: result.texturesWritten }, result.texturesWritten),
+      result.texturesWritten === 0 && result.filesWritten > 0 && !result.stopped
+        ? ''
+        : result.stopped
+          ? t('ai.plan.stoppedResult', { count: result.texturesWritten }, result.texturesWritten)
+          : t('ai.plan.appliedResult', { count: result.texturesWritten }, result.texturesWritten),
       result.checkpoints > 0
         ? t('ai.plan.checkpoints', { count: result.checkpoints }, result.checkpoints)
+        : '',
+      result.filesWritten > 0
+        ? t('ai.plan.filesWritten', { count: result.filesWritten }, result.filesWritten)
         : '',
       result.briefUpdated ? t('ai.proposal.briefUpdated') : '',
       result.metaUpdated ? t('ai.plan.metaUpdated') : ''
@@ -103,7 +112,7 @@ async function reject(proposalId: string): Promise<void> {
       :pack-id="packId"
       agent="creation"
       :ready="ready"
-      :empty-text="t('ai.emptyCreation')"
+      :empty-text="dataPack ? t('ai.emptyCreationData') : t('ai.emptyCreation')"
       @send="send"
       @open-settings="emit('openSettings')"
     >

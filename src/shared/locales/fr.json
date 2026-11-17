@@ -158,6 +158,12 @@
     "merge": {
       "planExpired": "Cet aperçu de fusion a expiré. Relancez l'aperçu.",
       "targetIsSource": "Le pack cible ne peut pas être aussi une source."
+    },
+    "data": {
+      "invalidPath": "« {path} » n'est pas un chemin de fichier de données valide.",
+      "tooLarge": "Le fichier est trop volumineux.",
+      "exists": "« {path} » existe déjà.",
+      "notInPack": "Le pack n'a pas de fichier « {path} »."
     }
   },
   "common": {
@@ -182,12 +188,18 @@
     "namePlaceholder": "Mon pack de feu",
     "description": "Description",
     "base": "Point de départ",
-    "baseVanilla": "Textures vanilla (modifier les textures du jeu)",
+    "baseVanilla": "Fichiers vanilla (modifiez les textures et données du jeu)",
     "baseEmpty": "Pack vide (ajouter vos propres fichiers)",
     "version": "Version de Minecraft",
     "versionHint": "Vous éditez pour cette version. L'export vers des versions plus anciennes arrivera plus tard.",
     "vanillaRequired": "Textures vanilla nécessaires",
-    "create": "Créer"
+    "create": "Créer",
+    "kind": "Type de pack",
+    "kindHint": {
+      "resource": "Textures et autres ressources du jeu, installées depuis Options > Packs de ressources.",
+      "data": "Recettes, tables de butin, tags et progrès, installés dans le dossier datapacks d'un monde.",
+      "combined": "Les deux dans un même projet ; exporté en un zip de ressources et un zip de données."
+    }
   },
   "vanilla": {
     "foundLocal": "Minecraft {version} a été trouvé sur cet ordinateur. Ses textures seront extraites (rien n'est envoyé en ligne).",
@@ -231,7 +243,9 @@
       "modified": "Modifiée",
       "added": "Ajoutée"
     },
-    "vanillaMissing": "Ce pack s'appuie sur les textures de Minecraft {version}, qui ne sont pas prêtes sur cet ordinateur."
+    "vanillaMissing": "Ce pack s'appuie sur les textures de Minecraft {version}, qui ne sont pas prêtes sur cet ordinateur.",
+    "sectionTextures": "Textures",
+    "sectionData": "Données"
   },
   "grid": {
     "search": "Rechercher des textures",
@@ -266,7 +280,10 @@
     "installHint": "Installez-le depuis Options > Packs de ressources (pas depuis l'écran Packs de données d'un monde).",
     "packVersionLabel": "{version} (version du pack)",
     "runMany": "Exporter {count} fichiers .zip",
-    "renamedNote": "{count} textures ont été renommées pour cette version. | 1 texture a été renommée pour cette version. | {count} textures ont été renommées pour cette version."
+    "renamedNote": "{count} textures ont été renommées pour cette version. | 1 texture a été renommée pour cette version. | {count} textures ont été renommées pour cette version.",
+    "packType": "Type de pack",
+    "packTypeHint": "Un zip par type et par version.",
+    "installHintData": "Placez le zip du pack de données dans le dossier datapacks d'un monde (ou déposez-le sur l'écran Packs de données du monde)."
   },
   "import": {
     "title": "Importation terminée",
@@ -322,7 +339,8 @@
       "dataLeftOut": "Les fichiers data/ du pack n'ont pas été inclus (exportez un pack de données pour eux).",
       "assetsLeftOut": "Les textures et autres fichiers assets/ n'ont pas été inclus : Minecraft ne les charge pas depuis un pack de données.",
       "noDataFiles": "Ce pack n'a pas encore de fichiers data/ : le pack de données est vide.",
-      "otherFilesAsIs": "Les modèles, états de blocs et autres fichiers JSON sont exportés tels quels ; vérifiez-les dans cette version."
+      "otherFilesAsIs": "Les modèles, états de blocs et autres fichiers JSON sont exportés tels quels ; vérifiez-les dans cette version.",
+      "dataAsIs": "Les fichiers de données sont copiés tels quels : vérifiez-les dans cette version (leur format peut différer)."
     },
     "identicalToVanilla": "Ignoré : identique à vanilla",
     "notInTarget": "Ignorée : cette texture n'existe pas dans cette version",
@@ -332,7 +350,9 @@
     },
     "doctor": {
       "proportions": "Proportions différentes de la texture de Minecraft : les modèles l’afficheront étirée ou coupée",
-      "missingAnimation": "Animée dans Minecraft, mais le pack n’a pas de .png.mcmeta : l’animation ne jouera pas. Ouvrez-la dans l’éditeur et enregistrez pour la copier"
+      "missingAnimation": "Animée dans Minecraft, mais le pack n’a pas de .png.mcmeta : l’animation ne jouera pas. Ouvrez-la dans l’éditeur et enregistrez pour la copier",
+      "invalidData": "Minecraft refuserait ce fichier de données (ouvrez-le pour voir les erreurs)",
+      "dataWarnings": "Ce fichier de données cite des objets, blocs ou tags que Minecraft n'a pas"
     }
   },
   "editor": {
@@ -452,7 +472,11 @@
       "bulk": "Modification de {count} textures | Modification de 1 texture | Modification de {count} textures",
       "aiBulk": "Plan IA sur {count} textures | Plan IA sur 1 texture | Plan IA sur {count} textures",
       "aiPlanStep": "Plan IA, étape {step} sur {total} ({count} textures)",
-      "merge": "Fusion de {count} fichiers depuis {packs} packs | Fusion de 1 fichier depuis {packs} packs | Fusion de {count} fichiers depuis {packs} packs"
+      "merge": "Fusion de {count} fichiers depuis {packs} packs | Fusion de 1 fichier depuis {packs} packs | Fusion de {count} fichiers depuis {packs} packs",
+      "saveData": "{name} enregistré",
+      "createData": "{name} créé",
+      "deleteData": "{name} retiré",
+      "aiDataFiles": "Plan IA : {count} fichiers de données | Plan IA : 1 fichier de données | Plan IA : {count} fichiers de données"
     },
     "title": "Historique",
     "empty": "Rien d'enregistré pour le moment."
@@ -518,7 +542,8 @@
     "agents": {
       "editor": "Agent Éditeur",
       "navigation": "Agent Navigation",
-      "creation": "Agent Création"
+      "creation": "Agent Création",
+      "data": "Agent Données"
     },
     "editorAgent": "Agent Éditeur",
     "refreshModels": "Actualiser les modèles",
@@ -641,7 +666,6 @@
     "invalidHeaders": "Chaque ligne doit avoir la forme Nom: valeur.",
     "editProvider": "Modifier",
     "agentDefaults": "Réglages par agent",
-    "agentLater": "Cet agent arrive dans une version ultérieure ; les réglages choisis ici seront alors utilisés.",
     "models": {
       "title": "Modèles",
       "hint": "Tous les modèles de vos fournisseurs, avec ce qu'ils savent faire et leur prix. Ajustez un modèle quand son fournisseur se trompe ou ne donne pas de prix.",
@@ -691,10 +715,16 @@
       "appliedResult": "Plan appliqué : {count} textures écrites. | Plan appliqué : 1 texture écrite. | Plan appliqué : {count} textures écrites.",
       "stoppedResult": "Plan arrêté : {count} textures écrites. | Plan arrêté : 1 texture écrite. | Plan arrêté : {count} textures écrites.",
       "checkpoints": "({count} entrées d'historique) | (1 entrée d'historique) | ({count} entrées d'historique)",
-      "metaUpdated": "Nom / description du pack mis à jour."
+      "metaUpdated": "Nom / description du pack mis à jour.",
+      "newFile": "Nouveau fichier",
+      "changedFile": "Fichier modifié",
+      "jsonWarnings": "{count} avertissements | 1 avertissement | {count} avertissements",
+      "filesWritten": "{count} fichiers de données écrits. | 1 fichier de données écrit. | {count} fichiers de données écrits."
     },
     "creationNoTextures": "Aucune texture trouvée pour ce pack. Préparez les textures Minecraft de sa version dans les Paramètres.",
-    "creationEmptyBase": "Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide (1 texture pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie."
+    "creationEmptyBase": "Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide (1 texture pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie.",
+    "creationDataContext": "Tout le pack de données : recettes, tables de butin, tags et progrès",
+    "emptyCreationData": "Décrivez ce que le pack de données doit faire (« le minerai de diamant donne deux diamants », « une recette de selle »). L'IA propose les fichiers ; vous vérifiez chacun avant tout changement."
   },
   "brief": {
     "open": "Brief de style",
@@ -760,7 +790,9 @@
       "pack": "du pack"
     },
     "unknown": "Opération {tool}",
-    "setPackMeta": "Modifier le pack ({fields})"
+    "setPackMeta": "Modifier le pack ({fields})",
+    "writeJson": "Modifier {path}",
+    "writeJsonNew": "Créer {path}"
   },
   "bulk": {
     "open": "Modifier la sélection...",
@@ -839,7 +871,7 @@
     "back": "Retour",
     "added": "{count} fichiers ajoutés | 1 fichier ajouté | {count} fichiers ajoutés",
     "identical": "{count} fichiers déjà identiques | 1 fichier déjà identique | {count} fichiers déjà identiques",
-    "merged": "{count} fichiers de langue, sons, atlas ou polices combinés | 1 fichier de langue, sons, atlas ou police combiné | {count} fichiers de langue, sons, atlas ou polices combinés",
+    "merged": "{count} fichiers de langue, de sons, d'atlas, de polices ou de tags combinés | 1 fichier de langue, de sons, d'atlas, de police ou de tags combiné | {count} fichiers de langue, de sons, d'atlas, de polices ou de tags combinés",
     "renamed": "{count} textures renommées pour Minecraft {version} | 1 texture renommée pour Minecraft {version} | {count} textures renommées pour Minecraft {version}",
     "skipped": "{count} fichiers ignorés : ils n'existent pas dans Minecraft {version} | 1 fichier ignoré : il n'existe pas dans Minecraft {version} | {count} fichiers ignorés : ils n'existent pas dans Minecraft {version}",
     "willCreate": "Crée le pack « {name} » pour Minecraft {version}.",
@@ -855,5 +887,163 @@
     "down": "↓",
     "moveUp": "Monter",
     "moveDown": "Descendre"
+  },
+  "packKind": {
+    "resource": "Pack de ressources",
+    "data": "Pack de données",
+    "combined": "Ressources + données",
+    "change": "{kind} ▾"
+  },
+  "data": {
+    "kinds": {
+      "recipe": "Recettes",
+      "loot_table": "Tables de butin",
+      "tag": "Tags",
+      "advancement": "Progrès",
+      "function": "Fonctions",
+      "other": "Autres données"
+    },
+    "changedTotal": "aucun fichier de données modifié | 1 fichier de données modifié | {count} fichiers de données modifiés",
+    "list": {
+      "id": "Identifiant",
+      "registry": "Registre",
+      "status": "État",
+      "search": "Rechercher des fichiers de données",
+      "count": "aucun fichier | 1 fichier | {count} fichiers",
+      "noVanilla": "Les données de Minecraft pour cette version ne sont pas disponibles (le fichier du jeu est introuvable) : seuls les fichiers du pack sont listés.",
+      "empty": "Aucun fichier de données ici pour l'instant."
+    },
+    "new": {
+      "open": "Nouveau fichier",
+      "title": "Nouveau fichier de données",
+      "kind": "Type",
+      "template": "Partir de",
+      "namespace": "Espace de noms",
+      "registry": "Registre du tag",
+      "name": "Nom",
+      "namePlaceholder": "bloc_de_rubis",
+      "nameHint": "Lettres minuscules, chiffres, _ - . et / pour les sous-dossiers.",
+      "invalidName": "Utilisez seulement des lettres minuscules, des chiffres, _ - . et /.",
+      "exists": "Ce fichier existe déjà.",
+      "namespaceHint": "Utilisez l'espace de noms du pack pour du nouveau contenu, et « minecraft » pour remplacer un fichier vanilla.",
+      "openExisting": "L'ouvrir",
+      "create": "Créer"
+    },
+    "templates": {
+      "shaped": "Fabrication avec motif",
+      "shapeless": "Fabrication sans motif",
+      "smelting": "Cuisson au four",
+      "stonecutting": "Tailleur de pierre",
+      "smithing": "Amélioration (forge)",
+      "block": "Butin d'un bloc",
+      "chest": "Butin de coffre",
+      "entity": "Butin d'une créature",
+      "tag": "Tag vide",
+      "advancement": "Progrès",
+      "function": "Fonction",
+      "empty": "JSON vide"
+    },
+    "editor": {
+      "back": "Retour aux fichiers de données",
+      "format": "Mettre en forme",
+      "compareHint": "Afficher le fichier de Minecraft à côté du vôtre",
+      "useVanilla": "Reprendre le texte vanilla",
+      "delete": "Supprimer",
+      "revertConfirm": "Retirer la version du pack et utiliser de nouveau le fichier de Minecraft ?",
+      "deleteConfirm": "Supprimer ce fichier du pack ?",
+      "missing": "Ce fichier n'existe pas.",
+      "vanilla": "Fichier de Minecraft",
+      "textFile": "Fichier de fonction : des commandes Minecraft, une par ligne (non vérifiées).",
+      "noProblems": "Aucun problème",
+      "errors": "aucune erreur | 1 erreur | {count} erreurs",
+      "warnings": "aucun avertissement | 1 avertissement | {count} avertissements",
+      "line": "Ligne {line}",
+      "more": "Plus"
+    },
+    "explain": {
+      "run": "Expliquer ce fichier",
+      "again": "Expliquer de nouveau",
+      "hint": "Envoyé à l'IA : ce fichier tel que dans l'éditeur, l'original de Minecraft, les changements et les vérifications. Rien n'est modifié.",
+      "stale": "Le fichier a changé depuis cette explication.",
+      "working": "Lecture du fichier..."
+    },
+    "agent": {
+      "button": "IA",
+      "buttonHint": "Discutez avec l'IA pour modifier ce fichier, ou obtenez une explication de ce qu'il fait dans le jeu.",
+      "chatTab": "Discuter",
+      "explainTab": "Expliquer",
+      "context": "À propos de {id} : l'IA voit ce fichier tel qu'il est dans l'éditeur.",
+      "empty": "Demandez une modification (« fais tomber 2 à 4 flèches », « donne 8 dalles ») ou posez une question sur ce fichier. Les modifications proposées vont dans l'éditeur quand vous les appliquez ; c'est vous qui enregistrez.",
+      "proposal": "Version proposée du fichier",
+      "wholeFile": "Fichier complet",
+      "outdated": "Le fichier a changé dans l'éditeur depuis votre demande : appliquer remplace ces modifications.",
+      "apply": "Appliquer dans l'éditeur",
+      "discard": "Ignorer",
+      "applied": "Appliqué dans l'éditeur (pas encore enregistré).",
+      "discarded": "Ignoré."
+    },
+    "type": {
+      "string": "un texte",
+      "number": "un nombre",
+      "integer": "un nombre entier",
+      "boolean": "true ou false",
+      "object": "un objet",
+      "array": "une liste",
+      "value": "une valeur valide"
+    },
+    "issue": {
+      "syntax": "Erreur de syntaxe JSON : {error}",
+      "required": "« {key} » est obligatoire",
+      "type": "Attendu : {expected}",
+      "value": "Doit être l'une de ces valeurs : {values}",
+      "tooSmall": "Doit valoir au moins {min}",
+      "tooBig": "Doit valoir au plus {max}",
+      "tooShort": "Doit avoir au moins {min} caractères",
+      "tooLong": "Doit avoir au plus {max} caractères",
+      "tooFewItems": "Il faut au moins {min} éléments",
+      "tooManyItems": "Au plus {max} éléments",
+      "invalid": "Valeur invalide",
+      "id": "« {value} » n'est pas un identifiant valide (espace:chemin en minuscules)",
+      "idOrTag": "« {value} » n'est pas un identifiant ou un #tag valide",
+      "ingredient": "Un ingrédient est un identifiant d'objet, un « #tag » ou une liste d'identifiants d'objets",
+      "ingredientEmpty": "Une liste d'ingrédients ne peut pas être vide",
+      "ingredientListItem": "« {value} » : une liste d'ingrédients ne contient que des identifiants d'objets (pas de tags)",
+      "itemStack": "Attendu : un identifiant d'objet ou un objet avec « id » (et « count »)",
+      "textComponent": "Attendu : un texte, ou un objet ou une liste de composants de texte",
+      "patternWidth": "Toutes les lignes du motif doivent avoir la même largeur",
+      "keyLength": "La clé « {key} » doit être un seul caractère",
+      "keySpace": "Une espace désigne une case vide : elle ne peut pas être une clé",
+      "keyUnused": "La clé « {key} » n'est pas utilisée dans le motif (Minecraft refuse la recette)",
+      "keyMissing": "« {key} » est utilisé dans le motif mais n'est pas défini dans « key »",
+      "numberProvider": "Attendu : un nombre ou un objet générateur de nombre",
+      "lootTableValue": "Attendu : un identifiant de table de butin ou une table intégrée",
+      "tagValue": "Une valeur de tag est un identifiant, un « #tag » ou un objet avec « id » et « required »",
+      "notObject": "Le fichier doit être un objet JSON",
+      "noCriteria": "Un progrès doit avoir au moins un critère",
+      "unknownCriterion": "« {name} » ne fait pas partie des critères",
+      "unknownItem": "Minecraft n'a pas d'objet « {id} »",
+      "unknownBlock": "Minecraft n'a pas de bloc « {id} »",
+      "unknownTag": "Tag inconnu « {id} »",
+      "unknownRecipeType": "Type de recette inconnu « {type} »",
+      "unknownEntryType": "Type d'entrée de butin inconnu « {type} »"
+    },
+    "syntax": {
+      "invalidSymbol": "caractère inattendu",
+      "invalidNumberFormat": "nombre invalide",
+      "propertyNameExpected": "un nom de propriété entre guillemets est attendu",
+      "valueExpected": "une valeur est attendue",
+      "colonExpected": "« : » attendu",
+      "commaExpected": "« , » attendue",
+      "closeBraceExpected": "« {'}'} » attendue",
+      "closeBracketExpected": "« ] » attendu",
+      "endOfFileExpected": "texte en trop après la fin",
+      "invalidCommentToken": "les commentaires ne sont pas autorisés",
+      "unexpectedEndOfComment": "commentaire non terminé",
+      "unexpectedEndOfString": "texte non terminé (\" manquant)",
+      "unexpectedEndOfNumber": "nombre non terminé",
+      "invalidUnicode": "séquence unicode invalide",
+      "invalidEscapeCharacter": "échappement invalide (\\\\)",
+      "invalidCharacter": "caractère invalide dans le texte"
+    }
   }
 }

@@ -4,6 +4,7 @@ import type {
   AgentEvent,
   AgentKind,
   AnyProposal,
+  EmittedProposal,
   BulkProposalApplyResult,
   CreationApplyResult,
   ConversationTurn,
@@ -16,6 +17,7 @@ import type {
   ToolCall,
   ToolKind
 } from '@shared/ai/types'
+import { isDataFileProposal } from '@shared/ai/types'
 import type { Language } from '@shared/model/settings'
 import { call, IpcError } from '../services/ipc'
 import { useSettingsStore } from './settings'
@@ -37,12 +39,20 @@ export interface AgentSession {
   key: string
   items: ChatItem[]
   runId: string | null
-  proposals: Record<string, AnyProposal>
+  proposals: Record<string, EmittedProposal>
   loaded: boolean
 }
 
-function sessionKey(packId: string, agent: AgentKind): string {
+/** A session of an agent, or of the data editor's "Explain" (one answer at a time, never persisted). */
+export type SessionKind = AgentKind | 'explain'
+
+function sessionKey(packId: string, agent: SessionKind): string {
   return `${packId}:${agent}`
+}
+
+/** A proposal with steps (not a data-agent file proposal), or undefined. */
+function stepProposal(p: EmittedProposal | undefined): AnyProposal | undefined {
+  return p && !isDataFileProposal(p) ? p : undefined
 }
 
 let itemSeq = 0
@@ -149,7 +159,7 @@ export const useAiStore = defineStore('ai', () => {
   }
 
   // ---------- sessions ----------
-  function session(packId: string, agent: AgentKind): AgentSession {
+  function session(packId: string, agent: SessionKind): AgentSession {
     const key = sessionKey(packId, agent)
     if (!sessions.value[key]) {
       sessions.value[key] = { key, items: [], runId: null, proposals: {}, loaded: false }
@@ -214,6 +224,49 @@ export const useAiStore = defineStore('ai', () => {
     )
   }
 
+  /** Data agent: a chat message about the file open in the data editor (`text`: the editor's text). */
+  async function sendData(args: {
+    packId: string
+    message: string
+    model: ModelRef
+    path: string
+    text: string
+    language: Language
+    thinking?: ReasoningLevel
+  }): Promise<void> {
+    await startRun(session(args.packId, 'data'), args.message, () =>
+      call('ai.data.send', { ...args, model: { ...args.model } })
+    )
+  }
+
+  /** Marks a data-agent proposal applied (its text went into the editor) or discarded. */
+  function decideDataProposal(
+    packId: string,
+    proposalId: string,
+    status: 'applied' | 'rejected'
+  ): void {
+    const p = session(packId, 'data').proposals[proposalId]
+    if (p && isDataFileProposal(p)) p.status = status
+  }
+
+  /**
+   * Explains a data file in plain words (PLAN M10): replaces the previous explanation of the pack with a new streamed
+   * answer. `text` is the editor's text, unsaved edits included.
+   */
+  async function explainData(args: {
+    packId: string
+    path: string
+    text: string
+    model: ModelRef
+    language: Language
+    thinking?: ReasoningLevel
+  }): Promise<void> {
+    const s = session(args.packId, 'explain')
+    if (s.runId) await call('ai.agent.stop', { runId: s.runId }).catch(() => undefined)
+    s.items = []
+    await startRun(s, null, () => call('ai.data.explain', { ...args, model: { ...args.model } }))
+  }
+
   /** Applies the ticked steps of a creation plan (resolves when written, or after Stop). */
   async function applyCreation(
     packId: string,
@@ -224,7 +277,7 @@ export const useAiStore = defineStore('ai', () => {
       proposalId,
       acceptedStepIds: [...acceptedStepIds]
     })
-    const p = session(packId, 'creation').proposals[proposalId]
+    const p = stepProposal(session(packId, 'creation').proposals[proposalId])
     if (p) {
       p.status =
         result.appliedStepIds.length === 0
@@ -240,13 +293,17 @@ export const useAiStore = defineStore('ai', () => {
     await call('ai.creation.stopApply', { proposalId })
   }
 
-  /** Shows the user message and a "working" bubble, starts the run, then routes its events to the session. */
+  /**
+   * Shows the user message (if any) and a "working" bubble, starts the run, then routes its events to the session.
+   */
   async function startRun(
     s: AgentSession,
-    message: string,
+    message: string | null,
     begin: () => Promise<{ runId: string }>
   ): Promise<void> {
-    s.items.push({ id: nextId(), role: 'user', text: message, thinking: '', toolCalls: [] })
+    if (message !== null) {
+      s.items.push({ id: nextId(), role: 'user', text: message, thinking: '', toolCalls: [] })
+    }
     s.items.push({
       id: nextId(),
       role: 'assistant',
@@ -277,7 +334,7 @@ export const useAiStore = defineStore('ai', () => {
     for (const e of buffered) onEvent(e)
   }
 
-  async function stop(packId: string, agent: AgentKind): Promise<void> {
+  async function stop(packId: string, agent: SessionKind): Promise<void> {
     const s = session(packId, agent)
     if (s.runId) await call('ai.agent.stop', { runId: s.runId })
   }
@@ -357,7 +414,7 @@ export const useAiStore = defineStore('ai', () => {
     acceptedStepIds: string[]
   ): Promise<ProposalApplyResult> {
     const result = await call('ai.proposal.apply', { proposalId, acceptedStepIds })
-    const p = session(packId, 'editor').proposals[proposalId]
+    const p = stepProposal(session(packId, 'editor').proposals[proposalId])
     if (p) {
       p.status = result.appliedStepIds.length === p.steps.length ? 'applied' : 'partially-applied'
     }
@@ -375,7 +432,7 @@ export const useAiStore = defineStore('ai', () => {
       acceptedStepIds: [...acceptedStepIds],
       acceptedPaths: [...acceptedPaths]
     })
-    const p = session(packId, 'navigation').proposals[proposalId]
+    const p = stepProposal(session(packId, 'navigation').proposals[proposalId])
     if (p) {
       const allTextures = 'items' in p ? acceptedPaths.length >= p.items.length : true
       p.status =
@@ -422,6 +479,9 @@ export const useAiStore = defineStore('ai', () => {
     sendNavigation,
     applyNavigation,
     sendCreation,
+    explainData,
+    sendData,
+    decideDataProposal,
     applyCreation,
     stopCreationApply,
     stop,

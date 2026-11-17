@@ -2,10 +2,11 @@ import type { StyleBrief, StyleBriefPatch } from '@shared/model/brief'
 
 /**
  * Pure parts of a merge: which JSON files are combined automatically and how, and how style briefs are combined.
- * PLAN 8.6: lang files (key union), sounds.json (event union), atlases (source list union), fonts (provider union).
+ * PLAN 8.6: lang files (key union), sounds.json (event union), atlases (source list union), fonts (provider union);
+ * M10: data pack tags (value union, as Minecraft stacks them).
  */
 
-export type MergeableKind = 'lang' | 'sounds' | 'atlas' | 'font'
+export type MergeableKind = 'lang' | 'sounds' | 'atlas' | 'font' | 'tag'
 
 /** Kind of an automatically merged JSON file, or null for files that are conflicts when they differ. */
 export function mergeableKind(path: string): MergeableKind | null {
@@ -13,6 +14,7 @@ export function mergeableKind(path: string): MergeableKind | null {
   if (/^assets\/[^/]+\/sounds\.json$/.test(path)) return 'sounds'
   if (/^assets\/[^/]+\/atlases\/[^/]+\.json$/.test(path)) return 'atlas'
   if (/^assets\/[^/]+\/font\/[^/]+\.json$/.test(path)) return 'font'
+  if (/^data\/[^/]+\/tags\/.+\.json$/.test(path)) return 'tag'
   return null
 }
 
@@ -41,6 +43,8 @@ function unionArrays(lists: unknown[][]): unknown[] {
  * - lang / sounds: key union; for the same key, the highest-priority document wins.
  * - atlas: `sources` lists combined (highest priority first, duplicates removed), other keys from the top document.
  * - font: `providers` lists combined the same way.
+ * - tag: `values` combined from the top document down, as Minecraft stacks packs: a document with "replace": true
+ *   drops the values of the documents below it (and the result keeps "replace": true).
  */
 export function combineJson(kind: MergeableKind, docs: readonly unknown[]): unknown | null {
   if (docs.length === 0 || !docs.every(isObject)) return null
@@ -53,6 +57,19 @@ export function combineJson(kind: MergeableKind, docs: readonly unknown[]): unkn
     for (const doc of objects)
       for (const key of Object.keys(doc)) if (!(key in ordered)) ordered[key] = out[key]
     return ordered
+  }
+  if (kind === 'tag') {
+    if (!objects.every((d) => Array.isArray(d['values']))) return null
+    const used: Array<Record<string, unknown>> = []
+    for (const doc of objects) {
+      used.push(doc)
+      if (doc['replace'] === true) break
+    }
+    const replace = used[used.length - 1]!['replace'] === true
+    return {
+      ...(replace ? { replace: true } : {}),
+      values: unionArrays(used.map((d) => d['values'] as unknown[]))
+    }
   }
   const listKey = kind === 'atlas' ? 'sources' : 'providers'
   if (!objects.every((d) => d[listKey] === undefined || Array.isArray(d[listKey]))) return null

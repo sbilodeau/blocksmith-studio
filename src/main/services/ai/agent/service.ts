@@ -14,6 +14,9 @@ import {
   type CreationAgentRequest,
   type CreationApplyResult,
   type CreationProposal,
+  type DataAgentRequest,
+  type DataExplainRequest,
+  type DataFileProposal,
   type PackMetaPatch,
   type ProposalStep,
   type EditorAgentRequest,
@@ -25,6 +28,8 @@ import { frameHeightOf } from '@shared/bulk/operations'
 import { encodePng } from '@shared/image'
 import type { BulkItem } from '@shared/model/bulk'
 import type { TextureEntry } from '@shared/model/pack'
+import type { DataList } from '@shared/model/data'
+import type { HistoryEntry } from '@shared/model/history'
 import type { BulkOperation } from '@shared/bulk/operations'
 import type { JobReporter, ProviderRegistry } from '../../contracts'
 import { AppErrorException } from '../../../ipc/registry'
@@ -35,6 +40,9 @@ import { errorOf, frameLayoutOf, runEditorAgent } from './runtime'
 import { replayTargets, runNavigationAgent, type NavigationTexture } from './navigation'
 import type { BulkService } from '../../bulk'
 import { pickSamples, runCreationAgent, type CreationSample } from './creation'
+import { buildExplainMessages, gatherExplainSources, type DataAiDeps } from './explain'
+import { runAgentLoop } from './loop'
+import { runDataAgent } from './data-agent'
 
 /** Largest selection the navigation agent works on. */
 export const MAX_NAVIGATION_TEXTURES = 2000
@@ -64,10 +72,27 @@ export interface EditorAgentServiceDeps {
     catalog(packId: string): Promise<TextureEntry[]>
     /** PNG of a catalog texture: the pack's file, else vanilla. */
     readPng(packId: string, path: string): Promise<Uint8Array | null>
-    meta(packId: string): Promise<{ name: string; description: string; base: 'vanilla' | 'empty' }>
+    meta(packId: string): Promise<{
+      name: string
+      description: string
+      base: 'vanilla' | 'empty'
+      kind?: 'resource' | 'data' | 'combined'
+    }>
     setMeta(packId: string, patch: PackMetaPatch): Promise<void>
+    /** Data packs and combined packs (M10): the data files the agent reads, and the writer of accepted files. */
+    data?: {
+      list(packId: string): Promise<DataList>
+      read(packId: string, path: string): Promise<string | null>
+      saveMany(
+        packId: string,
+        files: ReadonlyArray<{ path: string; text: string }>,
+        change: { source: HistoryEntry['source']; label: HistoryEntry['label'] }
+      ): Promise<unknown>
+    }
     jobs?: JobReporter
   }
+  /** "Explain" in the data editor (M10): what the explanation reads about the file and the game. */
+  dataAi?: DataAiDeps
   /** Default sink for background runs (main forwards it as 'ai.event'). */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -121,6 +146,25 @@ export interface EditorAgentService {
   /** Asks a running applyCreation to stop after the current step. */
   stopCreationApply(proposalId: string): void
   rejectProposal(proposalId: string): Promise<void>
+  /**
+   * Starts an explanation of a data file (one answer, no tools, nothing proposed), streamed as 'ai.event' like the
+   * agents. Stops the pack's previous explanation.
+   */
+  sendExplain(request: DataExplainRequest): Promise<{ runId: string }>
+  /** Starts a data-agent run about the open data file (stopping the pack's previous one). */
+  sendData(request: DataAgentRequest): Promise<{ runId: string }>
+  runData(
+    request: DataAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId?: string
+  ): Promise<void>
+  runExplain(
+    request: DataExplainRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId?: string
+  ): Promise<void>
   /** Resolves when no background run is active (tests, shutdown). */
   idle(): Promise<void>
 }
@@ -318,14 +362,26 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     try {
       proposals.expireFor(packId, 'creation')
       const creation = creationDeps()
-      const textures = await creation.catalog(packId)
-      if (textures.length === 0) throw new AppErrorException('ai.emptyPack')
-      const [samples, brief, history, pack] = await Promise.all([
+      const pack = await creation.meta(packId)
+      const kind = pack.kind ?? 'resource'
+      // A data pack has no textures to work on (and may not have vanilla textures extracted at all).
+      const textures = kind === 'data' ? [] : await creation.catalog(packId)
+      if (textures.length === 0 && kind !== 'data') throw new AppErrorException('ai.emptyPack')
+      const dataDeps = kind !== 'resource' ? creation.data : undefined
+      const [samples, brief, history, dataList] = await Promise.all([
         loadSamples(packId, textures),
         deps.brief.get(packId),
         deps.conversations.read(packId, 'creation'),
-        creation.meta(packId)
+        dataDeps ? dataDeps.list(packId) : Promise.resolve(undefined)
       ])
+      const data =
+        dataDeps && dataList
+          ? {
+              entries: dataList.entries,
+              ids: dataList.ids,
+              read: (path: string) => dataDeps.read(packId, path)
+            }
+          : undefined
       await deps.conversations.append(packId, 'creation', [
         {
           id: newId(),
@@ -342,6 +398,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
           textures,
           samples,
           pack,
+          ...(data ? { data } : {}),
           settings: deps.getAgentSettings('creation'),
           brief,
           history
@@ -378,6 +435,127 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     })
   }
 
+  async function runExplain(
+    request: DataExplainRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId = newId()
+  ): Promise<void> {
+    emit({ runId, type: 'started', agent: 'explain', model: request.model })
+    let result: Awaited<ReturnType<typeof runAgentLoop>>
+    try {
+      if (!deps.dataAi) throw new AppErrorException('ai.agentFailed')
+      const sources = await gatherExplainSources(request, deps.dataAi)
+      const modelInfo = await deps.providers.getModel(request.model).catch(() => undefined)
+      result = await runAgentLoop(
+        {
+          agent: 'explain',
+          tools: [],
+          messages: buildExplainMessages(sources, request.language),
+          execute: () => ({ ok: false, kind: 'read', summary: '', content: '{}' }),
+          kindOf: () => 'read'
+        },
+        {
+          runId,
+          model: request.model,
+          ...(modelInfo ? { modelInfo } : {}),
+          thinking: request.thinking ?? 'off',
+          maxIterations: 1
+        },
+        { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
+        emit,
+        signal
+      )
+    } catch (err) {
+      emit({ runId, type: 'done', reason: 'error', error: errorOf(err) })
+      return
+    }
+    // One answer: a model that asks for tools anyway still ends here ('budget' would read as an error).
+    emit({
+      runId,
+      type: 'done',
+      reason: result.reason === 'budget' ? 'end' : result.reason,
+      ...(result.error ? { error: result.error } : {})
+    })
+  }
+
+  async function runData(
+    request: DataAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId = newId()
+  ): Promise<void> {
+    const { packId } = request
+    emit({ runId, type: 'started', agent: 'data', model: request.model })
+    let result: Awaited<ReturnType<typeof runDataAgent>>
+    let proposal: DataFileProposal | undefined
+    try {
+      const dataAi = deps.dataAi
+      if (!dataAi) throw new AppErrorException('ai.agentFailed')
+      const [sources, entries, history, modelInfo] = await Promise.all([
+        gatherExplainSources(request, dataAi),
+        dataAi.entries(packId).catch(() => []),
+        deps.conversations.read(packId, 'data'),
+        deps.providers.getModel(request.model).catch(() => undefined)
+      ])
+      await deps.conversations.append(packId, 'data', [
+        {
+          id: newId(),
+          at: now().toISOString(),
+          role: 'user',
+          text: request.message,
+          dataPath: request.path,
+          model: request.model
+        }
+      ])
+      const read = async (path: string): Promise<string | null> =>
+        (await dataAi.packText(packId, path).catch(() => null)) ??
+        (await dataAi.vanillaText(packId, path).catch(() => null))
+      result = await runDataAgent(
+        {
+          runId,
+          request,
+          sources,
+          entries,
+          read,
+          settings: deps.getAgentSettings('data'),
+          history,
+          ...(modelInfo ? { modelInfo } : {})
+        },
+        { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
+        emit,
+        signal
+      )
+      if (result.proposal) {
+        proposal = {
+          id: newId(),
+          runId,
+          agent: 'data',
+          kind: 'file',
+          packId,
+          path: request.path,
+          before: request.text,
+          after: result.proposal.after,
+          warnings: result.proposal.warnings,
+          status: 'pending'
+        }
+        const last = [...result.turns].reverse().find((t) => t.role === 'assistant')
+        if (last) last.proposalId = proposal.id
+      }
+      await deps.conversations.append(packId, 'data', result.turns).catch(() => undefined)
+    } catch (err) {
+      emit({ runId, type: 'done', reason: 'error', error: errorOf(err) })
+      return
+    }
+    if (proposal) emit({ runId, type: 'proposal', proposal })
+    emit({
+      runId,
+      type: 'done',
+      reason: result.reason,
+      ...(result.error ? { error: result.error } : {})
+    })
+  }
+
   async function applyCreation(
     proposalId: string,
     acceptedStepIds: string[]
@@ -398,15 +576,28 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       const ids = new Set(acceptedStepIds)
       const accepted = proposal.steps.filter((s) => ids.has(s.id))
       const memory = accepted.filter((s) => s.kind === 'memory')
-      const textureSteps = accepted.filter((s) => s.kind === 'mutate')
+      const jsonSteps = accepted.filter((s) => s.json)
+      const textureSteps = accepted.filter((s) => s.kind === 'mutate' && !s.json)
       const patches = memory.flatMap((s) => (s.briefPatch ? [s.briefPatch] : []))
       const meta: PackMetaPatch = Object.assign({}, ...memory.map((s) => s.packMeta ?? {}))
       if (meta.name !== undefined || meta.description !== undefined) {
         await creation.setMeta(proposal.packId, meta)
       }
 
+      // Data files: all accepted ones in one history entry, before the (long) texture steps.
+      let filesWritten = 0
+      if (jsonSteps.length > 0) {
+        if (!creation.data) throw new AppErrorException('ai.agentFailed')
+        await creation.data.saveMany(
+          proposal.packId,
+          jsonSteps.map((s) => ({ path: s.json!.path, text: s.json!.text })),
+          { source: 'ai', label: { key: 'aiDataFiles', params: { count: jsonSteps.length } } }
+        )
+        filesWritten = jsonSteps.length
+      }
+
       const progress = creation.jobs?.start('ai.plan.apply')
-      const applied: ProposalStep[] = [...memory]
+      const applied: ProposalStep[] = [...memory, ...jsonSteps]
       let written = 0
       let checkpoints = 0
       let stopped = false
@@ -445,7 +636,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         }
         applied.push(step)
       }
-      progress?.('step', applied.length - memory.length, textureSteps.length)
+      progress?.('step', applied.length - memory.length - jsonSteps.length, textureSteps.length)
 
       if (applied.length > 0) {
         const decided = patches.some((p) => p.addDecision?.trim())
@@ -480,7 +671,8 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         checkpoints,
         stopped,
         briefUpdated: patches.length > 0,
-        metaUpdated: meta.name !== undefined || meta.description !== undefined
+        metaUpdated: meta.name !== undefined || meta.description !== undefined,
+        filesWritten
       }
     } finally {
       applying.delete(proposalId)
@@ -698,6 +890,30 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     },
 
     run,
+
+    async sendExplain(request) {
+      if (!deps.dataAi) throw new AppErrorException('ai.agentFailed')
+      if (!(await deps.packs.locate(request.packId))) {
+        throw new AppErrorException('packs.notFound', { packId: request.packId })
+      }
+      return start(`${request.packId}:explain`, (runId, signal) =>
+        runExplain(request, deps.emit, signal, runId)
+      )
+    },
+
+    runExplain,
+
+    async sendData(request) {
+      if (!deps.dataAi) throw new AppErrorException('ai.agentFailed')
+      if (!(await deps.packs.locate(request.packId))) {
+        throw new AppErrorException('packs.notFound', { packId: request.packId })
+      }
+      return start(`${request.packId}:data`, (runId, signal) =>
+        runData(request, deps.emit, signal, runId)
+      )
+    },
+
+    runData,
 
     stop(runId) {
       byRunId.get(runId)?.controller.abort()

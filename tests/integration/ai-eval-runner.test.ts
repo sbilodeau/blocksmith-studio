@@ -106,6 +106,29 @@ describe('eval runner', () => {
     ])
   })
 
+  it('runs data cases on one file of the sample data pack (the data editor chat)', async () => {
+    const cases = loadEvalCases(PHRASES).filter((c) => c.context === 'data')
+    expect(cases.map((c) => c.id)).toEqual(['data-recipe-count', 'data-tag-add', 'data-loot-two'])
+    /** Edits the open file the way a good model would: reads it from the request, changes one thing. */
+    const dataModel = (req: ChatRequest): ReturnType<typeof text>[] => {
+      const last = req.messages[req.messages.length - 1]
+      if (last?.role === 'tool') return [text('ok'), DONE_END]
+      const user = last?.text ?? ''
+      expect(user).toContain('[Open file]')
+      const json = JSON.parse(
+        /CURRENT FILE \(as in the editor\):\n```json\n([\s\S]*?)\n```/.exec(user)![1]!
+      )
+      if (json.result) json.result.count = 8
+      else if (json.values) json.values.push('minecraft:basalt')
+      else json.pools[0].entries[0].functions = [{ function: 'minecraft:set_count', count: 2 }]
+      return [toolCall('edit_file', { json }), DONE_TOOLS]
+    }
+    const { providers } = fakeProvider(Array.from({ length: 12 }, () => dataModel))
+    const results = await runEval({ providers, model, cases, concurrency: 1 })
+    expect(results.every((r) => r.pass)).toBe(true)
+    expect(results).toHaveLength(6)
+  })
+
   it('quick test ids exist in the bundled cases', () => {
     const ids = bundledEvalCases().map((c) => c.id)
     for (const id of QUICK_CASE_IDS) expect(ids).toContain(id)

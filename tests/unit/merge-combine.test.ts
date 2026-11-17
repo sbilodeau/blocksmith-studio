@@ -9,6 +9,9 @@ describe('mergeableKind', () => {
     ['assets/minecraft/sounds.json', 'sounds'],
     ['assets/minecraft/atlases/blocks.json', 'atlas'],
     ['assets/minecraft/font/default.json', 'font'],
+    ['data/minecraft/tags/item/planks.json', 'tag'],
+    ['data/my_pack/tags/worldgen/biome/hot.json', 'tag'],
+    ['data/minecraft/recipe/stone.json', null],
     ['assets/minecraft/models/block/stone.json', null],
     ['assets/minecraft/textures/block/stone.png', null]
   ] as const)('%s -> %s', (path, kind) => {
@@ -17,6 +20,20 @@ describe('mergeableKind', () => {
 })
 
 describe('combineJson', () => {
+  it('stacks tag values like Minecraft: a "replace" document hides the ones below it', () => {
+    const top = { values: ['minecraft:stone', 'minecraft:granite'] }
+    const mid = { replace: true, values: ['minecraft:granite', 'minecraft:basalt'] }
+    const low = { values: ['minecraft:dirt'] }
+    expect(combineJson('tag', [top, low])).toEqual({
+      values: ['minecraft:stone', 'minecraft:granite', 'minecraft:dirt']
+    })
+    expect(combineJson('tag', [top, mid, low])).toEqual({
+      replace: true,
+      values: ['minecraft:stone', 'minecraft:granite', 'minecraft:basalt']
+    })
+    expect(combineJson('tag', [top, { values: 'x' }])).toBeNull()
+  })
+
   it('unions lang keys, the highest-priority document winning, top keys first', () => {
     expect(
       combineJson('lang', [

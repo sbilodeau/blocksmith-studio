@@ -354,4 +354,61 @@ describe('VanillaStore', () => {
       expect(await s.entityModels('9.9.9')).toBeNull()
     })
   })
+  describe('vanilla data (M10)', () => {
+    /** Turns an extracted cache into one made before data support: no data files, no `data` flag. */
+    async function stripData(versionId: string): Promise<void> {
+      const dir = join(userData, 'vanilla', versionId)
+      await rm(join(dir, 'data'), { recursive: true, force: true })
+      const index = JSON.parse(await readFile(join(dir, 'index.json'), 'utf8'))
+      delete index.data
+      for (const key of Object.keys(index.entries))
+        if (key.startsWith('data/')) delete index.entries[key]
+      await writeFile(join(dir, 'index.json'), JSON.stringify(index))
+    }
+
+    it('is extracted with the assets', async () => {
+      await makeFixtureJar(join(officialRoot(), 'versions', '26.3', '26.3.jar'), '26.3')
+      const s = store()
+      const index = await s.prepare('26.3', { allowDownload: false })
+      expect(index.data).toBe(true)
+      expect(await s.prepareData('26.3')).toBe(true)
+      expect(s.resolveFile('26.3', 'data/minecraft/recipe/stone_slab.json')).not.toBeNull()
+    })
+
+    it('is added from the jar for versions extracted before, once', async () => {
+      const jar = join(officialRoot(), 'versions', '26.3', '26.3.jar')
+      await makeFixtureJar(jar, '26.3')
+      await store().prepare('26.3', { allowDownload: false })
+      await stripData('26.3')
+      const s = store()
+      expect((await s.getIndex('26.3'))!.data).toBeUndefined()
+      const [a, b] = await Promise.all([s.prepareData('26.3'), s.prepareData('26.3')])
+      expect([a, b]).toEqual([true, true])
+      const index = await s.getIndex('26.3')
+      expect(index!.data).toBe(true)
+      expect(index!.entries['data/minecraft/loot_table/blocks/stone.json']).toBeDefined()
+      const onDisk = JSON.parse(
+        await readFile(join(userData, 'vanilla', '26.3', 'index.json'), 'utf8')
+      )
+      expect(onDisk.data).toBe(true)
+      expect(
+        existsSync(join(userData, 'vanilla', '26.3', 'data/minecraft/recipe/stone_slab.json'))
+      ).toBe(true)
+      // The jar is not needed any more.
+      await rm(jar)
+      expect(await store().prepareData('26.3')).toBe(true)
+    })
+
+    it('is unavailable when the version is not extracted or its jar is gone', async () => {
+      const jar = join(officialRoot(), 'versions', '26.3', '26.3.jar')
+      await makeFixtureJar(jar, '26.3')
+      const s = store()
+      expect(await s.prepareData('26.3')).toBe(false)
+      expect(await s.prepareData('9.9.9')).toBe(false)
+      await s.prepare('26.3', { allowDownload: false })
+      await stripData('26.3')
+      await rm(jar)
+      expect(await store().prepareData('26.3')).toBe(false)
+    })
+  })
 })

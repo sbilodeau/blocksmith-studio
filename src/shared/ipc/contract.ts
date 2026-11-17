@@ -6,6 +6,7 @@ import type { MinecraftInstall, VanillaAvailability } from '../model/vanilla'
 import {
   CreatePackInputSchema,
   ExportPackTypeSchema,
+  PackKindSchema,
   type CategorySummary,
   type ExportReport,
   type ImportReport,
@@ -23,6 +24,12 @@ import {
   type BulkPreview
 } from '../model/bulk'
 import type { HistoryState, TextureData } from '../model/history'
+import {
+  MAX_DATA_FILE_BYTES,
+  type DataEntry,
+  type DataFileData,
+  type DataList
+} from '../model/data'
 import type { PreviewModel } from '../model/preview'
 import {
   ProviderConfigSchema,
@@ -87,6 +94,14 @@ const TexturePathSchema = z
   .regex(/^assets\/[a-z0-9_.-]+\/textures\/[a-z0-9_./-]+\.png$/)
   .refine((p) => !p.split('/').some((s) => s === '..' || s === '.' || s === ''))
 const TextureRef = PackRef.extend({ path: TexturePathSchema }).strict()
+/** POSIX pack-relative path of a data file: data/<namespace>/....json|.mcfunction (validated again in main). */
+const DataPathSchema = z
+  .string()
+  .max(512)
+  .regex(/^data\/[a-z0-9_.-]+\/[a-z0-9_./-]+\.(json|mcfunction)$/)
+  .refine((p) => !p.split('/').some((s) => s === '..' || s === '.' || s === ''))
+const DataRef = PackRef.extend({ path: DataPathSchema }).strict()
+const DataText = z.string().max(MAX_DATA_FILE_BYTES)
 const MAX_PNG_BYTES = 16 * 1024 * 1024
 const VersionId = z.string().regex(/^[0-9][0-9a-z.-]{0,31}$/)
 
@@ -127,10 +142,18 @@ export const inputSchemas = {
     /** Also declare newer formats (snapshots, future releases) as supported in pack.mcmeta. */
     acceptNewer: z.boolean().optional(),
     /** Resource pack (default) or data pack. */
-    packType: ExportPackTypeSchema.optional()
+    packType: ExportPackTypeSchema.optional(),
+    /** Several pack types (combined packs: both); wins over packType. */
+    packTypes: z.array(ExportPackTypeSchema).min(1).max(2).optional()
   }).strict(),
   'pack.upgrade': PackRef.extend({ targetVersion: VersionId }).strict(),
   'pack.doctor': PackRef,
+  'pack.setKind': PackRef.extend({ kind: PackKindSchema }).strict(),
+  'data.list': PackRef,
+  'data.read': DataRef,
+  'data.save': DataRef.extend({ text: DataText }).strict(),
+  'data.create': DataRef.extend({ text: DataText }).strict(),
+  'data.delete': DataRef,
   'texture.read': TextureRef,
   'texture.save': TextureRef.extend({
     png: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES),
@@ -189,10 +212,10 @@ export const inputSchemas = {
     .strict(),
   'ai.agent.stop': z.object({ runId: z.string().min(1).max(64) }).strict(),
   'ai.agent.conversation': PackRef.extend({
-    agent: z.enum(['creation', 'navigation', 'editor'])
+    agent: z.enum(['creation', 'navigation', 'editor', 'data'])
   }).strict(),
   'ai.agent.clear': PackRef.extend({
-    agent: z.enum(['creation', 'navigation', 'editor'])
+    agent: z.enum(['creation', 'navigation', 'editor', 'data'])
   }).strict(),
   'ai.proposal.apply': z
     .object({
@@ -235,6 +258,19 @@ export const inputSchemas = {
     })
     .strict(),
   'ai.creation.stopApply': z.object({ proposalId: z.string().min(1).max(64) }).strict(),
+  'ai.data.send': DataRef.extend({
+    message: z.string().trim().min(1).max(4000),
+    text: DataText,
+    model: ModelRefSchema,
+    language: LanguageSchema,
+    thinking: ReasoningLevelSchema.optional()
+  }).strict(),
+  'ai.data.explain': DataRef.extend({
+    text: DataText,
+    model: ModelRefSchema,
+    language: LanguageSchema,
+    thinking: ReasoningLevelSchema.optional()
+  }).strict(),
   'bulk.preview': BulkPreviewInputSchema,
   'bulk.apply': BulkApplyInputSchema,
   'bulk.discard': z.object({ previewId: z.string().min(1).max(64) }).strict(),
@@ -287,6 +323,17 @@ export interface InvokeOutputs {
   'pack.upgrade': UpgradeReport
   /** Pack Doctor: problems in the pack and what each export target would change. */
   'pack.doctor': DoctorReport
+  /** Resource pack, data pack or both: rewrites the folder's pack.mcmeta format (files are kept). */
+  'pack.setKind': PackSummary
+  /** The pack's data files plus vanilla's (copy-on-write), with ids for completion and warnings. */
+  'data.list': DataList
+  'data.read': DataFileData
+  /** Writes the file (one history entry); a JSON file equal to vanilla's is removed from the pack instead. */
+  'data.save': DataEntry
+  /** Creates a new file (refused when the pack or vanilla already has the path). */
+  'data.create': DataEntry
+  /** Removes the pack's copy (back to vanilla, or gone for an added file). */
+  'data.delete': void
   'texture.read': TextureData
   /** Writes the PNG into the pack (records a history entry) and returns the updated texture entry. */
   'texture.save': TextureEntry
@@ -328,6 +375,8 @@ export interface InvokeOutputs {
   /** Resolves when every accepted step is written (or after Stop); emits job.progress 'ai.plan.apply'. */
   'ai.creation.apply': CreationApplyResult
   'ai.creation.stopApply': void
+  'ai.data.send': { runId: string }
+  'ai.data.explain': { runId: string }
   /** Computes a manual bulk action (worker thread, emits job.progress). Nothing is written. */
   'bulk.preview': BulkPreview
   /** Writes the ticked textures of a preview as one undoable history entry. */

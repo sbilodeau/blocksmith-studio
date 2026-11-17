@@ -237,4 +237,36 @@ describe('import .zip', () => {
       code: 'import.invalidZip'
     })
   })
+  it('imports a data pack (data format) and a combined pack', async () => {
+    const recipe = json({
+      type: 'minecraft:smelting',
+      ingredient: 'minecraft:stone',
+      result: { id: 'minecraft:stone' }
+    })
+    const data = await env.service.importZip(
+      await zipFile('Hot Data.zip', {
+        'pack.mcmeta': mcmeta({
+          description: 'data',
+          pack_format: 120,
+          min_format: [120, 0],
+          max_format: [120, 0]
+        }),
+        'data/hot/recipe/a.json': recipe
+      })
+    )
+    expect(data).toMatchObject({ mappedVersion: '26.3', filesImported: 1, warnings: [] })
+    expect(data.pack.kind).toBe('data')
+    const meta = JSON.parse(await readFile(join(data.pack.folder, 'pack.mcmeta'), 'utf8'))
+    expect(meta.pack.pack_format).toBe(120)
+
+    const both = await env.service.importZip(
+      await zipFile('Both.zip', {
+        'pack.mcmeta': mcmeta({ description: 'both', min_format: [97, 0], max_format: 97 }),
+        [T('block/stone.png')]: makePng(16, 16, [255, 0, 0, 255]),
+        'data/both/recipe/a.json': recipe
+      })
+    )
+    expect(both.pack.kind).toBe('combined')
+    expect(both.mappedVersion).toBe('26.3')
+  })
 })

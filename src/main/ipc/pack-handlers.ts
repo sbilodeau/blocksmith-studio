@@ -51,26 +51,39 @@ export function registerPackHandlers({ packs, dialogs }: PackHandlerDeps): void 
       packType
     })
     await packs
-      .saveExportProfile(packId, { targets: [targetVersion], acceptNewer: acceptNewer ?? false })
+      .saveExportProfile(packId, {
+        targets: [targetVersion],
+        acceptNewer: acceptNewer ?? false,
+        ...(packType ? { packTypes: [packType] } : {})
+      })
       .catch(() => undefined)
     return report
   })
 
   handle('pack.doctor', ({ packId }) => packs.doctor(packId))
+  handle('pack.setKind', ({ packId, kind }) => packs.updateMeta(packId, { kind }))
   handle('pack.upgrade', ({ packId, targetVersion }) => packs.upgrade(packId, targetVersion))
 
-  handle('pack.exportMany', async ({ packId, targetVersions, acceptNewer, packType }) => {
-    // Validates the targets (and the pack) before showing the dialog.
-    for (const v of targetVersions) await packs.exportFileName(packId, v, packType)
-    const folder = await dialogs.chooseFolder(packs.workspaceRoot())
-    if (!folder) return null
-    const reports = await packs.exportMany(packId, targetVersions, folder, {
-      acceptNewer,
-      packType
-    })
-    await packs
-      .saveExportProfile(packId, { targets: targetVersions, acceptNewer: acceptNewer ?? false })
-      .catch(() => undefined)
-    return reports
-  })
+  handle(
+    'pack.exportMany',
+    async ({ packId, targetVersions, acceptNewer, packType, packTypes }) => {
+      // Validates the targets (and the pack) before showing the dialog.
+      for (const v of targetVersions) await packs.exportFileName(packId, v, packType)
+      const folder = await dialogs.chooseFolder(packs.workspaceRoot())
+      if (!folder) return null
+      const reports = await packs.exportMany(packId, targetVersions, folder, {
+        acceptNewer,
+        packType,
+        ...(packTypes ? { packTypes } : {})
+      })
+      await packs
+        .saveExportProfile(packId, {
+          targets: targetVersions,
+          acceptNewer: acceptNewer ?? false,
+          ...(packTypes ? { packTypes } : packType ? { packTypes: [packType] } : {})
+        })
+        .catch(() => undefined)
+      return reports
+    }
+  )
 }

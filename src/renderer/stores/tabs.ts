@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { disposePackStore } from './pack'
+import { disposeDataStore } from './data'
 import { disposeEditorStore } from './editor'
 
 /**
@@ -41,6 +42,7 @@ export const useTabsStore = defineStore('tabs', () => {
     const [removed] = tabs.value.splice(index, 1)
     if (removed.kind === 'pack') {
       disposePackStore(removed.id)
+      disposeDataStore(removed.id)
       disposeEditorStore(removed.id)
     }
     if (activeId.value === id) activeId.value = tabs.value[Math.max(0, index - 1)].id

@@ -46,6 +46,7 @@ describe.skipIf(!existsSync(JAR))('3D preview against the real 1.21.4 jar', () =
       description: '',
       authoringVersion: '1.21.4',
       base: 'vanilla',
+      kind: 'resource',
       createdAt: '2026-11-15T00:00:00.000Z',
       updatedAt: '2026-11-15T00:00:00.000Z'
     }

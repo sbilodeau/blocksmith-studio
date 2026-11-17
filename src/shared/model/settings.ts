@@ -87,7 +87,8 @@ const AiSettingsSchema = z
       .object({
         creation: AgentSettingsSchema.prefault({}),
         navigation: AgentSettingsSchema.prefault({}),
-        editor: AgentSettingsSchema.prefault({})
+        editor: AgentSettingsSchema.prefault({}),
+        data: AgentSettingsSchema.prefault({})
       })
       .prefault({}),
     modelOverrides: z.array(ModelOverrideSchema).max(500).default([]),
@@ -131,7 +132,8 @@ export const SettingsPatchSchema = z
       .object({
         creation: AgentSettingsSchema.partial().optional(),
         navigation: AgentSettingsSchema.partial().optional(),
-        editor: AgentSettingsSchema.partial().optional()
+        editor: AgentSettingsSchema.partial().optional(),
+        data: AgentSettingsSchema.partial().optional()
       })
       .strict()
       .optional(),
@@ -163,7 +165,8 @@ export function applySettingsPatch(current: Settings, patch: SettingsPatch): Set
       agents: {
         creation: { ...current.ai.agents.creation, ...(patch.aiAgents?.creation ?? {}) },
         navigation: { ...current.ai.agents.navigation, ...(patch.aiAgents?.navigation ?? {}) },
-        editor: { ...current.ai.agents.editor, ...(patch.aiAgents?.editor ?? {}) }
+        editor: { ...current.ai.agents.editor, ...(patch.aiAgents?.editor ?? {}) },
+        data: { ...current.ai.agents.data, ...(patch.aiAgents?.data ?? {}) }
       },
       modelOverrides: patch.aiModelOverride
         ? upsertOverride(current.ai.modelOverrides, patch.aiModelOverride)

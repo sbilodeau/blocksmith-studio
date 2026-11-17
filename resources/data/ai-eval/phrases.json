@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "FR/EN phrase -> expected tool calls (PLAN 6.8). Editor cases run on one 16x16 texture (fixture = image name); navigation cases run on a selection of textures (fixture = selection name, see evalSelection in src/main/services/ai/eval/report.ts); creation cases run on a whole pack (fixture = pack name, see evalPack in the same file).",
+  "description": "FR/EN phrase -> expected tool calls (PLAN 6.8). Editor cases run on one 16x16 texture (fixture = image name); navigation cases run on a selection of textures (fixture = selection name, see evalSelection in src/main/services/ai/eval/report.ts); creation cases run on a whole pack (fixture = pack name, see evalPack in the same file; \"sample_datapack\" is a data pack for write_json cases); data cases run the data editor's chat on one file of that data pack (fixture = its path, see evalDataFile).",
   "cases": [
     {
       "id": "rotate-left-90",
@@ -843,6 +843,115 @@
           "args": {
             "name": {
               "containsAny": ["feu", "fire"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-data-recipe",
+      "context": "creation",
+      "fixture": "sample_datapack",
+      "fr": "ajoute une recette pour fabriquer une selle avec du cuir",
+      "en": "add a recipe to craft a saddle from leather",
+      "expect": [
+        {
+          "tool": "write_json",
+          "args": {
+            "path": {
+              "containsAny": ["/recipe/"]
+            },
+            "json.result.id": {
+              "containsAny": ["saddle"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-data-loot",
+      "context": "creation",
+      "fixture": "sample_datapack",
+      "fr": "le minerai de diamant doit donner deux diamants",
+      "en": "diamond ore should drop two diamonds",
+      "expect": [
+        {
+          "tool": "write_json",
+          "args": {
+            "path": {
+              "containsAny": ["loot_table/blocks/diamond_ore"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-data-tag",
+      "context": "creation",
+      "fixture": "sample_datapack",
+      "fr": "ajoute le basalte au tag des pierres de base",
+      "en": "add basalt to the base stone tag",
+      "expect": [
+        {
+          "tool": "write_json",
+          "args": {
+            "path": {
+              "containsAny": ["tags/block/base_stone_overworld"]
+            },
+            "json.values": {
+              "containsAny": ["basalt"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-recipe-count",
+      "context": "data",
+      "fixture": "data/minecraft/recipe/oak_planks.json",
+      "fr": "fais-la donner 8 planches au lieu de 4",
+      "en": "make it give 8 planks instead of 4",
+      "expect": [
+        {
+          "tool": "edit_file",
+          "args": {
+            "json.result.count": 8,
+            "json.result.id": {
+              "containsAny": ["oak_planks"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-tag-add",
+      "context": "data",
+      "fixture": "data/minecraft/tags/block/base_stone_overworld.json",
+      "fr": "ajoute le basalte",
+      "en": "add basalt",
+      "expect": [
+        {
+          "tool": "edit_file",
+          "args": {
+            "json.values": {
+              "containsAll": ["basalt", "granite"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-loot-two",
+      "context": "data",
+      "fixture": "data/minecraft/loot_table/blocks/diamond_ore.json",
+      "fr": "fais-le donner deux diamants",
+      "en": "make it drop two diamonds",
+      "expect": [
+        {
+          "tool": "edit_file",
+          "args": {
+            "json.pools.0.entries.0.name": {
+              "containsAny": ["diamond"]
             }
           }
         }

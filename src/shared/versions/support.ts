@@ -95,9 +95,12 @@ export function findVersion(table: VersionTable, versionId: string): McVersion |
  */
 export function versionForPackFormat(
   table: VersionTable,
-  format: Pick<PackFormat, 'major'>
+  format: Pick<PackFormat, 'major'>,
+  type: 'resource' | 'data' = 'resource'
 ): McVersion | undefined {
-  return sortNewestFirst(releases(table)).find((v) => v.resourcePack.major === format.major)
+  return sortNewestFirst(releases(table)).find(
+    (v) => (type === 'data' ? v.dataPack : v.resourcePack).major === format.major
+  )
 }
 
 /** Compares two pack formats: negative if a < b, 0 if equal, positive if a > b. */

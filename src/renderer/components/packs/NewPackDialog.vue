@@ -14,7 +14,7 @@ import {
   NTag,
   type SelectOption
 } from 'naive-ui'
-import type { PackBase, PackSummary } from '@shared/model/pack'
+import type { PackBase, PackKind, PackSummary } from '@shared/model/pack'
 import VanillaPrepare from '../vanilla/VanillaPrepare.vue'
 import { useVanillaStore } from '../../stores/vanilla'
 import { usePacksStore } from '../../stores/packs'
@@ -31,6 +31,7 @@ const { showError } = useErrorMessage()
 const name = ref('')
 const description = ref('')
 const base = ref<PackBase>('vanilla')
+const kind = ref<PackKind>('resource')
 const version = ref<string | null>(null)
 const creating = ref(false)
 
@@ -52,6 +53,7 @@ watch(show, async (open) => {
   name.value = ''
   description.value = ''
   base.value = 'vanilla'
+  kind.value = 'resource'
   try {
     if (!vanilla.loaded) await vanilla.refresh()
   } catch (err) {
@@ -68,6 +70,7 @@ async function create(): Promise<void> {
       name: name.value.trim(),
       description: description.value,
       base: base.value,
+      kind: kind.value,
       authoringVersion: version.value
     })
     show.value = false
@@ -106,6 +109,21 @@ async function create(): Promise<void> {
           :autosize="{ minRows: 2, maxRows: 4 }"
           data-testid="new-pack-description"
         />
+      </n-form-item>
+      <n-form-item :label="t('newPack.kind')" :feedback="t(`newPack.kindHint.${kind}`)">
+        <n-radio-group v-model:value="kind">
+          <n-space>
+            <n-radio value="resource" data-testid="new-pack-kind-resource">{{
+              t('packKind.resource')
+            }}</n-radio>
+            <n-radio value="data" data-testid="new-pack-kind-data">{{
+              t('packKind.data')
+            }}</n-radio>
+            <n-radio value="combined" data-testid="new-pack-kind-combined">{{
+              t('packKind.combined')
+            }}</n-radio>
+          </n-space>
+        </n-radio-group>
       </n-form-item>
       <n-form-item :label="t('newPack.base')">
         <n-radio-group v-model:value="base">

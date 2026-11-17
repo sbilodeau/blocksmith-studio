@@ -1,3 +1,10 @@
+import {
+  VALIDATED_KINDS,
+  checkDataText,
+  collectDataIds,
+  dataContext,
+  parseDataPath
+} from '@shared/datapack'
 import { isValidResourcePath } from './paths'
 import { isPowerOfTwo, readPngHeader } from './png'
 import { parseJson, readAnimation } from './mcmeta'
@@ -112,4 +119,29 @@ export function validatePackFiles(files: readonly PackFile[]): PackWarning[] {
     }
   }
   return warnings
+}
+
+/**
+ * Data files checked against their schema (recipes, loot tables, tags, advancements; see shared/datapack): files
+ * Minecraft would reject (`doctor.invalidData`), and files naming items, blocks or tags the game does not have
+ * (`doctor.dataWarnings`). `knownPaths` (vanilla index paths) supplies the ids; without them ids are not checked.
+ */
+export function dataSchemaWarnings(
+  files: readonly PackFile[],
+  knownPaths: readonly string[]
+): PackWarning[] {
+  const dataFiles = files.filter((f) => f.path.startsWith('data/') && f.path.endsWith('.json'))
+  if (dataFiles.length === 0) return []
+  const ctx = dataContext(collectDataIds([...knownPaths, ...files.map((f) => f.path)]))
+  const out: PackWarning[] = []
+  const decoder = new TextDecoder()
+  for (const { path, data } of dataFiles) {
+    const info = parseDataPath(path)
+    // Unreadable JSON already has export.invalidJson.
+    if (!info || !VALIDATED_KINDS.includes(info.kind) || parseJson(data) === undefined) continue
+    const result = checkDataText(decoder.decode(data), info.kind, ctx, info.registry)
+    if (result.errors > 0) out.push({ code: 'doctor.invalidData', path })
+    else if (result.warnings > 0) out.push({ code: 'doctor.dataWarnings', path })
+  }
+  return out
 }

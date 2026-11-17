@@ -7,13 +7,13 @@ today; [PLAN.md](../PLAN.md) describes where it is going.
 
 ```
 +---------------------------+        contextBridge         +-------------------------------+
-| MAIN (Node, privileged)   | <--------------------------> | RENDERER (Vue 3, sandboxed)   |
-|  index.ts      lifecycle  |   window.blocksmith          |  App shell, tabs, settings    |
-|  window.ts     windows    |   .invoke(channel, payload)  |  Pinia stores, vue-i18n       |
-|  security*.ts  hardening  |   .on(event, listener)       |  Naive UI components          |
-|  ipc/          handlers   |                              |  No Node.js, no network       |
-|  services/     settings,  |        PRELOAD               |                               |
-|                updater    |  whitelists channels only    |                               |
+| MAIN (Node, privileged) | <--------------------------> | RENDERER (Vue 3, sandboxed) |
+| index.ts      lifecycle | window.blocksmith            | App shell, tabs, settings   |
+| window.ts     windows   | .invoke(channel, payload)    | Pinia stores, vue-i18n      |
+| security*.ts  hardening | .on(event, listener)         | Naive UI components         |
+| ipc/          handlers  |                              | No Node.js, no network      |
+| services/     settings, | PRELOAD                      |                             |
+| updater                 | whitelists channels only     |                             |
 +---------------------------+                              +-------------------------------+
 ```
 
@@ -63,18 +63,19 @@ context isolation enabled, unknown channels refused, CSP present, remote fetch b
 
 ## Main-process services
 
-| Service        | Folder / file                   | Responsibility                                                             |
-| -------------- | ------------------------------- | -------------------------------------------------------------------------- |
-| Settings       | `src/main/services/settings.ts` | `settings.json` in userData (see below)                                    |
-| Updater        | `src/main/services/updater.ts`  | Self-update (see [releasing.md](releasing.md))                             |
-| Vanilla store  | `src/main/services/vanilla/`    | Launcher detection, Mojang download, jar extraction (worker thread), index |
-| Pack service   | `src/main/services/packs/`      | Workspace, packs, texture index, categories, zip import and export         |
-| Texture edit   | `src/main/services/packs/`      | Texture read / save / revert (`textures-edit.ts`), recorded in history     |
-| History        | `src/main/services/history/`    | Per-pack journal, content-addressed blobs, undo / redo with conflict check |
-| Bulk           | `src/main/services/bulk/`       | Bulk operations on many textures (worker thread), see [bulk.md](bulk.md)   |
-| AI agents      | `src/main/services/ai/agent/`   | Editor and navigation agents, proposals, conversations (ai-agents.md)      |
-| Asset protocol | `src/main/protocol.ts`          | Read-only `bs-asset://` URLs for thumbnails (pack file, else vanilla file) |
-| Job reporter   | `src/main/jobs.ts`              | Throttled `job.progress` events for long operations                        |
+| Service        | Folder / file                     | Responsibility                                                                                    |
+| -------------- | --------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Settings       | `src/main/services/settings.ts`   | `settings.json` in userData (see below)                                                           |
+| Updater        | `src/main/services/updater.ts`    | Self-update (see [releasing.md](releasing.md))                                                    |
+| Vanilla store  | `src/main/services/vanilla/`      | Launcher detection, Mojang download, jar extraction (worker thread), index                        |
+| Pack service   | `src/main/services/packs/`        | Workspace, packs, texture index, categories, zip import and export                                |
+| Texture edit   | `src/main/services/packs/`        | Texture read / save / revert (`textures-edit.ts`), recorded in history                            |
+| Data files     | `src/main/services/packs/data.ts` | Data pack files: list (pack + vanilla), read, save, create, delete ([datapacks.md](datapacks.md)) |
+| History        | `src/main/services/history/`      | Per-pack journal, content-addressed blobs, undo / redo with conflict check                        |
+| Bulk           | `src/main/services/bulk/`         | Bulk operations on many textures (worker thread), see [bulk.md](bulk.md)                          |
+| AI agents      | `src/main/services/ai/agent/`     | Editor and navigation agents, proposals, conversations (ai-agents.md)                             |
+| Asset protocol | `src/main/protocol.ts`            | Read-only `bs-asset://` URLs for thumbnails (pack file, else vanilla file)                        |
+| Job reporter   | `src/main/jobs.ts`                | Throttled `job.progress` events for long operations                                               |
 
 Services talk to each other through the interfaces in `src/main/services/contracts.ts` (`VanillaStore`,
 `JobReporter`), so each one is tested with in-memory fakes of the others. `src/main/index.ts` wires the real
@@ -82,7 +83,7 @@ implementations together with Electron (dialogs, shell, `net.fetch`).
 
 Details: [versions.md](versions.md) (version table, support window, pack.mcmeta rules, vanilla extraction),
 [packs.md](packs.md) (pack layout, texture statuses, texture editing, history, import/export rules), [categories.md](categories.md)
-(category mapping).
+(category mapping), [datapacks.md](datapacks.md) (pack kinds, data files and their checks).
 
 ### History
 
@@ -104,7 +105,8 @@ Both are imported statically and bundled into the main process.
 ### Vanilla assets and the `bs-asset://` protocol
 
 Vanilla textures are never bundled. The vanilla store extracts the needed folders of a client jar (local install or
-Mojang download with consent) into `userData/vanilla/<version>/` and writes `index.json` last. A vanilla-based pack
+Mojang download with consent), including the vanilla recipes, loot tables, tags and advancements, into
+`userData/vanilla/<version>/` and writes `index.json` last. A vanilla-based pack
 stores only changed and added files; everything else is read from that cache. The renderer shows thumbnails through
 `bs-asset://pack/<packId>/<path>` (pack file, else vanilla) and `bs-asset://vanilla/<version>/<path>`. The protocol
 only serves `.png`, `.json` and `.mcmeta` files and checks every resolved path stays inside its root.

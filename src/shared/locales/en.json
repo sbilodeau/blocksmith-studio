@@ -158,6 +158,12 @@
     "merge": {
       "planExpired": "This merge preview has expired. Preview the merge again.",
       "targetIsSource": "The target pack cannot also be a source."
+    },
+    "data": {
+      "invalidPath": "\"{path}\" is not a valid data file path.",
+      "tooLarge": "The file is too large.",
+      "exists": "\"{path}\" already exists.",
+      "notInPack": "The pack has no file \"{path}\"."
     }
   },
   "common": {
@@ -182,12 +188,18 @@
     "namePlaceholder": "My fire pack",
     "description": "Description",
     "base": "Start from",
-    "baseVanilla": "Vanilla textures (edit the game's textures)",
+    "baseVanilla": "Vanilla files (edit the game's textures and data)",
     "baseEmpty": "Empty pack (add your own files)",
     "version": "Minecraft version",
     "versionHint": "You edit against this version. Exporting to older versions comes later.",
     "vanillaRequired": "Vanilla textures needed",
-    "create": "Create"
+    "create": "Create",
+    "kind": "Pack type",
+    "kindHint": {
+      "resource": "Textures and other game assets, installed from Options > Resource Packs.",
+      "data": "Recipes, loot tables, tags and advancements, installed in a world's datapacks folder.",
+      "combined": "Both in one project; exported as a resource pack zip and a data pack zip."
+    }
   },
   "vanilla": {
     "foundLocal": "Minecraft {version} was found on this computer. Its textures will be extracted (nothing is uploaded).",
@@ -231,7 +243,9 @@
       "modified": "Modified",
       "added": "Added"
     },
-    "vanillaMissing": "This pack is based on the Minecraft {version} textures, which are not set up on this computer."
+    "vanillaMissing": "This pack is based on the Minecraft {version} textures, which are not set up on this computer.",
+    "sectionTextures": "Textures",
+    "sectionData": "Data"
   },
   "grid": {
     "search": "Search textures",
@@ -266,7 +280,10 @@
     "installHint": "Install it from Options > Resource Packs (not from a world's Data Packs screen).",
     "packVersionLabel": "{version} (pack version)",
     "runMany": "Export {count} .zip files",
-    "renamedNote": "{count} textures were renamed for this version. | 1 texture was renamed for this version. | {count} textures were renamed for this version."
+    "renamedNote": "{count} textures were renamed for this version. | 1 texture was renamed for this version. | {count} textures were renamed for this version.",
+    "packType": "Pack type",
+    "packTypeHint": "One zip per type and version.",
+    "installHintData": "Put the data pack zip in a world's datapacks folder (or drop it on the world's Data Packs screen)."
   },
   "import": {
     "title": "Import complete",
@@ -322,7 +339,8 @@
       "dataLeftOut": "The pack's data/ files were left out (export a data pack for them).",
       "assetsLeftOut": "Textures and other assets/ files were left out: Minecraft does not load them from a data pack.",
       "noDataFiles": "This pack has no data/ files yet, so the data pack is empty.",
-      "otherFilesAsIs": "Models, block states and other JSON files are exported as they are; check them in this version."
+      "otherFilesAsIs": "Models, block states and other JSON files are exported as they are; check them in this version.",
+      "dataAsIs": "Data files are copied as they are: check them in that version (their format may differ)."
     },
     "identicalToVanilla": "Skipped: identical to vanilla",
     "notInTarget": "Skipped: this texture does not exist in this version",
@@ -332,7 +350,9 @@
     },
     "doctor": {
       "proportions": "Proportions differ from the Minecraft texture: models will show it stretched or cut",
-      "missingAnimation": "Animated in Minecraft but the pack has no .png.mcmeta: the animation will not play. Open it in the editor and save to copy it"
+      "missingAnimation": "Animated in Minecraft but the pack has no .png.mcmeta: the animation will not play. Open it in the editor and save to copy it",
+      "invalidData": "Minecraft would reject this data file (open it to see the errors)",
+      "dataWarnings": "This data file names items, blocks or tags Minecraft does not have"
     }
   },
   "editor": {
@@ -452,7 +472,11 @@
       "bulk": "Bulk edit of {count} textures | Bulk edit of 1 texture | Bulk edit of {count} textures",
       "aiBulk": "AI plan on {count} textures | AI plan on 1 texture | AI plan on {count} textures",
       "aiPlanStep": "AI plan, step {step} of {total} ({count} textures)",
-      "merge": "Merged {count} files from {packs} packs | Merged 1 file from {packs} packs | Merged {count} files from {packs} packs"
+      "merge": "Merged {count} files from {packs} packs | Merged 1 file from {packs} packs | Merged {count} files from {packs} packs",
+      "saveData": "Saved {name}",
+      "createData": "Created {name}",
+      "deleteData": "Removed {name}",
+      "aiDataFiles": "AI plan: {count} data files | AI plan: 1 data file | AI plan: {count} data files"
     },
     "title": "History",
     "empty": "Nothing saved yet."
@@ -518,7 +542,8 @@
     "agents": {
       "editor": "Editor agent",
       "navigation": "Navigation agent",
-      "creation": "Creation agent"
+      "creation": "Creation agent",
+      "data": "Data agent"
     },
     "editorAgent": "Editor agent",
     "refreshModels": "Refresh models",
@@ -641,7 +666,6 @@
     "invalidHeaders": "Each line must look like Name: value.",
     "editProvider": "Edit",
     "agentDefaults": "Agent defaults",
-    "agentLater": "This agent arrives in a later version; the defaults you choose here will be used then.",
     "models": {
       "title": "Models",
       "hint": "Every model your providers offer, with what it can do and its price. Adjust a model when its provider gets it wrong or gives no price.",
@@ -691,10 +715,16 @@
       "appliedResult": "Plan applied: {count} textures written. | Plan applied: 1 texture written. | Plan applied: {count} textures written.",
       "stoppedResult": "Plan stopped: {count} textures written. | Plan stopped: 1 texture written. | Plan stopped: {count} textures written.",
       "checkpoints": "({count} history entries) | (1 history entry) | ({count} history entries)",
-      "metaUpdated": "Pack name / description updated."
+      "metaUpdated": "Pack name / description updated.",
+      "newFile": "New file",
+      "changedFile": "Changed file",
+      "jsonWarnings": "{count} warnings | 1 warning | {count} warnings",
+      "filesWritten": "{count} data files written. | 1 data file written. | {count} data files written."
     },
     "creationNoTextures": "No textures found for this pack yet. Prepare the Minecraft textures of its version in Settings.",
-    "creationEmptyBase": "Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack (1 texture so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack."
+    "creationEmptyBase": "Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack (1 texture so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack.",
+    "creationDataContext": "Whole data pack: recipes, loot tables, tags and advancements",
+    "emptyCreationData": "Describe what the data pack should do (\"diamond ore drops two diamonds\", \"a recipe for saddles\"). The AI proposes the files; you review each one before anything changes."
   },
   "brief": {
     "open": "Style brief",
@@ -760,7 +790,9 @@
       "pack": "pack"
     },
     "unknown": "Operation {tool}",
-    "setPackMeta": "Change the pack ({fields})"
+    "setPackMeta": "Change the pack ({fields})",
+    "writeJson": "Change {path}",
+    "writeJsonNew": "Create {path}"
   },
   "bulk": {
     "open": "Edit selection...",
@@ -839,7 +871,7 @@
     "back": "Back",
     "added": "{count} files added | 1 file added | {count} files added",
     "identical": "{count} files already identical | 1 file already identical | {count} files already identical",
-    "merged": "{count} language, sound, atlas or font files combined | 1 language, sound, atlas or font file combined | {count} language, sound, atlas or font files combined",
+    "merged": "{count} language, sound, atlas, font or tag files combined | 1 language, sound, atlas, font or tag file combined | {count} language, sound, atlas, font or tag files combined",
     "renamed": "{count} textures renamed for Minecraft {version} | 1 texture renamed for Minecraft {version} | {count} textures renamed for Minecraft {version}",
     "skipped": "{count} files skipped: they do not exist in Minecraft {version} | 1 file skipped: it does not exist in Minecraft {version} | {count} files skipped: they do not exist in Minecraft {version}",
     "willCreate": "Creates the pack \"{name}\" for Minecraft {version}.",
@@ -855,5 +887,163 @@
     "down": "↓",
     "moveUp": "Move up",
     "moveDown": "Move down"
+  },
+  "packKind": {
+    "resource": "Resource pack",
+    "data": "Data pack",
+    "combined": "Resource + data pack",
+    "change": "{kind} ▾"
+  },
+  "data": {
+    "kinds": {
+      "recipe": "Recipes",
+      "loot_table": "Loot tables",
+      "tag": "Tags",
+      "advancement": "Advancements",
+      "function": "Functions",
+      "other": "Other data"
+    },
+    "changedTotal": "no changed data files | 1 changed data file | {count} changed data files",
+    "list": {
+      "id": "Id",
+      "registry": "Registry",
+      "status": "Status",
+      "search": "Search data files",
+      "count": "no files | 1 file | {count} files",
+      "noVanilla": "Minecraft's data for this version is not available (its game file is missing), so only the pack's own files are listed.",
+      "empty": "No data file here yet."
+    },
+    "new": {
+      "open": "New file",
+      "title": "New data file",
+      "kind": "Type",
+      "template": "Start from",
+      "namespace": "Namespace",
+      "registry": "Tag registry",
+      "name": "Name",
+      "namePlaceholder": "ruby_block",
+      "nameHint": "Lowercase letters, digits, _ - . and / for sub folders.",
+      "invalidName": "Use lowercase letters, digits, _ - . and / only.",
+      "exists": "This file already exists.",
+      "namespaceHint": "Use the pack's own namespace for new content, and \"minecraft\" to replace a vanilla file.",
+      "openExisting": "Open it",
+      "create": "Create"
+    },
+    "templates": {
+      "shaped": "Shaped crafting",
+      "shapeless": "Shapeless crafting",
+      "smelting": "Smelting",
+      "stonecutting": "Stonecutting",
+      "smithing": "Smithing upgrade",
+      "block": "Block drops",
+      "chest": "Chest loot",
+      "entity": "Mob drops",
+      "tag": "Empty tag",
+      "advancement": "Advancement",
+      "function": "Function",
+      "empty": "Empty JSON"
+    },
+    "editor": {
+      "back": "Back to data files",
+      "format": "Format",
+      "compareHint": "Show Minecraft's file next to yours",
+      "useVanilla": "Use vanilla text",
+      "delete": "Delete",
+      "revertConfirm": "Remove the pack's version and use Minecraft's file again?",
+      "deleteConfirm": "Delete this file from the pack?",
+      "missing": "This file does not exist.",
+      "vanilla": "Minecraft's file",
+      "textFile": "Function file: Minecraft commands, one per line (not checked).",
+      "noProblems": "No problems found",
+      "errors": "no errors | 1 error | {count} errors",
+      "warnings": "no warnings | 1 warning | {count} warnings",
+      "line": "Line {line}",
+      "more": "More"
+    },
+    "explain": {
+      "run": "Explain this file",
+      "again": "Explain again",
+      "hint": "Sent to the AI: this file as in the editor, Minecraft's original, the changes and the checks. Nothing is changed.",
+      "stale": "The file changed since this explanation.",
+      "working": "Reading the file..."
+    },
+    "agent": {
+      "button": "AI",
+      "buttonHint": "Chat with the AI to change this file, or get an explanation of what it does in the game.",
+      "chatTab": "Chat",
+      "explainTab": "Explain",
+      "context": "About {id}: the AI sees this file as it is in the editor.",
+      "empty": "Ask for a change (\"drop 2 to 4 arrows\", \"make it give 8 slabs\") or a question about this file. Proposed changes go into the editor when you apply them; you save them yourself.",
+      "proposal": "Proposed version of the file",
+      "wholeFile": "Whole file",
+      "outdated": "The file changed in the editor since your request: applying replaces those edits.",
+      "apply": "Apply to editor",
+      "discard": "Discard",
+      "applied": "Applied to the editor (not saved yet).",
+      "discarded": "Discarded."
+    },
+    "type": {
+      "string": "a text",
+      "number": "a number",
+      "integer": "a whole number",
+      "boolean": "true or false",
+      "object": "an object",
+      "array": "a list",
+      "value": "a valid value"
+    },
+    "issue": {
+      "syntax": "JSON syntax error: {error}",
+      "required": "\"{key}\" is required",
+      "type": "Expected {expected}",
+      "value": "Must be one of: {values}",
+      "tooSmall": "Must be at least {min}",
+      "tooBig": "Must be at most {max}",
+      "tooShort": "Must have at least {min} characters",
+      "tooLong": "Must have at most {max} characters",
+      "tooFewItems": "Needs at least {min} entries",
+      "tooManyItems": "At most {max} entries",
+      "invalid": "Invalid value",
+      "id": "\"{value}\" is not a valid id (lowercase namespace:path)",
+      "idOrTag": "\"{value}\" is not a valid id or #tag",
+      "ingredient": "An ingredient is an item id, a \"#tag\" or a list of item ids",
+      "ingredientEmpty": "An ingredient list cannot be empty",
+      "ingredientListItem": "\"{value}\": an ingredient list holds item ids only (no tags)",
+      "itemStack": "Expected an item id or an item object with \"id\" (and \"count\")",
+      "textComponent": "Expected a text, or a text component object or list",
+      "patternWidth": "Every pattern row must have the same width",
+      "keyLength": "Key \"{key}\" must be a single character",
+      "keySpace": "A space means an empty slot: it cannot be a key",
+      "keyUnused": "Key \"{key}\" is not used in the pattern (Minecraft rejects the recipe)",
+      "keyMissing": "\"{key}\" is used in the pattern but not defined in \"key\"",
+      "numberProvider": "Expected a number or a number provider object",
+      "lootTableValue": "Expected a loot table id or an inline loot table",
+      "tagValue": "A tag value is an id, a \"#tag\" or an object with \"id\" and \"required\"",
+      "notObject": "The file must be a JSON object",
+      "noCriteria": "An advancement needs at least one criterion",
+      "unknownCriterion": "\"{name}\" is not one of the criteria",
+      "unknownItem": "Minecraft has no item \"{id}\"",
+      "unknownBlock": "Minecraft has no block \"{id}\"",
+      "unknownTag": "Unknown tag \"{id}\"",
+      "unknownRecipeType": "Unknown recipe type \"{type}\"",
+      "unknownEntryType": "Unknown loot entry type \"{type}\""
+    },
+    "syntax": {
+      "invalidSymbol": "unexpected character",
+      "invalidNumberFormat": "invalid number",
+      "propertyNameExpected": "a property name in quotes is expected",
+      "valueExpected": "a value is expected",
+      "colonExpected": "\":\" expected",
+      "commaExpected": "\",\" expected",
+      "closeBraceExpected": "\"{'}'}\" expected",
+      "closeBracketExpected": "\"]\" expected",
+      "endOfFileExpected": "unexpected text after the end",
+      "invalidCommentToken": "comments are not allowed",
+      "unexpectedEndOfComment": "unfinished comment",
+      "unexpectedEndOfString": "unfinished text (missing \")",
+      "unexpectedEndOfNumber": "unfinished number",
+      "invalidUnicode": "invalid unicode escape",
+      "invalidEscapeCharacter": "invalid escape (\\\\)",
+      "invalidCharacter": "invalid character in text"
+    }
   }
 }

@@ -14,6 +14,7 @@ export {
 } from './importer'
 export { ExportSkipReason, ExportWarningCode } from './exporter'
 export { ValidationCode } from './validation'
+export { createDataService, DataErrorCode, type DataService, type DataServiceDeps } from './data'
 export type { PackLocation } from './project'
 export {
   createTextureEditService,

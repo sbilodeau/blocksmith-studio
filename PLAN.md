@@ -25,7 +25,7 @@ Repository: `github.com/sbilodeau/blocksmith-studio` - License: MIT
 | Pack storage      | Unzipped folder per pack in a user-chosen workspace + hidden `.blocksmith/` metadata folder                   |
 | Multi-pack        | Tab-based, 1 tab = 1 pack, several open at once                                                               |
 | Merge             | Priority-ordered sources + per-file conflict review, deep-merge for mergeable JSON, undoable                  |
-| Data packs        | Resource packs first. Data packs in a later milestone                                                         |
+| Data packs        | Resource, data or combined packs (M10); data files checked against hand-written schemas                       |
 | Animated textures | Strip editing with frame guides in MVP. Timeline/playback in M9 (frame-by-frame editing)                      |
 | UI library        | Naive UI                                                                                                      |
 | AI providers      | Ollama Cloud (native API) by default, any OpenAI-compatible endpoint as an option                             |
@@ -932,6 +932,17 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 
 ### M10 - Data packs
 - Data pack projects (or combined resource+data), JSON editors with schema validation (recipes, loot tables, tags, advancements), `write_json` tool, data pack format in mcmeta/export.
+- Built (see docs/datapacks.md): `project.kind` (resource / data / combined) chosen at creation and changeable;
+  vanilla data extracted with the assets (added from the jar for older caches) and shown copy-on-write; CodeMirror 6
+  editor with hand-written zod schemas checked against every vanilla file of the support window (real-jar test),
+  id warnings and completion, templates valid in every supported version; functions as plain text; combined packs
+  export both zips; data pack import, Pack Doctor checks and tag merging; `write_json`, `read_json` and `list_data`
+  for the creation agent (data steps applied as one history entry). Formats that changed inside the window (26.1
+  loot table fields) are let through rather than checked, and data files are exported to other versions as they are.
+  Added on request: an **AI** panel in the data editor with a chat (the `data` agent: `edit_file` proposes the whole
+  open file, applied to the editor unsaved, then saved by the user) and an **Explain** tab (one answer without tools,
+  in the UI language). Both get context built in main: vanilla's file, computed changes, checks, tag merge effect,
+  tags used, English names.
 
 ### M11 - Polish and extras
 - Category mapping editor UI; optional layers in the editor; pop-out 3D preview window; paint directly on the 3D preview model; more entity definitions; performance pass for huge packs; accessibility pass.

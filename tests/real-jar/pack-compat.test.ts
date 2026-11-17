@@ -175,7 +175,10 @@ describe.skipIf(games.length === 0)('exported packs in real Minecraft jars', () 
         { id: 'p', folder, project: project as never },
         c.target,
         out,
-        { vanilla: { getIndex: async () => null } as never, onProgress: () => {} },
+        {
+          vanilla: { getIndex: async () => null, prepareData: async () => false } as never,
+          onProgress: () => {}
+        },
         { acceptNewer: c.acceptNewer, packType: c.packType }
       )
       zips.push(`${c.packType}:${out}`)

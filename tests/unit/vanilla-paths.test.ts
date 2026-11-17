@@ -79,7 +79,11 @@ describe('isExtractedAsset', () => {
     'assets/minecraft/font/default.json',
     'assets/minecraft/lang/en_us.json',
     'pack.png',
-    'version.json'
+    'version.json',
+    'data/minecraft/recipe/stone_slab.json',
+    'data/minecraft/tags/item/planks.json',
+    'data/minecraft/loot_table/blocks/stone.json',
+    'data/minecraft/advancement/story/root.json'
   ])('extracts %s', (name) => {
     expect(isExtractedAsset(name)).toBe(true)
   })
@@ -88,7 +92,9 @@ describe('isExtractedAsset', () => {
     'net/minecraft/Foo.class',
     'a.class',
     'META-INF/MANIFEST.MF',
-    'data/minecraft/recipe/stone_slab.json',
+    'data/minecraft/worldgen/biome/plains.json',
+    'data/minecraft/recipe/stone_slab.txt',
+    'data/other/recipe/x.json',
     'assets/minecraft/shaders/core/position.vsh',
     'assets/minecraft/lang/deprecated.json',
     'assets/minecraft/lang/fr_fr.json',

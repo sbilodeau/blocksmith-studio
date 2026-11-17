@@ -58,6 +58,23 @@ const PLAN = [
   [text('Voici le plan.'), DONE_END]
 ] as Parameters<typeof fakeProvider>[0]
 
+/** A data pack plan: one new recipe (M10). */
+const DATA_PLAN = [
+  [
+    toolCall('write_json', {
+      path: 'data/hot/recipe/saddle.json',
+      json: {
+        type: 'minecraft:crafting_shapeless',
+        ingredients: ['minecraft:leather'],
+        result: { id: 'minecraft:saddle' }
+      }
+    }),
+    toolCall('update_style_brief', { patch: { theme: 'Fire' } }),
+    DONE_TOOLS
+  ],
+  [text('Voici le plan.'), DONE_END]
+] as Parameters<typeof fakeProvider>[0]
+
 describe('creation agent service', () => {
   let root: string
   let folder: string
@@ -73,13 +90,14 @@ describe('creation agent service', () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  function setup(options: { stopAfterFirstStep?: boolean; empty?: boolean } = {}): {
+  function setup(options: { stopAfterFirstStep?: boolean; empty?: boolean; data?: boolean } = {}): {
     agent: ReturnType<typeof createEditorAgentService>
     files: Map<string, Uint8Array>
     saves: Array<{ paths: string[]; change: unknown }>
     meta: PackMetaPatch[]
     progress: Array<[string, number, number]>
     brief: ReturnType<typeof createBriefService>
+    dataSaves: Array<{ files: Array<{ path: string; text: string }>; change: unknown }>
   } {
     const gray = (): [string, Uint8Array][] =>
       ENTRIES.map((e) => [e.path, encodePng(createImage(2, 2, [128, 128, 128, 255]))])
@@ -105,7 +123,8 @@ describe('creation agent service', () => {
       brief,
       run: inProcessBulkRunner
     })
-    const fake = fakeProvider(PLAN)
+    const dataSaves: Array<{ files: Array<{ path: string; text: string }>; change: unknown }> = []
+    const fake = fakeProvider(options.data ? DATA_PLAN : PLAN)
     const agent: ReturnType<typeof createEditorAgentService> = createEditorAgentService({
       providers: fake.providers,
       getAgentSettings: () => SETTINGS,
@@ -132,8 +151,21 @@ describe('creation agent service', () => {
         meta: async () => ({
           name: 'Pack',
           description: '',
-          base: options.empty ? 'empty' : 'vanilla'
+          base: options.empty ? 'empty' : 'vanilla',
+          kind: options.data ? 'data' : 'resource'
         }),
+        data: {
+          list: async () => ({
+            entries: [],
+            vanillaData: true,
+            ids: { items: ['minecraft:leather', 'minecraft:saddle'], blocks: [], tags: {} }
+          }),
+          read: async () => null,
+          saveMany: async (_p, list, change) => {
+            dataSaves.push({ files: [...list], change })
+            return null
+          }
+        },
         setMeta: async (_p, patch) => {
           meta.push(patch)
         },
@@ -142,7 +174,7 @@ describe('creation agent service', () => {
       emit: (e) => events.push(e),
       newId: seqIds()
     })
-    return { agent, files, saves, meta, progress, brief }
+    return { agent, files, saves, meta, progress, brief, dataSaves }
   }
 
   let currentProposal = ''
@@ -188,7 +220,8 @@ describe('creation agent service', () => {
       checkpoints: 2,
       stopped: false,
       briefUpdated: true,
-      metaUpdated: true
+      metaUpdated: true,
+      filesWritten: 0
     })
     expect(meta).toEqual([{ name: 'Fire Pack' }])
     expect(saves.map((s) => s.paths.map((p) => p.split('/').pop()))).toEqual([
@@ -224,7 +257,8 @@ describe('creation agent service', () => {
       texturesWritten: 1,
       checkpoints: 1,
       briefUpdated: false,
-      metaUpdated: false
+      metaUpdated: false,
+      filesWritten: 0
     })
     expect(saves).toHaveLength(1)
     expect(meta).toEqual([])
@@ -274,5 +308,26 @@ describe('creation agent service', () => {
         language: 'en'
       })
     ).rejects.toMatchObject({ code: 'packs.notFound' })
+  })
+  it('data packs: plans write_json steps and applies the files as one history entry', async () => {
+    const { agent, saves, dataSaves } = setup({ data: true })
+    const proposal = await send(agent)
+    expect(proposal.steps.map((s) => s.tool)).toEqual(['write_json', 'update_style_brief'])
+    expect(dataSaves).toEqual([])
+    const result = await agent.applyCreation(
+      proposal.id,
+      proposal.steps.map((s) => s.id)
+    )
+    expect(result).toMatchObject({ filesWritten: 1, texturesWritten: 0, briefUpdated: true })
+    expect(saves).toEqual([])
+    expect(dataSaves).toHaveLength(1)
+    expect(dataSaves[0]!.files[0]!.path).toBe('data/hot/recipe/saddle.json')
+    expect(JSON.parse(dataSaves[0]!.files[0]!.text)).toMatchObject({
+      result: { id: 'minecraft:saddle' }
+    })
+    expect(dataSaves[0]!.change).toEqual({
+      source: 'ai',
+      label: { key: 'aiDataFiles', params: { count: 1 } }
+    })
   })
 })

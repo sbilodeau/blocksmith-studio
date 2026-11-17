@@ -64,10 +64,25 @@ Each step is previewed on the representative textures and applied to the whole p
 category step at a time. Keep Minecraft's pixel-art look: limited colors, no smoothing, light from the top-left.
 When you are done, stop calling tools and reply with one or two short sentences.`
 
+export const CREATION_DATA_INSTRUCTIONS = `This is a DATA PACK: it changes the game's recipes, loot tables, tags and advancements, not its textures. You
+get the pack name and a summary of its data files.
+Use list_data to find files (the pack's own and Minecraft's vanilla ones), read_json to read one, and write_json to
+propose a whole JSON file. To change vanilla behavior, read the vanilla file, then write the SAME path with your
+change; for new content use the pack's own namespace. Write complete, valid files: write_json checks the format and
+refuses invalid files with the reasons, so fix them and try again. Data packs cannot add new items or blocks.
+Use update_style_brief to record lasting decisions (theme, rules), and set_pack_meta for a new name or description.
+When you are done, stop calling tools and reply with one or two short sentences.`
+
+export const COMBINED_DATA_ADDENDUM = `This pack ALSO holds data files (recipes, loot tables, tags, advancements): use list_data, read_json and
+write_json for those (write_json proposes a whole JSON file, checked against Minecraft's format; to change vanilla
+behavior, read the vanilla file and write the same path). Data packs cannot add new items or blocks.`
+
 const SCOPE_INSTRUCTIONS: Record<AgentKind, string> = {
   editor: EDITOR_INSTRUCTIONS,
   navigation: NAVIGATION_INSTRUCTIONS,
-  creation: CREATION_INSTRUCTIONS
+  creation: CREATION_INSTRUCTIONS,
+  // The data agent builds its own prompt (data-agent.ts).
+  data: ''
 }
 
 function fill(template: string, values: Record<string, string | number>): string {
@@ -96,8 +111,8 @@ export interface SystemPromptInput {
   animation?: { frames: number }
   /** Navigation agent: number of selected textures. */
   selection?: { count: number }
-  /** Creation agent: number of textures in the pack. */
-  pack?: { count: number }
+  /** Creation agent: number of textures in the pack, and what the pack holds (default: textures only). */
+  pack?: { count: number; kind?: 'resource' | 'data' | 'combined' }
 }
 
 export function buildSystemPrompt(input: SystemPromptInput): string {
@@ -105,7 +120,14 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     uiLanguage: LANGUAGE_NAMES[input.language],
     styleBriefJson: briefForPrompt(input.brief)
   })
-  const scope = fill(SCOPE_INSTRUCTIONS[input.agent], {
+  const kind = input.agent === 'creation' ? (input.pack?.kind ?? 'resource') : 'resource'
+  const template =
+    kind === 'data'
+      ? CREATION_DATA_INSTRUCTIONS
+      : kind === 'combined'
+        ? `${SCOPE_INSTRUCTIONS[input.agent]}\n${COMBINED_DATA_ADDENDUM}`
+        : SCOPE_INSTRUCTIONS[input.agent]
+  const scope = fill(template, {
     width: input.texture?.width ?? '?',
     height: input.texture?.height ?? '?',
     count: input.selection?.count ?? input.pack?.count ?? '?'

@@ -9,7 +9,7 @@ import { mapLimit, writeFileAtomic } from './files'
 import { mergeMcmeta, parseJson, toJsonBytes } from './mcmeta'
 import { scanFiles, sha256 } from './paths'
 import type { PackLocation } from './project'
-import { validatePackFiles, type PackFile } from './validation'
+import { dataSchemaWarnings, validatePackFiles, type PackFile } from './validation'
 import { buildDeterministicZip } from './zip'
 
 /** Warning codes added by the exporter itself (validation codes live in validation.ts). */
@@ -23,7 +23,9 @@ export const ExportWarningCode = {
   /** Data pack export: textures and other assets/ files were left out (data packs cannot contain them). */
   assetsLeftOut: 'export.assetsLeftOut',
   /** Data pack export: the pack has no data/ file, so the data pack is empty. */
-  noDataFiles: 'export.noDataFiles'
+  noDataFiles: 'export.noDataFiles',
+  /** Data pack export to another version: data files are copied as they are (their format may differ there). */
+  dataAsIs: 'export.dataAsIs'
 } as const
 
 export interface ExportOptions extends McmetaOptions {
@@ -81,6 +83,8 @@ export async function exportPackZip(
       : null
   // Snapshots are not extracted: compare with the authoring version's vanilla (paths before migration).
   const snapshotTarget = isSnapshot(target)
+  // Data files identical to vanilla are left out too: caches extracted before data support get it now.
+  if (packType === 'data') await vanilla.prepareData(snapshotTarget ? authoring : target.id)
   const index = await vanilla.getIndex(snapshotTarget ? authoring : target.id)
   if (!index) warnings.push({ code: ExportWarningCode.vanillaNotReady })
 
@@ -144,8 +148,12 @@ export async function exportPackZip(
     })
   }
   if (otherAssets) warnings.push({ code: ExportWarningCode.otherFilesAsIs })
-  if (packType === 'data' && !files.some((f) => f.path.startsWith('data/'))) {
+  const dataFiles = files.filter((f) => f.path.startsWith('data/'))
+  if (packType === 'data' && dataFiles.length === 0) {
     warnings.push({ code: ExportWarningCode.noDataFiles })
+  }
+  if (packType === 'data' && dataFiles.length > 0 && target.id !== authoring) {
+    warnings.push({ code: ExportWarningCode.dataAsIs })
   }
 
   const mcmeta = mergeMcmeta(
@@ -155,6 +163,9 @@ export async function exportPackZip(
   files.push({ path: 'pack.mcmeta', data: toJsonBytes(mcmeta) })
 
   warnings.push(...validatePackFiles(files))
+  if (packType === 'data') {
+    warnings.push(...dataSchemaWarnings(files, index ? Object.keys(index.entries) : []))
+  }
 
   onProgress('write', 0, 1)
   const zip = buildDeterministicZip(files)

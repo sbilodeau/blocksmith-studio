@@ -5,6 +5,7 @@ import {
   NAlert,
   NButton,
   NCheckbox,
+  NCheckboxGroup,
   NForm,
   NFormItem,
   NModal,
@@ -12,7 +13,7 @@ import {
   NSpace,
   type SelectOption
 } from 'naive-ui'
-import type { ExportReport } from '@shared/model/pack'
+import type { ExportPackType, ExportReport } from '@shared/model/pack'
 import { exportTargets, findVersion, isSnapshot, versionTable } from '@shared/versions'
 import JobProgressBar from '../common/JobProgressBar.vue'
 import type { PackStore } from '../../stores/pack'
@@ -27,6 +28,25 @@ const { showError } = useErrorMessage()
 /** Target versions (one zip each). */
 const targets = ref<string[]>([])
 const exporting = ref(false)
+const kind = computed(() => props.store.summary?.kind ?? 'resource')
+/** Zips to write per version: a combined pack can write both (one resource pack, one data pack). */
+const packTypes = ref<ExportPackType[]>(['resource'])
+function defaultTypes(): ExportPackType[] {
+  if (kind.value === 'data') return ['data']
+  if (kind.value === 'resource') return ['resource']
+  const remembered = props.store.summary?.exportProfile?.packTypes
+  return remembered?.length ? [...remembered] : ['resource', 'data']
+}
+const hint = computed(() =>
+  [
+    t('export.changedOnly'),
+    packTypes.value.includes('resource') ? t('export.installHint') : '',
+    packTypes.value.includes('data') ? t('export.installHintData') : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+)
+const zipCount = computed(() => targets.value.length * packTypes.value.length)
 /** Export option: also mark the pack compatible with newer versions (snapshots). Remembered per pack tab. */
 const acceptNewer = computed({
   get: () => props.store.exportAcceptNewer,
@@ -56,6 +76,7 @@ function preselect(): void {
   const remembered = (profile?.targets ?? []).filter((v) => available.has(v))
   targets.value = remembered.length ? remembered : authoring.value ? [authoring.value] : []
   if (profile) acceptNewer.value = profile.acceptNewer
+  packTypes.value = defaultTypes()
 }
 watch(show, (open) => {
   if (open) preselect()
@@ -66,15 +87,20 @@ watch(options, () => {
 })
 
 async function run(): Promise<void> {
-  const [first, ...rest] = targets.value
-  if (!first) return
+  const [first] = targets.value
+  const types = packTypes.value
+  if (!first || types.length === 0) return
   exporting.value = true
   try {
-    const reports = rest.length
-      ? await props.store.exportMany(targets.value, { acceptNewer: acceptNewer.value })
-      : await props.store
-          .exportPack(first, { acceptNewer: acceptNewer.value })
-          .then((r) => (r ? [r] : null))
+    const reports =
+      zipCount.value > 1
+        ? await props.store.exportMany(targets.value, {
+            acceptNewer: acceptNewer.value,
+            packTypes: types
+          })
+        : await props.store
+            .exportPack(first, { acceptNewer: acceptNewer.value, packType: types[0] })
+            .then((r) => (r ? [r] : null))
     if (reports) {
       show.value = false
       emit('exported', reports)
@@ -111,11 +137,24 @@ async function run(): Promise<void> {
           {{ t('export.acceptNewer') }}
         </n-checkbox>
       </n-form-item>
+      <n-form-item
+        v-if="kind === 'combined'"
+        :label="t('export.packType')"
+        :feedback="t('export.packTypeHint')"
+      >
+        <n-checkbox-group v-model:value="packTypes">
+          <n-space>
+            <n-checkbox value="resource" data-testid="export-type-resource">
+              {{ t('export.packTypes.resource') }}
+            </n-checkbox>
+            <n-checkbox value="data" data-testid="export-type-data">
+              {{ t('export.packTypes.data') }}
+            </n-checkbox>
+          </n-space>
+        </n-checkbox-group>
+      </n-form-item>
     </n-form>
-    <!-- Data pack export (packType 'data') is built and tested but hidden until data pack editing (M10). -->
-    <n-alert type="info" :show-icon="false">
-      {{ t('export.changedOnly') }} {{ t('export.installHint') }}
-    </n-alert>
+    <n-alert type="info" :show-icon="false">{{ hint }}</n-alert>
     <template #footer>
       <n-space justify="space-between" align="center">
         <job-progress-bar v-if="exporting" kind="pack.export" />
@@ -125,13 +164,11 @@ async function run(): Promise<void> {
           <n-button
             type="primary"
             :loading="exporting"
-            :disabled="targets.length === 0"
+            :disabled="targets.length === 0 || packTypes.length === 0"
             data-testid="export-run"
             @click="run"
           >
-            {{
-              targets.length > 1 ? t('export.runMany', { count: targets.length }) : t('export.run')
-            }}
+            {{ zipCount > 1 ? t('export.runMany', { count: zipCount }) : t('export.run') }}
           </n-button>
         </n-space>
       </n-space>

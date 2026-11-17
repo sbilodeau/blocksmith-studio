@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import { unzipSync } from 'fflate'
-import type { ImportReport, Project } from '@shared/model/pack'
+import type { ImportReport, PackKind, Project } from '@shared/model/pack'
 import { buildResourcePackMcmeta } from '@shared/versions/mcmeta'
 import type { ProgressFn, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
@@ -170,8 +170,19 @@ export async function importPackZip(zipPath: string, deps: ImportDeps): Promise<
   }
 
   const warnings: ImportReport['warnings'] = []
+  // A zip with data/ and no assets/ is a data pack (its pack.mcmeta declares a data pack format); with both, a
+  // combined pack (pack.mcmeta can only declare one format: the resource one is tried first).
+  const inPack = names.filter((n) => n.startsWith(prefix)).map((n) => n.slice(prefix.length))
+  const hasAssets = inPack.some((p) => p.startsWith('assets/'))
+  const hasDataFiles = inPack.some((p) => p.startsWith('data/'))
+  const kind: PackKind = hasDataFiles ? (hasAssets ? 'combined' : 'data') : 'resource'
   const declaredFormat = readDeclaredFormat(mcmeta)
-  const mapped = declaredFormat ? vanilla.versionForPackFormat(declaredFormat) : undefined
+  const mapped = declaredFormat
+    ? kind === 'data'
+      ? vanilla.versionForPackFormat(declaredFormat, 'data')
+      : (vanilla.versionForPackFormat(declaredFormat) ??
+        (kind === 'combined' ? vanilla.versionForPackFormat(declaredFormat, 'data') : undefined))
+    : undefined
   const authoring = vanilla.latestVersion()
   // An older pack inside the migration chain: texture paths are upgraded to the authoring version.
   const migrator =
@@ -182,6 +193,7 @@ export async function importPackZip(zipPath: string, deps: ImportDeps): Promise<
   else if (migrator) warnings.push({ code: ImportWarningCode.migrated })
   else if (mapped?.id !== authoring.id) warnings.push({ code: ImportWarningCode.formatMismatch })
 
+  if (hasDataFiles) await vanilla.prepareData(authoring.id)
   const index = await vanilla.getIndex(authoring.id)
   if (!index) warnings.push({ code: ImportWarningCode.vanillaNotReady })
 
@@ -223,6 +235,7 @@ export async function importPackZip(zipPath: string, deps: ImportDeps): Promise<
     description,
     authoringVersion: authoring.id,
     base: 'vanilla',
+    kind,
     createdAt: now,
     updatedAt: now
   }
@@ -238,7 +251,12 @@ export async function importPackZip(zipPath: string, deps: ImportDeps): Promise<
       await writeFileAtomic(target, file.data)
       onProgress('write', ++done, kept.length)
     }
-    const packMcmeta = mergeMcmeta(buildResourcePackMcmeta(description, authoring), mcmeta)
+    const packMcmeta = mergeMcmeta(
+      buildResourcePackMcmeta(description, authoring, {
+        packType: kind === 'data' ? 'data' : 'resource'
+      }),
+      mcmeta
+    )
     await writeFileAtomic(join(folder, 'pack.mcmeta'), toJsonBytes(packMcmeta))
     if (!kept.some((f) => f.path === 'pack.png')) {
       await writeFileAtomic(join(folder, 'pack.png'), createDefaultPackIcon({ seed: project.id }))

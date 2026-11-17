@@ -32,3 +32,10 @@ export {
 export { runAgentLoop, type AgentScope, type CallOutcome } from './loop'
 export { runCreationAgent, matchTextures, pickSamples, type CreationSample } from './creation'
 export { renderContactSheet, contactSheetPngs, TILES_PER_SHEET, MAX_SHEETS } from './contact-sheet'
+export {
+  buildExplainMessages,
+  gatherExplainSources,
+  type DataAiDeps,
+  type ExplainSources
+} from './explain'
+export { runDataAgent, buildDataAgentMessages, DATA_AGENT_TOOLS } from './data-agent'

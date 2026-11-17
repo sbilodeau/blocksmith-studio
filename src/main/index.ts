@@ -5,6 +5,7 @@ import { registerIpcHandlers } from './ipc/handlers'
 import { registerVanillaHandlers } from './ipc/vanilla-handlers'
 import { registerPackHandlers } from './ipc/pack-handlers'
 import { registerTextureHandlers } from './ipc/texture-handlers'
+import { registerDataHandlers } from './ipc/data-handlers'
 import { registerPreviewHandlers } from './ipc/preview-handlers'
 import { registerAiProviderHandlers } from './ipc/ai-provider-handlers'
 import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
@@ -19,7 +20,7 @@ import { createJobReporter } from './jobs'
 import { SettingsService } from './services/settings'
 import { createUpdaterService } from './services/updater'
 import { createDefaultVanillaStore } from './services/vanilla'
-import { createPackService, createTextureEditService } from './services/packs'
+import { createDataService, createPackService, createTextureEditService } from './services/packs'
 import { createHistoryService } from './services/history'
 import { createPreviewService } from './services/preview'
 import { createSecretsStore, secretsFilePath } from './services/secrets'
@@ -84,6 +85,12 @@ if (!app.requestSingleInstanceLock()) {
       notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
     })
     const textures = createTextureEditService({
+      packs,
+      vanilla,
+      history,
+      notifyChanged: (packId) => send(webContents(), 'packs.changed', { packId })
+    })
+    const data = createDataService({
       packs,
       vanilla,
       history,
@@ -170,6 +177,7 @@ if (!app.requestSingleInstanceLock()) {
         return r.canceled ? null : (r.filePaths[0] ?? null)
       }
     })
+    registerDataHandlers({ data })
     registerPreviewHandlers({ preview })
     registerAiProviderHandlers({ settings, secrets, registry: aiProviders })
     const bulk = createBulkService({
@@ -191,13 +199,29 @@ if (!app.requestSingleInstanceLock()) {
         catalog: (packId) => packs.catalog(packId),
         readPng: (packId, path) => textures.readCatalog(packId, path),
         meta: async (packId) => {
-          const { name, description, base } = await packs.get(packId)
-          return { name, description, base }
+          const { name, description, base, kind } = await packs.get(packId)
+          return { name, description, base, kind }
         },
         setMeta: async (packId, patch) => {
           await packs.updateMeta(packId, patch)
         },
+        data: {
+          list: (packId) => data.list(packId),
+          read: async (packId, path) => (await data.read(packId, path)).text,
+          saveMany: (packId, files, change) => data.saveMany(packId, files, change)
+        },
         jobs
+      },
+      dataAi: {
+        meta: async (packId) => {
+          const { name, kind, authoringVersion } = await packs.get(packId)
+          return { name, kind, authoringVersion }
+        },
+        vanillaText: (packId, path) => data.vanillaText(packId, path),
+        packText: (packId, path) => data.packText(packId, path),
+        ids: (packId) => data.ids(packId),
+        names: (packId) => data.names(packId),
+        entries: async (packId) => (await data.list(packId)).entries
       },
       providers: aiProviders,
       getAgentSettings: (agent) => settings.get().ai.agents[agent],

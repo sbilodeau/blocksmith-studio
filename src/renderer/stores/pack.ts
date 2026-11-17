@@ -4,6 +4,7 @@ import type {
   CategorySummary,
   ExportPackType,
   ExportReport,
+  PackKind,
   UpgradeReport,
   PackSummary,
   TextureEntry,
@@ -44,6 +45,8 @@ export function usePackStore(packId: string) {
     const lastEdited = ref<string | null>(null)
     /** Navigation agent panel next to the grid. */
     const aiPanel = ref(false)
+    /** Combined packs: which half the tab shows (data packs always show data, resource packs textures). */
+    const section = ref<'textures' | 'data'>('textures')
     /** Export option "also accept newer versions" (kept while the tab is open). */
     const exportAcceptNewer = ref(false)
     function setExportAcceptNewer(on: boolean): void {
@@ -154,6 +157,11 @@ export function usePackStore(packId: string) {
       }
     }
 
+    /** Resource pack, data pack or both (the tab reloads on 'packs.changed'). */
+    async function setKind(kind: PackKind): Promise<void> {
+      summary.value = await call('pack.setKind', { packId, kind })
+    }
+
     /** Moves the pack to a newer Minecraft version (the tab reloads on 'packs.changed'). */
     async function upgrade(targetVersion: string): Promise<UpgradeReport> {
       return call('pack.upgrade', { packId, targetVersion })
@@ -162,13 +170,14 @@ export function usePackStore(packId: string) {
     /** One zip per version in a folder the user picks; null when cancelled. */
     async function exportMany(
       targetVersions: string[],
-      options: { acceptNewer?: boolean } = {}
+      options: { acceptNewer?: boolean; packTypes?: ExportPackType[] } = {}
     ): Promise<ExportReport[] | null> {
       try {
         return await call('pack.exportMany', {
           packId,
           targetVersions: [...targetVersions],
-          ...(options.acceptNewer ? { acceptNewer: true } : {})
+          ...(options.acceptNewer ? { acceptNewer: true } : {}),
+          ...(options.packTypes ? { packTypes: [...options.packTypes] } : {})
         })
       } finally {
         useJobsStore().clear('pack.export')
@@ -191,6 +200,7 @@ export function usePackStore(packId: string) {
       gridScroll,
       lastEdited,
       aiPanel,
+      section,
       exportAcceptNewer,
       setExportAcceptNewer,
       changedCount,
@@ -204,6 +214,7 @@ export function usePackStore(packId: string) {
       closeEditor,
       exportPack,
       exportMany,
+      setKind,
       upgrade
     }
   })()
