@@ -1,7 +1,16 @@
 import { promises as fs } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { packAssetUrl } from '@shared/assets'
-import { getDefaultCategoryEngine, type CategoryEngine } from '@shared/categories'
+import {
+  categoryRulesKey,
+  createCategoryEngine,
+  getDefaultCategoryEngine,
+  resolveCategoryRules,
+  userCategoryRules,
+  type CategoryEngine,
+  type CategoryRule
+} from '@shared/categories'
+import { assertValidCategoryRules } from '../categories'
 import {
   CreatePackInputSchema,
   PACK_TYPE_FILE_SUFFIX,
@@ -74,7 +83,8 @@ export interface PackServiceDeps {
   /** Overridable for tests. */
   now?: () => Date
   newId?: () => string
-  categories?: CategoryEngine
+  /** The saved "All packs" category mapping (CategoryMappingStore); null or missing = the defaults. */
+  categoryRules?: () => readonly CategoryRule[] | null
   importLimits?: ImportLimits
 }
 
@@ -108,6 +118,12 @@ export interface PackService {
     patch: { name?: string; description?: string; kind?: PackKind }
   ): Promise<PackSummary>
   categories(packId: string): Promise<CategorySummary[]>
+  /** Visible category rules that apply to the pack ("All packs" mapping + the pack's rules), in display order. */
+  categoryRules(packId: string): Promise<readonly CategoryRule[]>
+  /** The pack's "This pack" category rules (project.json `categoryOverrides`, empty when none). */
+  categoryOverrides(packId: string): Promise<CategoryRule[]>
+  /** Validates (categories.* AppErrors) and saves the pack's category rules; an empty list removes the field. */
+  setCategoryOverrides(packId: string, overrides: readonly CategoryRule[]): Promise<CategoryRule[]>
   importZip(zipPath: string): Promise<ImportReport>
   /**
    * Exports to several versions, one zip per target and pack type in `folder` (default file names, existing files
@@ -155,9 +171,15 @@ export interface PackCacheControl {
 export function createPackService(deps: PackServiceDeps): PackService & PackCacheControl {
   const now = deps.now ?? ((): Date => new Date())
   const newId = deps.newId ?? newPackId
-  const engine = deps.categories ?? getDefaultCategoryEngine()
   const fileInfo = new FileInfoCache()
-  const indexer = new TextureIndexer(deps.vanilla, engine, fileInfo)
+  // The indexer categorizes with the default engine; `indexed` re-applies the pack's own engine when it differs.
+  const defaultEngine = getDefaultCategoryEngine()
+  const defaultRulesKey = categoryRulesKey(userCategoryRules(null))
+  const indexer = new TextureIndexer(deps.vanilla, defaultEngine, fileInfo)
+  /** Compiled engines by rules key (a few: one per distinct "All packs" + "This pack" combination in use). */
+  const engines = new Map<string, CategoryEngine>()
+  /** Engine whose categories an indexed list carries, when not the default one. */
+  const categorizedWith = new WeakMap<TextureEntry[], CategoryEngine>()
   /** packId -> absolute folder, refreshed by every scan. */
   const folders = new Map<string, string>()
 
@@ -211,6 +233,39 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     const location = await locate(packId)
     if (!location) throw new AppErrorException(PackErrorCode.notFound, { packId })
     return location
+  }
+
+  /** Category engine of a pack: "All packs" mapping (or defaults) + the pack's rules, compiled once per rule set. */
+  function engineFor(location: PackLocation): CategoryEngine {
+    const rules = resolveCategoryRules(
+      deps.categoryRules?.() ?? null,
+      location.project.categoryOverrides
+    )
+    const key = categoryRulesKey(rules)
+    if (key === defaultRulesKey) return defaultEngine
+    let engine = engines.get(key)
+    if (engine) {
+      engines.delete(key)
+    } else {
+      engine = createCategoryEngine(rules)
+      if (engines.size >= 8) engines.delete(engines.keys().next().value as string)
+    }
+    engines.set(key, engine)
+    return engine
+  }
+
+  /**
+   * Indexed textures with the pack's categories. The indexer's cached list is re-categorized in place when the pack's
+   * engine changed (category editor), once per list and engine; the engine memoizes categorize().
+   */
+  async function indexed(location: PackLocation, catalog = false): Promise<TextureEntry[]> {
+    const entries = await indexer.textures(location, catalog ? { catalog: true } : {})
+    const engine = engineFor(location)
+    if ((categorizedWith.get(entries) ?? defaultEngine) !== engine) {
+      for (const entry of entries) entry.categories = engine.categorize(entry.path)
+      categorizedWith.set(entries, engine)
+    }
+    return entries
   }
 
   async function changedCount(location: PackLocation): Promise<number> {
@@ -375,7 +430,7 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     },
 
     async catalog(packId) {
-      return indexer.textures(await requireLocation(packId), { catalog: true })
+      return indexed(await requireLocation(packId), true)
     },
 
     async updateMeta(packId, patch) {
@@ -433,12 +488,33 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
     },
 
     async textures(packId) {
-      return indexer.textures(await requireLocation(packId))
+      return indexed(await requireLocation(packId))
     },
 
     async categories(packId) {
-      const entries = await indexer.textures(await requireLocation(packId))
-      return summarizeCategories(entries, engine)
+      const location = await requireLocation(packId)
+      const entries = await indexed(location)
+      return summarizeCategories(entries, engineFor(location))
+    },
+
+    async categoryRules(packId) {
+      return engineFor(await requireLocation(packId)).rules
+    },
+
+    async categoryOverrides(packId) {
+      return (await requireLocation(packId)).project.categoryOverrides ?? []
+    },
+
+    async setCategoryOverrides(packId, overrides) {
+      assertValidCategoryRules(overrides)
+      const location = await requireLocation(packId)
+      const project: Project = {
+        ...location.project,
+        categoryOverrides: overrides.length ? [...overrides] : undefined
+      }
+      await writeProject(location.folder, project)
+      deps.notifyChanged(packId)
+      return project.categoryOverrides ?? []
     },
 
     async importZip(zipPath) {
