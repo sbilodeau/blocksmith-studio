@@ -19,8 +19,12 @@ const categoryName = useCategoryName()
       size="small"
       hoverable
       class="card"
+      role="button"
+      tabindex="0"
       :data-testid="`overview-${c.id}`"
       @click="emit('open', c.id)"
+      @keydown.enter.prevent="emit('open', c.id)"
+      @keydown.space.prevent="emit('open', c.id)"
     >
       <div class="preview">
         <img v-if="c.iconUrl" :src="c.iconUrl" alt="" class="pixelated" />
@@ -45,6 +49,10 @@ const categoryName = useCategoryName()
 .card {
   cursor: pointer;
   text-align: center;
+}
+.card:focus-visible {
+  outline: 2px solid #13904f;
+  outline-offset: 2px;
 }
 .preview {
   height: 96px;

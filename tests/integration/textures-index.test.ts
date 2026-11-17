@@ -195,7 +195,7 @@ describe('texture index I/O', () => {
     const inPack = (p: unknown): string | null => {
       const s = String(p)
       return s.startsWith(pack.folder) && s.endsWith('.png')
-        ? s.slice(pack.folder.length + 1)
+        ? s.slice(pack.folder.length + 1).replace(/\\/g, '/')
         : null
     }
     const readFile = fsp.readFile.bind(fsp)
