@@ -35,3 +35,23 @@ export function mirrorTransforms(
   if (mirrorX && mirrorY) list.push((p) => ({ x: width - 1 - p.x, y: height - 1 - p.y }))
   return list
 }
+
+/**
+ * Screen span of an image drawn at (ox, oy) with size w x h, clipped to a width x height canvas (x1/y1
+ * exclusive; empty when x1 <= x0 or y1 <= y0). Drawing loops stay proportional to what is visible at high zoom.
+ */
+export function visibleSpan(
+  ox: number,
+  oy: number,
+  w: number,
+  h: number,
+  width: number,
+  height: number
+): { x0: number; y0: number; x1: number; y1: number } {
+  return {
+    x0: Math.max(ox, 0),
+    y0: Math.max(oy, 0),
+    x1: Math.min(ox + w, width),
+    y1: Math.min(oy + h, height)
+  }
+}
