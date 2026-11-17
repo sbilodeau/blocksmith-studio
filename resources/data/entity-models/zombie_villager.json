@@ -1,0 +1,64 @@
+{
+  "id": "zombie_villager",
+  "textureSize": [64, 64],
+  "animation": "biped",
+  "textures": [
+    "assets/minecraft/textures/entity/zombie_villager/zombie_villager.png",
+    "assets/minecraft/textures/entity/zombie_villager/{profession,profession_level,type}/*.png"
+  ],
+  "parts": [
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 24, 0],
+      "boxes": [
+        { "origin": [-4, 24, -4], "size": [8, 10, 8], "uv": [0, 0] },
+        { "origin": [-4, 24, -4], "size": [8, 10, 8], "uv": [32, 0], "inflate": 0.5 },
+        { "origin": [-1, 23, 4], "size": [2, 4, 2], "uv": [24, 0] }
+      ],
+      "children": [
+        {
+          "name": "hat_rim",
+          "pivot": [0, 24, 0],
+          "rotation": [-90, 0, 0],
+          "boxes": [{ "origin": [-8, 16, 5], "size": [16, 16, 1], "uv": [30, 47] }]
+        }
+      ]
+    },
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 24, 0],
+      "boxes": [
+        { "origin": [-4, 12, -3], "size": [8, 12, 6], "uv": [16, 20] },
+        { "origin": [-4, 4, -3], "size": [8, 20, 6], "uv": [0, 38], "inflate": 0.05 }
+      ]
+    },
+    {
+      "name": "right_arm",
+      "role": "rightArm",
+      "pivot": [-5, 22, 0],
+      "rotation": [-80, 0, 0],
+      "boxes": [{ "origin": [-8, 12, -2], "size": [4, 12, 4], "uv": [44, 22] }]
+    },
+    {
+      "name": "left_arm",
+      "role": "leftArm",
+      "pivot": [5, 22, 0],
+      "rotation": [-80, 0, 0],
+      "boxes": [{ "origin": [4, 12, -2], "size": [4, 12, 4], "uv": [44, 22], "mirror": true }]
+    },
+    {
+      "name": "right_leg",
+      "role": "rightLeg",
+      "pivot": [-2, 12, 0],
+      "boxes": [{ "origin": [-4, 0, -2], "size": [4, 12, 4], "uv": [0, 22] }]
+    },
+    {
+      "name": "left_leg",
+      "role": "leftLeg",
+      "pivot": [2, 12, 0],
+      "boxes": [{ "origin": [0, 0, -2], "size": [4, 12, 4], "uv": [0, 22], "mirror": true }]
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "blaze",
+  "textureSize": [64, 32],
+  "animation": "none",
+  "textures": ["assets/minecraft/textures/entity/{blaze,blaze/blaze}.png"],
+  "parts": [
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 19, 0],
+      "boxes": [{ "origin": [-4, 15, -4], "size": [8, 8, 8], "uv": [0, 0] }]
+    },
+    {
+      "name": "rod0",
+      "pivot": [9, 21, 0],
+      "boxes": [{ "origin": [8, 13, -1], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod1",
+      "pivot": [0, 21, -9],
+      "boxes": [{ "origin": [-1, 13, -10], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod2",
+      "pivot": [-9, 21, 0],
+      "boxes": [{ "origin": [-10, 13, -1], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod3",
+      "pivot": [0, 21, 9],
+      "boxes": [{ "origin": [-1, 13, 8], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod4",
+      "pivot": [4.95, 17, -4.95],
+      "boxes": [{ "origin": [3.95, 9, -5.95], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod5",
+      "pivot": [-4.95, 17, -4.95],
+      "boxes": [{ "origin": [-5.95, 9, -5.95], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod6",
+      "pivot": [-4.95, 17, 4.95],
+      "boxes": [{ "origin": [-5.95, 9, 3.95], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod7",
+      "pivot": [4.95, 17, 4.95],
+      "boxes": [{ "origin": [3.95, 9, 3.95], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod8",
+      "pivot": [5, 8, 0],
+      "boxes": [{ "origin": [4, 0, -1], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod9",
+      "pivot": [0, 8, -5],
+      "boxes": [{ "origin": [-1, 0, -6], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod10",
+      "pivot": [-5, 8, 0],
+      "boxes": [{ "origin": [-6, 0, -1], "size": [2, 8, 2], "uv": [0, 16] }]
+    },
+    {
+      "name": "rod11",
+      "pivot": [0, 8, 5],
+      "boxes": [{ "origin": [-1, 0, 4], "size": [2, 8, 2], "uv": [0, 16] }]
+    }
+  ]
+}

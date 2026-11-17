@@ -1,0 +1,33 @@
+{
+  "id": "chest",
+  "textureSize": [64, 64],
+  "animation": "none",
+  "textures": [
+    "assets/minecraft/textures/entity/chest/{normal,trapped,christmas,ender,copper,copper_exposed,copper_weathered,copper_oxidized}.png"
+  ],
+  "parts": [
+    {
+      "name": "chest",
+      "pivot": [0, 12, 0],
+      "rotation": [180, 0, 0],
+      "boxes": [],
+      "children": [
+        {
+          "name": "bottom",
+          "pivot": [-8, 24, 8],
+          "boxes": [{ "origin": [-7, 14, -7], "size": [14, 10, 14], "uv": [0, 19] }]
+        },
+        {
+          "name": "lid",
+          "pivot": [-8, 15, 7],
+          "boxes": [{ "origin": [-7, 10, -7], "size": [14, 5, 14], "uv": [0, 0] }]
+        },
+        {
+          "name": "lock",
+          "pivot": [-8, 15, 7],
+          "boxes": [{ "origin": [-1, 13, -8], "size": [2, 4, 1], "uv": [0, 0] }]
+        }
+      ]
+    }
+  ]
+}

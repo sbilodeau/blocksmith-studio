@@ -183,7 +183,381 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
   ['entity/equipment/zombie_horse_saddle', [64, 64], ['saddle']],
   ['entity/equipment/wolf_body', [64, 32], ['armadillo_scute', 'armadillo_scute_overlay']],
   ['entity/equipment/wings', [64, 32], ['elytra']],
-  ['entity/equipment/pig_saddle', [64, 64], ['saddle']]
+  ['entity/equipment/pig_saddle', [64, 64], ['saddle']],
+  ['entity', [64, 64], ['wandering_trader']],
+  ['entity/wandering_trader', [64, 64], ['wandering_trader']],
+  // M11 additions (1.21.4 and 26.3 paths)
+  // zombie_villager
+  [
+    'entity/zombie_villager/profession',
+    [64, 64],
+    [
+      'armorer',
+      'butcher',
+      'cartographer',
+      'cleric',
+      'farmer',
+      'fisherman',
+      'fletcher',
+      'leatherworker',
+      'librarian',
+      'mason',
+      'nitwit',
+      'shepherd',
+      'toolsmith',
+      'weaponsmith'
+    ]
+  ],
+  [
+    'entity/zombie_villager/profession_level',
+    [64, 64],
+    ['diamond', 'emerald', 'gold', 'iron', 'stone']
+  ],
+  [
+    'entity/zombie_villager/type',
+    [64, 64],
+    ['desert', 'jungle', 'plains', 'savanna', 'snow', 'swamp', 'taiga']
+  ],
+  ['entity/zombie_villager', [64, 64], ['zombie_villager']],
+  // iron_golem
+  [
+    'entity/iron_golem',
+    [128, 128],
+    [
+      'iron_golem',
+      'iron_golem_crackiness_high',
+      'iron_golem_crackiness_low',
+      'iron_golem_crackiness_medium'
+    ]
+  ],
+  // slime
+  ['entity/slime', [64, 32], ['slime']],
+  // magma_cube
+  ['entity/slime', [64, 64], ['magmacube']],
+  // fox
+  [
+    'entity/fox',
+    [48, 32],
+    ['fox', 'fox_sleep', 'fox_snow', 'fox_snow_sleep', 'snow_fox', 'snow_fox_sleep']
+  ],
+  // bee
+  ['entity/bee', [64, 64], ['bee', 'bee_angry', 'bee_angry_nectar', 'bee_nectar']],
+  // llama
+  [
+    'entity/equipment/llama_body',
+    [128, 64],
+    [
+      'black',
+      'blue',
+      'brown',
+      'cyan',
+      'gray',
+      'green',
+      'light_blue',
+      'light_gray',
+      'lime',
+      'magenta',
+      'orange',
+      'pink',
+      'purple',
+      'red',
+      'trader_llama',
+      'white',
+      'yellow'
+    ]
+  ],
+  [
+    'entity/llama',
+    [128, 64],
+    ['brown', 'creamy', 'gray', 'llama_brown', 'llama_creamy', 'llama_gray', 'llama_white', 'white']
+  ],
+  // panda
+  [
+    'entity/panda',
+    [64, 64],
+    [
+      'aggressive_panda',
+      'brown_panda',
+      'lazy_panda',
+      'panda',
+      'panda_aggressive',
+      'panda_brown',
+      'panda_lazy',
+      'panda_playful',
+      'panda_weak',
+      'panda_worried',
+      'playful_panda',
+      'weak_panda',
+      'worried_panda'
+    ]
+  ],
+  // rabbit
+  [
+    'entity/rabbit',
+    [64, 32],
+    ['black', 'brown', 'caerbannog', 'gold', 'salt', 'toast', 'white', 'white_splotched']
+  ],
+  // piglin
+  ['entity/piglin', [64, 64], ['piglin', 'piglin_brute', 'zombified_piglin']],
+  // illager
+  ['entity/illager', [64, 64], ['evoker', 'illusioner', 'vindicator']],
+  // pillager
+  ['entity/illager', [64, 64], ['pillager']],
+  // witch
+  ['entity', [64, 128], ['witch']],
+  ['entity/witch', [64, 128], ['witch']],
+  // polar_bear
+  ['entity/bear', [128, 64], ['polarbear']],
+  // goat
+  ['entity/goat', [64, 64], ['goat']],
+  // frog
+  [
+    'entity/frog',
+    [48, 48],
+    ['cold_frog', 'frog_cold', 'frog_temperate', 'frog_warm', 'temperate_frog', 'warm_frog']
+  ],
+  // turtle
+  ['entity/turtle', [128, 64], ['big_sea_turtle', 'turtle']],
+  // dolphin
+  ['entity', [64, 64], ['dolphin']],
+  ['entity/dolphin', [64, 64], ['dolphin']],
+  // squid
+  ['entity/squid', [64, 32], ['glow_squid', 'squid']],
+  // phantom
+  ['entity', [64, 64], ['phantom', 'phantom_eyes']],
+  ['entity/phantom', [64, 64], ['phantom', 'phantom_eyes']],
+  // bat
+  ['entity', [32, 32], ['bat']],
+  ['entity/bat', [32, 32], ['bat']],
+  // blaze
+  ['entity', [64, 32], ['blaze']],
+  ['entity/blaze', [64, 32], ['blaze']],
+  // snow_golem
+  ['entity', [64, 64], ['snow_golem']],
+  ['entity/snow_golem', [64, 64], ['snow_golem']],
+  // hoglin
+  ['entity/hoglin', [128, 64], ['hoglin', 'zoglin']],
+  // strider
+  ['entity/equipment/strider_saddle', [64, 128], ['saddle']],
+  ['entity/strider', [64, 128], ['strider', 'strider_cold', 'strider_saddle']],
+  // shulker
+  [
+    'entity/shulker',
+    [64, 64],
+    [
+      'shulker',
+      'shulker_black',
+      'shulker_blue',
+      'shulker_brown',
+      'shulker_cyan',
+      'shulker_gray',
+      'shulker_green',
+      'shulker_light_blue',
+      'shulker_light_gray',
+      'shulker_lime',
+      'shulker_magenta',
+      'shulker_orange',
+      'shulker_pink',
+      'shulker_purple',
+      'shulker_red',
+      'shulker_white',
+      'shulker_yellow'
+    ]
+  ],
+  // chest
+  [
+    'entity/chest',
+    [64, 64],
+    [
+      'christmas',
+      'copper',
+      'copper_exposed',
+      'copper_oxidized',
+      'copper_weathered',
+      'ender',
+      'normal',
+      'trapped'
+    ]
+  ],
+  // double_chest_left
+  [
+    'entity/chest',
+    [64, 64],
+    [
+      'christmas_left',
+      'copper_exposed_left',
+      'copper_left',
+      'copper_oxidized_left',
+      'copper_weathered_left',
+      'normal_left',
+      'trapped_left'
+    ]
+  ],
+  // double_chest_right
+  [
+    'entity/chest',
+    [64, 64],
+    [
+      'christmas_right',
+      'copper_exposed_right',
+      'copper_oxidized_right',
+      'copper_right',
+      'copper_weathered_right',
+      'normal_right',
+      'trapped_right'
+    ]
+  ],
+  // boat
+  [
+    'entity/boat',
+    [128, 64],
+    [
+      'acacia',
+      'birch',
+      'cherry',
+      'dark_oak',
+      'jungle',
+      'mangrove',
+      'oak',
+      'pale_oak',
+      'poplar',
+      'spruce'
+    ]
+  ],
+  // chest_boat
+  [
+    'entity/chest_boat',
+    [128, 128],
+    [
+      'acacia',
+      'birch',
+      'cherry',
+      'dark_oak',
+      'jungle',
+      'mangrove',
+      'oak',
+      'pale_oak',
+      'poplar',
+      'spruce'
+    ]
+  ],
+  // shield
+  [
+    'entity/shield',
+    [64, 64],
+    [
+      'base',
+      'border',
+      'bricks',
+      'circle',
+      'creeper',
+      'cross',
+      'curly_border',
+      'diagonal_left',
+      'diagonal_right',
+      'diagonal_up_left',
+      'diagonal_up_right',
+      'flow',
+      'flower',
+      'globe',
+      'gradient',
+      'gradient_up',
+      'guster',
+      'half_horizontal',
+      'half_horizontal_bottom',
+      'half_vertical',
+      'half_vertical_right',
+      'mojang',
+      'piglin',
+      'rhombus',
+      'shield_base',
+      'shield_base_nopattern',
+      'skull',
+      'small_stripes',
+      'square_bottom_left',
+      'square_bottom_right',
+      'square_top_left',
+      'square_top_right',
+      'straight_cross',
+      'stripe_bottom',
+      'stripe_center',
+      'stripe_downleft',
+      'stripe_downright',
+      'stripe_left',
+      'stripe_middle',
+      'stripe_right',
+      'stripe_top',
+      'triangle_bottom',
+      'triangle_top',
+      'triangles_bottom',
+      'triangles_top'
+    ]
+  ],
+  ['entity', [64, 64], ['shield_base', 'shield_base_nopattern']],
+  // banner
+  [
+    'entity/banner',
+    [64, 64],
+    [
+      'banner_base',
+      'base',
+      'border',
+      'bricks',
+      'circle',
+      'creeper',
+      'cross',
+      'curly_border',
+      'diagonal_left',
+      'diagonal_right',
+      'diagonal_up_left',
+      'diagonal_up_right',
+      'flow',
+      'flower',
+      'globe',
+      'gradient',
+      'gradient_up',
+      'guster',
+      'half_horizontal',
+      'half_horizontal_bottom',
+      'half_vertical',
+      'half_vertical_right',
+      'mojang',
+      'piglin',
+      'rhombus',
+      'skull',
+      'small_stripes',
+      'square_bottom_left',
+      'square_bottom_right',
+      'square_top_left',
+      'square_top_right',
+      'straight_cross',
+      'stripe_bottom',
+      'stripe_center',
+      'stripe_downleft',
+      'stripe_downright',
+      'stripe_left',
+      'stripe_middle',
+      'stripe_right',
+      'stripe_top',
+      'triangle_bottom',
+      'triangle_top',
+      'triangles_bottom',
+      'triangles_top'
+    ]
+  ],
+  ['entity', [64, 64], ['banner_base']],
+  // silverfish
+  ['entity', [64, 32], ['silverfish']],
+  ['entity/silverfish', [64, 32], ['silverfish']],
+  // endermite
+  ['entity', [64, 32], ['endermite']],
+  ['entity/endermite', [64, 32], ['endermite']],
+  // parrot
+  [
+    'entity/parrot',
+    [32, 32],
+    ['parrot_blue', 'parrot_green', 'parrot_grey', 'parrot_red_blue', 'parrot_yellow_blue']
+  ]
 ]
 
 const tex = (key: string): string => `assets/minecraft/textures/${key}`
@@ -197,14 +571,15 @@ const KNOWN_ENTITY_TEXTURES: ReadonlyMap<string, [number, number]> = new Map(
 
 /** Vanilla entity textures that have no built-in definition yet (they must fall back to the flat view). */
 const UNCOVERED_ENTITY_TEXTURES: readonly string[] = [
-  tex('entity/piglin/piglin.png'),
-  tex('entity/zombie_villager/zombie_villager.png'),
   tex('entity/creeper/creeper_armor.png'),
-  tex('entity/llama/creamy.png'),
-  tex('entity/equipment/llama_body/blue.png'),
+  tex('entity/ghast/ghast.png'),
+  // 26.x rabbits use a new 64 x 64 layout.
+  tex('entity/rabbit/rabbit_brown.png'),
   // Baby mobs have their own layouts since 26.1.
   tex('entity/wolf/wolf_baby.png'),
   tex('entity/cow/cow_temperate_baby.png'),
+  tex('entity/villager/baby/plains.png'),
+  tex('entity/zombie_villager/baby/plains.png'),
   tex('block/stone.png')
 ]
 
@@ -377,7 +752,43 @@ const EXPECTED_HEIGHTS: Record<string, number> = {
   spider: 13,
   villager: 34,
   wolf: 15.5,
-  zombie: 32
+  zombie: 32,
+  bat: 13,
+  bee: 9,
+  blaze: 23,
+  dolphin: 13.722,
+  fox: 11.5,
+  frog: 8.01,
+  goat: 26,
+  hoglin: 31,
+  illager: 34,
+  iron_golem: 43,
+  llama: 36,
+  magma_cube: 8,
+  panda: 20.5,
+  phantom: 5.04,
+  piglin: 32,
+  pillager: 34,
+  polar_bear: 19,
+  rabbit: 17,
+  shulker: 16,
+  slime: 8,
+  snow_golem: 28,
+  squid: 33,
+  strider: 29,
+  turtle: 9,
+  witch: 43.394,
+  zombie_villager: 34,
+  chest: 14,
+  double_chest_left: 14,
+  double_chest_right: 14,
+  boat: 14.138,
+  chest_boat: 15,
+  shield: 22,
+  banner: 44,
+  silverfish: 8,
+  endermite: 4,
+  parrot: 14.816
 }
 
 describe('entity model files', () => {
@@ -465,13 +876,32 @@ const overlaps = (a: UvRect, b: UvRect): boolean =>
  * the four legs of a quadruped, cow horns, spider legs. Any other overlap between face rectangles is an error,
  * unless listed here as "<definition id>:<box uv>:<box uv>".
  */
-const ALLOWED_UV_OVERLAPS = new Set<string>([])
+const ALLOWED_UV_OVERLAPS = new Set<string>([
+  // Vanilla packs the two 1 x 2 x 3 antennae so that their layouts overlap by two rows.
+  'bee:2,0:2,3'
+])
 
 describe('entity box UVs', () => {
-  it('keeps every box UV layout inside the texture', () => {
+  it('keeps every used face of a box UV layout inside the texture', () => {
+    // Faces only: a flat plane (the frog's belly, 7 x 0 x 9) has empty side faces, and its layout may run past
+    // the texture edge as in vanilla.
     for (const def of definitions) {
       const [tw, th] = def.textureSize
       for (const { part, box } of placedBoxes(def)) {
+        const where = `${def.id}/${part.name} uv ${box.uv.join(',')}`
+        for (const r of faceRects(box)) {
+          expect(r.u1 >= 0 && r.v1 >= 0, where).toBe(true)
+          expect(r.u2 <= tw && r.v2 <= th, where).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('keeps solid box layouts inside the texture', () => {
+    for (const def of definitions) {
+      const [tw, th] = def.textureSize
+      for (const { part, box } of placedBoxes(def)) {
+        if (box.size.some((n) => n === 0)) continue
         const e = boxUvExtent(box)
         const where = `${def.id}/${part.name} uv ${box.uv.join(',')}`
         expect(e.u1 >= 0 && e.v1 >= 0, where).toBe(true)
@@ -507,6 +937,30 @@ describe('entity box UVs', () => {
   })
 })
 
+/** Parts that are off-center in vanilla too, as "<definition id>/<part name>". */
+const ASYMMETRIC_PARTS = new Set<string>([
+  'slime/mouth',
+  // The witch's hat leans to one side; the mole sits on one side of the nose.
+  'witch/hat2',
+  'witch/hat3',
+  'witch/hat4',
+  'witch/mole',
+  // Vanilla sets the strider's left bristles 1 px higher than the right ones.
+  'strider/right_bottom_bristle',
+  'strider/right_middle_bristle',
+  'strider/right_top_bristle',
+  'strider/left_top_bristle',
+  'strider/left_middle_bristle',
+  'strider/left_bottom_bristle',
+  // Each half of a double chest is one side of a two-block chest.
+  'double_chest_left/bottom',
+  'double_chest_left/lid',
+  'double_chest_left/lock',
+  'double_chest_right/bottom',
+  'double_chest_right/lid',
+  'double_chest_right/lock'
+])
+
 describe('entity rest-pose geometry', () => {
   it('stands on y = 0 (spider legs end within a pixel of the ground)', () => {
     for (const def of definitions) {
@@ -517,6 +971,10 @@ describe('entity rest-pose geometry', () => {
       } else if (def.id === 'elytra') {
         // Worn on the back: hangs from the shoulders (y = 24), tilted, so it ends above the ground.
         expect(min[1], def.id).toBeGreaterThan(0)
+      } else if (def.id === 'rabbit') {
+        // The front paws are tilted 10 degrees and dip 0.07 px into the ground, as in vanilla.
+        expect(min[1], def.id).toBeGreaterThan(-0.1)
+        expect(min[1], def.id).toBeLessThanOrEqual(0)
       } else if (def.id === 'spider') {
         expect(min[1], def.id).toBeGreaterThanOrEqual(0)
         expect(min[1], def.id).toBeLessThan(1)
@@ -540,6 +998,7 @@ describe('entity rest-pose geometry', () => {
       const placed = placedBoxes(def)
       const all = new Set(placed.map((p) => key(p.bounds.min, p.bounds.max)))
       for (const { part, bounds } of placed) {
+        if (ASYMMETRIC_PARTS.has(`${def.id}/${part.name}`)) continue
         const mirrored = key(
           [-bounds.max[0], bounds.min[1], bounds.min[2]],
           [-bounds.min[0], bounds.max[1], bounds.max[2]]
@@ -550,7 +1009,25 @@ describe('entity rest-pose geometry', () => {
   })
 
   it('faces +z: the head is in front of the body for animals', () => {
-    for (const id of ['cat', 'chicken', 'cow', 'pig', 'sheep', 'sheep_wool', 'spider', 'wolf']) {
+    for (const id of [
+      'cat',
+      'chicken',
+      'cow',
+      'pig',
+      'sheep',
+      'sheep_wool',
+      'spider',
+      'wolf',
+      'dolphin',
+      'fox',
+      'goat',
+      'hoglin',
+      'llama',
+      'panda',
+      'polar_bear',
+      'rabbit',
+      'turtle'
+    ]) {
       const placed = placedBoxes(byId(id))
       const head = unionBounds(placed.filter((p) => p.part.role === 'head'))
       const body = unionBounds(placed.filter((p) => p.part.role === 'body'))
@@ -638,10 +1115,34 @@ describe('entity rest-pose geometry', () => {
     expect(part(byId('skeleton'), 'right_arm').boxes[0].size).toEqual([2, 12, 2])
   })
 
+  it('stands chests upright with the lock at the front', () => {
+    // Block entity models are y up in vanilla: a root part turned 180 degrees around x puts them on their feet.
+    for (const id of ['chest', 'double_chest_left', 'double_chest_right']) {
+      const placed = placedBoxes(byId(id))
+      const named = (name: string): Aabb => unionBounds(placed.filter((p) => p.part.name === name))
+      expect(named('bottom').min[1], id).toBe(0)
+      expect(named('lid').min[1], id).toBe(named('bottom').max[1] - 1)
+      expect(named('lock').max[2], id).toBeGreaterThan(named('lid').max[2])
+    }
+  })
+
   it('lays the animal bodies down with the back texture on top and the belly below', () => {
     // Bodies are authored standing (as their texture layout requires) and rotated 90 degrees around x.
     // With that rotation the layout's "back" face ends up on top, "front" on the belly, "top" at the neck.
-    for (const id of ['pig', 'cow', 'sheep', 'sheep_wool', 'wolf', 'cat', 'chicken']) {
+    for (const id of [
+      'pig',
+      'cow',
+      'sheep',
+      'sheep_wool',
+      'wolf',
+      'cat',
+      'chicken',
+      'fox',
+      'llama',
+      'panda',
+      'polar_bear',
+      'turtle'
+    ]) {
       const body = byId(id).parts.find((p) => p.name === 'body')
       expect(body?.rotation, id).toEqual([90, 0, 0])
       const r = rotationMatrix([90, 0, 0])

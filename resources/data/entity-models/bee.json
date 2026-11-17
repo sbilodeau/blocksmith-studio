@@ -1,0 +1,65 @@
+{
+  "id": "bee",
+  "textureSize": [64, 64],
+  "animation": "none",
+  "textures": ["assets/minecraft/textures/entity/bee/bee{,_angry,_nectar,_angry_nectar}.png"],
+  "parts": [
+    {
+      "name": "bone",
+      "pivot": [0, 5, 0],
+      "boxes": [],
+      "children": [
+        {
+          "name": "body",
+          "role": "body",
+          "pivot": [0, 5, 0],
+          "boxes": [
+            { "origin": [-3.5, 2, -5], "size": [7, 7, 10], "uv": [0, 0] },
+            { "origin": [0, 5, -7], "size": [0, 1, 2], "uv": [26, 7] }
+          ],
+          "children": [
+            {
+              "name": "left_antenna",
+              "pivot": [0, 7, 5],
+              "boxes": [{ "origin": [1.5, 7, 5], "size": [1, 2, 3], "uv": [2, 0] }]
+            },
+            {
+              "name": "right_antenna",
+              "pivot": [0, 7, 5],
+              "boxes": [{ "origin": [-2.5, 7, 5], "size": [1, 2, 3], "uv": [2, 3] }]
+            }
+          ]
+        },
+        {
+          "name": "right_wing",
+          "role": "wing",
+          "pivot": [-1.5, 9, 3],
+          "rotation": [0, 15, 0],
+          "boxes": [{ "origin": [-10.5, 9, -3], "size": [9, 0, 6], "uv": [0, 18] }]
+        },
+        {
+          "name": "left_wing",
+          "role": "wing",
+          "pivot": [1.5, 9, 3],
+          "rotation": [0, -15, 0],
+          "boxes": [{ "origin": [1.5, 9, -3], "size": [9, 0, 6], "uv": [0, 18], "mirror": true }]
+        },
+        {
+          "name": "front_legs",
+          "pivot": [1.5, 2, 2],
+          "boxes": [{ "origin": [-3.5, 0, 2], "size": [7, 2, 0], "uv": [26, 1] }]
+        },
+        {
+          "name": "middle_legs",
+          "pivot": [1.5, 2, 0],
+          "boxes": [{ "origin": [-3.5, 0, 0], "size": [7, 2, 0], "uv": [26, 3] }]
+        },
+        {
+          "name": "back_legs",
+          "pivot": [1.5, 2, -2],
+          "boxes": [{ "origin": [-3.5, 0, -2], "size": [7, 2, 0], "uv": [26, 5] }]
+        }
+      ]
+    }
+  ]
+}

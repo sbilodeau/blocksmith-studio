@@ -326,6 +326,10 @@
       "layer": "horse#saddle"
     },
     {
+      "textures": ["assets/minecraft/textures/entity/equipment/humanoid_baby/*.png"],
+      "layer": "zombie_baby#chestplate"
+    },
+    {
       "textures": ["assets/minecraft/textures/entity/equipment/llama_body/*_baby.png"],
       "layer": "llama_baby#decor"
     },

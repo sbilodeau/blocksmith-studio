@@ -1,0 +1,59 @@
+{
+  "id": "dolphin",
+  "textureSize": [64, 64],
+  "animation": "none",
+  "textures": ["assets/minecraft/textures/entity/{dolphin,dolphin/dolphin}.png"],
+  "parts": [
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 2.464, 5],
+      "boxes": [{ "origin": [-4, 2.464, -8], "size": [8, 7, 13], "uv": [22, 0] }],
+      "children": [
+        {
+          "name": "back_fin",
+          "pivot": [0, 2.464, 5],
+          "rotation": [60, 0, 0],
+          "boxes": [{ "origin": [-0.5, -1.536, -8], "size": [1, 4, 5], "uv": [51, 0] }]
+        },
+        {
+          "name": "left_fin",
+          "pivot": [2, 4.464, 1],
+          "rotation": [60, 0, -120],
+          "boxes": [
+            { "origin": [1.5, 4.464, -6], "size": [1, 4, 7], "uv": [48, 20], "mirror": true }
+          ]
+        },
+        {
+          "name": "right_fin",
+          "pivot": [-2, 4.464, 1],
+          "rotation": [60, 0, 120],
+          "boxes": [{ "origin": [-2.5, 4.464, -6], "size": [1, 4, 7], "uv": [48, 20] }]
+        },
+        {
+          "name": "tail",
+          "role": "tail",
+          "pivot": [0, 4.964, -6],
+          "rotation": [-6, 0, 0],
+          "boxes": [{ "origin": [-2, 2.464, -17], "size": [4, 5, 11], "uv": [0, 19] }],
+          "children": [
+            {
+              "name": "tail_fin",
+              "pivot": [0, 4.964, -15],
+              "boxes": [{ "origin": [-5, 4.464, -21], "size": [10, 1, 6], "uv": [19, 20] }]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "role": "head",
+          "pivot": [0, 6.464, 8],
+          "boxes": [
+            { "origin": [-4, 2.464, 5], "size": [8, 7, 6], "uv": [0, 0] },
+            { "origin": [-1, 2.464, 11], "size": [2, 2, 4], "uv": [0, 13] }
+          ]
+        }
+      ]
+    }
+  ]
+}

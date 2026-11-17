@@ -39,10 +39,18 @@ How it runs:
   are carried over.
 - **Nothing is redistributed**: the geometry stays in the user's `userData`, like the extracted textures.
 
-Limits: armor model sets depend on a map keyed by `EquipmentSlot` that is built outside the model code, so their
-"keep only these parts" step is not applied (the table does not use armor layers; humanoid armor keeps its built-in
-definition). Animations (`setupAnim`) are not interpreted: models show their rest pose, with the preview's own walk
-animation when the part names match.
+Limits:
+
+- Armor model sets depend on a map keyed by `EquipmentSlot` that is built outside the model code, so their "keep only
+  these parts" step is not applied: every armor layer keeps all its parts. Adult humanoid armor (two textures,
+  `humanoid` and `humanoid_leggings`) keeps its built-in definitions. Baby humanoid armor uses one texture for every
+  slot (`entity/equipment/humanoid_baby/*.png`), so the table maps it to `zombie_baby#chestplate`, which then shows the
+  whole texture.
+- Animations (`setupAnim`) are not interpreted: models show their rest pose, with the preview's own walk animation
+  when the part names match.
+- Block entity models that vanilla draws y up without the entity flip (chests, checked on `chest#main`) go through the
+  same conversion, so their jar models show upside down and back to front. The built-in chest definitions are upright
+  (see [Conventions and decisions](#conventions-and-decisions)).
 
 ### The texture -> layer table
 
@@ -218,8 +226,38 @@ spider's leg angles, the cat's tail, the zombie's raised arms).
   hang. The armor stand has `animation: "none"` (it never walks).
 - **Small vanilla details kept**: legs at `x = +-1.9` (they overlap by 0.2 px so their inner faces never z-fight), the
   enderman head 1 px into the body, the enderman's inner jaw (`uv(0, 16)`, inflate -0.5, hidden at rest).
+- **Off-center vanilla models** are shifted so they are symmetric around `x = 0` (tested): the goat by -0.5 px, the
+  phantom by +0.5 px.
+- **Floating and swimming mobs** are lifted so their lowest point is on `y = 0`: squid (tentacles hang 9 px below the
+  vanilla ground line), phantom, blaze, dolphin, boats. The frog (feet 0.01 px under) and the parrot (legs leaning
+  1.7 degrees) are lifted by those few hundredths. The rabbit's tilted front paws dip 0.07 px into the ground, as in
+  vanilla (tested with a tolerance).
+- **Rest poses from the animation code**: zombie villager arms raised like the zombie; vindicator, evoker,
+  illusioner and witch arms crossed (`-42.972` degrees, the villager pose); pillager arms hanging; piglin ears at 30
+  degrees; bee wings folded as when it stands on the ground; snow golem arms on `z = 0` (the animation moves them there
+  from the layer's `z = +-1`).
+- **Blaze rods**: their positions come from the animation (a different angle per rod every tick). The definition puts
+  three rings of four rods (radius 9, 7 and 5 px) evenly around the head, at each ring's mean height, centered on their
+  pivots so the model stays symmetric.
+- **Block entities** (chests): vanilla draws them y up, without the entity flip. Their numbers are converted like
+  entity numbers (x and z first moved by -8 to center the block) and wrapped in a root part turned 180 degrees around x,
+  which stands the chest upright with its lock at the front (+z) and keeps every face on its texture region (tested).
+  Shields and standing banners are drawn with the entity flip and need no root part.
+- **Boats** are long along x in vanilla: a root part turned -90 degrees around y points the bow to +z. Their paddles
+  keep the layer's pose (out to the sides, tilted 11.25 degrees).
+- **Separate definitions** for the double chest halves (`double_chest_left`, `double_chest_right`, one-sided by
+  nature), the pillager (separate arms, no crossed-arms art) and the 1.21.x rabbit (64 x 32; 26.x rabbits use a new
+  64 x 64 layout and stay flat).
+- **Test allowlists** in `tests/unit/entity-models.test.ts`: `ASYMMETRIC_PARTS` (the slime's mouth, the witch's hat and
+  mole, the strider's bristles, the double chest halves) and `ALLOWED_UV_OVERLAPS` (the bee's antennae share two rows
+  of pixels in vanilla). Flat planes (`size` 0 on one axis) only need their used faces inside the texture: the frog's
+  belly plane layout runs past the 48 px edge, as in vanilla.
+- **Baby textures stay flat**: besides `*_baby.png`, the `villager/baby/` and `zombie_villager/baby/` folders (26.x baby
+  type textures) are left out of the villager and zombie villager globs.
 - **Not modeled**: armor stand arms/base variants, the bogged mushrooms, saddles and collars as separate geometry,
-  ears and cloaks of player skins.
+  ears and cloaks of player skins, llama and donkey chests, the turtle's egg belly, the frog's croaking sac, the
+  vindicator / evoker / illusioner attack arms (`uv(40, 46)`, shown when they attack or cast), the witch's hat rim
+  (transparent in the texture), the snow golem's pumpkin (a block model).
 
 ## Adding an entity
 
@@ -239,8 +277,10 @@ each definition matches, the ones with another size than its layout, and the ent
 
 The tests check: schema validity; unique ids, part names and roles; the roles needed by the animation; that every glob
 matches a known vanilla texture and every known texture matches exactly one definition with the right texture size;
-that every UV layout is inside the texture and does not overlap another layout; that the model stands on `y = 0`, has
-its expected height and is symmetric around `x = 0`; for bipeds, head on the body, legs under it and arms beside it.
+that every UV layout (every used face, for flat planes) is inside the texture and does not overlap another layout;
+that the model stands on `y = 0`, has its expected height and is symmetric around `x = 0`; for bipeds, head on the
+body, legs under it and arms beside it; that chests stand upright with the lock at the front. Vanilla quirks are listed
+in the test's allowlists (see [Conventions and decisions](#conventions-and-decisions)).
 
 ## Definitions
 
@@ -567,6 +607,67 @@ Checked with `scripts/entity-uv-overlay.mjs` against the 26.3 textures; position
 Also extended: `chicken` (`chicken_{cold,temperate,warm}.png`), `sheep_wool` (`sheep_wool.png`,
 `sheep_wool_undercoat.png`), `wolf` (wolf armor `equipment/wolf_body/*.png`).
 
+### M11 additions
+
+Written from the vanilla box numbers in vanilla space and converted with the formulas above. Each one was checked
+against the model the 26.3 jar registers (except the 1.21.x rabbit, whose layout 26.x replaced) and drawn over the
+1.21.4 and 26.3 textures (`scripts/entity-uv-overlay.mjs`).
+Paths cover both the 1.21.4 and the 26.x names; positions and pivots are in the JSON files.
+
+| Definition           | Texture   | Animation | Textures                                                                                            | Notes                                                                  |
+| -------------------- | --------- | --------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `zombie_villager`    | 64 x 64   | biped     | `zombie_villager/zombie_villager.png`, `zombie_villager/{profession,profession_level,type}/*.png`   | villager head, nose, hat and robe (inflate 0.05), zombie arms          |
+| `iron_golem`         | 128 x 128 | biped     | `iron_golem/*.png` (with the crackiness overlays)                                                   | body 18x12x11 `uv(0,40)`, arms 4x30x6, legs 6x16x5                     |
+| `piglin`             | 64 x 64   | biped     | `piglin/{piglin,piglin_brute,zombified_piglin}.png`                                                 | player body with jacket, sleeves and pants, head 10x8x8, ears          |
+| `illager`            | 64 x 64   | biped     | `illager/{evoker,illusioner,vindicator}.png`                                                        | hat 8x12x8 inflate 0.45, crossed arms                                  |
+| `pillager`           | 64 x 64   | biped     | `illager/pillager.png`                                                                              | illager with separate arms `uv(40,46)`                                 |
+| `witch`              | 64 x 128  | biped     | `witch.png`, `witch/witch.png`                                                                      | villager body, four-step hat (`uv(0,64)` to `uv(0,95)`), mole          |
+| `villager` (shared)  | 64 x 64   | biped     | `wandering_trader.png`, `wandering_trader/wandering_trader.png`                                     | the wandering trader uses the villager geometry                        |
+| `fox`                | 48 x 32   | quadruped | `fox/*.png` (sleeping and snow textures too)                                                        | body 6x11x6 lying, tail on the body                                    |
+| `bee`                | 64 x 64   | none      | `bee/bee{,_angry,_nectar,_angry_nectar}.png`                                                        | body 7x7x10, antennae, stinger plane, wings and leg planes             |
+| `llama`              | 128 x 64  | quadruped | `llama/{,llama_}{brown,creamy,gray,white}.png`, `equipment/llama_body/*.png` (decor, trader)        | head with neck 8x18x6, body 12x18x10 lying, legs 4x14x4                |
+| `panda`              | 64 x 64   | quadruped | `panda/*.png`                                                                                       | body 19x26x13 lying, legs 6x9x6                                        |
+| `rabbit`             | 64 x 32   | none      | `rabbit/{black,brown,caerbannog,gold,salt,toast,white,white_splotched}.png` (1.21.x)                | tilted body, haunches and front legs, ears turned 15 degrees           |
+| `polar_bear`         | 128 x 64  | quadruped | `bear/polarbear.png`                                                                                | body 14x14x11 and 12x12x10 lying                                       |
+| `goat`               | 64 x 64   | quadruped | `goat/goat.png`                                                                                     | horns, goatee plane, nose tilted 55 degrees, shifted -0.5 px           |
+| `frog`               | 48 x 48   | none      | `frog/*.png`                                                                                        | body, head, eyes, tongue, arms with hand planes, legs with feet planes |
+| `turtle`             | 128 x 64  | none      | `turtle/{big_sea_turtle,turtle}.png`                                                                | shell 19x20x6 and belly 11x18x3 lying, flipper planes                  |
+| `dolphin`            | 64 x 64   | none      | `dolphin.png`, `dolphin/dolphin.png`                                                                | body 8x7x13, fins, tail with tail fin, head with nose                  |
+| `squid`              | 64 x 32   | none      | `squid/{squid,glow_squid}.png`                                                                      | body 12x16x12, eight tentacles 2x18x2 on a circle                      |
+| `slime`              | 64 x 32   | none      | `slime/slime.png`                                                                                   | inner cube, eyes and mouth, and the outer cube 8x8x8 in one model      |
+| `magma_cube`         | 64 x 64   | none      | `slime/magmacube.png`                                                                               | eight 8x1x8 slices and the inner core                                  |
+| `phantom`            | 64 x 64   | none      | `phantom{,_eyes}.png`, `phantom/phantom{,_eyes}.png`                                                | body, tail, two-part wings, head; shifted +0.5 px                      |
+| `bat`                | 32 x 32   | none      | `bat.png`, `bat/bat.png`                                                                            | 1.20.3+ bat: wings and ears as planes                                  |
+| `blaze`              | 64 x 32   | none      | `blaze.png`, `blaze/blaze.png`                                                                      | head and twelve rods (see above)                                       |
+| `snow_golem`         | 64 x 64   | none      | `snow_golem.png`, `snow_golem/snow_golem.png`                                                       | every box shrunk by 0.5 as in vanilla                                  |
+| `hoglin`             | 128 x 64  | quadruped | `hoglin/{hoglin,zoglin}.png`                                                                        | head tilted 50 degrees with ears and horns, mane plane                 |
+| `strider`            | 64 x 128  | biped     | `strider/{strider,strider_cold,strider_saddle}.png`, `equipment/strider_saddle/*.png`               | body 16x14x16, six bristle planes                                      |
+| `shulker`            | 64 x 64   | none      | `shulker/shulker{,_*}.png` (not `spark.png`)                                                        | lid, base, head                                                        |
+| `silverfish`         | 64 x 32   | none      | `silverfish.png`, `silverfish/silverfish.png`                                                       | seven segments and three fur layers                                    |
+| `endermite`          | 64 x 32   | none      | `endermite.png`, `endermite/endermite.png`                                                          | four segments                                                          |
+| `parrot`             | 32 x 32   | none      | `parrot/*.png`                                                                                      | standing pose                                                          |
+| `chest`              | 64 x 64   | none      | `chest/{normal,trapped,christmas,ender,copper,copper_exposed,copper_weathered,copper_oxidized}.png` | bottom 14x10x14, lid 14x5x14, lock (block entity, see above)           |
+| `double_chest_left`  | 64 x 64   | none      | `chest/*_left.png`                                                                                  | 15 px wide half, lock on its inner edge                                |
+| `double_chest_right` | 64 x 64   | none      | `chest/*_right.png`                                                                                 | 15 px wide half, lock on its inner edge                                |
+| `boat`               | 128 x 64  | none      | `boat/*.png` except `bamboo.png` (the raft has its own model)                                       | bottom, four sides, paddles                                            |
+| `chest_boat`         | 128 x 128 | none      | `chest_boat/*.png` except `bamboo.png`                                                              | boat with chest bottom, lid and lock                                   |
+| `shield`             | 64 x 64   | none      | `shield_base{,_nopattern}.png`, `shield/*.png` (patterns)                                           | plate 12x22x1, handle 2x6x6                                            |
+| `banner`             | 64 x 64   | none      | `banner_base.png`, `banner/*.png` (patterns)                                                        | flag 20x40x1, pole 2x42x2, bar 20x2x2 (standing banner)                |
+
+Not done yet, and why:
+
+| Entity                       | Reason                                                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| ghast                        | Tentacle lengths come from a seeded random generator in the model code; 26.x also doubled the texture size |
+| axolotl                      | Its rest pose needs the animation: the leg planes hang 2 px below the body                                 |
+| rabbit (26.x)                | New 64 x 64 layout; covered by the jar model only                                                          |
+| cod, salmon                  | The cod's top fin uses a negative texture offset, which the format's `uv` (>= 0) cannot express            |
+| guardian, elder guardian     | Spike positions come from tables in the model code                                                         |
+| vex, allay                   | Wing and arm poses come from the animation                                                                 |
+| pufferfish, tropical fish    | Several models in one texture (pufferfish sizes) or pattern layers; not attempted yet                      |
+| decorated pot, bell, conduit | Per-face textures and block entity parts; not attempted yet                                                |
+| other 26.x-only mobs         | Covered by the jar models (copper golem, creaking, happy ghast, nautilus, sulfur cube...)                  |
+
 ## Visual checks
 
 Numbers are tested; orientation still needs eyes. Check first:
@@ -582,3 +683,5 @@ Numbers are tested; orientation still needs eyes. Check first:
    cut out.
 6. **Villager**: arms crossed in front of the chest (tilted forward about 43 degrees), nose on the face, hat rim (only
    painted on profession textures) flat around the head at forehead height.
+7. **Block entities and boats**: the chest's lid on top and its lock at the front; the boat's bow (shorter end
+   piece) at +z with the paddles out to the sides.
