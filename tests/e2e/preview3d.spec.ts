@@ -69,6 +69,14 @@ test('block textures preview on their model and update live while painting', asy
   await expect.poll(() => snapshot(page)).not.toBe(before)
 })
 
+test('block entity textures use the built-in models (the chest)', async () => {
+  launched = await setup()
+  const { page } = launched
+  await openTexture(page, 'normal')
+  await page.keyboard.press('3')
+  await expect(page.getByTestId('preview3d-kind')).toHaveText('Entity')
+})
+
 test('entity textures preview on their entity model', async () => {
   launched = await setup()
   const { page } = launched
@@ -92,7 +100,7 @@ test('item textures preview as an extruded sprite', async () => {
 test('entity textures without a model are shown flat, facing the camera, with a notice', async () => {
   launched = await setup()
   const { page } = launched
-  await openTexture(page, 'normal')
+  await openTexture(page, 'experience_orb')
   await page.keyboard.press('3')
   await expect(page.getByTestId('preview3d-kind')).toHaveText('Flat')
   await expect(page.getByTestId('preview3d-no-model')).toBeVisible()
