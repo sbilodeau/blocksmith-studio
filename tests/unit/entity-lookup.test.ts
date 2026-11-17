@@ -73,6 +73,26 @@ describe('findEntityDefinition', () => {
     expect(idOf('entity/iron_golem/iron_golem_crackiness_low.png')).toBe('iron_golem')
   })
 
+  it('resolves animals under their 1.21.4 and 26.x names', () => {
+    expect(idOf('entity/fox/snow_fox.png')).toBe('fox')
+    expect(idOf('entity/fox/fox_snow_sleep.png')).toBe('fox')
+    expect(idOf('entity/bee/bee_angry_nectar.png')).toBe('bee')
+    expect(idOf('entity/llama/creamy.png')).toBe('llama')
+    expect(idOf('entity/llama/llama_creamy.png')).toBe('llama')
+    expect(idOf('entity/equipment/llama_body/trader_llama.png')).toBe('llama')
+    expect(idOf('entity/panda/aggressive_panda.png')).toBe('panda')
+    expect(idOf('entity/panda/panda_aggressive.png')).toBe('panda')
+    expect(idOf('entity/rabbit/toast.png')).toBe('rabbit')
+    expect(idOf('entity/bear/polarbear.png')).toBe('polar_bear')
+    expect(idOf('entity/goat/goat.png')).toBe('goat')
+    expect(idOf('entity/frog/temperate_frog.png')).toBe('frog')
+    expect(idOf('entity/frog/frog_warm.png')).toBe('frog')
+    expect(idOf('entity/turtle/big_sea_turtle.png')).toBe('turtle')
+    expect(idOf('entity/turtle/turtle.png')).toBe('turtle')
+    expect(idOf('entity/dolphin.png')).toBe('dolphin')
+    expect(idOf('entity/squid/glow_squid.png')).toBe('squid')
+  })
+
   it('leaves look-alike textures of other layouts flat', () => {
     expect(idOf('entity/shulker/spark.png')).toBeUndefined()
     expect(idOf('entity/llama/spit.png')).toBeUndefined()

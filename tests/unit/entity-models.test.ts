@@ -230,6 +230,69 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
       'iron_golem_crackiness_medium'
     ]
   ],
+  // fox
+  [
+    'entity/fox',
+    [48, 32],
+    ['fox', 'fox_sleep', 'fox_snow', 'fox_snow_sleep', 'snow_fox', 'snow_fox_sleep']
+  ],
+  // bee
+  ['entity/bee', [64, 64], ['bee', 'bee_angry', 'bee_angry_nectar', 'bee_nectar']],
+  // llama
+  [
+    'entity/equipment/llama_body',
+    [128, 64],
+    [
+      'black',
+      'blue',
+      'brown',
+      'cyan',
+      'gray',
+      'green',
+      'light_blue',
+      'light_gray',
+      'lime',
+      'magenta',
+      'orange',
+      'pink',
+      'purple',
+      'red',
+      'trader_llama',
+      'white',
+      'yellow'
+    ]
+  ],
+  [
+    'entity/llama',
+    [128, 64],
+    ['brown', 'creamy', 'gray', 'llama_brown', 'llama_creamy', 'llama_gray', 'llama_white', 'white']
+  ],
+  // panda
+  [
+    'entity/panda',
+    [64, 64],
+    [
+      'aggressive_panda',
+      'brown_panda',
+      'lazy_panda',
+      'panda',
+      'panda_aggressive',
+      'panda_brown',
+      'panda_lazy',
+      'panda_playful',
+      'panda_weak',
+      'panda_worried',
+      'playful_panda',
+      'weak_panda',
+      'worried_panda'
+    ]
+  ],
+  // rabbit
+  [
+    'entity/rabbit',
+    [64, 32],
+    ['black', 'brown', 'caerbannog', 'gold', 'salt', 'toast', 'white', 'white_splotched']
+  ],
   // piglin
   ['entity/piglin', [64, 64], ['piglin', 'piglin_brute', 'zombified_piglin']],
   // illager
@@ -238,7 +301,24 @@ const GROUPS: [folder: string, size: [number, number], names: string[]][] = [
   ['entity/illager', [64, 64], ['pillager']],
   // witch
   ['entity', [64, 128], ['witch']],
-  ['entity/witch', [64, 128], ['witch']]
+  ['entity/witch', [64, 128], ['witch']],
+  // polar_bear
+  ['entity/bear', [128, 64], ['polarbear']],
+  // goat
+  ['entity/goat', [64, 64], ['goat']],
+  // frog
+  [
+    'entity/frog',
+    [48, 48],
+    ['cold_frog', 'frog_cold', 'frog_temperate', 'frog_warm', 'temperate_frog', 'warm_frog']
+  ],
+  // turtle
+  ['entity/turtle', [128, 64], ['big_sea_turtle', 'turtle']],
+  // dolphin
+  ['entity', [64, 64], ['dolphin']],
+  ['entity/dolphin', [64, 64], ['dolphin']],
+  // squid
+  ['entity/squid', [64, 32], ['glow_squid', 'squid']]
 ]
 
 const tex = (key: string): string => `assets/minecraft/textures/${key}`
@@ -434,10 +514,21 @@ const EXPECTED_HEIGHTS: Record<string, number> = {
   villager: 34,
   wolf: 15.5,
   zombie: 32,
+  bee: 9,
+  dolphin: 13.722,
+  fox: 11.5,
+  frog: 8.01,
+  goat: 26,
   illager: 34,
   iron_golem: 43,
+  llama: 36,
+  panda: 20.5,
   piglin: 32,
   pillager: 34,
+  polar_bear: 19,
+  rabbit: 17,
+  squid: 33,
+  turtle: 9,
   witch: 43.394,
   zombie_villager: 34
 }
@@ -653,7 +744,24 @@ describe('entity rest-pose geometry', () => {
   })
 
   it('faces +z: the head is in front of the body for animals', () => {
-    for (const id of ['cat', 'chicken', 'cow', 'pig', 'sheep', 'sheep_wool', 'spider', 'wolf']) {
+    for (const id of [
+      'cat',
+      'chicken',
+      'cow',
+      'pig',
+      'sheep',
+      'sheep_wool',
+      'spider',
+      'wolf',
+      'dolphin',
+      'fox',
+      'goat',
+      'llama',
+      'panda',
+      'polar_bear',
+      'rabbit',
+      'turtle'
+    ]) {
       const placed = placedBoxes(byId(id))
       const head = unionBounds(placed.filter((p) => p.part.role === 'head'))
       const body = unionBounds(placed.filter((p) => p.part.role === 'body'))
@@ -744,7 +852,20 @@ describe('entity rest-pose geometry', () => {
   it('lays the animal bodies down with the back texture on top and the belly below', () => {
     // Bodies are authored standing (as their texture layout requires) and rotated 90 degrees around x.
     // With that rotation the layout's "back" face ends up on top, "front" on the belly, "top" at the neck.
-    for (const id of ['pig', 'cow', 'sheep', 'sheep_wool', 'wolf', 'cat', 'chicken']) {
+    for (const id of [
+      'pig',
+      'cow',
+      'sheep',
+      'sheep_wool',
+      'wolf',
+      'cat',
+      'chicken',
+      'fox',
+      'llama',
+      'panda',
+      'polar_bear',
+      'turtle'
+    ]) {
       const body = byId(id).parts.find((p) => p.name === 'body')
       expect(body?.rotation, id).toEqual([90, 0, 0])
       const r = rotationMatrix([90, 0, 0])

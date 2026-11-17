@@ -28,10 +28,21 @@ import donkey from '../../../resources/data/entity-models/donkey.json'
 import cowVariants from '../../../resources/data/entity-models/cow_variants.json'
 import zombieVillager from '../../../resources/data/entity-models/zombie_villager.json'
 import ironGolem from '../../../resources/data/entity-models/iron_golem.json'
+import fox from '../../../resources/data/entity-models/fox.json'
+import bee from '../../../resources/data/entity-models/bee.json'
+import llama from '../../../resources/data/entity-models/llama.json'
+import panda from '../../../resources/data/entity-models/panda.json'
+import rabbit from '../../../resources/data/entity-models/rabbit.json'
 import piglin from '../../../resources/data/entity-models/piglin.json'
 import illager from '../../../resources/data/entity-models/illager.json'
 import pillager from '../../../resources/data/entity-models/pillager.json'
 import witch from '../../../resources/data/entity-models/witch.json'
+import polarBear from '../../../resources/data/entity-models/polar_bear.json'
+import goat from '../../../resources/data/entity-models/goat.json'
+import frog from '../../../resources/data/entity-models/frog.json'
+import turtle from '../../../resources/data/entity-models/turtle.json'
+import dolphin from '../../../resources/data/entity-models/dolphin.json'
+import squid from '../../../resources/data/entity-models/squid.json'
 
 /**
  * Built-in entity geometry definitions (resources/data/entity-models/*.json), authored for Blocksmith Studio
@@ -68,10 +79,21 @@ const RAW_DEFINITIONS: Record<string, unknown> = {
   'zombie.json': zombie,
   'zombie_villager.json': zombieVillager,
   'iron_golem.json': ironGolem,
+  'fox.json': fox,
+  'bee.json': bee,
+  'llama.json': llama,
+  'panda.json': panda,
+  'rabbit.json': rabbit,
   'piglin.json': piglin,
   'illager.json': illager,
   'pillager.json': pillager,
-  'witch.json': witch
+  'witch.json': witch,
+  'polar_bear.json': polarBear,
+  'goat.json': goat,
+  'frog.json': frog,
+  'turtle.json': turtle,
+  'dolphin.json': dolphin,
+  'squid.json': squid
 }
 
 interface CompiledDefinition {

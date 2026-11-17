@@ -1,0 +1,81 @@
+{
+  "id": "rabbit",
+  "textureSize": [64, 32],
+  "animation": "none",
+  "textures": [
+    "assets/minecraft/textures/entity/rabbit/{black,brown,caerbannog,gold,salt,toast,white,white_splotched}.png"
+  ],
+  "parts": [
+    {
+      "name": "left_hind_foot",
+      "pivot": [3, 6.5, -3.7],
+      "boxes": [{ "origin": [2, 0, -7], "size": [2, 1, 7], "uv": [26, 24] }]
+    },
+    {
+      "name": "right_hind_foot",
+      "pivot": [-3, 6.5, -3.7],
+      "boxes": [{ "origin": [-4, 0, -7], "size": [2, 1, 7], "uv": [8, 24] }]
+    },
+    {
+      "name": "left_haunch",
+      "pivot": [3, 6.5, -3.7],
+      "rotation": [-20, 0, 0],
+      "boxes": [{ "origin": [2, 2.5, -8.7], "size": [2, 4, 5], "uv": [30, 15] }]
+    },
+    {
+      "name": "right_haunch",
+      "pivot": [-3, 6.5, -3.7],
+      "rotation": [-20, 0, 0],
+      "boxes": [{ "origin": [-4, 2.5, -8.7], "size": [2, 4, 5], "uv": [16, 15] }]
+    },
+    {
+      "name": "body",
+      "role": "body",
+      "pivot": [0, 5, -8],
+      "rotation": [-20, 0, 0],
+      "boxes": [{ "origin": [-3, 2, -8], "size": [6, 5, 10], "uv": [0, 0] }]
+    },
+    {
+      "name": "left_front_leg",
+      "pivot": [3, 7, 1],
+      "rotation": [-10, 0, 0],
+      "boxes": [{ "origin": [2, 0, 0], "size": [2, 7, 2], "uv": [8, 15] }]
+    },
+    {
+      "name": "right_front_leg",
+      "pivot": [-3, 7, 1],
+      "rotation": [-10, 0, 0],
+      "boxes": [{ "origin": [-4, 0, 0], "size": [2, 7, 2], "uv": [0, 15] }]
+    },
+    {
+      "name": "head",
+      "role": "head",
+      "pivot": [0, 8, 1],
+      "boxes": [
+        { "origin": [-2.5, 8, 1], "size": [5, 4, 5], "uv": [32, 0] },
+        { "origin": [-0.5, 9.5, 5.5], "size": [1, 1, 1], "uv": [32, 9] }
+      ],
+      "children": [
+        {
+          "name": "right_ear",
+          "pivot": [0, 8, 1],
+          "rotation": [0, 15, 0],
+          "boxes": [{ "origin": [-2.5, 12, 1], "size": [2, 5, 1], "uv": [52, 0] }]
+        },
+        {
+          "name": "left_ear",
+          "pivot": [0, 8, 1],
+          "rotation": [0, -15, 0],
+          "boxes": [{ "origin": [0.5, 12, 1], "size": [2, 5, 1], "uv": [58, 0] }]
+        }
+      ]
+    },
+    {
+      "name": "tail",
+      "role": "tail",
+      "pivot": [0, 4, -7],
+      "rotation": [-20, 0, 0],
+      "boxes": [{ "origin": [-1.5, 2.5, -9], "size": [3, 3, 2], "uv": [52, 6] }]
+    }
+  ]
+}
