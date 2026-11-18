@@ -53,6 +53,15 @@ export const INVOKE_CHANNELS = [
   'data.save',
   'data.create',
   'data.delete',
+  // Custom items (M14)
+  'items.list',
+  'items.read',
+  'items.create',
+  'items.save',
+  'items.delete',
+  'items.regenerate',
+  'items.catalog',
+  'items.context',
   // Texture editing and pack history
   'texture.read',
   'texture.save',

@@ -181,6 +181,14 @@
       "invalidGlob": "Le motif « {glob} » de la catégorie {category} n'est pas valide.",
       "duplicateId": "Deux catégories ont l'identifiant {id}.",
       "invalidRule": "La catégorie {category} n'est pas valide."
+    },
+    "items": {
+      "needsCombined": "Les items personnalisés demandent un pack avec ressources et données. Passez d’abord le pack en « Ressources + données ».",
+      "notFound": "Le pack n’a pas d’item « {id} ».",
+      "exists": "Le pack a déjà un item « {id} ».",
+      "invalid": "La définition de « {id} » n’est pas valide.",
+      "invalidLang": "« {path} » n’est pas un fichier de langue valide : les noms de l’item ne peuvent pas y être écrits.",
+      "invalidTexture": "« {path} » n’est pas une texture de Minecraft ni du pack."
     }
   },
   "common": {
@@ -371,6 +379,15 @@
       "missingAnimation": "Animée dans Minecraft, mais le pack n’a pas de .png.mcmeta : l’animation ne jouera pas. Ouvrez-la dans l’éditeur et enregistrez pour la copier",
       "invalidData": "Minecraft refuserait ce fichier de données (ouvrez-le pour voir les erreurs)",
       "dataWarnings": "Ce fichier de données cite des objets, blocs ou tags que Minecraft n'a pas"
+    },
+    "items": {
+      "invalidDefinition": "Cette définition d’item personnalisé n’est pas valide : l’item est laissé hors des exports",
+      "missingTexture": "La texture d’un item personnalisé manque : l’item s’affichera en damier violet et noir",
+      "unknownBase": "L’item de base de cet item personnalisé n’existe pas dans cette version de Minecraft",
+      "unknownIngredient": "La recette de cet item personnalisé utilise un item qui n’existe pas dans cette version de Minecraft",
+      "generatedEdited": "Fichier généré par un item personnalisé et modifié à la main : enregistrer l’item le remplacera",
+      "generatedMissing": "Un fichier généré par un item personnalisé manque",
+      "langOutdated": "Le fichier de langue n’a pas le nom actuel d’un item personnalisé"
     }
   },
   "editor": {
@@ -503,7 +520,13 @@
       "saveData": "{name} enregistré",
       "createData": "{name} créé",
       "deleteData": "{name} retiré",
-      "aiDataFiles": "Plan IA : {count} fichiers de données | Plan IA : 1 fichier de données | Plan IA : {count} fichiers de données"
+      "aiDataFiles": "Plan IA : {count} fichiers de données | Plan IA : 1 fichier de données | Plan IA : {count} fichiers de données",
+      "createItem": "Item {name} créé",
+      "saveItem": "Item {name} enregistré",
+      "renameItem": "Item {from} renommé en {to}",
+      "deleteItem": "Item {name} supprimé",
+      "regenerateItem": "Item {name} régénéré",
+      "aiItems": "Plan IA : {count} items | Plan IA : 1 item | Plan IA : {count} items"
     },
     "title": "Historique",
     "empty": "Rien d'enregistré pour le moment."

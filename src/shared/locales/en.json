@@ -181,6 +181,14 @@
       "invalidGlob": "The pattern \"{glob}\" of the category {category} is not valid.",
       "duplicateId": "Two categories have the id {id}.",
       "invalidRule": "The category {category} is not valid."
+    },
+    "items": {
+      "needsCombined": "Custom items need a pack with both resources and data. Change the pack to \"Resource + data pack\" first.",
+      "notFound": "The pack has no item \"{id}\".",
+      "exists": "The pack already has an item \"{id}\".",
+      "invalid": "The definition of \"{id}\" is not valid.",
+      "invalidLang": "\"{path}\" is not a valid language file, so the item names cannot be written into it.",
+      "invalidTexture": "\"{path}\" is not a texture of Minecraft or of the pack."
     }
   },
   "common": {
@@ -371,6 +379,15 @@
       "missingAnimation": "Animated in Minecraft but the pack has no .png.mcmeta: the animation will not play. Open it in the editor and save to copy it",
       "invalidData": "Minecraft would reject this data file (open it to see the errors)",
       "dataWarnings": "This data file names items, blocks or tags Minecraft does not have"
+    },
+    "items": {
+      "invalidDefinition": "This custom item definition is not valid: the item is left out of exports",
+      "missingTexture": "Texture of a custom item is missing: the item shows as a purple and black square",
+      "unknownBase": "The base item of this custom item does not exist in this Minecraft version",
+      "unknownIngredient": "The recipe of this custom item uses an item that does not exist in this Minecraft version",
+      "generatedEdited": "File generated from a custom item was edited by hand: saving the item will replace it",
+      "generatedMissing": "File generated from a custom item is missing",
+      "langOutdated": "Language file does not have the current name of a custom item"
     }
   },
   "editor": {
@@ -503,7 +520,13 @@
       "saveData": "Saved {name}",
       "createData": "Created {name}",
       "deleteData": "Removed {name}",
-      "aiDataFiles": "AI plan: {count} data files | AI plan: 1 data file | AI plan: {count} data files"
+      "aiDataFiles": "AI plan: {count} data files | AI plan: 1 data file | AI plan: {count} data files",
+      "createItem": "Created item {name}",
+      "saveItem": "Saved item {name}",
+      "renameItem": "Renamed item {from} to {to}",
+      "deleteItem": "Deleted item {name}",
+      "regenerateItem": "Regenerated item {name}",
+      "aiItems": "AI plan: {count} items | AI plan: 1 item | AI plan: {count} items"
     },
     "title": "History",
     "empty": "Nothing saved yet."

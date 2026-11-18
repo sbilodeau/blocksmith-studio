@@ -59,6 +59,11 @@ const COMMON_TEXTURES = [
   [`${T}item/diamond_sword.png`, 16, 16],
   [`${T}item/apple.png`, 16, 16],
   [`${T}item/stick.png`, 16, 16],
+  // Starting textures of the custom item presets (resources/data/custom-items.json, M14).
+  [`${T}item/amethyst_shard.png`, 16, 16],
+  [`${T}item/diamond_pickaxe.png`, 16, 16],
+  [`${T}item/diamond_helmet.png`, 16, 16],
+  [`${T}entity/equipment/humanoid/diamond.png`, 64, 32],
   [`${T}entity/zombie/zombie.png`, 64, 64],
   [`${T}entity/chest/normal.png`, 64, 64],
   [`${T}entity/experience/experience_orb.png`, 64, 64],
@@ -135,6 +140,29 @@ export function fixtureJarFiles(versionId, options = {}) {
     'assets/minecraft/items/diamond_sword.json': json({
       model: { type: 'minecraft:model', model: 'minecraft:item/diamond_sword' }
     }),
+    // Items of the custom item presets and the item picker (M14).
+    'assets/minecraft/items/apple.json': json({
+      model: { type: 'minecraft:model', model: 'minecraft:item/apple' }
+    }),
+    'assets/minecraft/models/item/apple.json': json({
+      parent: 'minecraft:item/generated',
+      textures: { layer0: 'minecraft:item/apple' }
+    }),
+    'assets/minecraft/items/stick.json': json({
+      model: { type: 'minecraft:model', model: 'minecraft:item/stick' }
+    }),
+    'assets/minecraft/items/poisonous_potato.json': json({
+      model: { type: 'minecraft:model', model: 'minecraft:item/poisonous_potato' }
+    }),
+    'assets/minecraft/items/stone_sword.json': json({
+      model: { type: 'minecraft:model', model: 'minecraft:item/stone_sword' }
+    }),
+    'assets/minecraft/items/stone_pickaxe.json': json({
+      model: { type: 'minecraft:model', model: 'minecraft:item/stone_pickaxe' }
+    }),
+    'assets/minecraft/items/netherite_helmet.json': json({
+      model: { type: 'minecraft:model', model: 'minecraft:item/netherite_helmet' }
+    }),
     'assets/minecraft/atlases/blocks.json': json({
       sources: [{ type: 'directory', source: 'block', prefix: 'block/' }]
     }),
@@ -146,6 +174,14 @@ export function fixtureJarFiles(versionId, options = {}) {
       key: { '#': 'minecraft:stone' },
       pattern: ['###'],
       result: { count: 6, id: 'minecraft:stone_slab' }
+    }),
+    // Uses an item as an ingredient: custom items based on apple get the "used by vanilla recipes" warning.
+    'data/minecraft/recipe/golden_apple.json': json({
+      type: 'minecraft:crafting_shaped',
+      category: 'misc',
+      key: { '#': 'minecraft:gold_ingot', A: 'minecraft:apple' },
+      pattern: ['###', '#A#', '###'],
+      result: { id: 'minecraft:golden_apple' }
     }),
     'data/minecraft/recipe/stone_from_smelting.json': json({
       type: 'minecraft:smelting',
@@ -181,7 +217,13 @@ export function fixtureJarFiles(versionId, options = {}) {
     }),
     'assets/minecraft/lang/en_us.json': json({
       'block.minecraft.stone': 'Stone',
-      'item.minecraft.diamond_sword': 'Diamond Sword'
+      'item.minecraft.diamond_sword': 'Diamond Sword',
+      'item.minecraft.apple': 'Apple',
+      'item.minecraft.stick': 'Stick',
+      'item.minecraft.poisonous_potato': 'Poisonous Potato',
+      'item.minecraft.stone_sword': 'Stone Sword',
+      'item.minecraft.stone_pickaxe': 'Stone Pickaxe',
+      'item.minecraft.netherite_helmet': 'Netherite Helmet'
     }),
     'pack.png': texture('pack.png', 64, 64),
     'version.json': json({

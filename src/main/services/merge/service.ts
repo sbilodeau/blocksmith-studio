@@ -300,6 +300,12 @@ export function createMergeService(deps: MergeServiceDeps): MergeService {
           name: input.target.name,
           description: input.target.description,
           base: stored.newBase ?? 'vanilla',
+          // Custom items (M14) need a combined pack; other merges keep the default kind.
+          ...([...stored.writes.keys(), ...plan.conflicts.map((c) => c.path)].some((p) =>
+            p.startsWith('blocksmith/items/')
+          )
+            ? { kind: 'combined' as const }
+            : {}),
           authoringVersion: plan.target.authoringVersion
         })
         targetId = created.id

@@ -36,6 +36,8 @@ export interface DataFileData {
   origin: 'pack' | 'vanilla' | 'none'
   /** The vanilla file at the same path (compare / revert), for vanilla-based packs. */
   vanillaText: string | null
+  /** Id of the custom item that generates this file (M14): edit the item, not the file. */
+  generatedBy?: string
 }
 
 /** Largest data file accepted by data.save (vanilla's biggest is about 100 KB). */
