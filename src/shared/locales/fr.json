@@ -270,7 +270,8 @@
     },
     "vanillaMissing": "Ce pack s'appuie sur les textures de Minecraft {version}, qui ne sont pas prêtes sur cet ordinateur.",
     "sectionTextures": "Textures",
-    "sectionData": "Données"
+    "sectionData": "Données",
+    "sectionItems": "Objets"
   },
   "grid": {
     "search": "Rechercher des textures",
@@ -910,7 +911,9 @@
     "targetsHint": "Ce qu'un export vers chaque version change : les textures renommées pour cette version, et celles qui n'y existent pas (ignorées ; survolez le nombre pour les voir).",
     "version": "Version",
     "renamed": "Renommées",
-    "skipped": "Ignorées"
+    "skipped": "Ignorées",
+    "openItem": "Ouvrir l'objet",
+    "regenerate": "Régénérer"
   },
   "merge": {
     "open": "Fusionner des packs...",
@@ -1229,6 +1232,217 @@
       "syncing": "Synchronisation...",
       "synced": "Synchronisé à {time} ({count} fichier(s) modifié(s))",
       "error": "Échec de la synchronisation : {reason}"
+    }
+  },
+  "items": {
+    "list": {
+      "count": "Aucun objet personnalisé | 1 objet personnalisé | {count} objets personnalisés",
+      "sidebar": "Les objets personnalisés fonctionnent dans Minecraft sans mod : chacun est un objet du jeu avec son propre nom, sa texture, ses propriétés et sa recette.",
+      "needsCombinedTitle": "Les objets personnalisés demandent un pack de ressources + données",
+      "needsCombined": "Un objet personnalisé a une texture et un nom (pack de ressources), et une recette et une commande pour l'obtenir (pack de données) : le pack doit contenir les deux. Changez-le en « Pack de ressources + données » pour créer des objets ; ses textures et fichiers de données sont conservés.",
+      "makeCombined": "Changer en pack de ressources + données",
+      "invalid": "Aucune définition invalide | 1 définition d'objet n'est pas valide, elle est donc exclue des exports : | {count} définitions d'objets ne sont pas valides, elles sont donc exclues des exports :",
+      "noTexture": "Sans texture",
+      "empty": "Aucun objet personnalisé pour l'instant. Créez-en un avec Nouvel objet.",
+      "emptyNotCombined": "Aucun objet personnalisé."
+    },
+    "kinds": {
+      "simple": "Objet simple",
+      "food": "Nourriture",
+      "weapon": "Arme",
+      "tool": "Outil",
+      "armor": "Pièce d'armure"
+    },
+    "toolTypes": {
+      "pickaxe": "Pioche",
+      "axe": "Hache",
+      "shovel": "Pelle",
+      "hoe": "Houe"
+    },
+    "slots": {
+      "head": "Casque",
+      "chest": "Plastron",
+      "legs": "Jambières",
+      "feet": "Bottes"
+    },
+    "tiers": {
+      "wooden": "Bois",
+      "stone": "Pierre",
+      "iron": "Fer",
+      "diamond": "Diamant",
+      "netherite": "Netherite"
+    },
+    "rarities": {
+      "common": "Commun (blanc)",
+      "uncommon": "Peu commun (jaune)",
+      "rare": "Rare (cyan)",
+      "epic": "Épique (magenta)"
+    },
+    "new": {
+      "open": "Nouvel objet",
+      "title": "Nouvel objet personnalisé",
+      "kind": "Type",
+      "kindHint": {
+        "simple": "Un objet à collecter, échanger ou utiliser dans des recettes, comme une gemme ou une pièce.",
+        "food": "Quelque chose à manger ou à boire, avec des points de faim et des effets.",
+        "weapon": "Une arme comme une épée, avec ses propres dégâts, vitesse et durabilité.",
+        "tool": "Un outil qui mine plus vite, avec son propre niveau et sa durabilité.",
+        "armor": "Une pièce d'armure, avec sa propre protection et la texture portée sur le corps."
+      },
+      "nameEnPlaceholder": "Ruby Sword",
+      "nameFrPlaceholder": "Épée en rubis",
+      "id": "Identifiant",
+      "idHint": "Construit à partir du nom anglais. Lettres minuscules, chiffres et _ seulement.",
+      "idEmpty": "Le nom anglais n'a ni lettre ni chiffre pour l'identifiant : saisissez un identifiant.",
+      "idInvalid": "Utilisez de 1 à 64 lettres minuscules, chiffres ou _.",
+      "idExists": "Le pack a déjà un objet avec cet identifiant.",
+      "texture": "Texture de départ",
+      "texturePreset": "Celle du type",
+      "textureBlank": "Vide",
+      "textureOther": "Celle d'un autre objet",
+      "textureBlankHint": "Une image vide de 16x16 à dessiner vous-même.",
+      "texturePick": "Choisir un objet",
+      "texturePickTitle": "Copier la texture de",
+      "create": "Créer"
+    },
+    "form": {
+      "general": "Général",
+      "nameEn": "Nom (anglais)",
+      "nameFr": "Nom (français)",
+      "nameFrPlaceholder": "Facultatif : l'anglais est utilisé s'il manque",
+      "kind": "Type",
+      "base": "Objet de base",
+      "baseHint": "Dans le jeu, l'objet personnalisé est cet objet du jeu avec les propriétés ci-dessous : il garde le comportement de l'objet de base, sauf si une propriété le change.",
+      "change": "Changer",
+      "clear": "Effacer",
+      "remove": "Retirer",
+      "default": "Par défaut",
+      "none": "Aucun",
+      "maxStack": "Taille maximale de pile",
+      "durability": "Durabilité",
+      "rarity": "Rareté (couleur du nom)",
+      "glint": "Reflet d'enchantement",
+      "glintOn": "Toujours",
+      "glintOff": "Jamais",
+      "enchantability": "Enchantabilité",
+      "repairWith": "Réparé avec",
+      "handheld": "Tenu comme un outil",
+      "handheldHint": "Tenu comme un outil : affiché en diagonale dans la main, comme les épées et les pioches. Sinon affiché à plat, comme la plupart des objets.",
+      "lore": "Lignes de description",
+      "loreEn": "Ligne en anglais",
+      "loreFr": "Ligne en français (facultatif)",
+      "loreAdd": "Ajouter une ligne",
+      "food": "Nourriture",
+      "nutrition": "Points de faim",
+      "saturation": "Saturation",
+      "eatSeconds": "Durée pour manger (secondes)",
+      "animation": "Animation",
+      "animations": {
+        "eat": "Manger",
+        "drink": "Boire"
+      },
+      "alwaysEdible": "Peut être mangé sans avoir faim",
+      "nutritionHint": "2 points de faim remplissent un pilon de la barre de faim. Une pomme donne 4 points et 2,4 de saturation.",
+      "effects": "Effets quand il est mangé",
+      "effect": "Effet",
+      "seconds": "Secondes",
+      "level": "Niveau",
+      "chance": "Probabilité (0 à 1)",
+      "effectAdd": "Ajouter un effet",
+      "tool": "Outil",
+      "toolType": "Type d'outil",
+      "tier": "Niveau",
+      "tierHint": "Le niveau décide quels blocs donnent leur objet une fois minés (le niveau diamant mine l'obsidienne).",
+      "miningSpeed": "Vitesse de minage",
+      "attackStats": "Dégâts et vitesse d'attaque",
+      "weapon": "Attaque",
+      "attackDamage": "Dégâts d'attaque",
+      "attackSpeed": "Vitesse d'attaque",
+      "weaponHint": "Comme dans l'infobulle du jeu : une épée en diamant a 7 de dégâts d'attaque et 1,6 de vitesse d'attaque.",
+      "armor": "Armure",
+      "slot": "Emplacement",
+      "armorPoints": "Points d'armure",
+      "toughness": "Robustesse",
+      "knockbackResistance": "Résistance au recul (0 à 1)",
+      "advanced": "Avancé",
+      "removeComponents": "Composants retirés de l'objet de base",
+      "extraComponents": "Composants supplémentaires (JSON)",
+      "extraHint": "Pour les experts : un objet JSON de composants d'objet Minecraft, écrits tels quels dans l'objet (par exemple « minecraft:fire_resistant » avec un objet vide). Vérifié quand vous quittez le champ.",
+      "extraNotJson": "Ce n'est pas du JSON valide.",
+      "extraNotObject": "Écrivez un objet JSON, avec les identifiants des composants comme clés.",
+      "errors": {
+        "required": "Obligatoire",
+        "min": "Au moins {min}",
+        "max": "Au plus {max}",
+        "minItems": "Ajoutez-en au moins {min}",
+        "maxItems": "Au plus {max} entrées",
+        "maxLength": "Au plus {max} caractères",
+        "format": "Identifiant non valide",
+        "choice": "Ne fait pas partie des choix",
+        "unknownKeys": "Champs inconnus : {keys}",
+        "stackDurability": "Un objet avec une durabilité ne s'empile pas : mettez 1, ou retirez la durabilité",
+        "recipeEmpty": "Placez au moins un objet dans la grille",
+        "invalid": "Non valide"
+      }
+    },
+    "recipe": {
+      "title": "Recette",
+      "none": "Aucune recette",
+      "shaped": "Avec forme (3x3)",
+      "shapeless": "Sans forme",
+      "noneHint": "Sans recette, l'objet s'obtient avec les commandes ci-dessous.",
+      "emptySlot": "Case vide",
+      "clear": "Vider cette case",
+      "remove": "Retirer",
+      "add": "Ajouter un ingrédient",
+      "count": "Objets fabriqués",
+      "pickTitle": "Choisir un ingrédient",
+      "hint": "Cliquez sur une case pour choisir un objet ou un #tag (n'importe quel objet d'un groupe, comme #minecraft:planks). Survolez une case pour la vider."
+    },
+    "picker": {
+      "title": "Choisir un objet",
+      "search": "Rechercher par nom ou identifiant",
+      "searchTags": "Rechercher des objets et des #tags",
+      "tag": "Tag d'objets",
+      "packItem": "Ce pack",
+      "none": "Aucun résultat",
+      "hint": "Objets de la version de Minecraft du pack.",
+      "ingredientHint": "Les objets personnalisés ne peuvent pas être des ingrédients : Minecraft ne vérifie que l'identifiant de l'objet de base, donc tout objet basé dessus conviendrait."
+    },
+    "howTo": {
+      "title": "Comment l'obtenir",
+      "cheats": "Dans un monde avec les commandes activées (ou en tant qu'opérateur), tapez l'une de ces commandes dans le chat :",
+      "function": "Lance la fonction du pack qui donne l'objet :",
+      "give": "Ou la commande complète, sans le pack de données :",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "Impossible de copier la commande.",
+      "unsaved": "Enregistrez d'abord l'objet : la fonction donne la version enregistrée."
+    },
+    "editor": {
+      "back": "Retour aux objets",
+      "backToItem": "Retour à l'objet",
+      "ai": "IA",
+      "aiHint": "Demandez à l'IA de modifier cet objet, ou d'expliquer ce qu'il fait dans le jeu",
+      "aiPlaceholder": "L'assistant d'objets n'est pas encore disponible.",
+      "applied": "La proposition est dans le formulaire. Vérifiez-la, puis enregistrez.",
+      "errorCount": "Aucune erreur | 1 erreur à corriger | {count} erreurs à corriger",
+      "fixErrors": "Corrigez les erreurs indiquées dans le formulaire avant d'enregistrer.",
+      "rename": "Changer l'identifiant",
+      "renameHint": "L'identifiant sert dans les commandes et les noms de fichiers. Ses fichiers et textures suivent.",
+      "delete": "Supprimer l'objet",
+      "deleteConfirm": "Supprimer {name}, sa texture et tous les fichiers générés à partir de lui ? Vous pourrez annuler dans l'historique.",
+      "texture": "Texture",
+      "worn": "Portée sur le corps",
+      "editTexture": "Modifier",
+      "textureHint": "Modifier ouvre l'éditeur de pixels. Retour dans l'éditeur vous ramène ici.",
+      "textureMissing": "Le fichier de texture manque. Enregistrez l'objet pour en créer un vide.",
+      "baseUsed": "Minecraft traite aussi cet objet comme {base} : aucune recette du jeu ne l'utilise. | Minecraft traite aussi cet objet comme {base} : 1 recette du jeu l'utilise. | Minecraft traite aussi cet objet comme {base} : {count} recettes du jeu l'utilisent.",
+      "baseUsedHint": "Les joueurs pourraient utiliser l'objet personnalisé dans ces recettes. Choisissez un objet de base qu'aucune recette n'utilise pour l'éviter."
+    },
+    "generated": {
+      "notice": "Ce fichier est généré à partir de l'objet personnalisé « {id} » : vos modifications ici seraient remplacées à l'enregistrement de l'objet, il est donc en lecture seule. Modifiez plutôt l'objet.",
+      "openItem": "Ouvrir l'objet"
     }
   }
 }

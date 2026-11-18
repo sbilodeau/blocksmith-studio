@@ -270,7 +270,8 @@
     },
     "vanillaMissing": "This pack is based on the Minecraft {version} textures, which are not set up on this computer.",
     "sectionTextures": "Textures",
-    "sectionData": "Data"
+    "sectionData": "Data",
+    "sectionItems": "Items"
   },
   "grid": {
     "search": "Search textures",
@@ -910,7 +911,9 @@
     "targetsHint": "What an export to each version changes: textures moved to that version's name, and textures that do not exist there (skipped; hover the number to list them).",
     "version": "Version",
     "renamed": "Renamed",
-    "skipped": "Skipped"
+    "skipped": "Skipped",
+    "openItem": "Open item",
+    "regenerate": "Regenerate"
   },
   "merge": {
     "open": "Merge packs...",
@@ -1229,6 +1232,217 @@
       "syncing": "Syncing...",
       "synced": "Synced at {time} ({count} file(s) changed)",
       "error": "Sync failed: {reason}"
+    }
+  },
+  "items": {
+    "list": {
+      "count": "No custom items | 1 custom item | {count} custom items",
+      "sidebar": "Custom items work in Minecraft without mods: each one is a vanilla item with its own name, texture, properties and recipe.",
+      "needsCombinedTitle": "Custom items need a resource + data pack",
+      "needsCombined": "A custom item has a texture and a name (resource pack) and a recipe and a give command (data pack), so the pack must hold both. Change it to a \"Resource + data pack\" to create items: the textures and data files it already has are kept.",
+      "makeCombined": "Change to a resource + data pack",
+      "invalid": "No definition is invalid | 1 item definition is not valid, so it is left out of exports: | {count} item definitions are not valid, so they are left out of exports:",
+      "noTexture": "No texture",
+      "empty": "No custom items yet. Create one with New item.",
+      "emptyNotCombined": "No custom items."
+    },
+    "kinds": {
+      "simple": "Simple item",
+      "food": "Food",
+      "weapon": "Weapon",
+      "tool": "Tool",
+      "armor": "Armor piece"
+    },
+    "toolTypes": {
+      "pickaxe": "Pickaxe",
+      "axe": "Axe",
+      "shovel": "Shovel",
+      "hoe": "Hoe"
+    },
+    "slots": {
+      "head": "Helmet",
+      "chest": "Chestplate",
+      "legs": "Leggings",
+      "feet": "Boots"
+    },
+    "tiers": {
+      "wooden": "Wood",
+      "stone": "Stone",
+      "iron": "Iron",
+      "diamond": "Diamond",
+      "netherite": "Netherite"
+    },
+    "rarities": {
+      "common": "Common (white)",
+      "uncommon": "Uncommon (yellow)",
+      "rare": "Rare (aqua)",
+      "epic": "Epic (magenta)"
+    },
+    "new": {
+      "open": "New item",
+      "title": "New custom item",
+      "kind": "Kind",
+      "kindHint": {
+        "simple": "An item to collect, trade or craft with, like a gem or a coin.",
+        "food": "Something to eat or drink, with hunger points and effects.",
+        "weapon": "A sword-like weapon with its own damage, speed and durability.",
+        "tool": "A tool that mines faster, with its own tier and durability.",
+        "armor": "A piece of armor, with its own protection and the texture worn on the body."
+      },
+      "nameEnPlaceholder": "Ruby Sword",
+      "nameFrPlaceholder": "Épée en rubis",
+      "id": "Id",
+      "idHint": "Built from the English name. Lowercase letters, digits and _ only.",
+      "idEmpty": "The English name has no letter or digit for the id: type an id.",
+      "idInvalid": "Use 1 to 64 lowercase letters, digits or _.",
+      "idExists": "The pack already has an item with this id.",
+      "texture": "Starting texture",
+      "texturePreset": "Kind's texture",
+      "textureBlank": "Blank",
+      "textureOther": "Another item's",
+      "textureBlankHint": "An empty 16x16 image to draw from scratch.",
+      "texturePick": "Choose an item",
+      "texturePickTitle": "Copy the texture of",
+      "create": "Create"
+    },
+    "form": {
+      "general": "General",
+      "nameEn": "Name (English)",
+      "nameFr": "Name (French)",
+      "nameFrPlaceholder": "Optional: English is used when missing",
+      "kind": "Kind",
+      "base": "Base item",
+      "baseHint": "In the game, the custom item is this vanilla item with the properties below: it keeps the base item's behavior unless a property changes it.",
+      "change": "Change",
+      "clear": "Clear",
+      "remove": "Remove",
+      "default": "Default",
+      "none": "None",
+      "maxStack": "Max stack size",
+      "durability": "Durability",
+      "rarity": "Rarity (name color)",
+      "glint": "Enchantment glint",
+      "glintOn": "Always",
+      "glintOff": "Never",
+      "enchantability": "Enchantability",
+      "repairWith": "Repaired with",
+      "handheld": "Held like a tool",
+      "handheldHint": "Held like a tool: shown diagonally in the hand, like swords and pickaxes. Otherwise shown flat, like most items.",
+      "lore": "Description lines",
+      "loreEn": "Line in English",
+      "loreFr": "Line in French (optional)",
+      "loreAdd": "Add a line",
+      "food": "Food",
+      "nutrition": "Hunger points",
+      "saturation": "Saturation",
+      "eatSeconds": "Eating time (seconds)",
+      "animation": "Animation",
+      "animations": {
+        "eat": "Eat",
+        "drink": "Drink"
+      },
+      "alwaysEdible": "Can be eaten when not hungry",
+      "nutritionHint": "2 hunger points fill one drumstick of the hunger bar. An apple gives 4 points and 2.4 saturation.",
+      "effects": "Effects when eaten",
+      "effect": "Effect",
+      "seconds": "Seconds",
+      "level": "Level",
+      "chance": "Chance (0 to 1)",
+      "effectAdd": "Add an effect",
+      "tool": "Tool",
+      "toolType": "Tool type",
+      "tier": "Tier",
+      "tierHint": "The tier decides which blocks drop their item when mined (a diamond tier mines obsidian).",
+      "miningSpeed": "Mining speed",
+      "attackStats": "Attack damage and speed",
+      "weapon": "Attack",
+      "attackDamage": "Attack damage",
+      "attackSpeed": "Attack speed",
+      "weaponHint": "As shown in the game's tooltip: a diamond sword has 7 attack damage and 1.6 attack speed.",
+      "armor": "Armor",
+      "slot": "Slot",
+      "armorPoints": "Armor points",
+      "toughness": "Toughness",
+      "knockbackResistance": "Knockback resistance (0 to 1)",
+      "advanced": "Advanced",
+      "removeComponents": "Components removed from the base item",
+      "extraComponents": "Extra components (JSON)",
+      "extraHint": "For experts: a JSON object of Minecraft item components, written into the item as they are (for example \"minecraft:fire_resistant\" with an empty object). Checked when you leave the field.",
+      "extraNotJson": "This is not valid JSON.",
+      "extraNotObject": "Write a JSON object, with component ids as keys.",
+      "errors": {
+        "required": "Required",
+        "min": "At least {min}",
+        "max": "At most {max}",
+        "minItems": "Add at least {min}",
+        "maxItems": "At most {max} entries",
+        "maxLength": "At most {max} characters",
+        "format": "Not a valid id",
+        "choice": "Not one of the choices",
+        "unknownKeys": "Unknown fields: {keys}",
+        "stackDurability": "An item with durability cannot stack: use 1, or remove the durability",
+        "recipeEmpty": "Put at least one item in the grid",
+        "invalid": "Not valid"
+      }
+    },
+    "recipe": {
+      "title": "Recipe",
+      "none": "No recipe",
+      "shaped": "Shaped (3x3)",
+      "shapeless": "Shapeless",
+      "noneHint": "Without a recipe, the item is obtained with the commands below.",
+      "emptySlot": "Empty slot",
+      "clear": "Empty this slot",
+      "remove": "Remove",
+      "add": "Add an ingredient",
+      "count": "Items made",
+      "pickTitle": "Choose an ingredient",
+      "hint": "Click a slot to choose an item or a #tag (any item of a group, like #minecraft:planks). Hover a slot to empty it."
+    },
+    "picker": {
+      "title": "Choose an item",
+      "search": "Search by name or id",
+      "searchTags": "Search items and #tags",
+      "tag": "Item tag",
+      "packItem": "This pack",
+      "none": "No match",
+      "hint": "Items of the pack's Minecraft version.",
+      "ingredientHint": "Custom items cannot be ingredients: Minecraft only checks the base item's id, so any item based on it would match."
+    },
+    "howTo": {
+      "title": "How to get it",
+      "cheats": "In a world with cheats on (or as an operator), type one of these in the chat:",
+      "function": "Runs the give function of the pack:",
+      "give": "Or the whole command, without the data pack:",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Could not copy the command.",
+      "unsaved": "Save the item first: the function gives the saved version."
+    },
+    "editor": {
+      "back": "Back to items",
+      "backToItem": "Back to the item",
+      "ai": "AI",
+      "aiHint": "Ask the AI to change this item, or to explain what it does in the game",
+      "aiPlaceholder": "The item assistant is not available yet.",
+      "applied": "The proposal is in the form. Check it, then save.",
+      "errorCount": "No errors | 1 error to fix | {count} errors to fix",
+      "fixErrors": "Fix the errors shown in the form before saving.",
+      "rename": "Change the id",
+      "renameHint": "The id is used in commands and file names. Its files and textures move with it.",
+      "delete": "Delete the item",
+      "deleteConfirm": "Delete {name}, its texture and every file made from it? You can undo this in the history.",
+      "texture": "Texture",
+      "worn": "Worn on the body",
+      "editTexture": "Edit",
+      "textureHint": "Edit opens the pixel editor. Back in the editor returns here.",
+      "textureMissing": "The texture file is missing. Save the item to create a blank one.",
+      "baseUsed": "Minecraft also treats this item as {base}: no vanilla recipe uses it. | Minecraft also treats this item as {base}: 1 vanilla recipe uses it. | Minecraft also treats this item as {base}: {count} vanilla recipes use it.",
+      "baseUsedHint": "Players could use the custom item in these recipes. Choose a base item no recipe uses to avoid it."
+    },
+    "generated": {
+      "notice": "This file is generated from the custom item \"{id}\": changes made here would be replaced when the item is saved, so it is read-only. Edit the item instead.",
+      "openItem": "Open item"
     }
   }
 }
