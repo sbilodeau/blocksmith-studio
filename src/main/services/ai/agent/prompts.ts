@@ -26,6 +26,7 @@ for detail. Stay in the texture's existing palette or the style brief palette. K
 no anti-aliasing, limited colors, 1-pixel details, consistent light from the top-left.
 Each tool you call runs on a draft and returns the new state, so you can chain steps (for example rotate, then draw on
 the rotated result). Coordinates in later calls refer to the state AFTER the previous calls.
+When the request names a CUSTOM ITEM, the texture is that item's: keep it readable as an inventory icon.
 When the request includes a 3D MODEL LAYOUT, the texture is wrapped around that 3D model: use its rectangles to know
 which pixels are which body part or block face before drawing, and edit every face a change should appear on.
 For textures larger than 64 px, call get_pixels with a rect to read exact pixels before drawing details.
@@ -69,20 +70,32 @@ get the pack name and a summary of its data files.
 Use list_data to find files (the pack's own and Minecraft's vanilla ones), read_json to read one, and write_json to
 propose a whole JSON file. To change vanilla behavior, read the vanilla file, then write the SAME path with your
 change; for new content use the pack's own namespace. Write complete, valid files: write_json checks the format and
-refuses invalid files with the reasons, so fix them and try again. Data packs cannot add new items or blocks.
+refuses invalid files with the reasons, so fix them and try again. Data files cannot add new blocks, and custom items
+(new items with their own name, texture, stats and recipe) need a "Resource + data pack": if the user asks for one, say
+that the pack can be changed to "Resource + data pack" first.
 Use update_style_brief to record lasting decisions (theme, rules), and set_pack_meta for a new name or description.
 When you are done, stop calling tools and reply with one or two short sentences.`
 
 export const COMBINED_DATA_ADDENDUM = `This pack ALSO holds data files (recipes, loot tables, tags, advancements): use list_data, read_json and
 write_json for those (write_json proposes a whole JSON file, checked against Minecraft's format; to change vanilla
-behavior, read the vanilla file and write the same path). Data packs cannot add new items or blocks.`
+behavior, read the vanilla file and write the same path). Data files cannot add new blocks.
+This pack can add CUSTOM ITEMS: a custom item is a vanilla "base" item (for example a stone sword) that carries its own
+name, texture, stats, food effects and recipe; Minecraft still treats it as its base item for everything the definition
+does not change. Use list_items and read_item to see the pack's items, write_item to create or replace one (the WHOLE
+definition, names in English AND French) and delete_item to remove one. A new item's texture is copied from
+"textureFrom": recolor it afterwards with apply_to_all on {"match": "<item id>"} (for example a hue_shift for a ruby).`
+
+export const RESOURCE_ITEMS_ADDENDUM = `This resource pack can only change how things look. Custom items (new items with their own name, stats and
+recipe) need a "Resource + data pack": if the user asks for one, say that the pack can be changed to "Resource + data
+pack" first.`
 
 const SCOPE_INSTRUCTIONS: Record<AgentKind, string> = {
   editor: EDITOR_INSTRUCTIONS,
   navigation: NAVIGATION_INSTRUCTIONS,
   creation: CREATION_INSTRUCTIONS,
-  // The data agent builds its own prompt (data-agent.ts).
-  data: ''
+  // The data and item agents build their own prompts (data-agent.ts, item-agent.ts).
+  data: '',
+  item: ''
 }
 
 function fill(template: string, values: Record<string, string | number>): string {
@@ -126,7 +139,9 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
       ? CREATION_DATA_INSTRUCTIONS
       : kind === 'combined'
         ? `${SCOPE_INSTRUCTIONS[input.agent]}\n${COMBINED_DATA_ADDENDUM}`
-        : SCOPE_INSTRUCTIONS[input.agent]
+        : input.agent === 'creation'
+          ? `${SCOPE_INSTRUCTIONS[input.agent]}\n${RESOURCE_ITEMS_ADDENDUM}`
+          : SCOPE_INSTRUCTIONS[input.agent]
   const scope = fill(template, {
     width: input.texture?.width ?? '?',
     height: input.texture?.height ?? '?',

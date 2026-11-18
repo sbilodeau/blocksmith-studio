@@ -76,6 +76,14 @@ export function textureState(
   return state
 }
 
+/** The custom item an open texture belongs to, as the editor agent's request names it. */
+export interface CustomItemTag {
+  /** English name. */
+  name: string
+  kind: string
+  base: string
+}
+
 /** The user message of a run: tagged with the open texture, current state, then the request. */
 export function buildUserMessage(
   message: string,
@@ -83,13 +91,18 @@ export function buildUserMessage(
   img: RgbaImage,
   plan: ImagePlan,
   /** How the texture wraps its 3D model (src/shared/preview/layout.ts), when known. */
-  layout?: string
+  layout?: string,
+  /** The custom item the texture belongs to (M14), when it is one. */
+  customItem?: CustomItemTag
 ): ChatMessage {
   const state = textureState(img, plan)
   const model = layout ? `\n\n${layout}` : ''
+  const item = customItem
+    ? `\n[Custom item: ${customItem.name} (${customItem.kind}, base ${customItem.base})]`
+    : ''
   return {
     role: 'user',
-    text: `[Open texture: ${texturePath} (${img.width} x ${img.height} px)]\n${state.text}${model}\n\nUser request:\n${message}`,
+    text: `[Open texture: ${texturePath} (${img.width} x ${img.height} px)]${item}\n${state.text}${model}\n\nUser request:\n${message}`,
     ...(state.png ? { images: [state.png] } : {})
   }
 }
@@ -120,7 +133,9 @@ function turnMessage(turn: ConversationTurn): ChatMessage | null {
       ? `[Texture: ${turn.texturePath}] `
       : turn.dataPath
         ? `[File: ${turn.dataPath}] `
-        : ''
+        : turn.itemId
+          ? `[Item: ${turn.itemId}] `
+          : ''
     return { role: 'user', text: `${tag}${turn.text ?? ''}` }
   }
   if (turn.role === 'assistant') {

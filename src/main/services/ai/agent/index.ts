@@ -39,3 +39,14 @@ export {
   type ExplainSources
 } from './explain'
 export { runDataAgent, buildDataAgentMessages, DATA_AGENT_TOOLS } from './data-agent'
+export {
+  runItemAgent,
+  gatherItemSources,
+  buildItemAgentMessages,
+  buildItemExplainMessages,
+  itemContext,
+  ITEM_AGENT_TOOLS,
+  type ItemSources
+} from './item-agent'
+export { checkDefinition, knownIdsOf, type ItemAiDeps, type KnownIds } from './item-ai'
+export type { CreationItems } from './creation'

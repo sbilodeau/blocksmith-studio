@@ -317,6 +317,9 @@ if (!app.requestSingleInstanceLock()) {
           read: async (packId, path) => (await data.read(packId, path)).text,
           saveMany: (packId, files, change) => data.saveMany(packId, files, change)
         },
+        items: {
+          applyMany: (packId, operations, change) => items.applyMany(packId, operations, change)
+        },
         jobs
       },
       dataAi: {
@@ -329,6 +332,13 @@ if (!app.requestSingleInstanceLock()) {
         ids: (packId) => data.ids(packId),
         names: (packId) => data.names(packId),
         entries: async (packId) => (await data.list(packId)).entries
+      },
+      items: {
+        all: (packId) => items.all(packId),
+        catalog: (packId) => items.catalog(packId),
+        context: (packId, base) => items.context(packId, base),
+        forTexture: (packId, path) => items.forTexture(packId, path),
+        readPng: (packId, path) => textures.readCatalog(packId, path)
       },
       providers: aiProviders,
       getAgentSettings: (agent) => settings.get().ai.agents[agent],
