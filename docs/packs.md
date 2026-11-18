@@ -24,6 +24,7 @@ fire-pack/
   pack.png                    64x64, generated at creation
   assets/<ns>/...             only files that differ from vanilla, or new files
   data/<ns>/...               data pack files (data and combined packs, see datapacks.md)
+  blocksmith/items/<id>.json  custom item definitions (combined packs, see custom-items.md); never exported
   .blocksmith/project.json    id, name, description, authoring version, base, kind, dates (ProjectSchema)
   .blocksmith/history/        pack journal for undo / redo (see History)
 ```
@@ -192,7 +193,9 @@ Packs screen is checked against the data pack format and shows "Made for an olde
 
 1. **Collect** every file of the pack folder for the pack type, except hidden entries (`.blocksmith/`, `.git/`...),
    OS junk and files byte-identical to the target's vanilla (reported in `skipped` with reason
-   `identicalToVanilla`).
+   `identicalToVanilla`). Custom items are generated again in the target version's format and `blocksmith/` is
+   left out ([custom-items.md](custom-items.md#versions)); an invalid definition is reported as
+   `items.invalidDefinition`.
 2. **pack.mcmeta** is always regenerated from the project description, the target version and the pack type; extra
    top-level sections of the pack's own `pack.mcmeta` (`language`, `filter`, `overlays`...) are kept.
 3. **Validate** (Pack Doctor basics, reported as warnings, never silently fixed).
