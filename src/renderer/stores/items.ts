@@ -58,8 +58,9 @@ export function useItemsStore(packId: string) {
     /** Bumped whenever the pack's files change: icons and the 3D preview reload. */
     const revision = ref(0)
 
+    // Serialized through the reactive proxy so every nested field is tracked (toRaw would not be).
     const parsed = computed(() =>
-      draft.value ? CustomItemSchema.safeParse(toPlain(draft.value)) : null
+      draft.value ? CustomItemSchema.safeParse(JSON.parse(JSON.stringify(draft.value))) : null
     )
     const valid = computed(() => !!parsed.value?.success && !extraInvalid.value)
     /** The definition shown by the commands, the preview and the AI: the form when valid, else the saved one. */
