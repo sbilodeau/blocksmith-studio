@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { VANILLA_DATA_RE, collectDataIds, parseDataPath, type DataIds } from '@shared/datapack'
 import type { HistoryEntry } from '@shared/model/history'
+import { ITEMS_DIR, ITEM_DEF_RE, itemGenerating, parseItemFiles } from '@shared/items'
 import {
   MAX_DATA_FILE_BYTES,
   type DataEntry,
@@ -135,6 +136,19 @@ export function createDataService(deps: DataServiceDeps): DataService {
     return files.filter((f) => parseDataPath(f.path) !== null)
   }
 
+  /** Id of the custom item generating `path` (M14), if any. */
+  async function generatedBy(location: PackLocation, path: string): Promise<string | undefined> {
+    const names = await fs.readdir(join(location.folder, ...ITEMS_DIR.split('/'))).catch(() => [])
+    const files: Array<{ path: string; text: string }> = []
+    for (const name of names) {
+      const itemPath = `${ITEMS_DIR}/${name}`
+      if (!ITEM_DEF_RE.test(itemPath)) continue
+      const bytes = await readOptional(resolvePackFile(location.folder, itemPath))
+      if (bytes) files.push({ path: itemPath, text: decoder.decode(bytes) })
+    }
+    return itemGenerating(path, parseItemFiles(files).items)?.id
+  }
+
   async function ids(location: PackLocation, packPaths: readonly string[]): Promise<DataIds> {
     const version = location.project.authoringVersion
     // Ids come from the game, whatever the pack's base.
@@ -245,11 +259,13 @@ export function createDataService(deps: DataServiceDeps): DataService {
       const own = await readOptional(dataFile(location, path))
       const vanilla = await readOptional(await vanillaFile(location, path))
       const text = own ?? vanilla
+      const item = own ? await generatedBy(location, path) : undefined
       return {
         path,
         text: text ? decoder.decode(text) : null,
         origin: own ? 'pack' : vanilla ? 'vanilla' : 'none',
-        vanillaText: vanilla ? decoder.decode(vanilla) : null
+        vanillaText: vanilla ? decoder.decode(vanilla) : null,
+        ...(item ? { generatedBy: item } : {})
       }
     },
 

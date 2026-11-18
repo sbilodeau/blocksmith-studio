@@ -60,6 +60,8 @@ describe('registerAiAgentHandlers', () => {
         'ai.creation.stopApply',
         'ai.data.send',
         'ai.data.explain',
+        'ai.item.send',
+        'ai.item.explain',
         'brief.get',
         'brief.update'
       ].sort()
@@ -77,6 +79,59 @@ describe('registerAiAgentHandlers', () => {
       theme: 'Cozy',
       decisions: [{ by: 'user', text: 'Warm', at: '2026-11-15T10:00:00.000Z' }]
     })
+  })
+
+  it('starts item agent and item Explain runs when the item deps are wired', async () => {
+    const item = { schemaVersion: 1, id: 'ruby', namespace: 'gems' }
+    const input = {
+      packId: 'p1',
+      id: 'ruby',
+      item,
+      model: { providerId: 'fake', modelId: 'm1' },
+      language: 'en'
+    }
+    // Without the item deps the item channels fail fast.
+    register()
+    await expect(handlers.get('ai.item.send')!({ ...input, message: 'hi' })).rejects.toMatchObject({
+      code: 'ai.agentFailed'
+    })
+
+    handlers.clear()
+    const { agent } = registerAiAgentHandlers({
+      providers: fakeProvider([]).providers,
+      getAgentSettings: () => ({ thinking: 'off', maxIterations: 6, imageMode: 'grid' }),
+      packs: { locate: async (id) => (id === 'p1' ? { folder } : null) },
+      readVanillaPng: async () => null,
+      dataAi: {
+        meta: async () => ({ name: 'Gems', kind: 'combined', authoringVersion: '26.3' }),
+        vanillaText: async () => null,
+        packText: async () => null,
+        ids: async () => ({ items: [], blocks: [], tags: {} }),
+        names: async () => ({}),
+        entries: async () => []
+      },
+      items: {
+        all: async () => [],
+        catalog: async () => ({ version: '26.3', items: [], tags: [] }),
+        context: async () => ({ baseRecipeUses: [] }),
+        forTexture: async () => null,
+        readPng: async () => null
+      },
+      emit: () => undefined
+    })
+    expect(await handlers.get('ai.item.send')!({ ...input, message: 'hi' })).toMatchObject({
+      runId: expect.any(String)
+    })
+    expect(await handlers.get('ai.item.explain')!(input)).toMatchObject({
+      runId: expect.any(String)
+    })
+    await expect(
+      handlers.get('ai.item.explain')!({ ...input, packId: 'nope' })
+    ).rejects.toMatchObject({ code: 'packs.notFound' })
+    await agent.idle()
+    expect(
+      await handlers.get('ai.agent.conversation')!({ packId: 'p1', agent: 'item' })
+    ).toMatchObject([{ role: 'user', text: 'hi', itemId: 'ruby' }, { role: 'assistant' }])
   })
 
   it('forwards conversation, stop and proposal errors', async () => {

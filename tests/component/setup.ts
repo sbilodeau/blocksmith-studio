@@ -6,6 +6,9 @@ import type { VanillaAvailability } from '@shared/model/vanilla'
 import type { EvalReport, ModelInfo, ModelRef, ProviderStatus } from '@shared/ai/types'
 import type { BulkPreview } from '@shared/model/bulk'
 import type { DataEntry, DataFileData, DataList } from '@shared/model/data'
+import type { DoctorReport } from '@shared/model/pack'
+import type { CustomItem, ItemCatalog, ItemList, ItemSummary } from '@shared/model/items'
+import { itemTexturePath } from '@shared/items/schema'
 
 /**
  * In-memory fake of the preload bridge (`window.blocksmith`) for component tests.
@@ -29,6 +32,13 @@ export interface FakeBridge {
   /** Data browser (data.list) and file texts (data.read), by path. */
   dataList: DataList
   dataFiles: Record<string, DataFileData>
+  /** Custom items (items.list), their definitions (items.read), the catalog and the base item's recipe uses. */
+  itemList: ItemList
+  itemDefs: Record<string, CustomItem>
+  itemCatalog: ItemCatalog
+  baseRecipeUses: string[]
+  /** Result of pack.doctor. */
+  doctor: DoctorReport
   calls: Array<{ channel: string; payload: unknown }>
   emit(channel: string, payload: unknown): void
 }
@@ -54,6 +64,35 @@ function dataEntry({ path }: { path: string }): DataEntry {
   }
 }
 
+/** A handler throws this to answer with a typed AppError. */
+export class FakeAppError {
+  constructor(
+    public code: string,
+    public params?: Record<string, string | number>
+  ) {}
+}
+
+function itemSummary(item: CustomItem): ItemSummary {
+  return {
+    id: item.id,
+    namespace: item.namespace,
+    kind: item.kind,
+    base: item.base,
+    names: item.names,
+    texture: itemTexturePath(item),
+    hasTexture: true
+  }
+}
+
+/** items.create / items.save: the definition replaces `previousId` in the fake pack. */
+function writeItem(item: CustomItem, previousId?: string): ItemSummary {
+  if (previousId) delete fakeBridge.itemDefs[previousId]
+  fakeBridge.itemDefs[item.id] = item
+  const others = fakeBridge.itemList.items.filter((i) => i.id !== previousId && i.id !== item.id)
+  fakeBridge.itemList = { ...fakeBridge.itemList, items: [...others, itemSummary(item)] }
+  return itemSummary(item)
+}
+
 export const fakeBridge: FakeBridge = {
   settings: defaultSettings(),
   updater: { state: 'disabled', reason: 'dev' },
@@ -68,6 +107,11 @@ export const fakeBridge: FakeBridge = {
   bulkPreview: null,
   dataList: { entries: [], vanillaData: true, ids: { items: [], blocks: [], tags: {} } },
   dataFiles: {},
+  itemList: { items: [], invalid: [], namespace: 'my_pack' },
+  itemDefs: {},
+  itemCatalog: { version: '26.3', items: [], tags: [] },
+  baseRecipeUses: [],
+  doctor: { issues: [], targets: [], files: 0 },
   calls: [],
   emit(channel, payload) {
     listeners.get(channel)?.forEach((l) => l(payload))
@@ -94,6 +138,9 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
   },
   'ai.eval.stop': () => undefined,
   'ai.data.explain': () => ({ runId: 'explain-1' }),
+  'ai.item.send': () => ({ runId: 'item-1' }),
+  'ai.item.explain': () => ({ runId: 'item-explain-1' }),
+  'ai.agent.conversation': () => [],
   'ai.agent.stop': () => undefined,
   'bulk.preview': () => fakeBridge.bulkPreview,
   'bulk.apply': (input) => ({ applied: (input as { paths: string[] }).paths.length }),
@@ -106,6 +153,34 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
   'data.create': (input) => dataEntry(input as { path: string }),
   'data.save': (input) => dataEntry(input as { path: string }),
   'data.delete': () => undefined,
+  'items.list': () => fakeBridge.itemList,
+  'items.read': (input) => {
+    const { id } = input as { id: string }
+    const item = fakeBridge.itemDefs[id]
+    if (!item) throw new FakeAppError('items.notFound', { id })
+    return structuredClone(item)
+  },
+  'items.create': (input) => {
+    const { item } = input as { item: CustomItem }
+    if (fakeBridge.itemDefs[item.id]) throw new FakeAppError('items.exists', { id: item.id })
+    return writeItem(item)
+  },
+  'items.save': (input) => {
+    const { id, item } = input as { id: string; item: CustomItem }
+    return writeItem(item, id)
+  },
+  'items.delete': (input) => {
+    const { id } = input as { id: string }
+    delete fakeBridge.itemDefs[id]
+    fakeBridge.itemList = {
+      ...fakeBridge.itemList,
+      items: fakeBridge.itemList.items.filter((i) => i.id !== id)
+    }
+  },
+  'items.regenerate': () => undefined,
+  'items.catalog': () => fakeBridge.itemCatalog,
+  'items.context': () => ({ baseRecipeUses: fakeBridge.baseRecipeUses }),
+  'pack.doctor': () => fakeBridge.doctor,
   'updater.getStatus': () => fakeBridge.updater,
   'updater.check': () => fakeBridge.updater,
   'workspace.get': () => ({ path: '/Users/test/Documents/Blocksmith Studio' }),
@@ -158,7 +233,14 @@ Object.defineProperty(window, 'blocksmith', {
       fakeBridge.calls.push({ channel, payload })
       const handler = handlers[channel]
       if (!handler) return { ok: false, error: { code: 'ipc.unknownChannel' } }
-      return { ok: true, value: handler(payload) }
+      try {
+        return { ok: true, value: handler(payload) }
+      } catch (err) {
+        if (err instanceof FakeAppError) {
+          return { ok: false, error: { code: err.code, params: err.params } }
+        }
+        throw err
+      }
     }),
     on: vi.fn((channel: string, listener: (p: unknown) => void) => {
       if (!listeners.has(channel)) listeners.set(channel, new Set())

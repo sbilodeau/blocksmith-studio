@@ -3,6 +3,7 @@ import type { ExportPackType, ExportReport } from '@shared/model/pack'
 import type { McVersion } from '@shared/model/versions'
 import { buildResourcePackMcmeta, type McmetaOptions } from '@shared/versions/mcmeta'
 import { isSnapshot } from '@shared/versions/support'
+import { exportItemFiles, itemFormatFor } from '@shared/items'
 import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 import type { ProgressFn, VanillaStore } from '../contracts'
 import { mapLimit, writeFileAtomic } from './files'
@@ -92,11 +93,15 @@ export async function collectExportFiles(
 
   let existingMcmeta: unknown
   let collected = 0
-  const loaded = await mapLimit(scanned, 32, async (file) => {
+  const read = await mapLimit(scanned, 32, async (file) => {
     const data = new Uint8Array(await fs.readFile(file.abs))
     onProgress('collect', ++collected, scanned.length)
     return { path: file.path, data }
   })
+  // Custom items (M14): their files are generated again in the target's format; blocksmith/ is left out.
+  const items = exportItemFiles(read, itemFormatFor(target))
+  for (const path of items.invalid) warnings.push({ code: 'items.invalidDefinition', path })
+  const loaded = items.files
 
   const files: PackFile[] = []
   let leftOut = 0

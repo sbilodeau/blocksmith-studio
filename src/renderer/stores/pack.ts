@@ -15,6 +15,15 @@ import { useJobsStore } from './jobs'
 
 export type StatusFilter = 'all' | 'changed' | TextureStatus
 
+export type PackSection = 'textures' | 'data' | 'items'
+
+/** Sections a pack kind offers, in switch order (the first is the default). */
+export function packSections(kind: PackKind): PackSection[] {
+  if (kind === 'data') return ['data', 'items']
+  if (kind === 'resource') return ['textures', 'items']
+  return ['textures', 'data', 'items']
+}
+
 export const ALL_CATEGORIES = '__all__'
 
 /**
@@ -48,8 +57,13 @@ export function usePackStore(packId: string) {
     const lastEdited = ref<string | null>(null)
     /** Navigation agent panel next to the grid. */
     const aiPanel = ref(false)
-    /** Combined packs: which half the tab shows (data packs always show data, resource packs textures). */
-    const section = ref<'textures' | 'data'>('textures')
+    /**
+     * Which part of the pack the tab shows: textures (resource and combined packs), data files (data and combined
+     * packs) or custom items (every kind; creating one needs a combined pack).
+     */
+    const section = ref<PackSection>('textures')
+    /** The texture editor was opened from an item page: no prev / next, and Back returns to the item. */
+    const editingFromItem = ref(false)
     /** Export option "also accept newer versions" (kept while the tab is open). */
     const exportAcceptNewer = ref(false)
     function setExportAcceptNewer(on: boolean): void {
@@ -147,14 +161,16 @@ export function usePackStore(packId: string) {
       anchor.value = null
     }
 
-    function openEditor(path: string): void {
+    function openEditor(path: string, fromItem = false): void {
       editing.value = path
       lastEdited.value = path
+      editingFromItem.value = fromItem
     }
 
     function closeEditor(): void {
       if (editing.value) lastEdited.value = editing.value
       editing.value = null
+      editingFromItem.value = false
     }
 
     async function exportPack(
@@ -217,6 +233,7 @@ export function usePackStore(packId: string) {
       lastEdited,
       aiPanel,
       section,
+      editingFromItem,
       exportAcceptNewer,
       setExportAcceptNewer,
       changedCount,

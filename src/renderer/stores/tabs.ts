@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { disposePackStore } from './pack'
 import { disposeDataStore } from './data'
+import { disposeItemsStore } from './items'
 import { disposeEditorStore } from './editor'
 import { disposePopoutStore } from './popout'
 
@@ -44,6 +45,7 @@ export const useTabsStore = defineStore('tabs', () => {
     if (removed.kind === 'pack') {
       disposePackStore(removed.id)
       disposeDataStore(removed.id)
+      disposeItemsStore(removed.id)
       disposePopoutStore(removed.id)
       disposeEditorStore(removed.id)
     }

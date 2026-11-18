@@ -19,6 +19,9 @@ anything is applied.
 - Data packs (or resource + data packs): recipes, loot tables, tags, advancements and functions, edited with live
   checks against Minecraft's format, item id completion, new-file templates, an AI chat that refines the open file
   and an **Explain** tab that says in simple terms what a file changes in the game
+- **Custom items** that work without mods: a new item with its own name (English and French), texture, 3D look,
+  properties (food and its effects, weapon damage, tool mining, armor) and crafting recipe, made from a form or by
+  asking the AI, and generated in the right format for each Minecraft version
 - Bulk edits of a selection (hue, brightness, palette, outline, flip...) reviewed texture by texture
 - AI agents (Ollama Cloud by default, any OpenAI-compatible endpoint) that only propose tool calls you validate
 - Export to any Minecraft Java version released in the last two years, or install straight into Minecraft, with a
@@ -48,6 +51,12 @@ pack. On a data pack it writes the files instead ("le minerai de diamant donne d
 saddles"): each proposed file is checked and shown before you apply it. In the data editor, the **AI** panel has a chat
 that refines the open file (you apply its proposal to the editor and save it) and an **Explain** tab that says what the
 file does in the game compared with Minecraft's original, in simple terms and in your language.
+
+On a resource + data pack, the AI also makes **custom items**: "crée une épée en rubis qui fait 9 de dégâts" adds a
+step that creates the item (and a later step can recolor its texture). On an item's page, the **AI** panel changes
+that item ("fais 9 de dégâts", "ajoute vision nocturne 30 secondes quand on le mange"): you apply its proposal to the
+form and save it. Its **Explain** tab says what the item does in the game. In the pixel editor, the agent knows when
+the texture belongs to a custom item.
 
 To use the agents, open Settings > AI, paste your [Ollama Cloud](https://ollama.com) API key and pick a model (models that
 support tools are listed, with badges for vision and reasoning, and `$` / `$$` / `$$$` when the price is known).

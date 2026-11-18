@@ -15,7 +15,7 @@ type MakeFixtureJar = (outPath: string, versionId: string) => Promise<void>
 let launched: LaunchedApp | undefined
 let server: FakeProviderServer | undefined
 
-/** A pack of `kind` on the fixture jar (vanilla data: 2 recipes, a loot table, 2 tags, an advancement). */
+/** A pack of `kind` on the fixture jar (vanilla data: 3 recipes, a loot table, 2 tags, an advancement). */
 async function setup(
   name: string,
   kind: 'resource' | 'data',
@@ -133,7 +133,7 @@ test('edits a vanilla recipe with live checks, creates a file and exports a data
   const { page, app, root } = launched
   await expect(page.getByTestId('pack-kind')).toContainText('Data pack')
   await expect(page.getByTestId('data-list')).toBeVisible()
-  await expect(page.getByTestId('data-kind-recipe')).toContainText('2')
+  await expect(page.getByTestId('data-kind-recipe')).toContainText('3')
   await expect(page.getByTestId('data-kind-tag')).toContainText('2')
 
   // Open the vanilla stone slab recipe and break it: the check reports the missing result.

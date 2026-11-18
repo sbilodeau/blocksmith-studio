@@ -86,6 +86,9 @@ in the gutter, a clickable issue list with line numbers, completion of item ids 
 to vanilla** / **Delete**, with a confirmation) and **Save** (also Ctrl/Cmd+S). Leaving with unsaved changes asks to
 save or discard. Function files are plain text (not checked).
 
+Files generated from a custom item (its recipe and give function, see [custom-items.md](custom-items.md)) open
+read-only with a notice and an **Open item** button: they are written again each time the item is saved.
+
 **AI** opens a side panel with two tabs:
 
 - **Chat**: the data agent helps refine the open file ("drop 2 to 4 arrows", "make it give 8 slabs", or a question).

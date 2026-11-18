@@ -1,7 +1,17 @@
 import { z } from 'zod'
-import { encodePng, imagesEqual, type RgbaImage } from '@shared/image'
+import { createImage, decodePng, encodePng, imagesEqual, type RgbaImage } from '@shared/image'
 import { applyParsed, bulkTools } from '@shared/bulk/operations'
 import { globToRegExp } from '@shared/categories/glob'
+import { splitTexturePath } from '@shared/categories/engine'
+import { getDefaultCategoryEngine } from '@shared/categories/defaults'
+import {
+  armorTexturePath,
+  itemPreset,
+  itemTexturePath,
+  wornTexturePreset,
+  type CustomItem,
+  type ItemVariant
+} from '@shared/items'
 import { ToolError, getTool, paletteSummary, toolJsonSchema, type AnyTool } from '@shared/ai/tools'
 import { updateStyleBrief } from '@shared/ai/tools/memory'
 import type {
@@ -47,6 +57,17 @@ import {
   issuesForModel,
   type CreationData
 } from './creation-data'
+import {
+  ITEM_DEFINITION_GUIDE,
+  LIST_ITEMS_DESCRIPTION,
+  ListItemsSchema,
+  READ_ITEM_DESCRIPTION,
+  ReadItemSchema,
+  checkDefinition,
+  itemLine,
+  listItemsResult,
+  type KnownIds
+} from './item-ai'
 
 /**
  * The creation agent (PLAN 6.3, M6): works on the whole pack. It builds the style brief with the user, then proposes
@@ -66,6 +87,11 @@ export const SAMPLES_PER_CATEGORY = 3
 export const SAMPLES_PER_STEP = 6
 /** Names returned by list_textures. */
 export const MAX_LISTED = 200
+/** Custom items written or deleted per plan. */
+export const MAX_ITEM_STEPS = 12
+/** Size of a blank item texture, and of a worn armor texture sheet. */
+const BLANK_ITEM = { width: 16, height: 16 }
+const BLANK_WORN = { width: 64, height: 32 }
 
 export interface CreationSample {
   path: string
@@ -85,9 +111,22 @@ export interface CreationRunInput {
   pack: { name: string; description: string; base?: 'vanilla' | 'empty'; kind?: PackKind }
   /** Data packs and combined packs: the data files the agent can read and change (write_json). */
   data?: CreationData
+  /** Combined packs (M14): the custom items the agent can read, create, replace and delete. */
+  items?: CreationItems
   settings: AgentSettings
   brief: StyleBrief
   history: ConversationTurn[]
+}
+
+/** The pack's custom items as the creation agent sees them. */
+export interface CreationItems {
+  list: CustomItem[]
+  /** Namespace of new items. */
+  namespace: string
+  /** Vanilla ids of the pack's version (warnings), or null when unknown. */
+  known: KnownIds | null
+  /** PNG of a pack texture, else vanilla's; null when neither has it. */
+  readPng(path: string): Promise<Uint8Array | null>
 }
 
 export interface CreationRunResult {
@@ -150,6 +189,43 @@ const ListTexturesSchema = z
   })
   .strict()
 
+const TexturePathSchema = z
+  .string()
+  .max(256)
+  .regex(/^assets\/[a-z0-9_.-]+\/textures\/[a-z0-9_./-]+\.png$/)
+
+const WriteItemSchema = z
+  .object({
+    item: z
+      .record(z.string(), z.unknown())
+      .describe('The WHOLE definition of the item, as a JSON object'),
+    textureFrom: TexturePathSchema.optional().describe(
+      "New item: the vanilla or pack texture its texture starts from (default: the kind's diamond item)"
+    )
+  })
+  .strict()
+
+const DeleteItemSchema = z
+  .object({ id: z.string().min(1).max(64).describe('Id of the item to delete') })
+  .strict()
+
+const WRITE_ITEM_DESCRIPTION = `Propose a custom item (create it, or replace the item with the same id), shown to the user as a plan step. "item" is
+the WHOLE definition (format below); "textureFrom" is the vanilla or pack texture a NEW item's texture is copied from
+(default: the diamond item of its kind). The definition is checked: an invalid one is refused with the reasons. The
+new texture can then be recolored with apply_to_all (filter {"match": "<id>"}), on top of this step.
+Examples:
+- "crée une épée en rubis qui fait 9 de dégâts" / "create a ruby sword that deals 9 damage" ->
+  {"item":{"schemaVersion":1,"id":"ruby_sword","namespace":"<pack namespace>","kind":"weapon",
+  "base":"minecraft:stone_sword","names":{"en_us":"Ruby Sword","fr_fr":"Épée en rubis"},"handheld":true,
+  "durability":1561,"weapon":{"attackDamage":9,"attackSpeed":1.6},"recipe":{"type":"shaped","grid":[null,
+  "minecraft:redstone_block",null,null,"minecraft:redstone_block",null,null,"minecraft:stick",null],"count":1}},
+  "textureFrom":"assets/minecraft/textures/item/diamond_sword.png"}, then apply_to_all hue_shift on
+  {"match":"ruby_sword"} to make it red
+- "une pomme magique qui donne de la régénération" / "a magic apple that gives regeneration" -> kind "food", base
+  "minecraft:poisonous_potato", "food": {"nutrition":4,"saturation":2.4,"effects":[{"effect":"minecraft:regeneration",
+  "seconds":10,"level":2}]}, "textureFrom":"assets/minecraft/textures/item/apple.png"
+${ITEM_DEFINITION_GUIDE}`
+
 const SetPackMetaSchema = z
   .object({
     name: z.string().trim().min(1).max(60).optional().describe('New pack name'),
@@ -175,9 +251,11 @@ function spec(name: string, description: string, schema: z.ZodType): ToolSpec {
   }
 }
 
+const ITEM_TOOLS = ['list_items', 'read_item', 'write_item', 'delete_item']
+
 /**
  * The creation scope's tools for a pack kind: apply_to_all and list_textures (packs with textures), list_data, read_json
- * and write_json (packs with data), set_pack_meta and update_style_brief (all).
+ * and write_json (packs with data), the custom item tools (combined packs), set_pack_meta and update_style_brief (all).
  */
 export function creationTools(kind: PackKind = 'resource'): CreationTool[] {
   const textures = kind !== 'data'
@@ -185,6 +263,7 @@ export function creationTools(kind: PackKind = 'resource'): CreationTool[] {
   return allCreationTools().filter((t) => {
     if (t.name === 'apply_to_all' || t.name === 'list_textures') return textures
     if (t.name === 'list_data' || t.name === 'read_json' || t.name === 'write_json') return data
+    if (ITEM_TOOLS.includes(t.name)) return kind === 'combined'
     return true
   })
 }
@@ -239,6 +318,35 @@ before using it in apply_to_all. Example: {"filter":{"match":"*_ore"},"limit":50
       kind: 'mutate',
       schema: WriteJsonSchema,
       spec: spec('write_json', WRITE_JSON_DESCRIPTION, WriteJsonSchema)
+    },
+    {
+      name: 'list_items',
+      kind: 'read',
+      schema: ListItemsSchema,
+      spec: spec('list_items', LIST_ITEMS_DESCRIPTION, ListItemsSchema)
+    },
+    {
+      name: 'read_item',
+      kind: 'read',
+      schema: ReadItemSchema,
+      spec: spec('read_item', READ_ITEM_DESCRIPTION, ReadItemSchema)
+    },
+    {
+      name: 'write_item',
+      kind: 'mutate',
+      schema: WriteItemSchema,
+      spec: spec('write_item', WRITE_ITEM_DESCRIPTION, WriteItemSchema)
+    },
+    {
+      name: 'delete_item',
+      kind: 'mutate',
+      schema: DeleteItemSchema,
+      spec: spec(
+        'delete_item',
+        `Propose to delete a custom item of the pack (its definition, texture, recipe and other generated files), shown to
+the user as a plan step. Example: "supprime l'item ruby" / "delete the ruby item" -> {"id":"ruby"}`,
+        DeleteItemSchema
+      )
     },
     {
       name: 'set_pack_meta',
@@ -340,7 +448,10 @@ function sheetTexture(index: number, s: CreationSample, image = s.image): SheetT
 
 /** The user message of a creation run: pack, categories, samples (+ contact sheet for vision), then the request. */
 export function buildCreationMessage(
-  input: Pick<CreationRunInput, 'textures' | 'samples' | 'pack' | 'data' | 'categoryLabels'>,
+  input: Pick<
+    CreationRunInput,
+    'textures' | 'samples' | 'pack' | 'data' | 'categoryLabels' | 'items'
+  >,
   message: string,
   withImage: boolean
 ): ChatMessage {
@@ -370,7 +481,11 @@ export function buildCreationMessage(
   const parts = [
     header,
     ...(kind === 'combined'
-      ? ['This pack holds textures AND data files.', ...dataSummary(input.data)]
+      ? [
+          'This pack holds textures AND data files.',
+          ...dataSummary(input.data),
+          ...itemsSummary(input.items)
+        ]
       : []),
     ...(pack.base === 'empty'
       ? [
@@ -402,6 +517,34 @@ export function buildCreationMessage(
   }
   parts.push('', 'User request:', message)
   return { role: 'user', text: parts.join('\n'), ...(images?.length ? { images } : {}) }
+}
+
+/** The pack's custom items (combined packs). */
+function itemsSummary(items: CreationItems | undefined): string[] {
+  if (!items) return []
+  return items.list.length
+    ? [
+        `Custom items of the pack (namespace "${items.namespace}"):`,
+        ...items.list.map((i) => `- ${itemLine(i)}`)
+      ]
+    : [`The pack has no custom item yet (namespace for new items: "${items.namespace}").`]
+}
+
+/** A texture the plan adds (a new custom item's), as the pack's texture list shows it. */
+function plannedTexture(path: string, image: RgbaImage): TextureEntry {
+  const parts = splitTexturePath(path)!
+  return {
+    path,
+    namespace: parts.namespace,
+    folder: parts.folder,
+    name: parts.name,
+    width: image.width,
+    height: image.height,
+    animated: false,
+    status: 'added',
+    categories: getDefaultCategoryEngine().categorize(path),
+    url: ''
+  }
 }
 
 /** Data files per kind and the pack's own files (data packs and combined packs). */
@@ -438,7 +581,10 @@ export async function runCreationAgent(
   emit: Emit,
   signal: AbortSignal
 ): Promise<CreationRunResult> {
-  const { request, settings, textures, samples } = input
+  const { request, settings } = input
+  // Copies: write_item adds the textures of new items, so later apply_to_all steps can preview on them.
+  const textures = [...input.textures]
+  const samples = [...input.samples]
   const steps: ProposalStep[] = []
   const at = (): string => deps.now().toISOString()
   /** Sample pixels after the steps so far. */
@@ -453,8 +599,13 @@ export async function runCreationAgent(
   const plan = planImages(model, settings.imageMode)
   const kind = input.pack.kind ?? 'resource'
   const tools = creationTools(kind).filter(
-    (t) => input.data || !['list_data', 'read_json', 'write_json'].includes(t.name)
+    (t) =>
+      (input.data || !['list_data', 'read_json', 'write_json'].includes(t.name)) &&
+      (input.items || !ITEM_TOOLS.includes(t.name))
   )
+  /** The pack's items as saved, then as the plan so far leaves them. */
+  const packItems = new Map((input.items?.list ?? []).map((i) => [i.id, i]))
+  const plannedItems = new Map(packItems)
   const dataDraft = input.data ? new DataDraft(input.data) : null
   const byName = new Map(tools.map((t) => [t.name, t]))
   const specs = tools.map((t) => t.spec)
@@ -498,6 +649,7 @@ export async function runCreationAgent(
     if (matched.length === 0) {
       return fail('mutate', 'No texture of the pack matches this filter; nothing was planned.')
     }
+    const matchedPaths = new Set(matched.map((t) => t.path))
     if (steps.length >= MAX_PLAN_STEPS) {
       return fail(
         'mutate',
@@ -547,7 +699,14 @@ export async function runCreationAgent(
       args: op.args,
       kind: 'mutate',
       description: tool.describe(op.args),
-      dependsOn: steps.filter((s) => s.kind === 'mutate' && !s.json).map((s) => s.id),
+      // Earlier texture steps, and the items whose new textures this step covers.
+      dependsOn: steps
+        .filter((s) =>
+          s.item
+            ? s.item.op === 'write' && itemTextures(s.item.item).some((p) => matchedPaths.has(p))
+            : s.kind === 'mutate' && !s.json
+        )
+        .map((s) => s.id),
       targets: matched.map((t) => t.path),
       scope,
       samples: items
@@ -607,6 +766,150 @@ export async function runCreationAgent(
     })
   }
 
+  /** The item texture and worn texture of a definition. */
+  function itemTextures(item: CustomItem | undefined): string[] {
+    if (!item) return []
+    const worn = armorTexturePath(item)
+    return worn ? [itemTexturePath(item), worn] : [itemTexturePath(item)]
+  }
+
+  /** Decoded PNG of a pack or vanilla texture; null when missing or unreadable. */
+  async function readImage(path: string): Promise<RgbaImage | null> {
+    const png = await input.items!.readPng(path).catch(() => null)
+    if (!png) return null
+    try {
+      return decodePng(png)
+    } catch {
+      return null
+    }
+  }
+
+  /** Makes a planned texture visible to list_textures and apply_to_all, with its pixels as a sample. */
+  function addPlannedTexture(path: string, image: RgbaImage): void {
+    if (!textures.some((t) => t.path === path)) textures.push(plannedTexture(path, image))
+    if (!sampleByPath.has(path)) {
+      const sample: CreationSample = { path, image }
+      samples.push(sample)
+      sampleByPath.set(path, sample)
+      draft.set(path, image)
+    }
+  }
+
+  /** Puts `step` in place of the plan's earlier step for the same item (keeping its id), or at the end. */
+  function putItemStep(step: Omit<ProposalStep, 'id'>, id: string): void {
+    const index = steps.findIndex((s) => s.item?.id === id)
+    const placed: ProposalStep = { id: index >= 0 ? steps[index]!.id : deps.newId(), ...step }
+    if (index >= 0) steps.splice(index, 1, placed)
+    else steps.push(placed)
+  }
+
+  function itemStepsFull(id: string): boolean {
+    return (
+      steps.filter((s) => s.item).length >= MAX_ITEM_STEPS && !steps.some((s) => s.item?.id === id)
+    )
+  }
+
+  async function writeItem(
+    call: ToolCall,
+    data: z.output<typeof WriteItemSchema>
+  ): Promise<CallOutcome> {
+    const items = input.items!
+    // Fields the model may leave out: the format version and the pack's namespace.
+    const given = Object.fromEntries(Object.entries(data.item).filter(([, v]) => v !== undefined))
+    const raw = { schemaVersion: 1, namespace: items.namespace, ...given }
+    const id = typeof raw['id'] === 'string' ? raw['id'] : ''
+    const previous = plannedItems.get(id) ?? null
+    const check = checkDefinition(raw, { previous, taken: new Set(), known: items.known })
+    if (!check.item) return fail('mutate', check.error ?? 'Invalid definition.')
+    const item = check.item
+    if (itemStepsFull(item.id)) {
+      return fail(
+        'mutate',
+        `The plan already has ${MAX_ITEM_STEPS} items; stop and let the user review it.`
+      )
+    }
+    const isNew = !packItems.has(item.id)
+    let textureFrom: string | undefined
+    if (isNew) {
+      const variant = (item.tool?.type ?? item.armor?.slot) as ItemVariant | undefined
+      textureFrom = data.textureFrom ?? itemPreset(item.kind, variant).textureFrom
+      const image = await readImage(textureFrom)
+      if (!image) {
+        return fail(
+          'mutate',
+          `No texture at ${textureFrom}: give a vanilla or pack texture path in "textureFrom" (for example assets/minecraft/textures/item/diamond_sword.png), or leave it out.`
+        )
+      }
+      addPlannedTexture(itemTexturePath(item), image)
+    } else {
+      const path = itemTexturePath(item)
+      const image =
+        (await readImage(path)) ?? createImage(BLANK_ITEM.width, BLANK_ITEM.height, [0, 0, 0, 0])
+      addPlannedTexture(path, image)
+    }
+    const worn = armorTexturePath(item)
+    if (worn && item.armor) {
+      const image =
+        (await readImage(worn)) ??
+        (await readImage(wornTexturePreset(item.armor.slot))) ??
+        createImage(BLANK_WORN.width, BLANK_WORN.height, [0, 0, 0, 0])
+      addPlannedTexture(worn, image)
+    }
+    const name = item.names['en_us'] ?? item.id
+    putItemStep(
+      {
+        callId: call.id,
+        tool: 'write_item',
+        args: { id: item.id, ...(textureFrom ? { textureFrom } : {}) },
+        kind: 'mutate',
+        description: { key: isNew ? 'ops.writeItemNew' : 'ops.writeItem', params: { name } },
+        dependsOn: [],
+        item: { op: 'write', id: item.id, item, ...(textureFrom ? { textureFrom } : {}), isNew }
+      },
+      item.id
+    )
+    plannedItems.set(item.id, item)
+    return ok('mutate', `Proposed the item ${item.id}${isNew ? ' (new)' : ''}`, {
+      proposed: true,
+      texture: itemTexturePath(item),
+      ...(check.unknownIds.length
+        ? { warnings: `Ids this Minecraft version does not have: ${check.unknownIds.join(', ')}` }
+        : {}),
+      note: 'The user will review this item.'
+    })
+  }
+
+  function deleteItem(call: ToolCall, data: z.output<typeof DeleteItemSchema>): CallOutcome {
+    const id = data.id.includes(':') ? data.id.slice(data.id.indexOf(':') + 1) : data.id
+    const item = packItems.get(id)
+    if (!item || !plannedItems.has(id)) {
+      return fail('mutate', `The pack has no item "${data.id}" (use list_items).`)
+    }
+    if (itemStepsFull(id)) {
+      return fail(
+        'mutate',
+        `The plan already has ${MAX_ITEM_STEPS} items; stop and let the user review it.`
+      )
+    }
+    putItemStep(
+      {
+        callId: call.id,
+        tool: 'delete_item',
+        args: { id },
+        kind: 'mutate',
+        description: { key: 'ops.deleteItem', params: { name: item.names['en_us'] ?? id } },
+        dependsOn: [],
+        item: { op: 'delete', id }
+      },
+      id
+    )
+    plannedItems.delete(id)
+    return ok('mutate', `Proposed to delete the item ${id}`, {
+      proposed: true,
+      note: 'The user will review this change.'
+    })
+  }
+
   async function execute(call: ToolCall): Promise<CallOutcome> {
     const tool = byName.get(call.name)
     if (!tool) return unknownTool(call, specs)
@@ -627,6 +930,22 @@ export async function runCreationAgent(
       }
       case 'write_json':
         return writeJson(call, parsed.data as z.output<typeof WriteJsonSchema>)
+      case 'list_items':
+        return ok(
+          'read',
+          `Listed ${plannedItems.size} item(s)`,
+          listItemsResult([...plannedItems.values()])
+        )
+      case 'read_item': {
+        const { id } = parsed.data as z.output<typeof ReadItemSchema>
+        const found = plannedItems.get(id.includes(':') ? id.slice(id.indexOf(':') + 1) : id)
+        if (!found) return fail('read', `The pack has no item "${id}" (use list_items).`)
+        return ok('read', `Read the item ${found.id}`, { definition: found })
+      }
+      case 'write_item':
+        return writeItem(call, parsed.data as z.output<typeof WriteItemSchema>)
+      case 'delete_item':
+        return deleteItem(call, parsed.data as z.output<typeof DeleteItemSchema>)
       case 'apply_to_all':
         return applyToAll(call, parsed.data as z.output<typeof ApplyToAllSchema>)
       case 'list_textures': {

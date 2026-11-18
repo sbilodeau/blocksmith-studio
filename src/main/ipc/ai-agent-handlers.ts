@@ -8,7 +8,8 @@ import {
   createEditorAgentService,
   type EditorAgentService,
   type EditorAgentServiceDeps,
-  type DataAiDeps
+  type DataAiDeps,
+  type ItemAiDeps
 } from '../services/ai/agent'
 
 export interface AiAgentHandlerDeps {
@@ -26,6 +27,8 @@ export interface AiAgentHandlerDeps {
   creation?: EditorAgentServiceDeps['creation']
   /** "Explain" in the data editor (M10). */
   dataAi?: DataAiDeps
+  /** Custom items (M14): the item agent and Explain (with `dataAi`), the creation agent's item tools. */
+  items?: ItemAiDeps
   /** Main forwards these to the window as 'ai.event'. */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -51,6 +54,7 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
     ...(deps.navigation ? { navigation: deps.navigation } : {}),
     ...(deps.creation ? { creation: deps.creation } : {}),
     ...(deps.dataAi ? { dataAi: deps.dataAi } : {}),
+    ...(deps.items ? { items: deps.items } : {}),
     emit: deps.emit,
     now: deps.now,
     newId: deps.newId
@@ -75,6 +79,8 @@ export function registerAiAgentHandlers(deps: AiAgentHandlerDeps): {
   handle('ai.creation.stopApply', ({ proposalId }) => agent.stopCreationApply(proposalId))
   handle('ai.data.send', (request) => agent.sendData(request))
   handle('ai.data.explain', (request) => agent.sendExplain(request))
+  handle('ai.item.send', (request) => agent.sendItem(request))
+  handle('ai.item.explain', (request) => agent.sendItemExplain(request))
   handle('brief.get', ({ packId }) => brief.get(packId))
   handle('brief.update', ({ packId, patch }) => brief.update(packId, patch, 'user'))
 

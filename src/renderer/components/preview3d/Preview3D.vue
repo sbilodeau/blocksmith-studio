@@ -28,7 +28,12 @@ import { call } from '../../services/ipc'
  * Live 3D preview of the texture open in the editor (PLAN 3.4). `source` is the editor store (docked panel) or
  * the state relayed to the pop-out window (`popout`).
  */
-const props = defineProps<{ source: PreviewSource; popout?: boolean }>()
+const props = defineProps<{
+  source: PreviewSource
+  popout?: boolean
+  /** A view only (item page): no painting on the model, no pop-out. */
+  readonly?: boolean
+}>()
 const emit = defineEmits<{ popout: [] }>()
 const { t } = useI18n()
 const source = computed(() => props.source)
@@ -466,7 +471,7 @@ onBeforeUnmount(() => {
             {{ t(`preview.view.${v}`) }}
           </n-button>
         </n-button-group>
-        <n-tooltip>
+        <n-tooltip v-if="!readonly">
           <template #trigger>
             <n-button
               size="tiny"
@@ -480,7 +485,7 @@ onBeforeUnmount(() => {
           </template>
           {{ t('preview.paintHint') }}
         </n-tooltip>
-        <n-tooltip v-if="!popout">
+        <n-tooltip v-if="!popout && !readonly">
           <template #trigger>
             <n-button size="tiny" data-testid="preview3d-popout" @click="emit('popout')">
               {{ t('preview.popOut') }}

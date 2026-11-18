@@ -17,6 +17,9 @@ import {
   type DataAgentRequest,
   type DataExplainRequest,
   type DataFileProposal,
+  type ItemAgentRequest,
+  type ItemDefinitionProposal,
+  type ItemExplainRequest,
   type PackMetaPatch,
   type ProposalStep,
   type EditorAgentRequest,
@@ -31,6 +34,8 @@ import type { TextureEntry } from '@shared/model/pack'
 import type { DataList } from '@shared/model/data'
 import type { HistoryEntry } from '@shared/model/history'
 import type { BulkOperation } from '@shared/bulk/operations'
+import { namespaceFor } from '@shared/datapack/paths'
+import type { CustomItem } from '@shared/items'
 import type { JobReporter, ProviderRegistry } from '../../contracts'
 import { AppErrorException } from '../../../ipc/registry'
 import type { BriefService } from '../../brief'
@@ -39,10 +44,13 @@ import { ProposalStore, decisionNote, replayProposal, requestSummary } from './p
 import { errorOf, frameLayoutOf, runEditorAgent } from './runtime'
 import { replayTargets, runNavigationAgent, type NavigationTexture } from './navigation'
 import type { BulkService } from '../../bulk'
-import { pickSamples, runCreationAgent, type CreationSample } from './creation'
+import { pickSamples, runCreationAgent, type CreationItems, type CreationSample } from './creation'
 import { buildExplainMessages, gatherExplainSources, type DataAiDeps } from './explain'
 import { runAgentLoop } from './loop'
 import { runDataAgent } from './data-agent'
+import { knownIdsOf, type ItemAiDeps } from './item-ai'
+import { buildItemExplainMessages, gatherItemSources, runItemAgent } from './item-agent'
+import type { ItemOperation } from '../../items'
 
 /** Largest selection the navigation agent works on. */
 export const MAX_NAVIGATION_TEXTURES = 2000
@@ -91,10 +99,23 @@ export interface EditorAgentServiceDeps {
         change: { source: HistoryEntry['source']; label: HistoryEntry['label'] }
       ): Promise<unknown>
     }
+    /** Combined packs (M14): the writer of accepted custom items (one history entry for all of them). */
+    items?: {
+      applyMany(
+        packId: string,
+        operations: readonly ItemOperation[],
+        change: { source: HistoryEntry['source']; label: HistoryEntry['label'] }
+      ): Promise<unknown>
+    }
     jobs?: JobReporter
   }
   /** "Explain" in the data editor (M10): what the explanation reads about the file and the game. */
   dataAi?: DataAiDeps
+  /**
+   * Custom items (M14): what the item agent and the item Explain read (they also use `dataAi` for the pack and its
+   * data files), the creation agent's item tools, and the editor agent's "[Custom item]" line.
+   */
+  items?: ItemAiDeps
   /** Default sink for background runs (main forwards it as 'ai.event'). */
   emit: (event: AgentEvent) => void
   now?: () => Date
@@ -167,6 +188,22 @@ export interface EditorAgentService {
     signal: AbortSignal,
     runId?: string
   ): Promise<void>
+  /** Starts an item-agent run about the custom item open in the item page (stopping the pack's previous one). */
+  sendItem(request: ItemAgentRequest): Promise<{ runId: string }>
+  runItem(
+    request: ItemAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId?: string
+  ): Promise<void>
+  /** Starts an explanation of a custom item (one answer, no tools), stopping the pack's previous one. */
+  sendItemExplain(request: ItemExplainRequest): Promise<{ runId: string }>
+  runItemExplain(
+    request: ItemExplainRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId?: string
+  ): Promise<void>
   /** Resolves when no background run is active (tests, shutdown). */
   idle(): Promise<void>
 }
@@ -234,11 +271,14 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     try {
       const base = decode(request.texture.png)
       proposals.expireFor(packId, 'editor')
-      const [brief, vanilla, history, layout] = await Promise.all([
+      const [brief, vanilla, history, layout, customItem] = await Promise.all([
         deps.brief.get(packId),
         readVanilla(packId, request.texture.path),
         deps.conversations.read(packId, 'editor'),
-        modelLayout(packId, request.texture.path, base)
+        modelLayout(packId, request.texture.path, base),
+        deps.items
+          ? deps.items.forTexture(packId, request.texture.path).catch(() => null)
+          : Promise.resolve(null)
       ])
       const userTurn: ConversationTurn = {
         id: newId(),
@@ -258,7 +298,16 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
           brief,
           vanilla,
           history,
-          ...(layout ? { modelLayout: layout } : {})
+          ...(layout ? { modelLayout: layout } : {}),
+          ...(customItem
+            ? {
+                customItem: {
+                  name: customItem.names['en_us'] ?? customItem.id,
+                  kind: customItem.kind,
+                  base: customItem.base
+                }
+              }
+            : {})
         },
         { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
         emit,
@@ -351,6 +400,25 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     return samples
   }
 
+  /** The custom items the creation agent works with (combined packs), or undefined without the item deps. */
+  async function creationItems(
+    packId: string,
+    packName: string
+  ): Promise<CreationItems | undefined> {
+    const items = deps.items
+    if (!items || !deps.creation?.items) return undefined
+    const [list, catalog] = await Promise.all([
+      items.all(packId).catch(() => [] as CustomItem[]),
+      items.catalog(packId).catch(() => null)
+    ])
+    return {
+      list,
+      namespace: list[0]?.namespace ?? namespaceFor(packName),
+      known: catalog ? knownIdsOf(catalog) : null,
+      readPng: (path) => items.readPng(packId, path)
+    }
+  }
+
   async function runCreation(
     request: CreationAgentRequest,
     emit: (event: AgentEvent) => void,
@@ -370,14 +438,15 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       const textures = kind === 'data' ? [] : await creation.catalog(packId)
       if (textures.length === 0 && kind !== 'data') throw new AppErrorException('ai.emptyPack')
       const dataDeps = kind !== 'resource' ? creation.data : undefined
-      const [samples, brief, history, dataList, categoryLabels] = await Promise.all([
+      const [samples, brief, history, dataList, categoryLabels, items] = await Promise.all([
         loadSamples(packId, textures),
         deps.brief.get(packId),
         deps.conversations.read(packId, 'creation'),
         dataDeps ? dataDeps.list(packId) : Promise.resolve(undefined),
         kind !== 'data' && creation.categoryLabels
           ? creation.categoryLabels(packId).catch(() => ({}))
-          : Promise.resolve({})
+          : Promise.resolve({}),
+        kind === 'combined' ? creationItems(packId, pack.name) : Promise.resolve(undefined)
       ])
       const data =
         dataDeps && dataList
@@ -405,6 +474,7 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
           samples,
           pack,
           ...(data ? { data } : {}),
+          ...(items ? { items } : {}),
           settings: deps.getAgentSettings('creation'),
           brief,
           history
@@ -562,6 +632,133 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     })
   }
 
+  function itemDeps(): { items: ItemAiDeps; dataAi: DataAiDeps } {
+    if (!deps.items || !deps.dataAi) throw new AppErrorException('ai.agentFailed')
+    return { items: deps.items, dataAi: deps.dataAi }
+  }
+
+  async function runItem(
+    request: ItemAgentRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId = newId()
+  ): Promise<void> {
+    const { packId } = request
+    emit({ runId, type: 'started', agent: 'item', model: request.model })
+    let result: Awaited<ReturnType<typeof runItemAgent>>
+    let proposal: ItemDefinitionProposal | undefined
+    try {
+      const { items, dataAi } = itemDeps()
+      const [sources, entries, ids, history, modelInfo] = await Promise.all([
+        gatherItemSources(request, { items, meta: (id) => dataAi.meta(id) }),
+        dataAi.entries(packId).catch(() => []),
+        dataAi.ids(packId).catch(() => ({ items: [], blocks: [], tags: {} })),
+        deps.conversations.read(packId, 'item'),
+        deps.providers.getModel(request.model).catch(() => undefined)
+      ])
+      await deps.conversations.append(packId, 'item', [
+        {
+          id: newId(),
+          at: now().toISOString(),
+          role: 'user',
+          text: request.message,
+          itemId: request.id,
+          model: request.model
+        }
+      ])
+      const read = async (path: string): Promise<string | null> =>
+        (await dataAi.packText(packId, path).catch(() => null)) ??
+        (await dataAi.vanillaText(packId, path).catch(() => null))
+      result = await runItemAgent(
+        {
+          runId,
+          request,
+          sources,
+          readPng: (path) => items.readPng(packId, path),
+          data: { entries, ids, read },
+          settings: deps.getAgentSettings('item'),
+          history,
+          ...(modelInfo ? { modelInfo } : {})
+        },
+        { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
+        emit,
+        signal
+      )
+      if (result.proposal) {
+        proposal = {
+          id: newId(),
+          runId,
+          agent: 'item',
+          kind: 'item',
+          packId,
+          itemId: request.id,
+          before: request.item,
+          after: result.proposal.after,
+          unknownIds: result.proposal.unknownIds,
+          status: 'pending'
+        }
+        const last = [...result.turns].reverse().find((t) => t.role === 'assistant')
+        if (last) last.proposalId = proposal.id
+      }
+      await deps.conversations.append(packId, 'item', result.turns).catch(() => undefined)
+    } catch (err) {
+      emit({ runId, type: 'done', reason: 'error', error: errorOf(err) })
+      return
+    }
+    if (proposal) emit({ runId, type: 'proposal', proposal })
+    emit({
+      runId,
+      type: 'done',
+      reason: result.reason,
+      ...(result.error ? { error: result.error } : {})
+    })
+  }
+
+  async function runItemExplain(
+    request: ItemExplainRequest,
+    emit: (event: AgentEvent) => void,
+    signal: AbortSignal,
+    runId = newId()
+  ): Promise<void> {
+    emit({ runId, type: 'started', agent: 'explain', model: request.model })
+    let result: Awaited<ReturnType<typeof runAgentLoop>>
+    try {
+      const { items, dataAi } = itemDeps()
+      const [sources, modelInfo] = await Promise.all([
+        gatherItemSources(request, { items, meta: (id) => dataAi.meta(id) }),
+        deps.providers.getModel(request.model).catch(() => undefined)
+      ])
+      result = await runAgentLoop(
+        {
+          agent: 'explain',
+          tools: [],
+          messages: buildItemExplainMessages(sources, request.language),
+          execute: () => ({ ok: false, kind: 'read', summary: '', content: '{}' }),
+          kindOf: () => 'read'
+        },
+        {
+          runId,
+          model: request.model,
+          ...(modelInfo ? { modelInfo } : {}),
+          thinking: request.thinking ?? 'off',
+          maxIterations: 1
+        },
+        { providers: deps.providers, newId, now, tokenBudget: deps.tokenBudget },
+        emit,
+        signal
+      )
+    } catch (err) {
+      emit({ runId, type: 'done', reason: 'error', error: errorOf(err) })
+      return
+    }
+    emit({
+      runId,
+      type: 'done',
+      reason: result.reason === 'budget' ? 'end' : result.reason,
+      ...(result.error ? { error: result.error } : {})
+    })
+  }
+
   async function applyCreation(
     proposalId: string,
     acceptedStepIds: string[]
@@ -583,7 +780,8 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
       const accepted = proposal.steps.filter((s) => ids.has(s.id))
       const memory = accepted.filter((s) => s.kind === 'memory')
       const jsonSteps = accepted.filter((s) => s.json)
-      const textureSteps = accepted.filter((s) => s.kind === 'mutate' && !s.json)
+      const itemSteps = accepted.filter((s) => s.item)
+      const textureSteps = accepted.filter((s) => s.kind === 'mutate' && !s.json && !s.item)
       const patches = memory.flatMap((s) => (s.briefPatch ? [s.briefPatch] : []))
       const meta: PackMetaPatch = Object.assign({}, ...memory.map((s) => s.packMeta ?? {}))
       if (meta.name !== undefined || meta.description !== undefined) {
@@ -602,8 +800,31 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         filesWritten = jsonSteps.length
       }
 
+      // Custom items: all accepted ones in one history entry, before the catalog is read for the texture steps (so a
+      // step recoloring a new item's texture finds it).
+      let itemsWritten = 0
+      if (itemSteps.length > 0) {
+        if (!creation.items) throw new AppErrorException('ai.agentFailed')
+        const operations: ItemOperation[] = itemSteps.map((s) => {
+          const change = s.item!
+          return change.op === 'delete'
+            ? { op: 'delete', id: change.id }
+            : {
+                op: 'write',
+                item: change.item!,
+                ...(change.isNew ? {} : { previousId: change.id }),
+                ...(change.textureFrom ? { textureFrom: change.textureFrom } : {})
+              }
+        })
+        await creation.items.applyMany(proposal.packId, operations, {
+          source: 'ai',
+          label: { key: 'aiItems', params: { count: itemSteps.length } }
+        })
+        itemsWritten = itemSteps.length
+      }
+
       const progress = creation.jobs?.start('ai.plan.apply')
-      const applied: ProposalStep[] = [...memory, ...jsonSteps]
+      const applied: ProposalStep[] = [...memory, ...jsonSteps, ...itemSteps]
       let written = 0
       let checkpoints = 0
       let stopped = false
@@ -642,7 +863,11 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         }
         applied.push(step)
       }
-      progress?.('step', applied.length - memory.length - jsonSteps.length, textureSteps.length)
+      progress?.(
+        'step',
+        applied.length - memory.length - jsonSteps.length - itemSteps.length,
+        textureSteps.length
+      )
 
       if (applied.length > 0) {
         const decided = patches.some((p) => p.addDecision?.trim())
@@ -678,7 +903,8 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
         stopped,
         briefUpdated: patches.length > 0,
         metaUpdated: meta.name !== undefined || meta.description !== undefined,
-        filesWritten
+        filesWritten,
+        itemsWritten
       }
     } finally {
       applying.delete(proposalId)
@@ -920,6 +1146,30 @@ export function createEditorAgentService(deps: EditorAgentServiceDeps): EditorAg
     },
 
     runData,
+
+    async sendItem(request) {
+      itemDeps()
+      if (!(await deps.packs.locate(request.packId))) {
+        throw new AppErrorException('packs.notFound', { packId: request.packId })
+      }
+      return start(`${request.packId}:item`, (runId, signal) =>
+        runItem(request, deps.emit, signal, runId)
+      )
+    },
+
+    runItem,
+
+    async sendItemExplain(request) {
+      itemDeps()
+      if (!(await deps.packs.locate(request.packId))) {
+        throw new AppErrorException('packs.notFound', { packId: request.packId })
+      }
+      return start(`${request.packId}:itemExplain`, (runId, signal) =>
+        runItemExplain(request, deps.emit, signal, runId)
+      )
+    },
+
+    runItemExplain,
 
     stop(runId) {
       byRunId.get(runId)?.controller.abort()

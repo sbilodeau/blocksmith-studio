@@ -33,7 +33,7 @@ const form = ref<string | null>(null)
 function openForm(target: string | null): void {
   form.value = target
 }
-const AGENTS: AgentKind[] = ['editor', 'navigation', 'creation', 'data']
+const AGENTS: AgentKind[] = ['editor', 'navigation', 'creation', 'data', 'item']
 
 async function saveKey(providerId: string): Promise<void> {
   try {

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "description": "Starting point of each custom item kind (PLAN M14): the vanilla base item and the properties a new item gets, all editable afterwards. Base items are chosen among items no vanilla crafting recipe uses as an ingredient, because Minecraft matches recipe ingredients by item id only (a custom item works as its base item in vanilla recipes). Tools have one variant per tool type and armor one per slot (diamond-like stats). `textureFrom` is the vanilla texture a new item starts from; `wornTextureFrom` the vanilla worn armor texture per layer.",
+  "kinds": {
+    "simple": {
+      "base": "minecraft:poisonous_potato",
+      "handheld": false,
+      "removeComponents": ["minecraft:food", "minecraft:consumable"],
+      "textureFrom": "assets/minecraft/textures/item/amethyst_shard.png",
+      "item": {
+        "maxStack": 64
+      }
+    },
+    "food": {
+      "base": "minecraft:poisonous_potato",
+      "handheld": false,
+      "removeComponents": [],
+      "textureFrom": "assets/minecraft/textures/item/apple.png",
+      "item": {
+        "food": {
+          "nutrition": 4,
+          "saturation": 2.4,
+          "eatSeconds": 1.6,
+          "alwaysEdible": false,
+          "animation": "eat",
+          "effects": []
+        }
+      }
+    },
+    "weapon": {
+      "base": "minecraft:stone_sword",
+      "handheld": true,
+      "removeComponents": [],
+      "textureFrom": "assets/minecraft/textures/item/diamond_sword.png",
+      "item": {
+        "durability": 1561,
+        "weapon": {
+          "attackDamage": 7,
+          "attackSpeed": 1.6
+        }
+      }
+    },
+    "tool": {
+      "handheld": true,
+      "removeComponents": [],
+      "variants": {
+        "pickaxe": {
+          "base": "minecraft:stone_pickaxe",
+          "textureFrom": "assets/minecraft/textures/item/diamond_pickaxe.png",
+          "item": {
+            "durability": 1561,
+            "tool": {
+              "type": "pickaxe",
+              "tier": "diamond",
+              "miningSpeed": 8
+            },
+            "weapon": {
+              "attackDamage": 5,
+              "attackSpeed": 1.2
+            }
+          }
+        },
+        "axe": {
+          "base": "minecraft:stone_axe",
+          "textureFrom": "assets/minecraft/textures/item/diamond_axe.png",
+          "item": {
+            "durability": 1561,
+            "tool": {
+              "type": "axe",
+              "tier": "diamond",
+              "miningSpeed": 8
+            },
+            "weapon": {
+              "attackDamage": 9,
+              "attackSpeed": 1.0
+            }
+          }
+        },
+        "shovel": {
+          "base": "minecraft:stone_shovel",
+          "textureFrom": "assets/minecraft/textures/item/diamond_shovel.png",
+          "item": {
+            "durability": 1561,
+            "tool": {
+              "type": "shovel",
+              "tier": "diamond",
+              "miningSpeed": 8
+            },
+            "weapon": {
+              "attackDamage": 5.5,
+              "attackSpeed": 1.0
+            }
+          }
+        },
+        "hoe": {
+          "base": "minecraft:stone_hoe",
+          "textureFrom": "assets/minecraft/textures/item/diamond_hoe.png",
+          "item": {
+            "durability": 1561,
+            "tool": {
+              "type": "hoe",
+              "tier": "diamond",
+              "miningSpeed": 8
+            },
+            "weapon": {
+              "attackDamage": 1,
+              "attackSpeed": 4.0
+            }
+          }
+        }
+      }
+    },
+    "armor": {
+      "handheld": false,
+      "removeComponents": [],
+      "wornTextureFrom": {
+        "humanoid": "assets/minecraft/textures/entity/equipment/humanoid/diamond.png",
+        "humanoid_leggings": "assets/minecraft/textures/entity/equipment/humanoid_leggings/diamond.png"
+      },
+      "variants": {
+        "head": {
+          "base": "minecraft:netherite_helmet",
+          "textureFrom": "assets/minecraft/textures/item/diamond_helmet.png",
+          "item": {
+            "durability": 363,
+            "armor": {
+              "slot": "head",
+              "armor": 3,
+              "toughness": 2,
+              "knockbackResistance": 0
+            }
+          }
+        },
+        "chest": {
+          "base": "minecraft:netherite_chestplate",
+          "textureFrom": "assets/minecraft/textures/item/diamond_chestplate.png",
+          "item": {
+            "durability": 528,
+            "armor": {
+              "slot": "chest",
+              "armor": 8,
+              "toughness": 2,
+              "knockbackResistance": 0
+            }
+          }
+        },
+        "legs": {
+          "base": "minecraft:netherite_leggings",
+          "textureFrom": "assets/minecraft/textures/item/diamond_leggings.png",
+          "item": {
+            "durability": 495,
+            "armor": {
+              "slot": "legs",
+              "armor": 6,
+              "toughness": 2,
+              "knockbackResistance": 0
+            }
+          }
+        },
+        "feet": {
+          "base": "minecraft:netherite_boots",
+          "textureFrom": "assets/minecraft/textures/item/diamond_boots.png",
+          "item": {
+            "durability": 429,
+            "armor": {
+              "slot": "feet",
+              "armor": 3,
+              "toughness": 2,
+              "knockbackResistance": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

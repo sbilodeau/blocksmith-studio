@@ -46,6 +46,8 @@ import {
   type DataList
 } from '../model/data'
 import type { PreviewModel } from '../model/preview'
+import { CustomItemSchema, ITEM_ID_RE, ITEM_REF_RE, type CustomItem } from '../items/schema'
+import type { ItemCatalog, ItemContext, ItemList, ItemSummary } from '../model/items'
 import {
   ProviderConfigSchema,
   ModelRefSchema,
@@ -117,6 +119,14 @@ const DataPathSchema = z
   .refine((p) => !p.split('/').some((s) => s === '..' || s === '.' || s === ''))
 const DataRef = PackRef.extend({ path: DataPathSchema }).strict()
 const DataText = z.string().max(MAX_DATA_FILE_BYTES)
+const ItemRef = PackRef.extend({ id: z.string().regex(ITEM_ID_RE) }).strict()
+/**
+ * The item form's definition sent to the item agent: unsaved and possibly not valid yet (main checks it and tells the
+ * model what is wrong), so only its size is bounded here.
+ */
+const ItemDraft = z
+  .record(z.string(), z.unknown())
+  .refine((v) => JSON.stringify(v).length <= 64 * 1024, { message: 'tooLarge' })
 const MAX_PNG_BYTES = 16 * 1024 * 1024
 const VersionId = z.string().regex(/^[0-9][0-9a-z.-]{0,31}$/)
 /** A category rule list from the editor (size-bounded here; validated in depth by main). */
@@ -187,6 +197,19 @@ export const inputSchemas = {
   'data.save': DataRef.extend({ text: DataText }).strict(),
   'data.create': DataRef.extend({ text: DataText }).strict(),
   'data.delete': DataRef,
+  'items.list': PackRef,
+  'items.read': ItemRef,
+  'items.create': PackRef.extend({
+    item: CustomItemSchema,
+    /** Vanilla or pack texture the new item's texture copies; null = blank 16x16 (validated again in main). */
+    textureFrom: TexturePathSchema.nullable()
+  }).strict(),
+  /** Saves over the definition `id`; a different item.id renames the item. */
+  'items.save': ItemRef.extend({ item: CustomItemSchema }).strict(),
+  'items.delete': ItemRef,
+  'items.regenerate': ItemRef,
+  'items.catalog': PackRef,
+  'items.context': PackRef.extend({ base: z.string().regex(ITEM_REF_RE).max(128) }).strict(),
   'texture.read': TextureRef,
   'texture.save': TextureRef.extend({
     png: z.instanceof(Uint8Array).refine((b) => b.byteLength > 0 && b.byteLength <= MAX_PNG_BYTES),
@@ -254,10 +277,10 @@ export const inputSchemas = {
     .strict(),
   'ai.agent.stop': z.object({ runId: z.string().min(1).max(64) }).strict(),
   'ai.agent.conversation': PackRef.extend({
-    agent: z.enum(['creation', 'navigation', 'editor', 'data'])
+    agent: z.enum(['creation', 'navigation', 'editor', 'data', 'item'])
   }).strict(),
   'ai.agent.clear': PackRef.extend({
-    agent: z.enum(['creation', 'navigation', 'editor', 'data'])
+    agent: z.enum(['creation', 'navigation', 'editor', 'data', 'item'])
   }).strict(),
   'ai.proposal.apply': z
     .object({
@@ -309,6 +332,19 @@ export const inputSchemas = {
   }).strict(),
   'ai.data.explain': DataRef.extend({
     text: DataText,
+    model: ModelRefSchema,
+    language: LanguageSchema,
+    thinking: ReasoningLevelSchema.optional()
+  }).strict(),
+  'ai.item.send': ItemRef.extend({
+    message: z.string().trim().min(1).max(4000),
+    item: ItemDraft,
+    model: ModelRefSchema,
+    language: LanguageSchema,
+    thinking: ReasoningLevelSchema.optional()
+  }).strict(),
+  'ai.item.explain': ItemRef.extend({
+    item: ItemDraft,
     model: ModelRefSchema,
     language: LanguageSchema,
     thinking: ReasoningLevelSchema.optional()
@@ -398,6 +434,18 @@ export interface InvokeOutputs {
   'data.create': DataEntry
   /** Removes the pack's copy (back to vanilla, or gone for an added file). */
   'data.delete': void
+  /** Custom items of the pack (blocksmith/items/*.json). */
+  'items.list': ItemList
+  'items.read': CustomItem
+  /** Writes the definition, its generated files, names and texture as one history entry. */
+  'items.create': ItemSummary
+  'items.save': ItemSummary
+  /** Removes the definition, its generated files, names and textures (one history entry). */
+  'items.delete': void
+  'items.regenerate': void
+  /** Vanilla items with English names and icon textures, and item tags, of the pack's version. */
+  'items.catalog': ItemCatalog
+  'items.context': ItemContext
   'texture.read': TextureData
   /** Writes the PNG into the pack (records a history entry) and returns the updated texture entry. */
   'texture.save': TextureEntry
@@ -446,6 +494,10 @@ export interface InvokeOutputs {
   'ai.creation.stopApply': void
   'ai.data.send': { runId: string }
   'ai.data.explain': { runId: string }
+  /** Starts an item-agent run about the open custom item; progress arrives as 'ai.event'. */
+  'ai.item.send': { runId: string }
+  /** Starts an explanation of the open custom item (one answer, no tools). */
+  'ai.item.explain': { runId: string }
   /** Computes a manual bulk action (worker thread, emits job.progress). Nothing is written. */
   'bulk.preview': BulkPreview
   /** Writes the ticked textures of a preview as one undoable history entry. */

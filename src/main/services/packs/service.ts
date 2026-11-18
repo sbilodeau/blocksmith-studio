@@ -34,6 +34,14 @@ import { PathMigrator, canMigrate } from '@shared/versions/migrations'
 import type { JobReporter, VanillaStore } from '../contracts'
 import { AppErrorException } from '../../ipc/registry'
 import { collectExportFiles, exportPackZip, type CollectedExport } from './exporter'
+import {
+  ITEM_DEF_RE,
+  LATEST_ITEM_FORMAT,
+  checkItems,
+  generateItemFiles,
+  itemFormatFor,
+  parseItemFiles
+} from '@shared/items'
 import { FileInfoCache, PNG_HEADER_BYTES, mapLimit, readFileHead, writeFileAtomic } from './files'
 import {
   dataSchemaWarnings,
@@ -652,6 +660,27 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         updatedAt: now().toISOString()
       }
       await writeProject(location.folder, project)
+      // Custom items (M14): generated files follow the new version's formats.
+      const itemDefs = files.filter((f) => ITEM_DEF_RE.test(f.path))
+      if (itemDefs.length > 0) {
+        const { items } = parseItemFiles(
+          await Promise.all(
+            itemDefs.map(async (f) => ({
+              path: f.path,
+              text: (await fs.readFile(f.abs)).toString('utf8')
+            }))
+          )
+        )
+        for (const item of items) {
+          for (const file of generateItemFiles(item, itemFormatFor(target))) {
+            const dest = resolvePackFile(location.folder, file.path)
+            if (!dest) continue
+            await fs.mkdir(dirname(dest), { recursive: true })
+            await writeFileAtomic(dest, new TextEncoder().encode(file.text))
+            touched.push(file.path)
+          }
+        }
+      }
       for (const path of touched) fileInfo.delete(join(location.folder, ...path.split('/')))
       indexer.forget(packId)
       deps.notifyChanged(packId)
@@ -684,6 +713,28 @@ export function createPackService(deps: PackServiceDeps): PackService & PackCach
         ...proportionWarnings(files, (path) => index?.entries[path]),
         ...missingAnimationWarnings(files, (path) => index?.entries[path]?.animated)
       ]
+      // Custom items (M14): definitions, textures and generated files.
+      const byPath = new Map(files.map((f) => [f.path, f.data]))
+      const authoringVersion = deps.vanilla.getVersion(authoring)
+      const vanillaItems = index
+        ? new Set(
+            Object.keys(index.entries).flatMap((p) => {
+              const m = /^assets\/minecraft\/items\/([a-z0-9_]+)\.json$/.exec(p)
+              return m ? [`minecraft:${m[1]}`] : []
+            })
+          )
+        : null
+      issues.push(
+        ...checkItems({
+          paths: new Set(byPath.keys()),
+          read: (path) => {
+            const data = path.endsWith('.png') ? undefined : byPath.get(path)
+            return data ? new TextDecoder().decode(data) : null
+          },
+          format: authoringVersion ? itemFormatFor(authoringVersion) : LATEST_ITEM_FORMAT,
+          vanillaItems: vanillaItems && vanillaItems.size > 0 ? vanillaItems : null
+        })
+      )
       const mcmeta = files.find((f) => f.path === 'pack.mcmeta')
       if (!mcmeta || !isRecord(parseJson(mcmeta.data)))
         issues.push({ code: 'export.invalidMcmeta' })

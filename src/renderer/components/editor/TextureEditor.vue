@@ -136,7 +136,20 @@ function back(): void {
   })
 }
 
+/** Opened from an item page: the editor is about that item's texture, Back returns to the item. */
+const fromItem = computed(() => pack.value.editingFromItem)
+
+/** Closes the editor (after the unsaved-changes question), then runs `action` (PackView: open an item). */
+function leave(action: () => void): void {
+  guardUnsaved(() => {
+    editor.value.close()
+    pack.value.closeEditor()
+    action()
+  })
+}
+
 function go(direction: 'prev' | 'next'): void {
+  if (fromItem.value) return
   const target = neighbors.value[direction]
   if (!target) return
   guardUnsaved(() => pack.value.openEditor(target.path))
@@ -256,6 +269,8 @@ const statusTag = computed(() => {
     type: s === 'vanilla' ? 'default' : s === 'added' ? 'success' : 'warning'
   } as const
 })
+
+defineExpose({ leave })
 </script>
 
 <template>
@@ -263,9 +278,9 @@ const statusTag = computed(() => {
     <n-space justify="space-between" align="center" class="head" :wrap="false">
       <n-space align="center" :wrap="false">
         <n-button size="small" data-testid="editor-back" @click="back">{{
-          t('editor.back')
+          fromItem ? t('items.editor.backToItem') : t('editor.back')
         }}</n-button>
-        <n-button-group size="small">
+        <n-button-group v-if="!fromItem" size="small">
           <n-button :disabled="!neighbors.prev" data-testid="editor-prev" @click="go('prev')">
             {{ t('editor.prev') }}
           </n-button>

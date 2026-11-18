@@ -57,7 +57,7 @@ export const EvalCaseSchema = z.object({
    * editor: one texture (fixture = image); navigation: a selection (fixture = selection name); creation: a whole
    * pack (fixture = pack name); data: the data editor's chat (fixture = a file path of the sample data pack).
    */
-  context: z.enum(['editor', 'navigation', 'creation', 'data']),
+  context: z.enum(['editor', 'navigation', 'creation', 'data', 'item']),
   fixture: z.string(),
   fr: z.string(),
   en: z.string(),

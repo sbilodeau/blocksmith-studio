@@ -11,8 +11,9 @@ import { usePackStore } from '../../stores/pack'
 /**
  * Review of a creation-agent plan (PLAN 6.3, M6): one checkbox per step. A texture step shows what it covers
  * (categories, folders, name pattern, number of textures) and a few representative textures before / after; brief
- * and pack name steps show their change; data file steps (write_json, M10) show the proposed file. Applying writes the
- * data files as one history entry, then one history entry per texture step, and can be stopped between steps.
+ * and pack name steps show their change; data file steps (write_json, M10) show the proposed file; custom item steps
+ * (write_item / delete_item, M14) show the item. Applying writes the data files as one history entry, then the custom
+ * items as one history entry, then one history entry per texture step, and can be stopped between steps.
  */
 const props = withDefaults(
   defineProps<{
@@ -41,7 +42,7 @@ watch(
 
 const pending = computed(() => props.proposal.status === 'pending')
 const textureSteps = computed(() =>
-  props.proposal.steps.filter((s) => s.kind === 'mutate' && !s.json)
+  props.proposal.steps.filter((s) => s.kind === 'mutate' && !s.json && !s.item)
 )
 const keptTextureSteps = computed(() => textureSteps.value.filter((s) => kept.value.has(s.id)))
 /** Texture writes if every kept step changes every texture it covers (upper bound shown on the button). */
@@ -91,6 +92,12 @@ function metaLabel(step: ProposalStep): string {
   ]
     .filter(Boolean)
     .join(' · ')
+}
+
+/** "weapon, base minecraft:stone_sword" */
+function itemSummary(step: ProposalStep): string {
+  const item = step.item?.item
+  return item ? t('ai.plan.itemSummary', { kind: item.kind, base: item.base }) : ''
 }
 
 function apply(): void {
@@ -147,7 +154,30 @@ function apply(): void {
           >
             {{ step.json.previous === null ? t('ai.plan.newFile') : t('ai.plan.changedFile') }}
           </n-tag>
+          <n-tag
+            v-else-if="step.item"
+            size="tiny"
+            :bordered="false"
+            :type="step.item.op === 'delete' ? 'error' : step.item.isNew ? 'success' : 'warning'"
+          >
+            {{
+              step.item.op === 'delete'
+                ? t('ai.plan.deletedItem')
+                : step.item.isNew
+                  ? t('ai.plan.newItem')
+                  : t('ai.plan.changedItem')
+            }}
+          </n-tag>
         </div>
+        <details v-if="step.item?.item" class="json" data-testid="plan-item">
+          <summary>
+            <n-text depth="2">{{ itemSummary(step) }}</n-text>
+            <n-text v-if="step.item.textureFrom" depth="3" class="json-warn">
+              {{ t('ai.plan.itemTexture', { path: step.item.textureFrom }) }}
+            </n-text>
+          </summary>
+          <pre>{{ JSON.stringify(step.item.item, null, 2) }}</pre>
+        </details>
         <details v-if="step.json" class="json" data-testid="plan-json">
           <summary>
             <n-text depth="2">{{ step.json.path }}</n-text>
@@ -245,7 +275,11 @@ function apply(): void {
   font-size: 12px;
 }
 .step.off .samples,
+.step.off .scope,
 .step.off .json {
+  opacity: 0.4;
+}
+.json {
   margin: 4px 0 0 26px;
   font-size: 12px;
 }
@@ -263,9 +297,6 @@ function apply(): void {
   border-radius: 4px;
   background: rgba(128, 128, 128, 0.1);
   font-size: 11px;
-}
-.scope {
-  opacity: 0.4;
 }
 .head {
   display: flex;

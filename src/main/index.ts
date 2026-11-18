@@ -7,6 +7,7 @@ import { registerVanillaHandlers } from './ipc/vanilla-handlers'
 import { registerPackHandlers } from './ipc/pack-handlers'
 import { registerTextureHandlers } from './ipc/texture-handlers'
 import { registerDataHandlers } from './ipc/data-handlers'
+import { registerItemHandlers } from './ipc/item-handlers'
 import { registerPreviewHandlers } from './ipc/preview-handlers'
 import { registerAiProviderHandlers } from './ipc/ai-provider-handlers'
 import { registerAiAgentHandlers } from './ipc/ai-agent-handlers'
@@ -29,6 +30,7 @@ import { launcherCandidates } from './services/vanilla/detect'
 import { registerMinecraftHandlers } from './ipc/minecraft-handlers'
 import { createDefaultVanillaStore } from './services/vanilla'
 import { createDataService, createPackService, createTextureEditService } from './services/packs'
+import { createItemService } from './services/items'
 import { createHistoryService } from './services/history'
 import { createPopoutManager, createPreviewService } from './services/preview'
 import { createSecretsStore, secretsFilePath } from './services/secrets'
@@ -125,6 +127,13 @@ if (!app.requestSingleInstanceLock()) {
       packs,
       vanilla,
       history,
+      notifyChanged: (packId) => packChanged(packId)
+    })
+    const items = createItemService({
+      packs,
+      vanilla,
+      history,
+      data,
       notifyChanged: (packId) => packChanged(packId)
     })
     const preview = createPreviewService({ packs, vanilla })
@@ -271,6 +280,7 @@ if (!app.requestSingleInstanceLock()) {
       }
     })
     registerDataHandlers({ data })
+    registerItemHandlers({ items })
     registerPreviewHandlers({ preview, popouts })
     registerAiProviderHandlers({ settings, secrets, registry: aiProviders })
     const bulk = createBulkService({
@@ -307,6 +317,9 @@ if (!app.requestSingleInstanceLock()) {
           read: async (packId, path) => (await data.read(packId, path)).text,
           saveMany: (packId, files, change) => data.saveMany(packId, files, change)
         },
+        items: {
+          applyMany: (packId, operations, change) => items.applyMany(packId, operations, change)
+        },
         jobs
       },
       dataAi: {
@@ -319,6 +332,13 @@ if (!app.requestSingleInstanceLock()) {
         ids: (packId) => data.ids(packId),
         names: (packId) => data.names(packId),
         entries: async (packId) => (await data.list(packId)).entries
+      },
+      items: {
+        all: (packId) => items.all(packId),
+        catalog: (packId) => items.catalog(packId),
+        context: (packId, base) => items.context(packId, base),
+        forTexture: (packId, path) => items.forTexture(packId, path),
+        readPng: (packId, path) => textures.readCatalog(packId, path)
       },
       providers: aiProviders,
       getAgentSettings: (agent) => settings.get().ai.agents[agent],

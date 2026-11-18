@@ -181,6 +181,14 @@
       "invalidGlob": "Le motif « {glob} » de la catégorie {category} n'est pas valide.",
       "duplicateId": "Deux catégories ont l'identifiant {id}.",
       "invalidRule": "La catégorie {category} n'est pas valide."
+    },
+    "items": {
+      "needsCombined": "Les items personnalisés demandent un pack avec ressources et données. Passez d’abord le pack en « Ressources + données ».",
+      "notFound": "Le pack n’a pas d’item « {id} ».",
+      "exists": "Le pack a déjà un item « {id} ».",
+      "invalid": "La définition de « {id} » n’est pas valide.",
+      "invalidLang": "« {path} » n’est pas un fichier de langue valide : les noms de l’item ne peuvent pas y être écrits.",
+      "invalidTexture": "« {path} » n’est pas une texture de Minecraft ni du pack."
     }
   },
   "common": {
@@ -262,7 +270,8 @@
     },
     "vanillaMissing": "Ce pack s'appuie sur les textures de Minecraft {version}, qui ne sont pas prêtes sur cet ordinateur.",
     "sectionTextures": "Textures",
-    "sectionData": "Données"
+    "sectionData": "Données",
+    "sectionItems": "Objets"
   },
   "grid": {
     "search": "Rechercher des textures",
@@ -371,6 +380,15 @@
       "missingAnimation": "Animée dans Minecraft, mais le pack n’a pas de .png.mcmeta : l’animation ne jouera pas. Ouvrez-la dans l’éditeur et enregistrez pour la copier",
       "invalidData": "Minecraft refuserait ce fichier de données (ouvrez-le pour voir les erreurs)",
       "dataWarnings": "Ce fichier de données cite des objets, blocs ou tags que Minecraft n'a pas"
+    },
+    "items": {
+      "invalidDefinition": "Cette définition d’item personnalisé n’est pas valide : l’item est laissé hors des exports",
+      "missingTexture": "La texture d’un item personnalisé manque : l’item s’affichera en damier violet et noir",
+      "unknownBase": "L’item de base de cet item personnalisé n’existe pas dans cette version de Minecraft",
+      "unknownIngredient": "La recette de cet item personnalisé utilise un item qui n’existe pas dans cette version de Minecraft",
+      "generatedEdited": "Fichier généré par un item personnalisé et modifié à la main : enregistrer l’item le remplacera",
+      "generatedMissing": "Un fichier généré par un item personnalisé manque",
+      "langOutdated": "Le fichier de langue n’a pas le nom actuel d’un item personnalisé"
     }
   },
   "editor": {
@@ -503,7 +521,13 @@
       "saveData": "{name} enregistré",
       "createData": "{name} créé",
       "deleteData": "{name} retiré",
-      "aiDataFiles": "Plan IA : {count} fichiers de données | Plan IA : 1 fichier de données | Plan IA : {count} fichiers de données"
+      "aiDataFiles": "Plan IA : {count} fichiers de données | Plan IA : 1 fichier de données | Plan IA : {count} fichiers de données",
+      "createItem": "Item {name} créé",
+      "saveItem": "Item {name} enregistré",
+      "renameItem": "Item {from} renommé en {to}",
+      "deleteItem": "Item {name} supprimé",
+      "regenerateItem": "Item {name} régénéré",
+      "aiItems": "Plan IA : {count} items | Plan IA : 1 item | Plan IA : {count} items"
     },
     "title": "Historique",
     "empty": "Rien d'enregistré pour le moment."
@@ -577,7 +601,8 @@
       "editor": "Agent Éditeur",
       "navigation": "Agent Navigation",
       "creation": "Agent Création",
-      "data": "Agent Données"
+      "data": "Agent Données",
+      "item": "Agent des items"
     },
     "editorAgent": "Agent Éditeur",
     "refreshModels": "Actualiser les modèles",
@@ -753,7 +778,13 @@
       "newFile": "Nouveau fichier",
       "changedFile": "Fichier modifié",
       "jsonWarnings": "{count} avertissements | 1 avertissement | {count} avertissements",
-      "filesWritten": "{count} fichiers de données écrits. | 1 fichier de données écrit. | {count} fichiers de données écrits."
+      "filesWritten": "{count} fichiers de données écrits. | 1 fichier de données écrit. | {count} fichiers de données écrits.",
+      "newItem": "Nouvel item",
+      "changedItem": "Item modifié",
+      "deletedItem": "Item supprimé",
+      "itemSummary": "{kind}, base {base}",
+      "itemTexture": "Texture copiée de {path}",
+      "itemsWritten": "{count} items personnalisés écrits. | 1 item personnalisé écrit. | {count} items personnalisés écrits."
     },
     "creationNoTextures": "Aucune texture trouvée pour ce pack. Préparez les textures Minecraft de sa version dans les Paramètres.",
     "creationEmptyBase": "Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide (1 texture pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie.",
@@ -828,7 +859,10 @@
     "unknown": "Opération {tool}",
     "setPackMeta": "Modifier le pack ({fields})",
     "writeJson": "Modifier {path}",
-    "writeJsonNew": "Créer {path}"
+    "writeJsonNew": "Créer {path}",
+    "writeItem": "Modifier l'item {name}",
+    "writeItemNew": "Créer l'item {name}",
+    "deleteItem": "Supprimer l'item {name}"
   },
   "bulk": {
     "open": "Modifier la sélection...",
@@ -887,7 +921,9 @@
     "targetsHint": "Ce qu'un export vers chaque version change : les textures renommées pour cette version, et celles qui n'y existent pas (ignorées ; survolez le nombre pour les voir).",
     "version": "Version",
     "renamed": "Renommées",
-    "skipped": "Ignorées"
+    "skipped": "Ignorées",
+    "openItem": "Ouvrir l'objet",
+    "regenerate": "Régénérer"
   },
   "merge": {
     "open": "Fusionner des packs...",
@@ -1206,6 +1242,272 @@
       "syncing": "Synchronisation...",
       "synced": "Synchronisé à {time} ({count} fichier(s) modifié(s))",
       "error": "Échec de la synchronisation : {reason}"
+    }
+  },
+  "items": {
+    "list": {
+      "count": "Aucun objet personnalisé | 1 objet personnalisé | {count} objets personnalisés",
+      "sidebar": "Les objets personnalisés fonctionnent dans Minecraft sans mod : chacun est un objet du jeu avec son propre nom, sa texture, ses propriétés et sa recette.",
+      "needsCombinedTitle": "Les objets personnalisés demandent un pack de ressources + données",
+      "needsCombined": "Un objet personnalisé a une texture et un nom (pack de ressources), et une recette et une commande pour l'obtenir (pack de données) : le pack doit contenir les deux. Changez-le en « Pack de ressources + données » pour créer des objets ; ses textures et fichiers de données sont conservés.",
+      "makeCombined": "Changer en pack de ressources + données",
+      "invalid": "Aucune définition invalide | 1 définition d'objet n'est pas valide, elle est donc exclue des exports : | {count} définitions d'objets ne sont pas valides, elles sont donc exclues des exports :",
+      "noTexture": "Sans texture",
+      "empty": "Aucun objet personnalisé pour l'instant. Créez-en un avec Nouvel objet.",
+      "emptyNotCombined": "Aucun objet personnalisé."
+    },
+    "kinds": {
+      "simple": "Objet simple",
+      "food": "Nourriture",
+      "weapon": "Arme",
+      "tool": "Outil",
+      "armor": "Pièce d'armure"
+    },
+    "toolTypes": {
+      "pickaxe": "Pioche",
+      "axe": "Hache",
+      "shovel": "Pelle",
+      "hoe": "Houe"
+    },
+    "slots": {
+      "head": "Casque",
+      "chest": "Plastron",
+      "legs": "Jambières",
+      "feet": "Bottes"
+    },
+    "tiers": {
+      "wooden": "Bois",
+      "stone": "Pierre",
+      "iron": "Fer",
+      "diamond": "Diamant",
+      "netherite": "Netherite"
+    },
+    "rarities": {
+      "common": "Commun (blanc)",
+      "uncommon": "Peu commun (jaune)",
+      "rare": "Rare (cyan)",
+      "epic": "Épique (magenta)"
+    },
+    "new": {
+      "open": "Nouvel objet",
+      "title": "Nouvel objet personnalisé",
+      "kind": "Type",
+      "kindHint": {
+        "simple": "Un objet à collecter, échanger ou utiliser dans des recettes, comme une gemme ou une pièce.",
+        "food": "Quelque chose à manger ou à boire, avec des points de faim et des effets.",
+        "weapon": "Une arme comme une épée, avec ses propres dégâts, vitesse et durabilité.",
+        "tool": "Un outil qui mine plus vite, avec son propre niveau et sa durabilité.",
+        "armor": "Une pièce d'armure, avec sa propre protection et la texture portée sur le corps."
+      },
+      "nameEnPlaceholder": "Ruby Sword",
+      "nameFrPlaceholder": "Épée en rubis",
+      "id": "Identifiant",
+      "idHint": "Construit à partir du nom anglais. Lettres minuscules, chiffres et _ seulement.",
+      "idEmpty": "Le nom anglais n'a ni lettre ni chiffre pour l'identifiant : saisissez un identifiant.",
+      "idInvalid": "Utilisez de 1 à 64 lettres minuscules, chiffres ou _.",
+      "idExists": "Le pack a déjà un objet avec cet identifiant.",
+      "texture": "Texture de départ",
+      "texturePreset": "Celle du type",
+      "textureBlank": "Vide",
+      "textureOther": "Celle d'un autre objet",
+      "textureBlankHint": "Une image vide de 16x16 à dessiner vous-même.",
+      "texturePick": "Choisir un objet",
+      "texturePickTitle": "Copier la texture de",
+      "create": "Créer"
+    },
+    "form": {
+      "general": "Général",
+      "nameEn": "Nom (anglais)",
+      "nameFr": "Nom (français)",
+      "nameFrPlaceholder": "Facultatif : l'anglais est utilisé s'il manque",
+      "kind": "Type",
+      "base": "Objet de base",
+      "baseHint": "Dans le jeu, l'objet personnalisé est cet objet du jeu avec les propriétés ci-dessous : il garde le comportement de l'objet de base, sauf si une propriété le change.",
+      "change": "Changer",
+      "clear": "Effacer",
+      "remove": "Retirer",
+      "default": "Par défaut",
+      "none": "Aucun",
+      "maxStack": "Taille maximale de pile",
+      "durability": "Durabilité",
+      "rarity": "Rareté (couleur du nom)",
+      "glint": "Reflet d'enchantement",
+      "glintOn": "Toujours",
+      "glintOff": "Jamais",
+      "enchantability": "Enchantabilité",
+      "repairWith": "Réparé avec",
+      "handheld": "Tenu comme un outil",
+      "handheldHint": "Tenu comme un outil : affiché en diagonale dans la main, comme les épées et les pioches. Sinon affiché à plat, comme la plupart des objets.",
+      "lore": "Lignes de description",
+      "loreEn": "Ligne en anglais",
+      "loreFr": "Ligne en français (facultatif)",
+      "loreAdd": "Ajouter une ligne",
+      "food": "Nourriture",
+      "nutrition": "Points de faim",
+      "saturation": "Saturation",
+      "eatSeconds": "Durée pour manger (secondes)",
+      "animation": "Animation",
+      "animations": {
+        "eat": "Manger",
+        "drink": "Boire"
+      },
+      "alwaysEdible": "Peut être mangé sans avoir faim",
+      "nutritionHint": "2 points de faim remplissent un pilon de la barre de faim. Une pomme donne 4 points et 2,4 de saturation.",
+      "effects": "Effets quand il est mangé",
+      "effect": "Effet",
+      "seconds": "Secondes",
+      "level": "Niveau",
+      "chance": "Probabilité (0 à 1)",
+      "effectAdd": "Ajouter un effet",
+      "tool": "Outil",
+      "toolType": "Type d'outil",
+      "tier": "Niveau",
+      "tierHint": "Le niveau décide quels blocs donnent leur objet une fois minés (le niveau diamant mine l'obsidienne).",
+      "miningSpeed": "Vitesse de minage",
+      "attackStats": "Dégâts et vitesse d'attaque",
+      "weapon": "Attaque",
+      "attackDamage": "Dégâts d'attaque",
+      "attackSpeed": "Vitesse d'attaque",
+      "weaponHint": "Comme dans l'infobulle du jeu : une épée en diamant a 7 de dégâts d'attaque et 1,6 de vitesse d'attaque.",
+      "armor": "Armure",
+      "slot": "Emplacement",
+      "armorPoints": "Points d'armure",
+      "toughness": "Robustesse",
+      "knockbackResistance": "Résistance au recul (0 à 1)",
+      "advanced": "Avancé",
+      "removeComponents": "Composants retirés de l'objet de base",
+      "extraComponents": "Composants supplémentaires (JSON)",
+      "extraHint": "Pour les experts : un objet JSON de composants d'objet Minecraft, écrits tels quels dans l'objet (par exemple « minecraft:fire_resistant » avec un objet vide). Vérifié quand vous quittez le champ.",
+      "extraNotJson": "Ce n'est pas du JSON valide.",
+      "extraNotObject": "Écrivez un objet JSON, avec les identifiants des composants comme clés.",
+      "errors": {
+        "required": "Obligatoire",
+        "min": "Au moins {min}",
+        "max": "Au plus {max}",
+        "minItems": "Ajoutez-en au moins {min}",
+        "maxItems": "Au plus {max} entrées",
+        "maxLength": "Au plus {max} caractères",
+        "format": "Identifiant non valide",
+        "choice": "Ne fait pas partie des choix",
+        "unknownKeys": "Champs inconnus : {keys}",
+        "stackDurability": "Un objet avec une durabilité ne s'empile pas : mettez 1, ou retirez la durabilité",
+        "recipeEmpty": "Placez au moins un objet dans la grille",
+        "invalid": "Non valide"
+      }
+    },
+    "recipe": {
+      "title": "Recette",
+      "none": "Aucune recette",
+      "shaped": "Avec forme (3x3)",
+      "shapeless": "Sans forme",
+      "noneHint": "Sans recette, l'objet s'obtient avec les commandes ci-dessous.",
+      "emptySlot": "Case vide",
+      "clear": "Vider cette case",
+      "remove": "Retirer",
+      "add": "Ajouter un ingrédient",
+      "count": "Objets fabriqués",
+      "pickTitle": "Choisir un ingrédient",
+      "hint": "Cliquez sur une case pour choisir un objet ou un #tag (n'importe quel objet d'un groupe, comme #minecraft:planks). Survolez une case pour la vider."
+    },
+    "picker": {
+      "title": "Choisir un objet",
+      "search": "Rechercher par nom ou identifiant",
+      "searchTags": "Rechercher des objets et des #tags",
+      "tag": "Tag d'objets",
+      "packItem": "Ce pack",
+      "none": "Aucun résultat",
+      "hint": "Objets de la version de Minecraft du pack.",
+      "ingredientHint": "Les objets personnalisés ne peuvent pas être des ingrédients : Minecraft ne vérifie que l'identifiant de l'objet de base, donc tout objet basé dessus conviendrait."
+    },
+    "howTo": {
+      "title": "Comment l'obtenir",
+      "cheats": "Dans un monde avec les commandes activées (ou en tant qu'opérateur), tapez l'une de ces commandes dans le chat :",
+      "function": "Lance la fonction du pack qui donne l'objet :",
+      "give": "Ou la commande complète, sans le pack de données :",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "Impossible de copier la commande.",
+      "unsaved": "Enregistrez d'abord l'objet : la fonction donne la version enregistrée."
+    },
+    "editor": {
+      "back": "Retour aux objets",
+      "backToItem": "Retour à l'objet",
+      "ai": "IA",
+      "aiHint": "Demandez à l'IA de modifier cet objet, ou d'expliquer ce qu'il fait dans le jeu",
+      "applied": "La proposition est dans le formulaire. Vérifiez-la, puis enregistrez.",
+      "errorCount": "Aucune erreur | 1 erreur à corriger | {count} erreurs à corriger",
+      "fixErrors": "Corrigez les erreurs indiquées dans le formulaire avant d'enregistrer.",
+      "rename": "Changer l'identifiant",
+      "renameHint": "L'identifiant sert dans les commandes et les noms de fichiers. Ses fichiers et textures suivent.",
+      "delete": "Supprimer l'objet",
+      "deleteConfirm": "Supprimer {name}, sa texture et tous les fichiers générés à partir de lui ? Vous pourrez annuler dans l'historique.",
+      "texture": "Texture",
+      "worn": "Portée sur le corps",
+      "editTexture": "Modifier",
+      "textureHint": "Modifier ouvre l'éditeur de pixels. Retour dans l'éditeur vous ramène ici.",
+      "textureMissing": "Le fichier de texture manque. Enregistrez l'objet pour en créer un vide.",
+      "baseUsed": "Minecraft traite aussi cet objet comme {base} : aucune recette du jeu ne l'utilise. | Minecraft traite aussi cet objet comme {base} : 1 recette du jeu l'utilise. | Minecraft traite aussi cet objet comme {base} : {count} recettes du jeu l'utilisent.",
+      "baseUsedHint": "Les joueurs pourraient utiliser l'objet personnalisé dans ces recettes. Choisissez un objet de base qu'aucune recette n'utilise pour l'éviter."
+    },
+    "generated": {
+      "notice": "Ce fichier est généré à partir de l'objet personnalisé « {id} » : vos modifications ici seraient remplacées à l'enregistrement de l'objet, il est donc en lecture seule. Modifiez plutôt l'objet.",
+      "openItem": "Ouvrir l'objet"
+    }
+  },
+  "itemAgent": {
+    "context": "À propos de {name} : l'IA voit cet item tel qu'il est dans le formulaire.",
+    "empty": "Demandez une modification (« fais 9 de dégâts », « il doit se cumuler par 16 », « ajoute vision nocturne 30 secondes quand on le mange ») ou posez une question sur cet item. Les modifications proposées vont dans le formulaire quand vous les appliquez ; c'est vous qui enregistrez.",
+    "proposal": "Définition proposée de l'item",
+    "renamed": "Renommé en {id}",
+    "noChanges": "Mêmes valeurs, seulement écrites autrement.",
+    "wholeDefinition": "Définition complète",
+    "unknownIds": "Cette version de Minecraft n'a pas : {ids}",
+    "outdated": "L'item a changé dans le formulaire depuis votre demande : appliquer remplace ces modifications.",
+    "apply": "Appliquer dans le formulaire",
+    "discard": "Ignorer",
+    "applied": "Appliqué dans le formulaire (pas encore enregistré).",
+    "discarded": "Ignoré.",
+    "yes": "oui",
+    "no": "non",
+    "unset": "non défini",
+    "fields": {
+      "id": "Identifiant",
+      "name": "Nom ({lang})",
+      "lore": "Lignes d'info-bulle",
+      "kind": "Type",
+      "base": "Item de base",
+      "handheld": "Tenu comme un outil",
+      "rarity": "Rareté",
+      "glint": "Reflet enchanté",
+      "maxStack": "Taille de pile",
+      "durability": "Durabilité",
+      "repairWith": "Réparé avec",
+      "enchantability": "Enchantabilité",
+      "attackDamage": "Dégâts d'attaque",
+      "attackSpeed": "Vitesse d'attaque",
+      "toolType": "Type d'outil",
+      "toolTier": "Niveau de minage",
+      "miningSpeed": "Vitesse de minage",
+      "armorSlot": "Emplacement d'armure",
+      "armor": "Points d'armure",
+      "toughness": "Robustesse d'armure",
+      "knockbackResistance": "Résistance au recul",
+      "nutrition": "Faim restaurée",
+      "saturation": "Saturation",
+      "eatSeconds": "Temps pour manger (secondes)",
+      "alwaysEdible": "Se mange même rassasié",
+      "animation": "Animation",
+      "effects": "Effets quand on le mange",
+      "recipe": "Recette",
+      "removeComponents": "Composants retirés",
+      "extraComponents": "Composants supplémentaires"
+    },
+    "explain": {
+      "run": "Expliquer cet item",
+      "again": "Expliquer de nouveau",
+      "hint": "Envoyé à l'IA : cet item tel que dans le formulaire, son item de base, les recettes qui utilisent l'item de base et les vérifications. Rien n'est modifié.",
+      "stale": "L'item a changé depuis cette explication.",
+      "working": "Lecture de l'item..."
     }
   }
 }
