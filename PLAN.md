@@ -26,6 +26,7 @@ Repository: `github.com/sbilodeau/blocksmith-studio` - License: MIT
 | Multi-pack        | Tab-based, 1 tab = 1 pack, several open at once                                                               |
 | Merge             | Priority-ordered sources + per-file conflict review, deep-merge for mergeable JSON, undoable                  |
 | Data packs        | Resource, data or combined packs (M10); data files checked against hand-written schemas                       |
+| Custom items      | Own items (name, texture, recipe) from data + resource packs (M14), no Java mods; AI can edit them            |
 | Animated textures | Strip editing with frame guides in MVP. Timeline/playback in M9 (frame-by-frame editing)                      |
 | UI library        | Naive UI                                                                                                      |
 | AI providers      | Ollama Cloud (native API) by default, any OpenAI-compatible endpoint as an option                             |
@@ -420,6 +421,7 @@ user message
 | Creation   | Pack level (one per tab)                                                 | Pack meta, style brief, category list + counts, small contact sheet of representative textures   | All read tools, `apply_to_all`, `update_style_brief`, `set_pack_meta`, color ops via filters, `write_json` (later) |
 | Navigation | Category / selection (one per tab)                                       | Selected texture list, contact sheet(s) of the selection in batches, per-texture palette summary | Read tools, color ops, transforms, `apply_to_all` limited to the selection                                         |
 | Editor     | 1:1 editor (one per tab, persists across textures while the tab is open) | Current texture: upscaled image + JSON grid; vanilla reference on request                        | All texture tools: transforms, drawing, color, read, `open_texture`, `save_texture` (as a step)                    |
+| Item       | Custom item page (one per tab, M14)                                      | The open item definition, the files it generates, base item recipe uses, checks, English names   | `edit_item`, `read_json`, `list_data`, `list_items`, `get_texture`                                                 |
 
 The editor agent's conversation persists when the user moves from one texture to the next. Every user message is
 tagged with the currently open texture, so the model knows which one "it" refers to.
@@ -521,6 +523,7 @@ The JSON Schema sent to providers is generated from zod. `docs/tools-reference.m
 | Read      | `get_pixels(rect?)`, `get_palette()`, `get_texture(path, source: pack\|vanilla, as: grid\|image)`, `list_textures(filter)`                                                                                       |
 | Pack      | `open_texture(path)`, `save_texture()`, `apply_to_all(operation, filter)`, `set_pack_meta(name?, description?)`, `write_json(path, json)` (data pack milestone)                                                  |
 | Memory    | `read_style_brief()`, `update_style_brief(patch)`                                                                                                                                                                |
+| Items     | `list_items()`, `read_item(id)`, `write_item(definition, textureFrom?)`, `delete_item(id)` (creation agent, M14); `edit_item(definition)` (item agent)                                                           |
 
 Every color tool accepts an optional `region` (rect or mask from the current selection) and `target`.
 `apply_to_all.operation` is a nested `{ tool, args }` limited to color/transform tools; `filter` = `{ categories?, folders?, glob?, selection? }`.
@@ -979,6 +982,89 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 - Destinations are remembered per pack in `userData/minecraft.json`; launcher instances are not detected (decided
   2026-11-17: official launcher plus folders added by hand). See docs/minecraft-install.md.
 
+### M14 - Custom items
+New items that work in unmodded Minecraft: their own name (English and French), texture, 3D look, properties and
+recipe, made from a form or by asking the AI. Decided 2026-11-17 instead of MCreator-style Java mods, which would
+need Java code generated per mod loader, a JDK and Gradle on the user's machine, rework at each Minecraft release,
+and a rewrite of MCreator's generators (GPL-3.0, not reusable in this MIT project).
+
+How it works in game: a custom item is a vanilla **base item** carrying data components. `item_model` points to the
+pack's own model, `item_name` to a translated name, and the other components give the behavior. Every version of the
+support window (1.21.4 and later) reads `item_model` and the `assets/<ns>/items/` item definitions. New blocks, mobs
+and behaviors that need code (right-click actions, projectiles, machines) stay out of reach without a mod.
+
+- **Source of truth**: one `blocksmith/items/<id>.json` per item at the pack root. It is a pack file, so history,
+  undo, merge and send-to-pack cover it; Minecraft ignores it; exports and live mode leave it out. It is checked with
+  zod: id, names (`en_us`, `fr_fr`, other languages optional), base item, kind, properties, texture path, recipe,
+  and **extra components** (raw JSON, for experts).
+- **Generated files**, written with the definition on save as ONE history entry. Custom items need a combined pack;
+  the first item on a resource or data pack offers to switch the kind (`pack.setKind`).
+
+  | File            | Path                                                                                                    |
+  | --------------- | ------------------------------------------------------------------------------------------------------- |
+  | Texture         | `assets/<ns>/textures/item/<id>.png`                                                                    |
+  | Model           | `assets/<ns>/models/item/<id>.json` (`item/generated`, or `item/handheld` for tools and weapons)        |
+  | Item definition | `assets/<ns>/items/<id>.json`                                                                           |
+  | Names           | `assets/<ns>/lang/en_us.json` and `fr_fr.json`, key `item.<ns>.<id>`, merged with the file's other keys |
+  | Armor (worn)    | `assets/<ns>/equipment/<id>.json` and `textures/entity/equipment/humanoid[_leggings]/<id>.png`          |
+  | Recipe          | `data/<ns>/recipe/<id>.json`, whose result carries the item's components                                |
+  | Give command    | `data/<ns>/function/give/<id>.mcfunction`, run in game with `/function <ns>:give/<id>`                  |
+
+  The definition records the hash of each generated file. The data editor shows generated files read-only with an
+  **Open item** button, and the Pack Doctor flags a generated file edited by hand or missing (one click regenerates).
+- **Kinds**: presets that pick a base item and show the matching properties. Everything stays editable.
+
+  | Kind        | Properties (components)                                                                                   |
+  | ----------- | --------------------------------------------------------------------------------------------------------- |
+  | Simple item | Stack size, rarity, glint, lore                                                                           |
+  | Food        | Hunger and saturation, eating time, always edible, effects when eaten (`food`, `consumable`)              |
+  | Weapon      | Attack damage and speed, durability, enchantability, repair item (`attribute_modifiers`, `max_damage`...) |
+  | Tool        | Mining speed, which blocks (pickaxe / axe / shovel / hoe), durability (`tool`, `max_damage`)              |
+  | Armor piece | Slot, armor and toughness, durability, worn texture (`equippable`, `attribute_modifiers`)                 |
+
+  Default base items per kind live in `resources/data/custom-items.json` (zod-checked, like the other tables).
+- **Base item warning**: Minecraft matches recipe ingredients by item id only, so a custom item also works as its base
+  item in vanilla recipes (a custom food based on `apple` crafts golden apples). The form shows how many vanilla
+  recipes use the base item (computed from the vanilla data), and the presets prefer base items no recipe uses.
+- **One definition, every version**: `src/shared/items/generate.ts` builds the files for a target version from a
+  small format table. Text components are JSON strings before 1.21.5 and objects from 1.21.5; the same table covers
+  the other component format changes inside the window (attribute modifiers and tooltip display in 1.21.5, and what
+  the implementation finds). The pack holds the files for its authoring version; exports regenerate them for each
+  target version. A future format change means one new row and a test.
+- **UI**: a third sidebar mode **Items** next to Textures and Data (combined packs). The list shows each item's
+  icon and name. **New item** asks for the kind, the names (the id comes from the English name) and the texture
+  (blank 16x16, or a copy of a vanilla or pack texture). The item page has the properties form, the texture with
+  **Edit** (opens the pixel editor, editor agent included), the live 3D preview (the existing item renderer; worn
+  armor is shown flat, a preview on a player is not in this milestone), a recipe editor (3x3 shaped grid or
+  shapeless, item picker with vanilla names and the pack's custom items), **How to get it** (the `/function` and
+  `/give` commands to copy) and the AI panel. Deleting an item removes its generated files; renaming the id moves
+  them. Both are one undoable history entry.
+- **AI**, so the chat can create and change items in English or French:
+  - **Item agent** (new, the AI panel of the item page, built like the data agent): it works on the open item. Its
+    context has the definition, the files it generates, the base item's recipe uses, the checks and the English
+    names of the ids involved. `edit_item` proposes the whole new definition, checked like a save (errors refuse it
+    so the model fixes it); **Apply to form** puts it in the form, unsaved and undoable, and the user saves. It also
+    gets `read_json`, `list_data`, `list_items` and `get_texture` (to see the item's texture). An **Explain** tab
+    describes in plain words what the item does in game.
+  - **Creation agent** (whole pack): `list_items`, `read_item`, `write_item` (create or replace a whole definition,
+    with `textureFrom` to start from a vanilla or pack texture) and `delete_item`. Each is a plan step, applied as
+    one history entry like the other creation steps. A texture created by `write_item` can be changed by later color
+    and transform steps of the same plan, so "a ruby sword" can be the diamond sword texture shifted to red.
+  - **Editor agent**: when the open texture belongs to a custom item, its context says which item and kind, so
+    "draw a ruby" or "make it look more magical" has a meaning; a blank texture can be drawn from scratch.
+  - The AI fills both `en_us` and `fr_fr` names. New `ops.*` strings in both locales, and about 12 new FR/EN cases
+    in `resources/data/ai-eval/phrases.json` ("crée une épée en rubis qui fait 9 de dégâts", "make this apple give
+    night vision", "change la recette pour 3 rubis", "let it stack to 16"...).
+- **Checks**: definitions checked on load and save; generated data files go through the existing data checks; the
+  Pack Doctor reports a missing texture, a base item or recipe ingredient unknown in the authoring version, duplicate
+  ids and hand-edited or missing generated files.
+- **Not in this milestone**: custom blocks and mobs, behaviors that need code, custom items in loot tables (the data
+  editor can still add them by hand), a worn-armor preview on a player model.
+- **Acceptance**: in 1.21.4, 1.21.5 and 26.3, a ruby sword (damage, durability, recipe), a magic apple (effects when
+  eaten) and a ruby helmet (worn texture) work in game, with English and French names; undo restores the previous
+  state; exports for 1.21.4 and 26.3 load without errors in the game log. Docs: new `docs/custom-items.md`, updates
+  to `docs/ai-agents.md` and `docs/datapacks.md`, README and CHANGELOG.
+
 ---
 
 ## 13. Risks and open points
@@ -997,6 +1083,8 @@ read from the user's own jar, like the textures (nothing is bundled or uploaded;
 | Large packs (thousands of textures, high-res 512x)                                 | Medium | Thumbnails via custom protocol + lazy virtual grid, workers for bulk ops, index cache                                                                                                           |
 | Entity geometry isn't in Minecraft's assets (it's in Java code)                    | Medium | Own data-driven geometry files authored under MIT, starter set first, flat UV fallback; never copy Mojang code or GPL model packs                                                               |
 | Multi-tab memory use (several packs + agents)                                      | Low    | Unload inactive tab editors, keep only indexes in memory                                                                                                                                        |
+| Custom item formats change between versions (components, text, equipment)          | Medium | One definition per item, files generated per target version from a format table, generated files checked by the data checks, in-game check on 1.21.4, 1.21.5 and the latest release             |
+| A custom item also counts as its base item in vanilla recipes                      | Low    | Presets use base items no vanilla recipe uses; the form shows the base item's recipe uses                                                                                                       |
 | LLM responds in the wrong language or misreads FR directions                       | Low    | Explicit conventions in prompts and tool descriptions; FR/EN suite gates prompt changes                                                                                                         |
 
 ### Open points for later (non-blocking)
