@@ -16,11 +16,13 @@ design; this page describes what the code does.
 | Editor agent         | `src/main/services/ai/agent/runtime.ts`                                                                                                                  |
 | Navigation agent     | `src/main/services/ai/agent/navigation.ts`, contact sheets in `contact-sheet.ts`                                                                         |
 | Creation agent       | `src/main/services/ai/agent/creation.ts`                                                                                                                 |
+| Item agent           | `src/main/services/ai/agent/item-agent.ts`, shared item checks in `item-ai.ts`                                                                           |
 | Runs and proposals   | `src/main/services/ai/agent/service.ts`, `proposals.ts`                                                                                                  |
 | Conversation files   | `src/main/services/ai/agent/conversation.ts`                                                                                                             |
 | Style brief          | `src/main/services/brief.ts`                                                                                                                             |
-| IPC                  | `src/main/ipc/ai-agent-handlers.ts` (`ai.agent.*`, `ai.navigation.*`, `ai.creation.*`, `ai.proposal.*`, `brief.*`, `ai.event`)                           |
+| IPC                  | `src/main/ipc/ai-agent-handlers.ts` (`ai.agent.*`, `ai.navigation.*`, `ai.creation.*`, `ai.item.*`, `ai.proposal.*`, `brief.*`, `ai.event`)              |
 | Chat UI              | `src/renderer/components/ai/AgentChat.vue` (shared), `EditorAgentPanel.vue`, `NavigationAgentPanel.vue`, `CreationAgentPanel.vue` + `CreationReview.vue` |
+| Item chat UI         | `src/renderer/components/items/ItemAgentPanel.vue` + `ItemReview.vue`, `ItemExplain.vue`                                                                 |
 | Providers (consumed) | `ProviderRegistry` in `src/main/services/contracts.ts`                                                                                                   |
 
 ## Tools
@@ -93,8 +95,9 @@ are strings with an explicit sign (`"+20"`, `"-15"`, `"0"`). Colors are lowercas
    characters per token). Assistant tool calls are summarized as "(Tools called: ...)", tool results are dropped,
    proposal decisions become "[App note]" user messages. Dropped turns are replaced by one note listing the last
    few earlier requests.
-3. **User message**: `[Open texture: <path> (W x H px)]`, the texture state, the 3D model layout when the texture
-   has one, then the request.
+3. **User message**: `[Open texture: <path> (W x H px)]`, then `[Custom item: <name> (<kind>, base <base>)]` when
+   the texture is a custom item's texture or worn texture (M14, `ItemService.forTexture`), the texture state, the 3D
+   model layout when the texture has one, then the request.
 
 ### 3D model layout
 
@@ -295,6 +298,61 @@ renderer applies it to the editor, unsaved, and the user's save writes it. The F
 The data editor's **Explain** tab reuses the agent loop for one answer without tools (`explain.ts`, agent
 `explain` in the `started` event): no proposal, no conversation file. See [datapacks.md](datapacks.md#explain) for
 the context it sends.
+
+### Custom item tools (M14)
+
+On combined packs the creation agent also gets the custom item tools, with `COMBINED_DATA_ADDENDUM` explaining the
+base item idea; on resource and data packs the prompt says that custom items need a "Resource + data pack". The user
+message lists the pack's items (`id: English name (kind, base ...)`) and the namespace of new items.
+
+- `list_items {}` and `read_item { id }`: the pack's items as this plan leaves them.
+- `write_item { item, textureFrom? }`: the WHOLE definition (`schemaVersion` and `namespace` are filled in when left
+  out), checked by `checkDefinition` (`item-ai.ts`): `CustomItemSchema`, both `en_us` and `fr_fr` names for a new or
+  renamed item, the namespace unchanged; ids this version does not have are warnings. An id the pack has replaces
+  that item (`isNew: false`); otherwise it is a new item whose texture is copied from `textureFrom` (a vanilla or
+  pack texture, default: the preset texture of its kind). The new texture (and the worn texture of armor) joins the
+  run's texture list and samples, so a later `apply_to_all` on `{"match": "<id>"}` previews on it; that step's
+  `dependsOn` includes the item step. The step stores `item: { op: 'write', id, item, textureFrom?, isNew }`.
+- `delete_item { id }`: removes an item of the pack (`item: { op: 'delete', id }`).
+
+Writing or deleting the same id again replaces the earlier step and keeps its id. At most 12 item steps per plan.
+The plan review shows **New item** / **Changed item** / **Deleted item**, the kind and base, the texture source and
+the definition. On apply, item steps are written after the data files and BEFORE the catalog is read for the texture
+steps, as ONE history entry ("AI plan: N items", `ItemService.applyMany`), so a step recoloring a new item's texture
+finds it; the result has `itemsWritten`.
+
+### Item agent (item page)
+
+The item page's **AI** pane has a chat with the item agent (`item-agent.ts`, agent kind `item`, conversation
+`item.jsonl`, past messages tagged `[Item: <id>]`) and an **Explain** tab.
+
+- **Request** (`ai.item.send { packId, id, item, message, model, language, thinking? }`): `item` is the form's
+  definition, unsaved and possibly not valid (only its size is checked at the IPC boundary); `id` is the id the item
+  is saved under. Run key `<packId>:item`; stop with `ai.agent.stop`.
+- **Context** (`gatherItemSources`, `itemContext`): the pack and version, whether the form has unsaved edits, the
+  definition as JSON, the checks (schema errors, or ids the version does not have), the files the item generates,
+  how to get it (recipe, `/function <ns>:give/<id>`), the base item and the vanilla recipes that use it (the
+  custom item also works in them), the starting values of its kind as a reference, the English names of the ids
+  involved, and the pack's other items. The system prompt adds `ITEM_DEFINITION_GUIDE`, the field guide shared with
+  `write_item`.
+- **Tools**: `edit_item { item }` (the WHOLE new definition; the definition alone is accepted too), checked by
+  `checkDefinition` against the item it replaces: errors are returned to the model so it fixes them; a rename is
+  allowed (to an id no other item has) and needs both names. `get_texture { worn? }` returns the item texture as a
+  palette grid (read only). `list_items`, `read_item`, `read_json` and `list_data` read the pack.
+- **Proposal** (`ItemDefinitionProposal`, `kind: 'item'`): `before` (the form's definition), `after` (valid,
+  defaults filled in) and `unknownIds`. Like the data agent's, it is emitted but never stored or written by main:
+  `ItemReview.vue` lists the changed fields (`itemChangesBetween` in `src/shared/ai/item-changes.ts`: names, stats,
+  effects, recipe) and the whole definition, and **Apply to form** puts it in the form, unsaved.
+- **Explain** (`ai.item.explain { packId, id, item, model, language, thinking? }`, run key `<packId>:itemExplain`,
+  session `itemExplain` so it does not replace the data editor's explanation): one answer without tools, from the
+  same context, in the UI language: how to get the item, its stats compared with its base item, effects, stacking
+  and the base item caveat.
+- **Settings**: Settings > AI has an **Item agent** entry (model, reasoning, round trips, at most 6); without a
+  default model the chat and Explain use the creation agent's.
+
+The FR/EN evaluation has an `item` context (fixture = an item id of the combined test pack, see `evalItem`: damage,
+stack size, an effect when eaten, a recipe, a rename, the shimmer, durability) and creation cases on the
+`sample_combined` fixture (a sword, a food with an effect, a helmet, a pickaxe, a delete).
 
 ## Conversation files
 
