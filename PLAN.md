@@ -1060,6 +1060,13 @@ and behaviors that need code (right-click actions, projectiles, machines) stay o
   ids and hand-edited or missing generated files.
 - **Not in this milestone**: custom blocks and mobs, behaviors that need code, custom items in loot tables (the data
   editor can still add them by hand), a worn-armor preview on a player model.
+- Built (see docs/custom-items.md and docs/ai-agents.md): formats checked against the vanilla files of the
+  1.21.4 and 26.3 jars and the Minecraft wiki history; base items checked against the vanilla recipes (armor uses
+  netherite pieces, which no recipe takes as an ingredient, rather than chainmail, which smelts into nuggets);
+  generated files are compared with what the definition generates (no stored hashes); the Items section shows on
+  every pack kind and offers the switch to a resource + data pack; generated data files open read-only; custom items
+  are not offered as recipe ingredients or data editor completions (Minecraft does not know their ids); the AI
+  requires both English and French names for new and renamed items.
 - **Acceptance**: in 1.21.4, 1.21.5 and 26.3, a ruby sword (damage, durability, recipe), a magic apple (effects when
   eaten) and a ruby helmet (worn texture) work in game, with English and French names; undo restores the previous
   state; exports for 1.21.4 and 26.3 load without errors in the game log. Docs: new `docs/custom-items.md`, updates

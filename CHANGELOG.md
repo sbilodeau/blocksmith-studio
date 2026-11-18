@@ -5,6 +5,22 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### M14 - Custom items
+
+- **Items** section (next to Textures and Data): make new items that work in Minecraft without mods, with their own
+  name in English and French, texture, 3D preview, properties and crafting recipe. Five kinds: simple item, food
+  (hunger, eating time, effects when eaten), weapon (damage, attack speed, durability), tool (mining speed, which
+  blocks it can harvest) and armor piece (armor points, worn texture)
+- Each item is a Minecraft item carrying new properties; the item page warns when Minecraft would still use it as
+  that item in its own recipes. **How to get it** gives the command to type in the game
+- One save writes everything the game needs as one change you can undo; exports write the files in the right format
+  for each Minecraft version (1.21.5 changed it), and the Pack Doctor spots files edited by hand, with a
+  **Regenerate** button
+- **AI**: the creation agent creates, changes and deletes items on resource + data packs; each item's page has an
+  AI chat that changes the item and an **Explain** tab; the pixel editor's agent knows which item a texture belongs
+  to. 12 new French and English test phrases
+- Custom items need a resource + data pack: the Items section offers to switch the pack
+
 ## 26.47.1 - 2026-11-17
 
 ### M13 - Install in Minecraft and live mode
