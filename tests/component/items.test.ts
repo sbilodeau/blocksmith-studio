@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h, ref } from 'vue'
-import { NDialogProvider, NMessageProvider } from 'naive-ui'
+import { NDialogProvider, NMessageProvider, NSelect } from 'naive-ui'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { CustomItemSchema, type CustomItem } from '@shared/items/schema'
 import { itemPreset } from '@shared/items/presets'
@@ -394,6 +394,26 @@ describe('item page', () => {
     radio('recipe-mode-none')
     await flushPromises()
     expect(store.draft!.recipe).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('adds the properties of a new kind and lets the old ones be removed', async () => {
+    const wrapper = await openEditor()
+    const store = useItemsStore('p1')
+    const kind = wrapper
+      .findAllComponents(NSelect)
+      .find((s) => s.attributes('data-testid') === 'item-kind')!
+    kind.vm.$emit('update:value', 'food')
+    await flushPromises()
+    expect(store.draft!.kind).toBe('food')
+    expect(store.draft!.food).toMatchObject({ nutrition: 4, saturation: 2.4 })
+    expect($('item-food')).not.toBeNull()
+    expect($('item-section-remove-food')).toBeNull()
+    click('item-section-remove-weapon')
+    await flushPromises()
+    expect(store.draft!.weapon).toBeUndefined()
+    expect($('item-weapon')).toBeNull()
+    expect(store.valid).toBe(true)
     wrapper.unmount()
   })
 

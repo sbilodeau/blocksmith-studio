@@ -152,6 +152,12 @@ function setKind(kind: ItemKind): void {
     }
   }
 }
+/** Properties another kind's item still has (an AI proposal, a kind change): they can be removed. */
+const removable = (section: Section): boolean =>
+  d.value.kind !== section && !(section === 'weapon' && d.value.kind === 'tool')
+function removeSection(section: Section): void {
+  delete d.value[section]
+}
 const shows = (section: Section): boolean =>
   d.value.kind === section || d.value[section] !== undefined
 
@@ -392,7 +398,18 @@ function status(path: string): { validationStatus?: 'error'; feedback?: string }
     </section>
 
     <section v-if="shows('food') && d.food" data-testid="item-food">
-      <h4>{{ t('items.form.food') }}</h4>
+      <h4 class="section-head">
+        {{ t('items.form.food') }}
+        <n-button
+          v-if="removable('food')"
+          size="tiny"
+          quaternary
+          data-testid="item-section-remove-food"
+          @click="removeSection('food')"
+        >
+          {{ t('items.form.remove') }}
+        </n-button>
+      </h4>
       <div class="fields">
         <n-form-item :label="t('items.form.nutrition')" v-bind="status('food.nutrition')">
           <n-input-number
@@ -500,7 +517,18 @@ function status(path: string): { validationStatus?: 'error'; feedback?: string }
     </section>
 
     <section v-if="shows('tool') && d.tool" data-testid="item-tool">
-      <h4>{{ t('items.form.tool') }}</h4>
+      <h4 class="section-head">
+        {{ t('items.form.tool') }}
+        <n-button
+          v-if="removable('tool')"
+          size="tiny"
+          quaternary
+          data-testid="item-section-remove-tool"
+          @click="removeSection('tool')"
+        >
+          {{ t('items.form.remove') }}
+        </n-button>
+      </h4>
       <div class="fields">
         <n-form-item :label="t('items.form.toolType')" v-bind="status('tool.type')">
           <n-select
@@ -539,7 +567,18 @@ function status(path: string): { validationStatus?: 'error'; feedback?: string }
     </section>
 
     <section v-if="shows('weapon') && d.weapon" data-testid="item-weapon">
-      <h4>{{ t('items.form.weapon') }}</h4>
+      <h4 class="section-head">
+        {{ t('items.form.weapon') }}
+        <n-button
+          v-if="removable('weapon')"
+          size="tiny"
+          quaternary
+          data-testid="item-section-remove-weapon"
+          @click="removeSection('weapon')"
+        >
+          {{ t('items.form.remove') }}
+        </n-button>
+      </h4>
       <div class="fields">
         <n-form-item :label="t('items.form.attackDamage')" v-bind="status('weapon.attackDamage')">
           <n-input-number
@@ -566,7 +605,18 @@ function status(path: string): { validationStatus?: 'error'; feedback?: string }
     </section>
 
     <section v-if="shows('armor') && d.armor" data-testid="item-armor">
-      <h4>{{ t('items.form.armor') }}</h4>
+      <h4 class="section-head">
+        {{ t('items.form.armor') }}
+        <n-button
+          v-if="removable('armor')"
+          size="tiny"
+          quaternary
+          data-testid="item-section-remove-armor"
+          @click="removeSection('armor')"
+        >
+          {{ t('items.form.remove') }}
+        </n-button>
+      </h4>
       <div class="fields">
         <n-form-item :label="t('items.form.slot')" v-bind="status('armor.slot')">
           <n-select
@@ -665,6 +715,11 @@ h5 {
 }
 section:first-child h4 {
   margin-top: 0;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .fields {
   display: grid;
