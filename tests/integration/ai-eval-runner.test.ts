@@ -129,6 +129,90 @@ describe('eval runner', () => {
     expect(results).toHaveLength(6)
   })
 
+  it('runs item cases on the item page of a custom item (the item chat)', async () => {
+    const cases = loadEvalCases(PHRASES).filter((c) => c.context === 'item')
+    expect(cases.map((c) => c.id)).toEqual([
+      'item-damage',
+      'item-stack',
+      'item-night-vision',
+      'item-recipe',
+      'item-rename',
+      'item-glint',
+      'item-durability'
+    ])
+    /** Edits the open item the way a good model would: reads it from the request, changes one thing. */
+    const itemModel = (req: ChatRequest): ReturnType<typeof text>[] => {
+      const last = req.messages[req.messages.length - 1]
+      if (last?.role === 'tool') return [text('ok'), DONE_END]
+      const user = last?.text ?? ''
+      expect(user).toContain('[Open item]')
+      const item = JSON.parse(
+        /DEFINITION \(as in the form\):\n```json\n([\s\S]*?)\n```/.exec(user)![1]!
+      )
+      const ask = user.slice(user.lastIndexOf('User request:'))
+      const e = 'minecraft:emerald'
+      if (/\b9\b/.test(ask)) item.weapon.attackDamage = 9
+      else if (/16/.test(ask)) item.maxStack = 16
+      else if (/nocturne|night/i.test(ask))
+        item.food.effects = [{ effect: 'minecraft:night_vision', seconds: 30 }]
+      else if (/meraude|emerald/i.test(ask))
+        item.recipe = { type: 'shaped', grid: [e, e, e, null, null, null, null, null, null] }
+      else if (/lame|blade/i.test(ask)) {
+        item.id = 'ruby_blade'
+        item.names = { en_us: 'Ruby Blade', fr_fr: 'Lame de rubis' }
+      } else if (/brill|shimmer/i.test(ask)) item.glint = true
+      else item.durability = 500
+      return [toolCall('edit_item', { item }), DONE_TOOLS]
+    }
+    const { providers } = fakeProvider(Array.from({ length: 30 }, () => itemModel))
+    const results = await runEval({ providers, model, cases, concurrency: 1 })
+    expect(results.filter((r) => !r.pass)).toEqual([])
+    expect(results).toHaveLength(14)
+  })
+
+  it('runs creation item cases on the combined pack (write_item, delete_item)', async () => {
+    const cases = loadEvalCases(PHRASES).filter((c) => c.fixture === 'sample_combined')
+    expect(cases.map((c) => c.id)).toEqual([
+      'creation-item-sword',
+      'creation-item-apple',
+      'creation-item-helmet',
+      'creation-item-pickaxe',
+      'creation-item-delete'
+    ])
+    const creationModel = (req: ChatRequest): ReturnType<typeof text>[] => {
+      const last = req.messages[req.messages.length - 1]
+      if (last?.role === 'tool') return [text('ok'), DONE_END]
+      const user = last?.text ?? ''
+      expect(user).toContain('Custom items of the pack (namespace "eval_pack")')
+      expect(req.tools!.map((t) => t.name)).toContain('write_item')
+      const ask = user.slice(user.lastIndexOf('User request:'))
+      const item = (fields: Record<string, unknown>): ReturnType<typeof toolCall> =>
+        toolCall('write_item', {
+          item: {
+            schemaVersion: 1,
+            id: 'x',
+            namespace: 'eval_pack',
+            names: { en_us: 'X' },
+            ...fields
+          }
+        })
+      if (/supprime|delete/i.test(ask)) return [toolCall('delete_item', { id: 'ruby' }), DONE_TOOLS]
+      if (/épée|sword/i.test(ask))
+        return [item({ kind: 'weapon', weapon: { attackDamage: 9, attackSpeed: 1.6 } }), DONE_TOOLS]
+      if (/pomme|apple/i.test(ask)) {
+        const effects = [{ effect: 'minecraft:regeneration', seconds: 10 }]
+        return [item({ kind: 'food', food: { nutrition: 4, saturation: 2, effects } }), DONE_TOOLS]
+      }
+      if (/casque|helmet/i.test(ask))
+        return [item({ kind: 'armor', armor: { slot: 'head', armor: 3 } }), DONE_TOOLS]
+      return [item({ kind: 'tool', tool: { type: 'pickaxe' } }), DONE_TOOLS]
+    }
+    const { providers } = fakeProvider(Array.from({ length: 30 }, () => creationModel))
+    const results = await runEval({ providers, model, cases, concurrency: 1 })
+    expect(results.filter((r) => !r.pass)).toEqual([])
+    expect(results).toHaveLength(10)
+  })
+
   it('quick test ids exist in the bundled cases', () => {
     const ids = bundledEvalCases().map((c) => c.id)
     for (const id of QUICK_CASE_IDS) expect(ids).toContain(id)

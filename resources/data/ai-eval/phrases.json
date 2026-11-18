@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "FR/EN phrase -> expected tool calls (PLAN 6.8). Editor cases run on one 16x16 texture (fixture = image name); navigation cases run on a selection of textures (fixture = selection name, see evalSelection in src/main/services/ai/eval/report.ts); creation cases run on a whole pack (fixture = pack name, see evalPack in the same file; \"sample_datapack\" is a data pack for write_json cases); data cases run the data editor's chat on one file of that data pack (fixture = its path, see evalDataFile).",
+  "description": "FR/EN phrase -> expected tool calls (PLAN 6.8). Editor cases run on one 16x16 texture (fixture = image name); navigation cases run on a selection of textures (fixture = selection name, see evalSelection in src/main/services/ai/eval/report.ts); creation cases run on a whole pack (fixture = pack name, see evalPack in the same file; \"sample_datapack\" is a data pack for write_json cases, \"sample_combined\" a resource + data pack with custom items for write_item and delete_item cases); data cases run the data editor's chat on one file of that data pack (fixture = its path, see evalDataFile); item cases run the item page's chat on one custom item of the combined pack (fixture = its id, see evalItem).",
   "cases": [
     {
       "id": "rotate-left-90",
@@ -952,6 +952,204 @@
           "args": {
             "json.pools.0.entries.0.name": {
               "containsAny": ["diamond"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "item-damage",
+      "context": "item",
+      "fixture": "ruby_sword",
+      "fr": "fais 9 de dégâts",
+      "en": "make it deal 9 damage",
+      "expect": [
+        {
+          "tool": "edit_item",
+          "args": {
+            "item.weapon.attackDamage": 9
+          }
+        }
+      ]
+    },
+    {
+      "id": "item-stack",
+      "context": "item",
+      "fixture": "ruby",
+      "fr": "il doit se cumuler par 16",
+      "en": "let it stack to 16",
+      "expect": [
+        {
+          "tool": "edit_item",
+          "args": {
+            "item.maxStack": 16
+          }
+        }
+      ]
+    },
+    {
+      "id": "item-night-vision",
+      "context": "item",
+      "fixture": "magic_apple",
+      "fr": "ajoute vision nocturne 30 secondes quand on le mange",
+      "en": "add night vision for 30 seconds when it is eaten",
+      "expect": [
+        {
+          "tool": "edit_item",
+          "args": {
+            "item.food.effects.0.effect": {
+              "containsAny": ["night_vision"]
+            },
+            "item.food.effects.0.seconds": 30
+          }
+        }
+      ]
+    },
+    {
+      "id": "item-recipe",
+      "context": "item",
+      "fixture": "ruby_sword",
+      "fr": "change la recette pour 3 émeraudes en ligne",
+      "en": "change the recipe to 3 emeralds in a row",
+      "expect": [
+        {
+          "tool": "edit_item",
+          "args": {
+            "item.recipe.grid": {
+              "containsAny": ["emerald"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "item-rename",
+      "context": "item",
+      "fixture": "ruby_sword",
+      "fr": "renomme-le en Lame de rubis",
+      "en": "rename it Ruby Blade",
+      "expect": [
+        {
+          "tool": "edit_item",
+          "args": {
+            "item.names.fr_fr": {
+              "containsAny": ["lame"]
+            },
+            "item.names.en_us": {
+              "containsAny": ["blade"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "item-glint",
+      "context": "item",
+      "fixture": "ruby_sword",
+      "fr": "fais-le briller comme un objet enchanté",
+      "en": "make it shimmer like an enchanted item",
+      "expect": [
+        {
+          "tool": "edit_item",
+          "args": {
+            "item.glint": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "item-durability",
+      "context": "item",
+      "fixture": "ruby_sword",
+      "fr": "donne-lui 500 de durabilité",
+      "en": "give it 500 durability",
+      "expect": [
+        {
+          "tool": "edit_item",
+          "args": {
+            "item.durability": 500
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-item-sword",
+      "context": "creation",
+      "fixture": "sample_combined",
+      "fr": "crée une épée en rubis qui fait 9 de dégâts",
+      "en": "create a ruby sword that deals 9 damage",
+      "expect": [
+        {
+          "tool": "write_item",
+          "args": {
+            "item.kind": "weapon",
+            "item.weapon.attackDamage": 9
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-item-apple",
+      "context": "creation",
+      "fixture": "sample_combined",
+      "fr": "ajoute une pomme magique qui donne de la régénération",
+      "en": "add a magic apple that gives regeneration",
+      "expect": [
+        {
+          "tool": "write_item",
+          "args": {
+            "item.kind": "food",
+            "item.food.effects": {
+              "containsAny": ["regeneration"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-item-helmet",
+      "context": "creation",
+      "fixture": "sample_combined",
+      "fr": "crée un casque en émeraude",
+      "en": "create an emerald helmet",
+      "expect": [
+        {
+          "tool": "write_item",
+          "args": {
+            "item.kind": "armor",
+            "item.armor.slot": "head"
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-item-pickaxe",
+      "context": "creation",
+      "fixture": "sample_combined",
+      "fr": "ajoute une pioche en améthyste",
+      "en": "add an amethyst pickaxe",
+      "expect": [
+        {
+          "tool": "write_item",
+          "args": {
+            "item.kind": "tool",
+            "item.tool.type": "pickaxe"
+          }
+        }
+      ]
+    },
+    {
+      "id": "creation-item-delete",
+      "context": "creation",
+      "fixture": "sample_combined",
+      "fr": "supprime l'item rubis",
+      "en": "delete the ruby item",
+      "expect": [
+        {
+          "tool": "delete_item",
+          "args": {
+            "id": {
+              "containsAny": ["ruby"]
             }
           }
         }

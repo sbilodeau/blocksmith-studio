@@ -1,10 +1,15 @@
 import { formatJson, parseDataPath } from '@shared/datapack'
 import type { DataEntry } from '@shared/model/data'
+import { CustomItemSchema, type CustomItem } from '@shared/items'
+import type { ItemCatalog } from '@shared/model/items'
 import type { CreationData } from '../agent/creation-data'
+import type { CreationItems } from '../agent/creation'
 import { gatherExplainSources, type ExplainSources } from '../agent/explain'
+import { gatherItemSources, type ItemSources } from '../agent/item-agent'
+import { knownIdsOf } from '../agent/item-ai'
 import type { ToolCall } from '@shared/ai/types'
 import type { TextureEntry } from '@shared/model/pack'
-import { createImage, drawLine, fillRect, parseHex, type RgbaImage } from '@shared/image'
+import { createImage, drawLine, encodePng, fillRect, parseHex, type RgbaImage } from '@shared/image'
 
 /**
  * FR/EN evaluation scoring and Markdown report (PLAN 6.8 / 9.4). Pure functions: the runner feeds results in,
@@ -198,14 +203,30 @@ export function evalSelection(name: string): EvalSelectionTexture[] {
 /**
  * Pack fixtures of creation cases. `sample_pack`: the sample_selection blocks (stone, iron_ore and gold_ore in
  * "blocks" and "ores", oak_planks), plus an iron pickaxe ("tools") and a diamond sword ("weapons"), all 16x16.
+ * `sample_datapack`: a data pack (write_json cases). `sample_combined`: both, plus the custom items of evalItem
+ * (write_item / delete_item cases).
  */
 export function evalPack(name: string): {
   textures: TextureEntry[]
   samples: EvalSelectionTexture[]
-  kind?: 'data'
+  kind?: 'data' | 'combined'
   data?: CreationData
+  items?: CreationItems
 } {
   if (name === 'sample_datapack') return evalDataPack()
+  if (name === 'sample_combined') {
+    return {
+      ...evalPack('sample_pack'),
+      kind: 'combined',
+      data: evalDataPack().data,
+      items: {
+        list: Object.values(EVAL_CUSTOM_ITEMS),
+        namespace: EVAL_NAMESPACE,
+        known: knownIdsOf(EVAL_CATALOG),
+        readPng: evalTexturePng
+      }
+    }
+  }
   if (name !== 'sample_pack') throw new Error(`unknown eval pack ${name}`)
   const item = (n: string, color: string): EvalSelectionTexture => {
     const img = createImage(16, 16, [0, 0, 0, 0])
@@ -343,4 +364,125 @@ export async function evalDataFile(path: string): Promise<{
     }
   )
   return { text, sources, entries: data.entries, read: data.read }
+}
+
+const EVAL_NAMESPACE = 'eval_pack'
+
+/** Vanilla items the item fixtures can name (English names, as the item catalog gives them). */
+const EVAL_CATALOG: ItemCatalog = {
+  version: '26.3',
+  items: [
+    ['stone_sword', 'Stone Sword'],
+    ['diamond_sword', 'Diamond Sword'],
+    ['stone_pickaxe', 'Stone Pickaxe'],
+    ['netherite_helmet', 'Netherite Helmet'],
+    ['poisonous_potato', 'Poisonous Potato'],
+    ['apple', 'Apple'],
+    ['golden_apple', 'Golden Apple'],
+    ['emerald', 'Emerald'],
+    ['diamond', 'Diamond'],
+    ['redstone', 'Redstone Dust'],
+    ['redstone_block', 'Block of Redstone'],
+    ['stick', 'Stick'],
+    ['amethyst_shard', 'Amethyst Shard'],
+    ['gold_ingot', 'Gold Ingot']
+  ].map(([id, name]) => ({ id: `minecraft:${id!}`, name: name! })),
+  tags: ['#minecraft:planks', '#minecraft:wooden_tool_materials']
+}
+
+/** Custom items of the item fixtures and of the combined eval pack. */
+export const EVAL_CUSTOM_ITEMS: Record<string, CustomItem> = Object.fromEntries(
+  [
+    {
+      schemaVersion: 1,
+      id: 'ruby_sword',
+      namespace: EVAL_NAMESPACE,
+      kind: 'weapon',
+      base: 'minecraft:stone_sword',
+      names: { en_us: 'Ruby Sword', fr_fr: 'Épée en rubis' },
+      handheld: true,
+      durability: 1561,
+      weapon: { attackDamage: 7, attackSpeed: 1.6 },
+      recipe: {
+        type: 'shaped',
+        grid: [
+          null,
+          'minecraft:redstone_block',
+          null,
+          null,
+          'minecraft:redstone_block',
+          null,
+          null,
+          'minecraft:stick',
+          null
+        ],
+        count: 1
+      }
+    },
+    {
+      schemaVersion: 1,
+      id: 'magic_apple',
+      namespace: EVAL_NAMESPACE,
+      kind: 'food',
+      base: 'minecraft:poisonous_potato',
+      names: { en_us: 'Magic Apple', fr_fr: 'Pomme magique' },
+      food: { nutrition: 4, saturation: 2.4, effects: [] },
+      recipe: {
+        type: 'shapeless',
+        ingredients: ['minecraft:apple', 'minecraft:gold_ingot'],
+        count: 1
+      }
+    },
+    {
+      schemaVersion: 1,
+      id: 'ruby',
+      namespace: EVAL_NAMESPACE,
+      kind: 'simple',
+      base: 'minecraft:poisonous_potato',
+      names: { en_us: 'Ruby', fr_fr: 'Rubis' },
+      maxStack: 64,
+      removeComponents: ['minecraft:food', 'minecraft:consumable']
+    }
+  ].map((raw) => {
+    const item = CustomItemSchema.parse(raw)
+    return [item.id, item]
+  })
+)
+
+/** Any texture of the eval packs: a 16x16 red diagonal on transparent pixels (vanilla and item textures alike). */
+async function evalTexturePng(path: string): Promise<Uint8Array | null> {
+  if (!/^assets\/[a-z0-9_.-]+\/textures\/[a-z0-9_./-]+\.png$/.test(path)) return null
+  const img = createImage(16, 16, [0, 0, 0, 0])
+  drawLine(img, { x: 3, y: 12 }, { x: 12, y: 3 }, parseHex('#c0392b'))
+  return encodePng(img)
+}
+
+/**
+ * The item page of a custom item of the combined eval pack, for "item" cases (the item agent): fixture = item id
+ * (ruby_sword, magic_apple, ruby).
+ */
+export async function evalItem(id: string): Promise<{
+  item: CustomItem
+  sources: ItemSources
+  data: CreationData
+  readPng: (path: string) => Promise<Uint8Array | null>
+}> {
+  const item = EVAL_CUSTOM_ITEMS[id]
+  if (!item) throw new Error(`unknown eval item ${id}`)
+  const sources = await gatherItemSources(
+    { packId: 'eval', id, item: { ...item } },
+    {
+      meta: async () => ({ name: 'Eval pack', authoringVersion: '26.3' }),
+      items: {
+        all: async () => Object.values(EVAL_CUSTOM_ITEMS),
+        catalog: async () => EVAL_CATALOG,
+        context: async (_packId, base) => ({
+          baseRecipeUses: base === 'minecraft:apple' ? ['minecraft:golden_apple'] : []
+        }),
+        forTexture: async () => null,
+        readPng: async (_packId, path) => evalTexturePng(path)
+      }
+    }
+  )
+  return { item, sources, data: evalDataPack().data, readPng: evalTexturePng }
 }

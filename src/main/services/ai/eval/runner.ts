@@ -3,11 +3,18 @@ import type { AgentEvent, AgentSettings, EvalReport, ModelRef, ToolCall } from '
 import { encodePng } from '@shared/image'
 import { emptyBrief } from '@shared/model/brief'
 import type { ProviderRegistry } from '../../contracts'
-import { runCreationAgent, runDataAgent, runEditorAgent, runNavigationAgent } from '../agent'
+import {
+  runCreationAgent,
+  runDataAgent,
+  runEditorAgent,
+  runItemAgent,
+  runNavigationAgent
+} from '../agent'
 import { EvalFileSchema, matchCalls, type EvalCase } from './match'
 import {
   evalDataFile,
   evalFixture,
+  evalItem,
   evalPack,
   evalSelection,
   summarize,
@@ -147,21 +154,22 @@ export async function runEvalCase(
     const deps = { providers: opts.providers, newId, now: () => new Date() }
     const pack = c.context === 'creation' ? evalPack(c.fixture) : undefined
     const dataFile = c.context === 'data' ? await evalDataFile(c.fixture) : undefined
-    const result = dataFile
-      ? await runDataAgent(
+    const itemPage = c.context === 'item' ? await evalItem(c.fixture) : undefined
+    const result = itemPage
+      ? await runItemAgent(
           {
             runId: newId(),
             request: {
               packId: 'eval',
+              id: itemPage.item.id,
+              item: { ...itemPage.item },
               message: phrase,
               model: opts.model,
-              path: c.fixture,
-              text: dataFile.text,
               language
             },
-            sources: dataFile.sources,
-            entries: dataFile.entries,
-            read: dataFile.read,
+            sources: itemPage.sources,
+            readPng: itemPage.readPng,
+            data: itemPage.data,
             settings,
             history: []
           },
@@ -169,39 +177,42 @@ export async function runEvalCase(
           emit,
           controller.signal
         )
-      : pack
-        ? await runCreationAgent(
+      : dataFile
+        ? await runDataAgent(
             {
               runId: newId(),
-              request: { packId: 'eval', message: phrase, model: opts.model, language },
-              textures: pack.textures,
-              samples: pack.samples,
-              pack: {
-                name: 'Eval pack',
-                description: '',
-                ...(pack.kind ? { kind: pack.kind } : {})
+              request: {
+                packId: 'eval',
+                message: phrase,
+                model: opts.model,
+                path: c.fixture,
+                text: dataFile.text,
+                language
               },
-              ...(pack.data ? { data: pack.data } : {}),
+              sources: dataFile.sources,
+              entries: dataFile.entries,
+              read: dataFile.read,
               settings,
-              brief: emptyBrief(),
               history: []
             },
             deps,
             emit,
             controller.signal
           )
-        : c.context === 'navigation'
-          ? await runNavigationAgent(
+        : pack
+          ? await runCreationAgent(
               {
                 runId: newId(),
-                request: {
-                  packId: 'eval',
-                  message: phrase,
-                  model: opts.model,
-                  paths: evalSelection(c.fixture).map((t) => t.path),
-                  language
+                request: { packId: 'eval', message: phrase, model: opts.model, language },
+                textures: pack.textures,
+                samples: pack.samples,
+                pack: {
+                  name: 'Eval pack',
+                  description: '',
+                  ...(pack.kind ? { kind: pack.kind } : {})
                 },
-                textures: evalSelection(c.fixture),
+                ...(pack.data ? { data: pack.data } : {}),
+                ...(pack.items ? { items: pack.items } : {}),
                 settings,
                 brief: emptyBrief(),
                 history: []
@@ -210,26 +221,46 @@ export async function runEvalCase(
               emit,
               controller.signal
             )
-          : await runEditorAgent(
-              {
-                runId: newId(),
-                request: {
-                  packId: 'eval',
-                  message: phrase,
-                  model: opts.model,
-                  texture: { path: EVAL_TEXTURE, png: encodePng(evalFixture(c.fixture)) },
-                  language
+          : c.context === 'navigation'
+            ? await runNavigationAgent(
+                {
+                  runId: newId(),
+                  request: {
+                    packId: 'eval',
+                    message: phrase,
+                    model: opts.model,
+                    paths: evalSelection(c.fixture).map((t) => t.path),
+                    language
+                  },
+                  textures: evalSelection(c.fixture),
+                  settings,
+                  brief: emptyBrief(),
+                  history: []
                 },
-                base: evalFixture(c.fixture),
-                settings,
-                brief: emptyBrief(),
-                vanilla: null,
-                history: []
-              },
-              deps,
-              emit,
-              controller.signal
-            )
+                deps,
+                emit,
+                controller.signal
+              )
+            : await runEditorAgent(
+                {
+                  runId: newId(),
+                  request: {
+                    packId: 'eval',
+                    message: phrase,
+                    model: opts.model,
+                    texture: { path: EVAL_TEXTURE, png: encodePng(evalFixture(c.fixture)) },
+                    language
+                  },
+                  base: evalFixture(c.fixture),
+                  settings,
+                  brief: emptyBrief(),
+                  vanilla: null,
+                  history: []
+                },
+                deps,
+                emit,
+                controller.signal
+              )
     const error = result.reason === 'error' ? (result.error?.code ?? 'ai.agentFailed') : undefined
     return {
       caseId: c.id,
