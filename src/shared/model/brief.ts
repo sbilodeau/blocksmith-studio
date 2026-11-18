@@ -18,7 +18,7 @@ export const StyleBriefSchema = z.object({
     .array(
       z.object({
         at: z.string(),
-        by: z.enum(['user', 'creation', 'navigation', 'editor', 'data']),
+        by: z.enum(['user', 'creation', 'navigation', 'editor', 'data', 'item']),
         text: z.string().max(300)
       })
     )
@@ -28,7 +28,7 @@ export const StyleBriefSchema = z.object({
     .array(
       z.object({
         at: z.string(),
-        agent: z.enum(['creation', 'navigation', 'editor', 'data']),
+        agent: z.enum(['creation', 'navigation', 'editor', 'data', 'item']),
         summary: z.string().max(300)
       })
     )

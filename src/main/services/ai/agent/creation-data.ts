@@ -86,7 +86,7 @@ export const WRITE_JSON_DESCRIPTION = `Propose a data pack JSON file (recipe, lo
 is the WHOLE file. Overriding a vanilla file uses its vanilla path (data/minecraft/...); new content goes in the
 pack's own namespace. The file is checked against Minecraft's format: an invalid file is refused with the reasons.
 Formats (Minecraft 1.21.4+): ingredients are an item id, a tag "#minecraft:planks" or a list of item ids; results are
-{"id":"minecraft:stone","count":2}. Data packs cannot add new items.
+{"id":"minecraft:stone","count":2}. Data files cannot add new items: custom items (combined packs) use write_item.
 Examples:
 - "une recette pour crafter une selle avec du cuir" / "a recipe to craft a saddle from leather" ->
   {"path":"data/my_pack/recipe/saddle.json","json":{"type":"minecraft:crafting_shaped","pattern":["LLL","L L"],

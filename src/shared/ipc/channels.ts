@@ -95,6 +95,8 @@ export const INVOKE_CHANNELS = [
   'ai.creation.stopApply',
   'ai.data.send',
   'ai.data.explain',
+  'ai.item.send',
+  'ai.item.explain',
   'bulk.preview',
   'bulk.apply',
   'bulk.discard',

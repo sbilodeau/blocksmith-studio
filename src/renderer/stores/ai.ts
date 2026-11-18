@@ -17,9 +17,9 @@ import type {
   ToolCall,
   ToolKind
 } from '@shared/ai/types'
-import { isDataFileProposal } from '@shared/ai/types'
+import { isDataFileProposal, isItemProposal } from '@shared/ai/types'
 import type { Language } from '@shared/model/settings'
-import { call, IpcError } from '../services/ipc'
+import { call, IpcError, toPlain } from '../services/ipc'
 import { useSettingsStore } from './settings'
 
 /** One message bubble in the AI panel, built from persisted turns and live events. */
@@ -43,16 +43,19 @@ export interface AgentSession {
   loaded: boolean
 }
 
-/** A session of an agent, or of the data editor's "Explain" (one answer at a time, never persisted). */
-export type SessionKind = AgentKind | 'explain'
+/**
+ * A session of an agent, or of an "Explain" panel (one answer at a time, never persisted): `explain` in the data
+ * editor, `itemExplain` in the item page (both can be open on the same pack).
+ */
+export type SessionKind = AgentKind | 'explain' | 'itemExplain'
 
 function sessionKey(packId: string, agent: SessionKind): string {
   return `${packId}:${agent}`
 }
 
-/** A proposal with steps (not a data-agent file proposal), or undefined. */
+/** A proposal with steps (not a data-agent file or item-agent definition proposal), or undefined. */
 function stepProposal(p: EmittedProposal | undefined): AnyProposal | undefined {
-  return p && !isDataFileProposal(p) ? p : undefined
+  return p && !isDataFileProposal(p) && !isItemProposal(p) ? p : undefined
 }
 
 let itemSeq = 0
@@ -265,6 +268,59 @@ export const useAiStore = defineStore('ai', () => {
     if (s.runId) await call('ai.agent.stop', { runId: s.runId }).catch(() => undefined)
     s.items = []
     await startRun(s, null, () => call('ai.data.explain', { ...args, model: { ...args.model } }))
+  }
+
+  /**
+   * Item agent (M14): a chat message about the custom item open in the item page. `item` is the form's definition,
+   * unsaved edits included; `id` the id it is saved under.
+   */
+  async function sendItem(args: {
+    packId: string
+    id: string
+    item: Record<string, unknown>
+    message: string
+    model: ModelRef
+    language: Language
+    thinking?: ReasoningLevel
+  }): Promise<void> {
+    await startRun(session(args.packId, 'item'), args.message, () =>
+      call('ai.item.send', {
+        ...args,
+        item: toPlain(args.item),
+        model: { ...args.model }
+      })
+    )
+  }
+
+  /** Marks an item-agent proposal applied (its definition went into the form) or discarded. */
+  function decideItemProposal(
+    packId: string,
+    proposalId: string,
+    status: 'applied' | 'rejected'
+  ): void {
+    const p = session(packId, 'item').proposals[proposalId]
+    if (p && isItemProposal(p)) p.status = status
+  }
+
+  /** Explains a custom item in plain words (M14): replaces the pack's previous item explanation. */
+  async function explainItem(args: {
+    packId: string
+    id: string
+    item: Record<string, unknown>
+    model: ModelRef
+    language: Language
+    thinking?: ReasoningLevel
+  }): Promise<void> {
+    const s = session(args.packId, 'itemExplain')
+    if (s.runId) await call('ai.agent.stop', { runId: s.runId }).catch(() => undefined)
+    s.items = []
+    await startRun(s, null, () =>
+      call('ai.item.explain', {
+        ...args,
+        item: toPlain(args.item),
+        model: { ...args.model }
+      })
+    )
   }
 
   /** Applies the ticked steps of a creation plan (resolves when written, or after Stop). */
@@ -482,6 +538,9 @@ export const useAiStore = defineStore('ai', () => {
     explainData,
     sendData,
     decideDataProposal,
+    sendItem,
+    decideItemProposal,
+    explainItem,
     applyCreation,
     stopCreationApply,
     stop,

@@ -601,7 +601,8 @@
       "editor": "Agent Éditeur",
       "navigation": "Agent Navigation",
       "creation": "Agent Création",
-      "data": "Agent Données"
+      "data": "Agent Données",
+      "item": "Agent des items"
     },
     "editorAgent": "Agent Éditeur",
     "refreshModels": "Actualiser les modèles",
@@ -777,7 +778,13 @@
       "newFile": "Nouveau fichier",
       "changedFile": "Fichier modifié",
       "jsonWarnings": "{count} avertissements | 1 avertissement | {count} avertissements",
-      "filesWritten": "{count} fichiers de données écrits. | 1 fichier de données écrit. | {count} fichiers de données écrits."
+      "filesWritten": "{count} fichiers de données écrits. | 1 fichier de données écrit. | {count} fichiers de données écrits.",
+      "newItem": "Nouvel item",
+      "changedItem": "Item modifié",
+      "deletedItem": "Item supprimé",
+      "itemSummary": "{kind}, base {base}",
+      "itemTexture": "Texture copiée de {path}",
+      "itemsWritten": "{count} items personnalisés écrits. | 1 item personnalisé écrit. | {count} items personnalisés écrits."
     },
     "creationNoTextures": "Aucune texture trouvée pour ce pack. Préparez les textures Minecraft de sa version dans les Paramètres.",
     "creationEmptyBase": "Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide (1 texture pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie. | Pack vide ({count} textures pour l'instant) : l'IA part des textures de Minecraft et ajoute à votre pack celles qu'elle modifie.",
@@ -852,7 +859,10 @@
     "unknown": "Opération {tool}",
     "setPackMeta": "Modifier le pack ({fields})",
     "writeJson": "Modifier {path}",
-    "writeJsonNew": "Créer {path}"
+    "writeJsonNew": "Créer {path}",
+    "writeItem": "Modifier l'item {name}",
+    "writeItemNew": "Créer l'item {name}",
+    "deleteItem": "Supprimer l'item {name}"
   },
   "bulk": {
     "open": "Modifier la sélection...",
@@ -1424,7 +1434,6 @@
       "backToItem": "Retour à l'objet",
       "ai": "IA",
       "aiHint": "Demandez à l'IA de modifier cet objet, ou d'expliquer ce qu'il fait dans le jeu",
-      "aiPlaceholder": "L'assistant d'objets n'est pas encore disponible.",
       "applied": "La proposition est dans le formulaire. Vérifiez-la, puis enregistrez.",
       "errorCount": "Aucune erreur | 1 erreur à corriger | {count} erreurs à corriger",
       "fixErrors": "Corrigez les erreurs indiquées dans le formulaire avant d'enregistrer.",
@@ -1443,6 +1452,62 @@
     "generated": {
       "notice": "Ce fichier est généré à partir de l'objet personnalisé « {id} » : vos modifications ici seraient remplacées à l'enregistrement de l'objet, il est donc en lecture seule. Modifiez plutôt l'objet.",
       "openItem": "Ouvrir l'objet"
+    }
+  },
+  "itemAgent": {
+    "context": "À propos de {name} : l'IA voit cet item tel qu'il est dans le formulaire.",
+    "empty": "Demandez une modification (« fais 9 de dégâts », « il doit se cumuler par 16 », « ajoute vision nocturne 30 secondes quand on le mange ») ou posez une question sur cet item. Les modifications proposées vont dans le formulaire quand vous les appliquez ; c'est vous qui enregistrez.",
+    "proposal": "Définition proposée de l'item",
+    "renamed": "Renommé en {id}",
+    "noChanges": "Mêmes valeurs, seulement écrites autrement.",
+    "wholeDefinition": "Définition complète",
+    "unknownIds": "Cette version de Minecraft n'a pas : {ids}",
+    "outdated": "L'item a changé dans le formulaire depuis votre demande : appliquer remplace ces modifications.",
+    "apply": "Appliquer dans le formulaire",
+    "discard": "Ignorer",
+    "applied": "Appliqué dans le formulaire (pas encore enregistré).",
+    "discarded": "Ignoré.",
+    "yes": "oui",
+    "no": "non",
+    "unset": "non défini",
+    "fields": {
+      "id": "Identifiant",
+      "name": "Nom ({lang})",
+      "lore": "Lignes d'info-bulle",
+      "kind": "Type",
+      "base": "Item de base",
+      "handheld": "Tenu comme un outil",
+      "rarity": "Rareté",
+      "glint": "Reflet enchanté",
+      "maxStack": "Taille de pile",
+      "durability": "Durabilité",
+      "repairWith": "Réparé avec",
+      "enchantability": "Enchantabilité",
+      "attackDamage": "Dégâts d'attaque",
+      "attackSpeed": "Vitesse d'attaque",
+      "toolType": "Type d'outil",
+      "toolTier": "Niveau de minage",
+      "miningSpeed": "Vitesse de minage",
+      "armorSlot": "Emplacement d'armure",
+      "armor": "Points d'armure",
+      "toughness": "Robustesse d'armure",
+      "knockbackResistance": "Résistance au recul",
+      "nutrition": "Faim restaurée",
+      "saturation": "Saturation",
+      "eatSeconds": "Temps pour manger (secondes)",
+      "alwaysEdible": "Se mange même rassasié",
+      "animation": "Animation",
+      "effects": "Effets quand on le mange",
+      "recipe": "Recette",
+      "removeComponents": "Composants retirés",
+      "extraComponents": "Composants supplémentaires"
+    },
+    "explain": {
+      "run": "Expliquer cet item",
+      "again": "Expliquer de nouveau",
+      "hint": "Envoyé à l'IA : cet item tel que dans le formulaire, son item de base, les recettes qui utilisent l'item de base et les vérifications. Rien n'est modifié.",
+      "stale": "L'item a changé depuis cette explication.",
+      "working": "Lecture de l'item..."
     }
   }
 }

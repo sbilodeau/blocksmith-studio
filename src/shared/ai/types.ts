@@ -5,6 +5,7 @@
 import type { Language } from '../model/settings'
 import type { StyleBriefPatch } from '../model/brief'
 import type { BulkItem } from '../model/bulk'
+import type { CustomItem } from '../items/schema'
 
 // ---------- providers and models ----------
 export type ProviderKind = 'ollama' | 'openai-compatible'
@@ -103,8 +104,11 @@ export interface ProviderAdapter {
 }
 
 // ---------- agents ----------
-/** `data`: the chat of the data editor, about the open data file (M10). */
-export type AgentKind = 'creation' | 'navigation' | 'editor' | 'data'
+/**
+ * `data`: the chat of the data editor, about the open data file (M10). `item`: the chat of the item page, about the
+ * open custom item (M14).
+ */
+export type AgentKind = 'creation' | 'navigation' | 'editor' | 'data' | 'item'
 
 export type ImageMode = 'vision+grid' | 'grid' | 'image'
 
@@ -173,6 +177,30 @@ export interface DataAgentRequest {
   thinking?: ReasoningLevel
 }
 
+/**
+ * A chat message to the item agent about the custom item open in the item page (M14). `item` is the form's definition,
+ * unsaved edits included (it may not be valid yet: main checks it); `id` is the id the item is saved under.
+ */
+export interface ItemAgentRequest {
+  packId: string
+  id: string
+  item: Record<string, unknown>
+  message: string
+  model: ModelRef
+  language: Language
+  thinking?: ReasoningLevel
+}
+
+/** "Explain" in the item page (M14): one answer, without tools, about what the open item does in game. */
+export interface ItemExplainRequest {
+  packId: string
+  id: string
+  item: Record<string, unknown>
+  model: ModelRef
+  language: Language
+  thinking?: ReasoningLevel
+}
+
 /** A request to the navigation agent about the grid selection. */
 export interface NavigationAgentRequest {
   packId: string
@@ -213,6 +241,21 @@ export interface ProposalStep {
   json?: JsonFileChange
   /** Animated texture: the frame the step changes (0-based), or 'all' for every frame. */
   frame?: number | 'all'
+  /** Creation agent write_item / delete_item (M14): the custom item written or deleted. */
+  item?: ItemStepChange
+}
+
+/** A custom item proposed by the creation agent (applied with the plan's other items as one history entry). */
+export interface ItemStepChange {
+  op: 'write' | 'delete'
+  /** Id of the item written or deleted. */
+  id: string
+  /** The whole definition (write). */
+  item?: CustomItem
+  /** New item: the vanilla or pack texture its texture copies. */
+  textureFrom?: string
+  /** True when the pack has no item with this id yet (write). */
+  isNew?: boolean
 }
 
 /** Filter of a creation-agent step (categories AND folders AND name glob) and how many textures it matched. */
@@ -304,11 +347,32 @@ export interface DataFileProposal {
   status: 'pending' | 'applied' | 'rejected'
 }
 
-/** Proposals kept in main until applied (a data-agent proposal is applied in the renderer and never stored). */
+/**
+ * An item-agent proposal (M14): the whole new definition of the open custom item, checked against the schema.
+ * Applying it puts the definition in the item form, unsaved: the user's save writes it (one history entry).
+ */
+export interface ItemDefinitionProposal {
+  id: string
+  runId: string
+  agent: 'item'
+  kind: 'item'
+  packId: string
+  /** Id the item is saved under (the request's). */
+  itemId: string
+  /** The form's definition the agent started from. */
+  before: Record<string, unknown>
+  /** The proposed definition (valid). */
+  after: CustomItem
+  /** Item ids and tags of the proposal this Minecraft version does not have. */
+  unknownIds: string[]
+  status: 'pending' | 'applied' | 'rejected'
+}
+
+/** Proposals kept in main until applied (data and item proposals are applied in the renderer and never stored). */
 export type AnyProposal = Proposal | BulkProposal | CreationProposal
 
 /** Any proposal an agent run can emit. */
-export type EmittedProposal = AnyProposal | DataFileProposal
+export type EmittedProposal = AnyProposal | DataFileProposal | ItemDefinitionProposal
 
 export function isBulkProposal(p: AnyProposal): p is BulkProposal {
   return (p as BulkProposal).kind === 'bulk'
@@ -320,6 +384,10 @@ export function isCreationProposal(p: AnyProposal): p is CreationProposal {
 
 export function isDataFileProposal(p: EmittedProposal): p is DataFileProposal {
   return (p as DataFileProposal).kind === 'file'
+}
+
+export function isItemProposal(p: EmittedProposal): p is ItemDefinitionProposal {
+  return (p as ItemDefinitionProposal).kind === 'item'
 }
 
 export interface CreationApplyResult {
@@ -334,6 +402,8 @@ export interface CreationApplyResult {
   metaUpdated: boolean
   /** Data files written by write_json steps (one history entry for all of them). */
   filesWritten: number
+  /** Custom items written or deleted by write_item / delete_item steps (one history entry for all of them). */
+  itemsWritten: number
 }
 
 export interface BulkProposalApplyResult {
@@ -420,6 +490,8 @@ export interface ConversationTurn {
   texturePath?: string
   /** Data file the user message was about (data agent). */
   dataPath?: string
+  /** Custom item the user message was about (item agent). */
+  itemId?: string
   model?: ModelRef
   usage?: { inputTokens?: number; outputTokens?: number; costUsd?: number }
   proposalId?: string

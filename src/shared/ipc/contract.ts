@@ -120,6 +120,13 @@ const DataPathSchema = z
 const DataRef = PackRef.extend({ path: DataPathSchema }).strict()
 const DataText = z.string().max(MAX_DATA_FILE_BYTES)
 const ItemRef = PackRef.extend({ id: z.string().regex(ITEM_ID_RE) }).strict()
+/**
+ * The item form's definition sent to the item agent: unsaved and possibly not valid yet (main checks it and tells the
+ * model what is wrong), so only its size is bounded here.
+ */
+const ItemDraft = z
+  .record(z.string(), z.unknown())
+  .refine((v) => JSON.stringify(v).length <= 64 * 1024, { message: 'tooLarge' })
 const MAX_PNG_BYTES = 16 * 1024 * 1024
 const VersionId = z.string().regex(/^[0-9][0-9a-z.-]{0,31}$/)
 /** A category rule list from the editor (size-bounded here; validated in depth by main). */
@@ -270,10 +277,10 @@ export const inputSchemas = {
     .strict(),
   'ai.agent.stop': z.object({ runId: z.string().min(1).max(64) }).strict(),
   'ai.agent.conversation': PackRef.extend({
-    agent: z.enum(['creation', 'navigation', 'editor', 'data'])
+    agent: z.enum(['creation', 'navigation', 'editor', 'data', 'item'])
   }).strict(),
   'ai.agent.clear': PackRef.extend({
-    agent: z.enum(['creation', 'navigation', 'editor', 'data'])
+    agent: z.enum(['creation', 'navigation', 'editor', 'data', 'item'])
   }).strict(),
   'ai.proposal.apply': z
     .object({
@@ -325,6 +332,19 @@ export const inputSchemas = {
   }).strict(),
   'ai.data.explain': DataRef.extend({
     text: DataText,
+    model: ModelRefSchema,
+    language: LanguageSchema,
+    thinking: ReasoningLevelSchema.optional()
+  }).strict(),
+  'ai.item.send': ItemRef.extend({
+    message: z.string().trim().min(1).max(4000),
+    item: ItemDraft,
+    model: ModelRefSchema,
+    language: LanguageSchema,
+    thinking: ReasoningLevelSchema.optional()
+  }).strict(),
+  'ai.item.explain': ItemRef.extend({
+    item: ItemDraft,
     model: ModelRefSchema,
     language: LanguageSchema,
     thinking: ReasoningLevelSchema.optional()
@@ -474,6 +494,10 @@ export interface InvokeOutputs {
   'ai.creation.stopApply': void
   'ai.data.send': { runId: string }
   'ai.data.explain': { runId: string }
+  /** Starts an item-agent run about the open custom item; progress arrives as 'ai.event'. */
+  'ai.item.send': { runId: string }
+  /** Starts an explanation of the open custom item (one answer, no tools). */
+  'ai.item.explain': { runId: string }
   /** Computes a manual bulk action (worker thread, emits job.progress). Nothing is written. */
   'bulk.preview': BulkPreview
   /** Writes the ticked textures of a preview as one undoable history entry. */

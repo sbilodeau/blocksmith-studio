@@ -52,13 +52,15 @@ const input = ref('')
 const scroller = ref<InstanceType<typeof NScrollbar> | null>(null)
 
 /**
- * Model for this tab: starts from the agent default, can be switched on the fly. The data agent, new in M10, falls
- * back to the creation agent's model until it has its own default.
+ * Model for this tab: starts from the agent default, can be switched on the fly. The data agent (M10) and the item
+ * agent (M14) fall back to the creation agent's model until they have their own default.
  */
 const defaultModel = computed(
   () =>
     defaults.value.model ??
-    (props.agent === 'data' ? settings.settings.ai.agents.creation.model : undefined)
+    (props.agent === 'data' || props.agent === 'item'
+      ? settings.settings.ai.agents.creation.model
+      : undefined)
 )
 const model = ref<ModelRef | undefined>(defaultModel.value)
 watch(defaultModel, (m) => {

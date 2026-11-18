@@ -29,6 +29,7 @@ import {
   planImages,
   sendsGrid,
   textureState,
+  type CustomItemTag,
   type ImagePlan
 } from './context'
 import {
@@ -58,6 +59,8 @@ export interface RunInput {
   history: ConversationTurn[]
   /** How the texture wraps its 3D model (body part / block face rectangles), when known. */
   modelLayout?: string
+  /** The custom item the texture belongs to (M14), when it is one. */
+  customItem?: CustomItemTag
 }
 
 /** Frame layout of an animated request, or undefined when the strip does not match it. */
@@ -142,7 +145,8 @@ export async function runEditorAgent(
       request.texture.path,
       first,
       plan,
-      input.modelLayout
+      input.modelLayout,
+      input.customItem
     )
   ]
 
