@@ -65,7 +65,9 @@ async function apply(proposalId: string, stepIds: string[]): Promise<void> {
   try {
     const result = await ai.applyCreation(props.packId, proposalId, stepIds)
     const parts = [
-      result.texturesWritten === 0 && result.filesWritten > 0 && !result.stopped
+      result.texturesWritten === 0 &&
+      (result.filesWritten > 0 || result.itemsWritten > 0) &&
+      !result.stopped
         ? ''
         : result.stopped
           ? t('ai.plan.stoppedResult', { count: result.texturesWritten }, result.texturesWritten)
@@ -75,6 +77,9 @@ async function apply(proposalId: string, stepIds: string[]): Promise<void> {
         : '',
       result.filesWritten > 0
         ? t('ai.plan.filesWritten', { count: result.filesWritten }, result.filesWritten)
+        : '',
+      result.itemsWritten > 0
+        ? t('ai.plan.itemsWritten', { count: result.itemsWritten }, result.itemsWritten)
         : '',
       result.briefUpdated ? t('ai.proposal.briefUpdated') : '',
       result.metaUpdated ? t('ai.plan.metaUpdated') : ''

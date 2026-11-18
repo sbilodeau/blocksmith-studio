@@ -96,7 +96,7 @@ function refresh(): void {
           @update:value="onIterations"
         />
       </n-form-item>
-      <n-form-item v-if="agent !== 'data'" :label="t('ai.imageMode')">
+      <n-form-item v-if="agent !== 'data' && agent !== 'item'" :label="t('ai.imageMode')">
         <n-select
           :value="current.imageMode"
           :options="imageModes"

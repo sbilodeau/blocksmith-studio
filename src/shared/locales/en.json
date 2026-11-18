@@ -600,7 +600,8 @@
       "editor": "Editor agent",
       "navigation": "Navigation agent",
       "creation": "Creation agent",
-      "data": "Data agent"
+      "data": "Data agent",
+      "item": "Item agent"
     },
     "editorAgent": "Editor agent",
     "refreshModels": "Refresh models",
@@ -776,7 +777,13 @@
       "newFile": "New file",
       "changedFile": "Changed file",
       "jsonWarnings": "{count} warnings | 1 warning | {count} warnings",
-      "filesWritten": "{count} data files written. | 1 data file written. | {count} data files written."
+      "filesWritten": "{count} data files written. | 1 data file written. | {count} data files written.",
+      "newItem": "New item",
+      "changedItem": "Changed item",
+      "deletedItem": "Deleted item",
+      "itemSummary": "{kind}, base {base}",
+      "itemTexture": "Texture from {path}",
+      "itemsWritten": "{count} custom items written. | 1 custom item written. | {count} custom items written."
     },
     "creationNoTextures": "No textures found for this pack yet. Prepare the Minecraft textures of its version in Settings.",
     "creationEmptyBase": "Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack (1 texture so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack. | Empty pack ({count} textures so far): the AI starts from Minecraft's textures and adds the ones it changes to your pack.",
@@ -851,7 +858,10 @@
     "unknown": "Operation {tool}",
     "setPackMeta": "Change the pack ({fields})",
     "writeJson": "Change {path}",
-    "writeJsonNew": "Create {path}"
+    "writeJsonNew": "Create {path}",
+    "writeItem": "Change the item {name}",
+    "writeItemNew": "Create the item {name}",
+    "deleteItem": "Delete the item {name}"
   },
   "bulk": {
     "open": "Edit selection...",
@@ -1229,6 +1239,62 @@
       "syncing": "Syncing...",
       "synced": "Synced at {time} ({count} file(s) changed)",
       "error": "Sync failed: {reason}"
+    }
+  },
+  "itemAgent": {
+    "context": "About {name}: the AI sees this item as it is in the form.",
+    "empty": "Ask for a change (\"make it deal 9 damage\", \"let it stack to 16\", \"add night vision for 30 seconds when eaten\") or a question about this item. Proposed changes go into the form when you apply them; you save them yourself.",
+    "proposal": "Proposed definition of the item",
+    "renamed": "Renamed to {id}",
+    "noChanges": "Same values, only written differently.",
+    "wholeDefinition": "Whole definition",
+    "unknownIds": "This Minecraft version does not have: {ids}",
+    "outdated": "The item changed in the form since your request: applying replaces those edits.",
+    "apply": "Apply to form",
+    "discard": "Discard",
+    "applied": "Applied to the form (not saved yet).",
+    "discarded": "Discarded.",
+    "yes": "yes",
+    "no": "no",
+    "unset": "not set",
+    "fields": {
+      "id": "Id",
+      "name": "Name ({lang})",
+      "lore": "Tooltip lines",
+      "kind": "Kind",
+      "base": "Base item",
+      "handheld": "Held like a tool",
+      "rarity": "Rarity",
+      "glint": "Enchanted shimmer",
+      "maxStack": "Stack size",
+      "durability": "Durability",
+      "repairWith": "Repaired with",
+      "enchantability": "Enchantability",
+      "attackDamage": "Attack damage",
+      "attackSpeed": "Attack speed",
+      "toolType": "Tool type",
+      "toolTier": "Mining level",
+      "miningSpeed": "Mining speed",
+      "armorSlot": "Armor slot",
+      "armor": "Armor points",
+      "toughness": "Armor toughness",
+      "knockbackResistance": "Knockback resistance",
+      "nutrition": "Hunger restored",
+      "saturation": "Saturation",
+      "eatSeconds": "Time to eat (seconds)",
+      "alwaysEdible": "Can be eaten when full",
+      "animation": "Animation",
+      "effects": "Effects when eaten",
+      "recipe": "Recipe",
+      "removeComponents": "Removed components",
+      "extraComponents": "Extra components"
+    },
+    "explain": {
+      "run": "Explain this item",
+      "again": "Explain again",
+      "hint": "Sent to the AI: this item as in the form, its base item, the recipes that use the base item and the checks. Nothing is changed.",
+      "stale": "The item changed since this explanation.",
+      "working": "Reading the item..."
     }
   }
 }
