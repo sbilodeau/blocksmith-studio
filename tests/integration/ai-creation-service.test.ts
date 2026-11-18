@@ -221,7 +221,8 @@ describe('creation agent service', () => {
       stopped: false,
       briefUpdated: true,
       metaUpdated: true,
-      filesWritten: 0
+      filesWritten: 0,
+      itemsWritten: 0
     })
     expect(meta).toEqual([{ name: 'Fire Pack' }])
     expect(saves.map((s) => s.paths.map((p) => p.split('/').pop()))).toEqual([

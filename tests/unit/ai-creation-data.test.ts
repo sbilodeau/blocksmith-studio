@@ -103,7 +103,19 @@ describe('creation agent on data packs', () => {
       'set_pack_meta',
       'update_style_brief'
     ])
-    expect(creationTools('combined')).toHaveLength(7)
+    expect(creationTools('combined').map((t) => t.name)).toEqual([
+      'apply_to_all',
+      'list_textures',
+      'list_data',
+      'read_json',
+      'write_json',
+      'list_items',
+      'read_item',
+      'write_item',
+      'delete_item',
+      'set_pack_meta',
+      'update_style_brief'
+    ])
     expect(
       buildSystemPrompt({
         agent: 'creation',
