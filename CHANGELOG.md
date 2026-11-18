@@ -5,6 +5,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+## 26.47.2 - 2026-11-18
+
 ### M14 - Custom items
 
 - **Items** section (next to Textures and Data): make new items that work in Minecraft without mods, with their own
