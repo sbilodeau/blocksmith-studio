@@ -20,15 +20,25 @@ import { useErrorMessage } from '../../composables/useErrorMessage'
 /**
  * Pack Doctor (PLAN 8.5, M7): every problem found in the pack's files (the export checks plus texture proportions
  * against vanilla), and, for each Minecraft version the pack can be exported to, how many textures would be renamed
- * or skipped. Clicking a texture opens it in the editor.
+ * or skipped. Clicking a texture opens it in the editor. Custom item issues (M14) open the item, and the ones about
+ * generated files offer to regenerate them.
  */
 const props = defineProps<{ packId: string }>()
 const show = defineModel<boolean>('show', { required: true })
+const emit = defineEmits<{ 'open-item': [id: string] }>()
 const { t, te } = useI18n()
 const { showError } = useErrorMessage()
 const pack = computed(() => usePackStore(props.packId))
 const report = ref<DoctorReport | null>(null)
 const loading = ref(false)
+/** Item being regenerated (its button spins). */
+const regenerating = ref<string | null>(null)
+/** Issues fixed by writing the item's generated files again. */
+const REGENERATE = new Set([
+  'items.generatedEdited',
+  'items.generatedMissing',
+  'items.langOutdated'
+])
 
 async function refresh(): Promise<void> {
   loading.value = true
@@ -45,15 +55,17 @@ watch(show, (open) => {
   if (open) void refresh()
 })
 
+type Issue = DoctorReport['issues'][number]
+
 /** Issues grouped by code, in a stable order. */
 const groups = computed(() => {
-  const map = new Map<string, string[]>()
+  const map = new Map<string, Issue[]>()
   for (const issue of report.value?.issues ?? []) {
     const list = map.get(issue.code) ?? []
-    if (issue.path) list.push(issue.path)
+    if (issue.path || issue.itemId) list.push(issue)
     map.set(issue.code, list)
   }
-  return [...map].map(([code, paths]) => ({ code, paths }))
+  return [...map].map(([code, issues]) => ({ code, issues }))
 })
 
 function label(code: string): string {
@@ -71,6 +83,23 @@ function isTexture(path: string): boolean {
 function open(path: string): void {
   show.value = false
   pack.value.openEditor(path)
+}
+
+function openItem(id: string): void {
+  show.value = false
+  emit('open-item', id)
+}
+
+async function regenerate(id: string): Promise<void> {
+  regenerating.value = id
+  try {
+    await call('items.regenerate', { packId: props.packId, id })
+    await refresh()
+  } catch (err) {
+    showError(err)
+  } finally {
+    regenerating.value = null
+  }
 }
 </script>
 
@@ -99,23 +128,51 @@ function open(path: string): void {
                 :key="group.code"
                 :name="group.code"
                 :title="
-                  group.paths.length
-                    ? `${label(group.code)} (${group.paths.length})`
+                  group.issues.length
+                    ? `${label(group.code)} (${group.issues.length})`
                     : label(group.code)
                 "
               >
                 <ul class="paths">
-                  <li v-for="path in group.paths" :key="path">
-                    <n-button
-                      v-if="isTexture(path)"
-                      text
-                      size="tiny"
-                      type="primary"
-                      @click="open(path)"
-                    >
-                      {{ short(path) }}
-                    </n-button>
-                    <n-text v-else code>{{ path }}</n-text>
+                  <li
+                    v-for="(issue, i) in group.issues"
+                    :key="`${issue.path ?? ''}#${issue.itemId ?? ''}#${i}`"
+                    class="issue"
+                  >
+                    <template v-if="issue.path">
+                      <n-button
+                        v-if="isTexture(issue.path) && !issue.itemId"
+                        text
+                        size="tiny"
+                        type="primary"
+                        @click="open(issue.path)"
+                      >
+                        {{ short(issue.path) }}
+                      </n-button>
+                      <n-text v-else code>{{ issue.path }}</n-text>
+                    </template>
+                    <span v-if="issue.itemId" class="actions">
+                      <n-button
+                        size="tiny"
+                        secondary
+                        :data-testid="`doctor-open-item-${issue.itemId}`"
+                        @click="openItem(issue.itemId)"
+                      >
+                        {{ t('doctor.openItem') }}
+                      </n-button>
+                      <n-button
+                        v-if="REGENERATE.has(issue.code)"
+                        size="tiny"
+                        type="primary"
+                        secondary
+                        :loading="regenerating === issue.itemId"
+                        :disabled="regenerating !== null"
+                        :data-testid="`doctor-regenerate-${issue.itemId}`"
+                        @click="regenerate(issue.itemId)"
+                      >
+                        {{ t('doctor.regenerate') }}
+                      </n-button>
+                    </span>
                   </li>
                 </ul>
               </n-collapse-item>
@@ -163,5 +220,13 @@ function open(path: string): void {
   margin: 0;
   padding-left: 16px;
   font-size: 12px;
+}
+.issue {
+  margin-bottom: 4px;
+}
+.actions {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
 }
 </style>

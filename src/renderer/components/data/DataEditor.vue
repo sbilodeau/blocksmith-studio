@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  NAlert,
   NButton,
   NDropdown,
   NEmpty,
@@ -32,6 +33,7 @@ import { useErrorMessage } from '../../composables/useErrorMessage'
 import { useIssueMessage } from './issues'
 
 const props = defineProps<{ packId: string }>()
+const emit = defineEmits<{ 'open-item': [id: string] }>()
 const { t } = useI18n()
 const dialog = useDialog()
 const { showError } = useErrorMessage()
@@ -55,6 +57,9 @@ watch(aiTab, (tab) => {
 const editorRef = ref<InstanceType<typeof CodeEditor> | null>(null)
 
 const dirty = computed(() => text.value !== saved.value)
+/** Generated from a custom item (M14): the item is edited instead, its save rewrites this file. */
+const generatedBy = computed(() => file.value?.generatedBy ?? null)
+const readOnly = computed(() => generatedBy.value !== null)
 const isJson = computed(() => !!info.value && !info.value.text)
 const status = computed(() => (path.value ? store.value.entry(path.value)?.status : undefined))
 
@@ -113,7 +118,7 @@ watch(path, load, { immediate: true })
 
 async function save(): Promise<boolean> {
   const p = path.value
-  if (!p || saving.value) return false
+  if (!p || saving.value || readOnly.value) return false
   saving.value = true
   try {
     await store.value.save(p, text.value)
@@ -181,6 +186,7 @@ function onMore(key: string): void {
 
 /** The data agent's proposal goes into the editor, unsaved (the user saves it). */
 function applyProposal(next: string): void {
+  if (readOnly.value) return
   text.value = next
 }
 
@@ -254,7 +260,7 @@ defineExpose({ guardUnsaved })
       </div>
       <div class="head-right">
         <n-button
-          v-if="isJson"
+          v-if="isJson && !readOnly"
           size="small"
           :disabled="checked.value === undefined"
           data-testid="data-format"
@@ -275,7 +281,7 @@ defineExpose({ guardUnsaved })
           </template>
           {{ t('data.editor.compareHint') }}
         </n-tooltip>
-        <n-tooltip v-if="file">
+        <n-tooltip v-if="file && !readOnly">
           <template #trigger>
             <n-button
               size="small"
@@ -289,7 +295,7 @@ defineExpose({ guardUnsaved })
           {{ t('data.agent.buttonHint') }}
         </n-tooltip>
         <n-dropdown
-          v-if="moreOptions.length"
+          v-if="moreOptions.length && !readOnly"
           trigger="click"
           :options="moreOptions"
           @select="onMore"
@@ -297,6 +303,7 @@ defineExpose({ guardUnsaved })
           <n-button size="small" data-testid="data-more">{{ t('data.editor.more') }}</n-button>
         </n-dropdown>
         <n-button
+          v-if="!readOnly"
           size="small"
           type="primary"
           :disabled="!dirty"
@@ -309,6 +316,26 @@ defineExpose({ guardUnsaved })
       </div>
     </div>
 
+    <n-alert
+      v-if="generatedBy"
+      type="info"
+      :show-icon="false"
+      class="generated"
+      data-testid="data-generated"
+    >
+      <div class="generated-row">
+        <span>{{ t('items.generated.notice', { id: generatedBy }) }}</span>
+        <n-button
+          size="small"
+          type="primary"
+          data-testid="data-open-item"
+          @click="emit('open-item', generatedBy)"
+        >
+          {{ t('items.generated.openItem') }}
+        </n-button>
+      </div>
+    </n-alert>
+
     <n-spin :show="loading" class="spin">
       <div class="panes">
         <div class="pane">
@@ -317,6 +344,7 @@ defineExpose({ guardUnsaved })
             ref="editorRef"
             v-model:value="text"
             :mode="isJson ? 'json' : 'text'"
+            :read-only="readOnly"
             :diagnostics="diagnostics"
             :completions="completions"
             @save="save"
@@ -430,6 +458,15 @@ defineExpose({ guardUnsaved })
 .spin {
   flex: 1;
   min-height: 0;
+}
+.generated {
+  flex: none;
+}
+.generated-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .spin :deep(.n-spin-content) {
   height: 100%;

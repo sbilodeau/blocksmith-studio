@@ -35,9 +35,12 @@ import DataSidebar from '../components/data/DataSidebar.vue'
 import DataList from '../components/data/DataList.vue'
 import DataEditor from '../components/data/DataEditor.vue'
 import { useDataStore } from '../stores/data'
+import ItemList from '../components/items/ItemList.vue'
+import ItemEditor from '../components/items/ItemEditor.vue'
+import { useItemsStore } from '../stores/items'
 import { IpcError } from '../services/ipc'
 import { useVanillaStore } from '../stores/vanilla'
-import { usePackStore } from '../stores/pack'
+import { packSections, usePackStore, type PackSection } from '../stores/pack'
 import { usePacksStore } from '../stores/packs'
 import { useTabsStore } from '../stores/tabs'
 import { useErrorMessage } from '../composables/useErrorMessage'
@@ -68,37 +71,71 @@ const router = useRouter()
  * not the editor (which has its own AI tab).
  */
 const kind = computed<PackKind>(() => store.value.summary?.kind ?? 'resource')
-/** What the tab shows: a data pack its data files, a resource pack its textures, a combined pack either. */
-const section = computed(() =>
-  kind.value === 'data' ? 'data' : kind.value === 'resource' ? 'textures' : store.value.section
+/**
+ * What the tab shows: textures (resource and combined packs), data files (data and combined packs) or custom
+ * items (every kind).
+ */
+const sections = computed(() => packSections(kind.value))
+const section = computed<PackSection>(() =>
+  sections.value.includes(store.value.section) ? store.value.section : sections.value[0]!
 )
 const data = computed(() => useDataStore(props.packId))
+const items = computed(() => useItemsStore(props.packId))
 const dataEditor = ref<InstanceType<typeof DataEditor> | null>(null)
-const editingAny = computed(() =>
-  section.value === 'data' ? data.value.editing !== null : store.value.editing !== null
-)
+const itemEditor = ref<InstanceType<typeof ItemEditor> | null>(null)
+const textureEditor = ref<InstanceType<typeof TextureEditor> | null>(null)
+const editingAny = computed(() => {
+  if (section.value === 'data') return data.value.editing !== null
+  if (section.value === 'items') return items.value.editing !== null || store.value.editing !== null
+  return store.value.editing !== null
+})
 const showAiPanel = computed(() => store.value.aiPanel && !editingAny.value)
-/** The creation agent works on the whole pack (overview, or the data files); the navigation agent on the grid. */
-const onOverview = computed(() => section.value === 'data' || store.value.category === null)
+/**
+ * The creation agent works on the whole pack (overview, the data files or the items); the navigation agent on the
+ * grid.
+ */
+const onOverview = computed(() => section.value !== 'textures' || store.value.category === null)
 
-function switchSection(next: 'textures' | 'data'): void {
-  const go = (): void => {
-    store.value.section = next
-  }
-  if (dataEditor.value && section.value === 'data') dataEditor.value.guardUnsaved(go)
+/** Runs `go` once the open texture, data file or item page has no unsaved change left. */
+function leaveEditors(go: () => void): void {
+  if (store.value.editing && textureEditor.value) textureEditor.value.leave(go)
+  else if (section.value === 'data' && dataEditor.value) dataEditor.value.guardUnsaved(go)
+  else if (section.value === 'items' && itemEditor.value) itemEditor.value.guardUnsaved(go)
   else go()
+}
+
+function switchSection(next: PackSection): void {
+  leaveEditors(() => {
+    store.value.section = next
+  })
+}
+
+/** Opens a custom item's page (Pack Doctor, generated data files). */
+function openItem(id: string): void {
+  leaveEditors(() => {
+    data.value.close()
+    store.value.section = 'items'
+    items.value.open(id).catch(showError)
+  })
 }
 
 const kindOptions = computed(() =>
   (['resource', 'data', 'combined'] as const).map((k) => ({ value: k, label: t(`packKind.${k}`) }))
 )
+const changingKind = ref(false)
 async function changeKind(next: PackKind): Promise<void> {
-  if (next === kind.value) return
+  const previous = kind.value
+  if (next === previous) return
+  changingKind.value = true
   try {
     await store.value.setKind(next)
-    if (next === 'combined') store.value.section = kind.value === 'data' ? 'data' : 'textures'
+    if (next === 'combined' && store.value.section !== 'items') {
+      store.value.section = previous === 'data' ? 'data' : 'textures'
+    }
   } catch (err) {
     showError(err)
+  } finally {
+    changingKind.value = false
   }
 }
 
@@ -107,6 +144,8 @@ watch(
   () => {
     const d = data.value
     if (section.value === 'data' && !d.loaded && !d.loading) d.load().catch(showError)
+    const i = items.value
+    if (section.value === 'items' && !i.loaded && !i.loading) i.load().catch(showError)
   },
   { immediate: true }
 )
@@ -196,6 +235,7 @@ const off = window.blocksmith.on('packs.changed', ({ packId }) => {
   if (packId && packId !== props.packId) return
   store.value.load().catch(showError)
   if (data.value.loaded) data.value.load().catch(showError)
+  if (items.value.loaded) items.value.refresh().catch(showError)
 })
 onBeforeUnmount(off)
 
@@ -229,22 +269,30 @@ const exportItems = computed(() => {
     <loading-overlay :show="store.loading && !store.loaded" />
     <div class="pack" data-testid="pack-view">
       <aside v-if="!editingAny" class="side">
-        <n-radio-group
-          v-if="kind === 'combined'"
-          :value="section"
-          size="small"
-          class="sections"
-          @update:value="switchSection"
-        >
-          <n-radio-button value="textures" data-testid="pack-section-textures">
+        <n-radio-group :value="section" size="small" class="sections" @update:value="switchSection">
+          <n-radio-button
+            v-if="sections.includes('textures')"
+            value="textures"
+            data-testid="pack-section-textures"
+          >
             {{ t('pack.sectionTextures') }}
           </n-radio-button>
-          <n-radio-button value="data" data-testid="pack-section-data">
+          <n-radio-button
+            v-if="sections.includes('data')"
+            value="data"
+            data-testid="pack-section-data"
+          >
             {{ t('pack.sectionData') }}
           </n-radio-button>
+          <n-radio-button value="items" data-testid="pack-section-items">
+            {{ t('pack.sectionItems') }}
+          </n-radio-button>
         </n-radio-group>
+        <div v-if="section === 'items'" class="items-side" data-testid="items-sidebar">
+          <n-text depth="3">{{ t('items.list.sidebar') }}</n-text>
+        </div>
         <data-sidebar
-          v-if="section === 'data'"
+          v-else-if="section === 'data'"
           :active="data.kind"
           :counts="data.counts"
           :changed="data.changedCount"
@@ -351,10 +399,25 @@ const exportItems = computed(() => {
             <vanilla-prepare :version-id="missingVanilla" @ready="load" />
           </div>
           <template v-else-if="section === 'data'">
-            <data-editor v-if="data.editing" ref="dataEditor" :pack-id="packId" />
+            <data-editor
+              v-if="data.editing"
+              ref="dataEditor"
+              :pack-id="packId"
+              @open-item="openItem"
+            />
             <data-list v-else :pack-id="packId" :pack-name="store.summary?.name ?? ''" />
           </template>
-          <texture-editor v-else-if="store.editing" :pack-id="packId" />
+          <texture-editor v-else-if="store.editing" ref="textureEditor" :pack-id="packId" />
+          <template v-else-if="section === 'items'">
+            <item-editor v-if="items.editing" ref="itemEditor" :pack-id="packId" />
+            <item-list
+              v-else
+              :pack-id="packId"
+              :combined="kind === 'combined'"
+              :changing-kind="changingKind"
+              @make-combined="changeKind('combined')"
+            />
+          </template>
           <category-overview
             v-else-if="store.category === null"
             :categories="store.categories"
@@ -378,7 +441,7 @@ const exportItems = computed(() => {
     </div>
     <style-brief-drawer v-model:show="showBrief" :pack-id="packId" />
     <pack-history-drawer v-model:show="showHistory" :pack-id="packId" />
-    <pack-doctor-drawer v-model:show="showDoctor" :pack-id="packId" />
+    <pack-doctor-drawer v-model:show="showDoctor" :pack-id="packId" @open-item="openItem" />
     <play-in-minecraft-dialog v-model:show="showPlay" :store="store" />
     <export-dialog
       v-model:show="showExport"
@@ -440,6 +503,10 @@ const exportItems = computed(() => {
 .sections :deep(.n-radio-button) {
   flex: 1;
   text-align: center;
+}
+.items-side {
+  padding: 12px 8px;
+  font-size: 12px;
 }
 .main {
   flex: 1;
