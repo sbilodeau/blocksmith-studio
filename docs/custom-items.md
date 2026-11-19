@@ -25,7 +25,8 @@ components that change its look, name and behavior:
 
 Every version of the support window (1.21.4 and later) reads `item_model` and the `assets/<ns>/items/` item
 definitions, so custom items work across the whole window. Players get one with the recipe, or with
-`/function <ns>:give/<id>` (cheats on).
+`/function <ns>:give/<id>` (cheats on); `/function <ns>:give_all` gives every item of the namespace. `give_all` sits
+outside `give/`, so no item id can collide with it.
 
 **Base item caveat.** Minecraft matches recipe ingredients by item id only: a custom item still works as its base
 item in vanilla recipes (a custom food based on `apple` crafts golden apples), and a custom recipe cannot ask for a
@@ -86,10 +87,13 @@ Saving writes the definition and these files as ONE history entry (`createItem`,
 | Armor (worn)    | `assets/<ns>/equipment/<id>.json` and `textures/entity/equipment/humanoid[_leggings]/<id>.png` (64x32) |
 | Recipe          | `data/<ns>/recipe/<id>.json`, whose result is the base item with the item's components                 |
 | Give function   | `data/<ns>/function/give/<id>.mcfunction`                                                              |
+| Give all        | `data/<ns>/function/give_all.mcfunction`: calls every item's give function (shared by the namespace)   |
 
 Names use `{ "translate": "item.<ns>.<id>", "fallback": "<English name>" }`, so the name shows in English even
 without the lang file. A rename moves the textures and removes the old files; a delete removes everything,
-textures included (undo brings it back). Lang files left with no key are removed.
+textures included (undo brings it back). Lang files left with no key are removed, and so is `give_all` once the
+namespace has no item. The Pack Doctor checks `give_all` like the other generated files and reports it under the
+first item of its namespace.
 
 Generation is pure (`generateItemFiles`, `itemChanges`): the same definition and version always give the same text.
 That is how the Pack Doctor spots a generated file edited by hand, and why the data editor shows generated files

@@ -1423,6 +1423,7 @@
       "title": "Comment l'obtenir",
       "cheats": "Dans un monde avec les commandes activées (ou en tant qu'opérateur), tapez l'une de ces commandes dans le chat :",
       "function": "Lance la fonction du pack qui donne l'objet :",
+      "all": "Donne d'un coup tous les objets personnalisés du pack :",
       "give": "Ou la commande complète, sans le pack de données :",
       "copy": "Copier",
       "copied": "Copié",

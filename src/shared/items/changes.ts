@@ -2,6 +2,8 @@ import type { ItemFormat } from './formats'
 import {
   generateItemFiles,
   generatedPaths,
+  giveAllFile,
+  giveAllPath,
   itemDefinitionText,
   langEntries,
   langPath,
@@ -69,6 +71,7 @@ export function itemChanges({
     for (const file of updateLangFiles(ns, items, dropped, readLang, langs)) {
       changes.set(file.path, file.text)
     }
+    changes.set(giveAllPath(ns), giveAllFile(ns, items)?.text ?? null)
   }
   return [...changes].map(([path, text]) => ({ path, text }))
 }
@@ -131,6 +134,8 @@ export function exportItemFiles(
         if (file.text === null) byPath.delete(file.path)
         else byPath.set(file.path, encoder.encode(file.text))
       }
+      const giveAll = giveAllFile(ns, items)
+      if (giveAll) byPath.set(giveAll.path, encoder.encode(giveAll.text))
     }
   }
   return { files: [...byPath].map(([path, data]) => ({ path, data })), invalid }
@@ -199,10 +204,21 @@ export function checkItems({ paths, read, format, vanillaItems }: ItemCheckInput
       if (stale) issues.push({ code: 'items.langOutdated', path, itemId })
     }
   }
+  for (const ns of [...new Set(items.map((i) => i.namespace))].sort()) {
+    const file = giveAllFile(ns, items)!
+    const current = read(file.path)
+    const itemId = items.find((i) => i.namespace === ns)!.id
+    if (current === null) issues.push({ code: 'items.generatedMissing', path: file.path, itemId })
+    else if (normalize(current) !== file.text) {
+      issues.push({ code: 'items.generatedEdited', path: file.path, itemId })
+    }
+  }
   return issues
 }
 
 /** The item whose generated files include `path` (data editor: read-only notice), if any. */
 export function itemGenerating(path: string, items: readonly CustomItem[]): CustomItem | null {
-  return items.find((i) => generatedPaths(i).includes(path)) ?? null
+  return (
+    items.find((i) => generatedPaths(i).includes(path) || giveAllPath(i.namespace) === path) ?? null
+  )
 }

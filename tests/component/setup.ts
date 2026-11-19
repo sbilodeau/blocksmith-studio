@@ -215,6 +215,7 @@ const handlers: Record<string, (payload: unknown) => unknown> = {
   'vanilla.availability': () => fakeBridge.versions,
   'app.whatsNew': () => fakeBridge.whatsNew,
   'app.openExternal': () => undefined,
+  'app.copyText': () => undefined,
   'app.getInfo': () => ({
     name: 'Blocksmith Studio',
     version: '26.46.0',

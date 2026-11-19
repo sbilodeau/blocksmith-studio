@@ -1423,6 +1423,7 @@
       "title": "How to get it",
       "cheats": "In a world with cheats on (or as an operator), type one of these in the chat:",
       "function": "Runs the give function of the pack:",
+      "all": "Gives every custom item of the pack at once:",
       "give": "Or the whole command, without the data pack:",
       "copy": "Copy",
       "copied": "Copied",

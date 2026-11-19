@@ -46,17 +46,18 @@ renderer must be resolved and checked to stay inside an allowed root.
 
 ## Security model
 
-| Measure                                    | Where                                                    |
-| ------------------------------------------ | -------------------------------------------------------- |
-| `contextIsolation`, `sandbox`, no Node     | `src/main/window.ts`                                     |
-| Strict CSP (meta tag + response header)    | `src/main/security-policy.ts`, `electron.vite.config.ts` |
-| No navigation, no new windows, no webview  | `src/main/security.ts`                                   |
-| App windows only created by main           | `createPopoutWindow` in `src/main/window.ts`             |
-| External links: https only, system browser | `src/main/security-policy.ts`                            |
-| Permission requests denied                 | `src/main/security.ts`                                   |
-| IPC only from the app's own frames         | `isTrustedSender` in `src/main/security-policy.ts`       |
-| Payload validation with zod                | `src/main/ipc/registry.ts`                               |
-| Electron fuses (no RunAsNode, ASAR only)   | `electron-builder.yml`                                   |
+| Measure                                       | Where                                                    |
+| --------------------------------------------- | -------------------------------------------------------- |
+| `contextIsolation`, `sandbox`, no Node        | `src/main/window.ts`                                     |
+| Strict CSP (meta tag + response header)       | `src/main/security-policy.ts`, `electron.vite.config.ts` |
+| No navigation, no new windows, no webview     | `src/main/security.ts`                                   |
+| App windows only created by main              | `createPopoutWindow` in `src/main/window.ts`             |
+| External links: https only, system browser    | `src/main/security-policy.ts`                            |
+| Permission requests denied                    | `src/main/security.ts`                                   |
+| Clipboard: write only, through `app.copyText` | `src/main/ipc/handlers.ts`                               |
+| IPC only from the app's own frames            | `isTrustedSender` in `src/main/security-policy.ts`       |
+| Payload validation with zod                   | `src/main/ipc/registry.ts`                               |
+| Electron fuses (no RunAsNode, ASAR only)      | `electron-builder.yml`                                   |
 
 These are covered by `tests/unit/security-policy.test.ts`, `tests/unit/ipc-contract.test.ts` and
 `tests/e2e/security.spec.ts` (which checks the running app: no `require`/`process` in the renderer, sandbox and
