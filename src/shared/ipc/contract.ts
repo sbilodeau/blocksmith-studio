@@ -136,6 +136,8 @@ const CategoryRulesInput = z.array(CategoryRuleSchema).max(MAX_CATEGORIES)
 export const inputSchemas = {
   'app.getInfo': NoInput,
   'app.openExternal': z.object({ url: z.url({ protocol: /^https$/ }) }).strict(),
+  /** Writes text to the system clipboard (the renderer's navigator.clipboard is denied with every permission). */
+  'app.copyText': z.object({ text: z.string().max(1_000_000) }).strict(),
   'app.whatsNew': NoInput,
   'settings.get': NoInput,
   'settings.update': SettingsPatchSchema,
@@ -365,6 +367,7 @@ export const inputSchemas = {
 export interface InvokeOutputs {
   'app.getInfo': AppInfo
   'app.openExternal': void
+  'app.copyText': void
   /** Set once per launch after an update (the first call takes it, later calls get null). */
   'app.whatsNew': WhatsNew | null
   'settings.get': Settings

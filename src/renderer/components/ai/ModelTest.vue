@@ -116,7 +116,7 @@ async function copyReport(): Promise<void> {
   const text = single.value
     ? single.value.markdown
     : [comparisonMarkdown(reports.value), ...reports.value.map((r) => r.markdown)].join('\n')
-  await navigator.clipboard.writeText(text)
+  await call('app.copyText', { text })
   message.success(t('ai.eval.copied'))
 }
 </script>

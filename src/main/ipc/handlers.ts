@@ -1,4 +1,4 @@
-import { app, shell } from 'electron'
+import { app, clipboard, shell } from 'electron'
 import { handle, AppErrorException } from './registry'
 import { isAllowedExternalUrl } from '../security'
 import type { SettingsService } from '../services/settings'
@@ -27,6 +27,10 @@ export function registerIpcHandlers({ settings, updater, takeWhatsNew }: Handler
   handle('app.openExternal', async ({ url }) => {
     if (!isAllowedExternalUrl(url)) throw new AppErrorException('app.urlNotAllowed')
     await shell.openExternal(url)
+  })
+
+  handle('app.copyText', async ({ text }) => {
+    await clipboard.writeText(text)
   })
 
   handle('app.whatsNew', () => takeWhatsNew?.() ?? null)
