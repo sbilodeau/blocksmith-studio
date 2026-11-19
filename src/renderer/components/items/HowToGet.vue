@@ -4,12 +4,13 @@ import { useI18n } from 'vue-i18n'
 import { NButton, NText, useMessage } from 'naive-ui'
 import type { CustomItem } from '@shared/items/schema'
 import { LATEST_ITEM_FORMAT, itemFormatFor } from '@shared/items/formats'
-import { functionCommand, giveCommand } from '@shared/items/generate'
+import { functionCommand, giveAllCommand, giveCommand } from '@shared/items/generate'
 import { findVersion, versionTable } from '@shared/versions'
+import { call } from '../../services/ipc'
 
 /**
- * "How to get it" on the item page: the `/function` command (runs the generated give function) and the full
- * `/give` command for the pack's Minecraft version, with copy buttons.
+ * "How to get it" on the item page: the `/function` commands (the item's give function, and give_all for every
+ * item of the namespace) and the full `/give` command for the pack's Minecraft version, with copy buttons.
  */
 const props = defineProps<{ item: CustomItem; version: string; dirty: boolean }>()
 const { t } = useI18n()
@@ -20,11 +21,12 @@ const format = computed(() => {
   return v ? itemFormatFor(v) : LATEST_ITEM_FORMAT
 })
 const fn = computed(() => functionCommand(props.item))
+const all = computed(() => giveAllCommand(props.item.namespace))
 const give = computed(() => giveCommand(props.item, format.value))
 
 async function copy(text: string): Promise<void> {
   try {
-    await navigator.clipboard.writeText(text)
+    await call('app.copyText', { text })
     message.success(t('items.howTo.copied'))
   } catch {
     message.error(t('items.howTo.copyFailed'))
@@ -46,6 +48,15 @@ async function copy(text: string): Promise<void> {
       <n-text v-if="dirty" depth="3" class="hint" data-testid="item-how-to-unsaved">
         {{ t('items.howTo.unsaved') }}
       </n-text>
+    </div>
+    <div class="command">
+      <n-text depth="3" class="label">{{ t('items.howTo.all') }}</n-text>
+      <div class="row">
+        <code class="code" data-testid="item-how-to-all">{{ all }}</code>
+        <n-button size="tiny" data-testid="item-how-to-copy-all" @click="copy(all)">
+          {{ t('items.howTo.copy') }}
+        </n-button>
+      </div>
     </div>
     <div class="command">
       <n-text depth="3" class="label">{{ t('items.howTo.give') }}</n-text>

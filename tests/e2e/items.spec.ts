@@ -168,6 +168,23 @@ test('creates, edits, undoes and exports a custom weapon', async () => {
   await expect(page.getByTestId('item-how-to-function')).toHaveText(
     '/function item_pack:give/ruby_sword'
   )
+  await expect(page.getByTestId('item-how-to-all')).toHaveText('/function item_pack:give_all')
+  expect(
+    await readFile(await ctx.packFile('data/item_pack/function/give_all.mcfunction'), 'utf8')
+  ).toContain('function item_pack:give/ruby_sword')
+
+  // Copy goes through main (the renderer's clipboard permission is denied); the stub keeps the real clipboard.
+  await launched.app.evaluate(({ clipboard }) => {
+    const copied: string[] = []
+    ;(globalThis as { copied?: string[] }).copied = copied
+    clipboard.writeText = async (text: string): Promise<void> => {
+      copied.push(text)
+    }
+  })
+  await page.getByTestId('item-how-to-copy-function').click()
+  await expect
+    .poll(() => launched!.app.evaluate(() => (globalThis as { copied?: string[] }).copied))
+    .toEqual(['/function item_pack:give/ruby_sword'])
 
   // Undo puts the item back as created (one history entry), in the form too; redo brings the edit back.
   await page.getByTestId('pack-history-open').click()

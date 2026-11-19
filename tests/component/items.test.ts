@@ -430,6 +430,13 @@ describe('item page', () => {
     expect($('item-how-to-give')!.textContent).toContain(
       '/give @s minecraft:stone_sword[minecraft:item_model="my_pack:ruby_sword"'
     )
+    expect($('item-how-to-all')!.textContent).toBe('/function my_pack:give_all')
+    ;($('item-how-to-copy-all') as HTMLElement).click()
+    await flushPromises()
+    expect(fakeBridge.calls).toContainEqual({
+      channel: 'app.copyText',
+      payload: { text: '/function my_pack:give_all' }
+    })
     wrapper.unmount()
   })
 })

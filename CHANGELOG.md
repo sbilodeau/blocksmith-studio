@@ -5,6 +5,17 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+### Fixed
+
+- **Copy** buttons (an item's **How to get it**, the AI model test report) failed with "Could not copy"; copying now
+  goes through the app itself
+
+### Changed
+
+- Custom items: `/function <namespace>:give_all` gives every custom item of the pack at once. **How to get it** shows
+  it with a copy button. Packs made before this change get it on the next save, export or install, and the Pack
+  Doctor offers **Regenerate**
+
 ## 26.47.2 - 2026-11-18
 
 ### M14 - Custom items
