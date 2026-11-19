@@ -5,6 +5,8 @@ All notable changes to this project are documented here. Versions follow CalVer 
 
 ## Unreleased
 
+## 26.47.3 - 2026-11-19
+
 ### Fixed
 
 - **Copy** buttons (an item's **How to get it**, the AI model test report) failed with "Could not copy"; copying now
